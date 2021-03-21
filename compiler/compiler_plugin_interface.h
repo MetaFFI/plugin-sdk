@@ -4,9 +4,11 @@
 
 /**
  * Interface Compiler Plugin Implements
- */ 
+ */
+ #ifdef __cplusplus
 struct compiler_plugin_interface
 {
+#endif
 	/**
 	 * Compiles IDL to executable code called from XLLR to the foreign function
 	 */ 
@@ -22,6 +24,6 @@ struct compiler_plugin_interface
 								const char* output_path, uint32_t output_path_length,
 							   const char* serialization_code, uint32_t serialization_code_length,
 								char** out_err, uint32_t* out_err_len) = 0;
-	
+#ifdef __cplusplus
 };
-
+#endif
