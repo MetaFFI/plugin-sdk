@@ -4,8 +4,10 @@
 /**
  * Interface Compiler Plugin Implements
  */
+#ifdef __cplusplus
 struct serializer_plugin_interface
 {
+#endif
 	/**
 	 * Generates serialization code
 	 */
@@ -13,4 +15,6 @@ struct serializer_plugin_interface
 	                                   const char* idl, uint32_t idl_length,
 	                                   char** out_serialization_code, uint32_t* out_serialization_code_length,
 	                                   char** out_err, uint32_t* out_err_len) = 0;
+#ifdef __cplusplus
 };
+#endif

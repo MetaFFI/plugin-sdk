@@ -9,16 +9,19 @@ struct param_return_definition;
 /**
  * Interface Compiler Plugin Implements
  */
+#ifdef __cplusplus
 struct idl_plugin_interface
 {
+#endif
 	/**
 	 * Returns the data defined in the IDL
 	 */
 	virtual idl_definition* parse_idl(const char* idl_name, uint32_t idl_name_length,
 							 const char* idl, uint32_t idl_length,
 							 char** out_err, uint32_t* out_err_len) = 0;
-	
+#ifdef __cplusplus
 };
+#endif
 
 struct idl_definition
 {
