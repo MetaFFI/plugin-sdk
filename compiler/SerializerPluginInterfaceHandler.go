@@ -6,20 +6,21 @@ package main
  */
 import "C"
 
+var serializerPluginInterfaceHandler *SerializerPluginInterfaceHandler
+
 type SerializerPluginInterface interface{
 	CompileSerialization(idlName string, idl string) (serializationCode string, err error)
 }
 //--------------------------------------------------------------------
-type SerializerPluginInterfaceWrapper struct{
+type SerializerPluginInterfaceHandler struct{
 	wrapped SerializerPluginInterface
 }
 //--------------------------------------------------------------------
-func NewSerializerPluginInterfaceWrapper(wrapped SerializerPluginInterface) *SerializerPluginInterfaceWrapper{
-	return &SerializerPluginInterfaceWrapper{wrapped: wrapped}
+func CreateSerializerPluginInterfaceHandler(wrapped SerializerPluginInterface){
+	serializerPluginInterfaceHandler = &SerializerPluginInterfaceHandler{wrapped: wrapped}
 }
 //--------------------------------------------------------------------
-//export compile_serialization
-func (this *SerializerPluginInterfaceWrapper) compile_serialization(idl_name *C.char, idl_name_length C.uint,
+func (this *SerializerPluginInterfaceHandler) compile_serialization(idl_name *C.char, idl_name_length C.uint,
 												idl *C.char, idl_length C.uint,
 												out_serialization_code **C.char, out_serialization_code_length *C.uint,
 												out_err **C.char, out_err_len *C.uint) {
@@ -37,5 +38,18 @@ func (this *SerializerPluginInterfaceWrapper) compile_serialization(idl_name *C.
 
 	*out_serialization_code = C.CString(serializationCode)
 	*out_serialization_code_length = C.uint(len(serializationCode))
+}
+//--------------------------------------------------------------------
+//export compile_serialization
+func compile_serialization(idl_name *C.char, idl_name_length C.uint,
+						idl *C.char, idl_length C.uint,
+						out_serialization_code **C.char, out_serialization_code_length *C.uint,
+						out_err **C.char, out_err_len *C.uint) {
+
+	if serializerPluginInterfaceHandler == nil{
+		panic("serializerPluginInterfaceHandler is null!")
+	}
+
+	serializerPluginInterfaceHandler.compile_serialization(idl_name, idl_name_length, idl, idl_length, out_serialization_code, out_serialization_code_length, out_err, out_err_len)
 }
 //--------------------------------------------------------------------

@@ -1,25 +1,25 @@
 package main
 
-
 /*
 #include "idl_plugin_interface.h"
  */
 import "C"
 
+var idlPluginInterfaceHandler *IDLPluginInterfaceHandler
+
 type IDLPluginInterface interface{
 	ParseIDL(idlName string, idl string) error
 }
 //--------------------------------------------------------------------
-type IDLPluginInterfaceWrapper struct{
+type IDLPluginInterfaceHandler struct{
 	wrapped IDLPluginInterface
 }
 //--------------------------------------------------------------------
-func NewIDLPluginInterfaceWrapper(wrapped IDLPluginInterface) *IDLPluginInterfaceWrapper{
-	return &IDLPluginInterfaceWrapper{wrapped: wrapped}
+func CreateIDLPluginInterfaceHandler(wrapped IDLPluginInterface){
+	idlPluginInterfaceHandler = &IDLPluginInterfaceHandler{wrapped: wrapped}
 }
 //--------------------------------------------------------------------
-//export parse_idl
-func (this *IDLPluginInterfaceWrapper) parse_idl(idl_name *C.char, idl_name_length C.uint,
+func (this *IDLPluginInterfaceHandler) parse_idl(idl_name *C.char, idl_name_length C.uint,
 												idl *C.char, idl_length C.uint,
 												out_err **C.char, out_err_len *C.uint) {
 
@@ -33,5 +33,17 @@ func (this *IDLPluginInterfaceWrapper) parse_idl(idl_name *C.char, idl_name_leng
 		*out_err_len = C.uint(len(err.Error()))
 		return
 	}
+}
+//--------------------------------------------------------------------
+//export parse_idl
+func parse_idl(idl_name *C.char, idl_name_length C.uint,
+	idl *C.char, idl_length C.uint,
+	out_err **C.char, out_err_len *C.uint){
+
+	if idlPluginInterfaceHandler == nil{
+		panic("idlPluginInterfaceHandler is null!")
+	}
+
+	idlPluginInterfaceHandler.parse_idl(idl_name, idl_name_length, idl, idl_length, out_err, out_err_len)
 }
 //--------------------------------------------------------------------

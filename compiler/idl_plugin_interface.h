@@ -12,18 +12,17 @@ struct param_return_definition;
 #ifdef __cplusplus
 struct idl_plugin_interface
 {
-#endif
 	/**
 	 * Returns the data defined in the IDL
 	 */
-	virtual idl_definition* parse_idl(const char* idl_name, uint32_t idl_name_length,
-							 const char* idl, uint32_t idl_length,
-							 char** out_err, uint32_t* out_err_len) = 0;
-#ifdef __cplusplus
+	virtual	struct idl_definition* parse_idl(const char* idl_name, uint32_t idl_name_length,
+									 const char* idl, uint32_t idl_length,
+									 char** out_err, uint32_t* out_err_len) = 0;
+
 };
 #endif
 
-struct idl_definition
+typedef struct idl_definition
 {
 	const char* idl_filename;
 	uint32_t idl_filename_length;
@@ -40,20 +39,20 @@ struct idl_definition
 	const char* target_language;
 	uint32_t target_language_length;
 	
-	module_definition* modules;
+	struct module_definition* modules;
 	uint32_t modules_length;
-};
+}idl_definition;
 
-struct module_definition
+typedef struct module_definition
 {
 	const char* module_name;
 	uint32_t module_name_length;
 	
-	function_definition* functions;
+	struct function_definition* functions;
 	uint32_t functions_length;
-};
+}module_definition;
 
-struct function_definition
+typedef struct function_definition
 {
 	const char* function_name;
 	uint32_t function_name_length;
@@ -67,14 +66,14 @@ struct function_definition
 	const char* return_values_structure_name;
 	uint32_t return_values_structure_name_length;
 	
-	param_return_definition* parameters;
+	struct param_return_definition* parameters;
 	uint32_t parameters_length;
 	
-	param_return_definition* return_values;
+	struct param_return_definition* return_values;
 	uint32_t return_values_length;
-};
+}function_definition;
 
-struct param_return_definition
+typedef struct param_return_definition
 {
 	const char* param_return_definition_name;
 	uint32_t param_return_definition_name_length;
@@ -84,4 +83,4 @@ struct param_return_definition
 	
 	uint8_t is_complex_type;
 	uint8_t is_array;
-};
+}param_return_definition;

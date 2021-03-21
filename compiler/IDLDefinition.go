@@ -1,7 +1,7 @@
 package main
 
 /*
-#include "idl_plugin_intetrface.h"
+#include "idl_plugin_interface.h"
 
 module_definition* get_next_module(module_definition* p)
 {
@@ -56,11 +56,11 @@ type ParamReturnDefinition struct{
 func NewIDLDefinition(idl_def *C.idl_definition) *IDLDefinition{
 
 	res := &IDLDefinition{
-		IDLFilename: C.GoStringN(idl_def.idl_filename, idl_def.idl_filename_length),
-		IDLCode: C.GoStringN(idl_def.idl_code, idl_def.idl_code_length),
-		IDLExtension: C.GoStringN(idl_def.idl_extension, idl_def.idl_extension_length),
-		IDLFullPath: C.GoStringN(idl_def.idl_full_path, idl_def.idl_full_path_length),
-		TargetLanguage: C.GoStringN(idl_def.target_language, idl_def.target_language_length),
+		IDLFilename: C.GoStringN(idl_def.idl_filename, C.int(idl_def.idl_filename_length)),
+		IDLCode: C.GoStringN(idl_def.idl_code, C.int(idl_def.idl_code_length)),
+		IDLExtension: C.GoStringN(idl_def.idl_extension, C.int(idl_def.idl_extension_length)),
+		IDLFullPath: C.GoStringN(idl_def.idl_full_path, C.int(idl_def.idl_full_path_length)),
+		TargetLanguage: C.GoStringN(idl_def.target_language, C.int(idl_def.target_language_length)),
 		Modules: make([]ModuleDefinition, 0),
 	}
 
@@ -70,7 +70,7 @@ func NewIDLDefinition(idl_def *C.idl_definition) *IDLDefinition{
 	for i=0 ; i<idl_def.modules_length ; i++{
 
 		mod := ModuleDefinition{
-			Name:      C.GoStringN(currentModulePtr.module_name, currentModulePtr.module_name_length),
+			Name:      C.GoStringN(currentModulePtr.module_name, C.int(currentModulePtr.module_name_length)),
 			Functions: make([]FunctionDefinition, 0),
 		}
 
@@ -80,10 +80,10 @@ func NewIDLDefinition(idl_def *C.idl_definition) *IDLDefinition{
 		for j=0 ; j<currentModulePtr.functions_length ; j++{
 
 			function := FunctionDefinition{
-				Name:                      C.GoStringN(currentFunctionPtr.function_name, currentFunctionPtr.function_name_length),
-				ForeignFunctionName:       C.GoStringN(currentFunctionPtr.foreign_function_name, currentFunctionPtr.foreign_function_name_length),
-				ParametersStructureName:   C.GoStringN(currentFunctionPtr.parameters_structure_name, currentFunctionPtr.parameters_structure_name_length),
-				ReturnValuesStructureName: C.GoStringN(currentFunctionPtr.return_values_structure_name, currentFunctionPtr.return_values_structure_name_length),
+				Name:                      C.GoStringN(currentFunctionPtr.function_name, C.int(currentFunctionPtr.function_name_length)),
+				ForeignFunctionName:       C.GoStringN(currentFunctionPtr.foreign_function_name, C.int(currentFunctionPtr.foreign_function_name_length)),
+				ParametersStructureName:   C.GoStringN(currentFunctionPtr.parameters_structure_name, C.int(currentFunctionPtr.parameters_structure_name_length)),
+				ReturnValuesStructureName: C.GoStringN(currentFunctionPtr.return_values_structure_name, C.int(currentFunctionPtr.return_values_structure_name_length)),
 				Parameters:                make([]ParamReturnDefinition, 0),
 				ReturnValues:              make([]ParamReturnDefinition, 0),
 			}
@@ -93,8 +93,8 @@ func NewIDLDefinition(idl_def *C.idl_definition) *IDLDefinition{
 			currentParamPtr := currentFunctionPtr.parameters
 			for k=0 ; k<currentFunctionPtr.parameters_length ; k++{
 				param := ParamReturnDefinition{
-					Name:          C.GoStringN(currentParamPtr.param_return_definition_name, currentParamPtr.param_return_definition_name_length),
-					Type:          C.GoStringN(currentParamPtr.param_return_definition_type, currentParamPtr.param_return_definition_type_length),
+					Name:          C.GoStringN(currentParamPtr.param_return_definition_name, C.int(currentParamPtr.param_return_definition_name_length)),
+					Type:          C.GoStringN(currentParamPtr.param_return_definition_type, C.int(currentParamPtr.param_return_definition_type_length)),
 					IsComplexType: currentParamPtr.is_complex_type != 0,
 					IsArray:       currentParamPtr.is_array != 0,
 				}
@@ -106,8 +106,8 @@ func NewIDLDefinition(idl_def *C.idl_definition) *IDLDefinition{
 			currentReturnValuePtr := currentFunctionPtr.return_values
 			for k=0 ; k<currentFunctionPtr.return_values_length ; k++{
 				retval := ParamReturnDefinition{
-					Name:          C.GoStringN(currentReturnValuePtr.param_return_definition_name, currentReturnValuePtr.param_return_definition_name_length),
-					Type:          C.GoStringN(currentReturnValuePtr.param_return_definition_type, currentReturnValuePtr.param_return_definition_type_length),
+					Name:          C.GoStringN(currentReturnValuePtr.param_return_definition_name, C.int(currentReturnValuePtr.param_return_definition_name_length)),
+					Type:          C.GoStringN(currentReturnValuePtr.param_return_definition_type, C.int(currentReturnValuePtr.param_return_definition_type_length)),
 					IsComplexType: currentReturnValuePtr.is_complex_type != 0,
 					IsArray:       currentReturnValuePtr.is_array != 0,
 				}

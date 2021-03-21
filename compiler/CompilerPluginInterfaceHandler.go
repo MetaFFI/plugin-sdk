@@ -1,26 +1,25 @@
 package main
-
-
 /*
 #include "compiler_plugin_interface.h"
  */
 import "C"
+
+var compilerPluginInterfaceHandler *CompilerPluginInterfaceHandler
 
 type CompilerPluginInterface interface{
 	CompileToGuest(idlDefinition *IDLDefinition, outputPath string, serializationCode string) error
 	CompileFromHost(idlDefinition *IDLDefinition, outputPath string, serializationCode string) error
 }
 //--------------------------------------------------------------------
-type CompilerPluginInterfaceWrapper struct{
+type CompilerPluginInterfaceHandler struct{
 	wrapped CompilerPluginInterface
 }
 //--------------------------------------------------------------------
-func NewCompilerPluginInterfaceWrapper(wrapped CompilerPluginInterface) *CompilerPluginInterfaceWrapper{
-	return &CompilerPluginInterfaceWrapper{wrapped: wrapped}
+func CreateCompilerPluginInterfaceHandler(wrapped CompilerPluginInterface){
+	compilerPluginInterfaceHandler = &CompilerPluginInterfaceHandler{wrapped: wrapped}
 }
 //--------------------------------------------------------------------
-//export compile_to_guest
-func (this *CompilerPluginInterfaceWrapper) compile_to_guest(idl_def *C.idl_definition,
+func (this *CompilerPluginInterfaceHandler) compile_to_guest(idl_def *C.idl_definition,
 															output_path *C.char, output_path_length C.uint,
 															serialization_code *C.char, serialization_code_length C.uint,
 															out_err **C.char, out_err_len *C.uint) {
@@ -37,8 +36,7 @@ func (this *CompilerPluginInterfaceWrapper) compile_to_guest(idl_def *C.idl_defi
 	}
 }
 //--------------------------------------------------------------------
-//export compile_from_host
-func (this *CompilerPluginInterfaceWrapper) compile_from_host(idl_def *C.idl_definition,
+func (this *CompilerPluginInterfaceHandler) compile_from_host(idl_def *C.idl_definition,
 															output_path *C.char, output_path_length C.uint,
 															serialization_code *C.char, serialization_code_length C.uint,
 															out_err **C.char, out_err_len *C.uint){
@@ -53,5 +51,31 @@ func (this *CompilerPluginInterfaceWrapper) compile_from_host(idl_def *C.idl_def
 		*out_err_len = C.uint(len(err.Error()))
 		return
 	}
+}
+//--------------------------------------------------------------------
+//export compile_to_guest
+func compile_to_guest(idl_def *C.idl_definition,
+	output_path *C.char, output_path_length C.uint,
+	serialization_code *C.char, serialization_code_length C.uint,
+	out_err **C.char, out_err_len *C.uint) {
+
+	if compilerPluginInterfaceHandler == nil{
+		panic("compilerPluginInterfaceHandler is null!")
+	}
+
+	compilerPluginInterfaceHandler.compile_to_guest(idl_def, output_path, output_path_length, serialization_code, serialization_code_length, out_err, out_err_len)
+}
+//--------------------------------------------------------------------
+//export compile_from_host
+func compile_from_host(idl_def *C.idl_definition,
+	output_path *C.char, output_path_length C.uint,
+	serialization_code *C.char, serialization_code_length C.uint,
+	out_err **C.char, out_err_len *C.uint){
+
+	if compilerPluginInterfaceHandler == nil{
+		panic("compilerPluginInterfaceHandler is null!")
+	}
+
+	compilerPluginInterfaceHandler.compile_from_host(idl_def, output_path, output_path_length, serialization_code, serialization_code_length, out_err, out_err_len)
 }
 //--------------------------------------------------------------------
