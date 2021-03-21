@@ -34,7 +34,7 @@ func (this *IDLPluginInterfaceHandler) parse_idl(idl_name *C.char, idl_name_leng
 		return nil
 	}
 
-	return def
+	return def.ToCStruct()
 }
 //--------------------------------------------------------------------
 //export parse_idl
