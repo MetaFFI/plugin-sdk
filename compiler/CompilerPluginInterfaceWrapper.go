@@ -2,7 +2,7 @@ package main
 
 
 /*
-#include "compiler_plugin_intetrface.h"
+#include "compiler_plugin_interface.h"
  */
 import "C"
 

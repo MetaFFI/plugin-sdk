@@ -2,7 +2,7 @@ package main
 
 
 /*
-#include "idl_plugin_intetrface.h"
+#include "idl_plugin_interface.h"
  */
 import "C"
 

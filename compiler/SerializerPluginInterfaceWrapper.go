@@ -2,7 +2,7 @@ package main
 
 
 /*
-#include "serializer_plugin_intetrface.h"
+#include "serializer_plugin_interface.h"
  */
 import "C"
 
