@@ -1,4 +1,4 @@
-package main
+package compiler
 /*
 #include "compiler_plugin_interface.h"
  */

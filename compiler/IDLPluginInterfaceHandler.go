@@ -1,4 +1,4 @@
-package main
+package compiler
 
 /*
 #include "idl_plugin_interface.h"
