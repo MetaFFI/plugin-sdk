@@ -2,9 +2,9 @@
 #include <stdint.h>
 
 struct idl_definition;
-struct module_data;
-struct function_data;
-struct param_return_data;
+struct module_definition;
+struct function_definition;
+struct param_return_definition;
 
 /**
  * Interface Compiler Plugin Implements
@@ -12,15 +12,21 @@ struct param_return_data;
 struct idl_plugin_interface
 {
 	/**
-	 * Compiles IDL to executable code called from XLLR to the foreign function
+	 * Returns the data defined in the IDL
 	 */
-	virtual idl_data* parse_idl(const char* idl_path, uint32_t output_path_length, char** out_err, uint32_t* out_err_len) = 0;
+	virtual idl_definition* parse_idl(const char* idl_name, uint32_t idl_name_length,
+							 const char* idl, uint32_t idl_length,
+							 char** out_err, uint32_t* out_err_len) = 0;
+	
 };
 
 struct idl_definition
 {
 	const char* idl_filename;
 	uint32_t idl_filename_length;
+	
+	const char* idl_code;
+	uint32_t idl_code_length;
 	
 	const char* idl_extension;
 	uint32_t idl_extension_length;
@@ -31,20 +37,20 @@ struct idl_definition
 	const char* target_language;
 	uint32_t target_language_length;
 	
-	module_data* modules;
+	module_definition* modules;
 	uint32_t modules_length;
 };
 
-struct module_data
+struct module_definition
 {
 	const char* module_name;
 	uint32_t module_name_length;
 	
-	function_data* functions;
+	function_definition* functions;
 	uint32_t functions_length;
 };
 
-struct function_data
+struct function_definition
 {
 	const char* function_name;
 	uint32_t function_name_length;
@@ -58,22 +64,21 @@ struct function_data
 	const char* return_values_structure_name;
 	uint32_t return_values_structure_name_length;
 	
-	param_return_data* parameters;
+	param_return_definition* parameters;
 	uint32_t parameters_length;
 	
-	param_return_data* return_values;
+	param_return_definition* return_values;
 	uint32_t return_values_length;
 };
 
-struct param_return_data
+struct param_return_definition
 {
-	const char* param_return_data_name;
-	uint32_t param_return_data_name_length;
+	const char* param_return_definition_name;
+	uint32_t param_return_definition_name_length;
 	
-	const char* param_return_data_type;
-	uint32_t param_return_data_type_length;
+	const char* param_return_definition_type;
+	uint32_t param_return_definition_type_length;
 	
 	uint8_t is_complex_type;
 	uint8_t is_array;
-	uint8_t is_pointer;
 };

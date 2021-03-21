@@ -1,0 +1,1 @@
+module github.com/OpenFFI/plugin-sdk/compiler
