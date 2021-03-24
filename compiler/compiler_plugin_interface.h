@@ -12,7 +12,7 @@ struct compiler_plugin_interface
 	/**
 	 * Compiles IDL to executable code called from XLLR to the foreign function
 	 */ 
-	virtual	void compile_to_guest(struct idl_definition* idl_def,
+	virtual	void compile_to_guest(const char* idl_def_json, uint32_t idl_def_json_length,
 						   const char* output_path, uint32_t output_path_length,
 						   const char* serialization_code, uint32_t serialization_code_length,
 						   char** out_err, uint32_t* out_err_len) = 0;
@@ -20,7 +20,7 @@ struct compiler_plugin_interface
 	/**
 	 * Compile IDL to code calling to XLLR from host code
 	 */
-	virtual	void compile_from_host(struct idl_definition* idl_def,
+	virtual	void compile_from_host(const char* idl_def_json, uint32_t idl_def_json_length,
 							const char* output_path, uint32_t output_path_length,
 							const char* serialization_code, uint32_t serialization_code_length,
 							char** out_err, uint32_t* out_err_len) = 0;

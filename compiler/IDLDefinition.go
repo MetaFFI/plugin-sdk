@@ -1,245 +1,323 @@
 package compiler
 
-/*
-#include <stdlib.h>
-#include "idl_plugin_interface.h"
+import (
+	"encoding/json"
+	"fmt"
+	"strings"
+)
 
-module_definition* get_next_module(module_definition* p)
-{
-	p++;
-	return p;
+//--------------------------------------------------------------------
+// The expected syntax:
+// openffi_function_path: "key1=val1,key2=val2...."
+func parsePathToFunction(pathToFunction string, pathMap map[string]string) (map[string]string, error){
+
+	var res map[string]string
+	if pathMap == nil{
+		res = make(map[string]string)
+	} else {
+		res = pathMap
+	}
+
+	pairs := strings.Split(pathToFunction, ",")
+
+	if len(pairs) == 0{
+		return nil, nil
+	}
+
+	for _, pair := range pairs{
+		elems := strings.Split(pair, "=")
+
+		if len(elems) != 2{
+			return nil, fmt.Errorf("Failed parsing openffi_function_path tag. The pair \"%v\" is invalid.", pair)
+		}
+
+		elems[0] = strings.TrimSpace(elems[0])
+		elems[1] = strings.TrimSpace(elems[1])
+
+		if elems[0] == "" || elems[1] == ""{
+			return nil, fmt.Errorf("Failed parsing openffi_function_path tag. The pair \"%v\" is invalid.", pair)
+		}
+
+		res[elems[0]] = elems[1]
+	}
+
+	return res, nil
 }
+//--------------------------------------------------------------------
+func copyMap(source map[string]string) (target map[string]string){
+	target = make(map[string]string)
 
-function_definition* get_next_function(function_definition* p)
-{
-	p++;
-	return p;
+	if len(source) == 0{
+		return
+	}
+
+	for k, v := range source{
+		target[k] = v
+	}
+
+	return
 }
-
-param_return_definition* get_next_param_return(param_return_definition* p)
-{
-	p++;
-	return p;
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
+type Taggable interface {
+	SetTag(tag string, val string)
 }
- */
-import "C"
-
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
+type Commentable interface {
+	AppendComment(comment string)
+}
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
 type IDLDefinition struct {
-	IDLFilename string
-	IDLCode string
-	IDLExtension string
-	IDLFullPath string
-	TargetLanguage string
-	Modules []ModuleDefinition
+	IDLFilename string `json:"idl_filename"`
+	IDLExtension string `json:"idl_extension"`
+	IDLFullPath string `json:"idl_full_path"`
+	TargetLanguage string `json:"target_language"`
+	Tags map[string]string `json:"tags"`
+	Modules []ModuleDefinition `json:"modules"`
+	IDLCode string `json:"idl_code"`
 }
+//--------------------------------------------------------------------
+func NewIDLDefinition(idlDefinitionJson string) (*IDLDefinition, error){
 
+	def := IDLDefinition{}
+	err := json.Unmarshal([]byte(idlDefinitionJson), &def)
+	if err != nil{
+		return nil, fmt.Errorf("Failed to unmarshal IDL definition JSON: %v", err)
+	}
+
+	return &def, nil
+}
+//--------------------------------------------------------------------
+func (this *IDLDefinition) ToJSON() (string, error){
+
+	jsonStr, err := json.Marshal(this)
+	if err != nil{
+		return "", fmt.Errorf("Failed to marshal IDL definition to JSON: %v", err)
+	}
+
+	return string(jsonStr), nil
+}
+//--------------------------------------------------------------------
+func (this *IDLDefinition) SetTag(tag string, val string){
+
+	if this.Tags == nil{
+		this.Tags = make(map[string]string)
+	}
+
+	this.Tags[tag] = val
+}
+/*
+The function iterates the definition and fills fields according to well-known tags.
+
+Supported tags:
+//openffi_target_language
+//openffi_function_path
+*/
+func (this *IDLDefinition) ParseWellKnownTags() error{
+
+	var pathToFunction map[string]string
+	var err error
+
+	for tagName, tagVal := range this.Tags{
+		switch tagName {
+			case "openffi_target_language":
+				this.TargetLanguage = strings.TrimSpace(tagVal)
+
+			case "openffi_function_path":
+				pathToFunction, err = parsePathToFunction(tagVal, nil)
+				if err != nil{ return err }
+		}
+	}
+
+	for _, m := range this.Modules{
+
+		// make a copy for each module so items can be overridden
+		modulePathToFunction := copyMap(pathToFunction)
+
+		err := m.parseWellKnownTags(modulePathToFunction)
+		if err != nil{
+			return err
+		}
+	}
+
+	return nil
+}
+//--------------------------------------------------------------------
+/*
+Validates:
+- Target Language is set
+- Every function has a path
+ */
+func (this *IDLDefinition) Validate() error{
+
+	// validate Target language exists
+	if this.TargetLanguage == ""{
+		return fmt.Errorf("TargetLanguage is missing")
+	}
+
+	// validate function path is set for every function
+	for _, m := range this.Modules{
+		for _, f := range m.Functions{
+			if len(f.PathToForeignFunction) == 0{
+				return fmt.Errorf("Path to foreign function is not set to function %v", f.Name)
+			}
+		}
+	}
+
+	return nil
+}
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
 type ModuleDefinition struct{
-	Name string
-	Functions []FunctionDefinition
+	Name string `json:"name"`
+	Functions []FunctionDefinition `json:"functions"`
+	Tags map[string]string `json:"tags"`
+	Comment string `json:"comment"`
 }
+func (this *ModuleDefinition) SetTag(tag string, val string){
 
+	if this.Tags == nil{
+		this.Tags = make(map[string]string)
+	}
+
+	this.Tags[tag] = val
+}
+func (this *ModuleDefinition) AppendComment(comment string){
+	this.Comment += (comment + "\n")
+}
+//--------------------------------------------------------------------
+func (this *ModuleDefinition) parseWellKnownTags(pathToFunction map[string]string) error{
+
+	var err error
+	for tagName, tagVal := range this.Tags{
+		switch tagName {
+			case "openffi_function_path":
+				pathToFunction, err = parsePathToFunction(tagVal, pathToFunction)
+				if err != nil{ return err }
+		}
+	}
+
+	for _, f := range this.Functions{
+
+		functionPathToFunction := copyMap(pathToFunction)
+
+		err := f.parseWellKnownTags(functionPathToFunction)
+		if err != nil{
+			return err
+		}
+	}
+
+	return nil
+}
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
 type FunctionDefinition struct {
-	Name string
-	ForeignFunctionName string
-	ParametersStructureName string
-	ReturnValuesStructureName string
-	Parameters []ParamReturnDefinition
-	ReturnValues []ParamReturnDefinition
+	Name                  string             `json:"name"`
+	PathToForeignFunction map[string]string  `json:"path_to_foreign_function"`
+	ParametersType        string             `json:"parameter_type"`
+	ReturnValuesType      string             `json:"return_values_type"`
+	Parameters            []*FieldDefinition `json:"parameters"`
+	ReturnValues          []*FieldDefinition `json:"return_values"`
+	Tags                  map[string]string  `json:"tags"`
+	Comment               string             `json:"comment"`
 }
+func (this *FunctionDefinition) SetTag(tag string, val string){
 
-type ParamReturnDefinition struct{
-	Name string
-	Type string
-	IsComplexType bool
-	IsArray bool
-}
-//--------------------------------------------------------------------
-func NewIDLDefinition(idl_def *C.idl_definition) *IDLDefinition{
-
-	res := &IDLDefinition{
-		IDLFilename: C.GoStringN(idl_def.idl_filename, C.int(idl_def.idl_filename_length)),
-		IDLCode: C.GoStringN(idl_def.idl_code, C.int(idl_def.idl_code_length)),
-		IDLExtension: C.GoStringN(idl_def.idl_extension, C.int(idl_def.idl_extension_length)),
-		IDLFullPath: C.GoStringN(idl_def.idl_full_path, C.int(idl_def.idl_full_path_length)),
-		TargetLanguage: C.GoStringN(idl_def.target_language, C.int(idl_def.target_language_length)),
-		Modules: make([]ModuleDefinition, 0),
+	if this.Tags == nil{
+		this.Tags = make(map[string]string)
 	}
 
-	// iterate modules
-	var i C.uint
-	currentModulePtr := idl_def.modules
-	for i=0 ; i<idl_def.modules_length ; i++{
-
-		mod := ModuleDefinition{
-			Name:      C.GoStringN(currentModulePtr.module_name, C.int(currentModulePtr.module_name_length)),
-			Functions: make([]FunctionDefinition, 0),
-		}
-
-		// iterate functions
-		var j C.uint
-		currentFunctionPtr := currentModulePtr.functions
-		for j=0 ; j<currentModulePtr.functions_length ; j++{
-
-			function := FunctionDefinition{
-				Name:                      C.GoStringN(currentFunctionPtr.function_name, C.int(currentFunctionPtr.function_name_length)),
-				ForeignFunctionName:       C.GoStringN(currentFunctionPtr.foreign_function_name, C.int(currentFunctionPtr.foreign_function_name_length)),
-				ParametersStructureName:   C.GoStringN(currentFunctionPtr.parameters_structure_name, C.int(currentFunctionPtr.parameters_structure_name_length)),
-				ReturnValuesStructureName: C.GoStringN(currentFunctionPtr.return_values_structure_name, C.int(currentFunctionPtr.return_values_structure_name_length)),
-				Parameters:                make([]ParamReturnDefinition, 0),
-				ReturnValues:              make([]ParamReturnDefinition, 0),
-			}
-
-			// iterate Parameters/Return values
-			var k C.uint
-			currentParamPtr := currentFunctionPtr.parameters
-			for k=0 ; k<currentFunctionPtr.parameters_length ; k++{
-				param := ParamReturnDefinition{
-					Name:          C.GoStringN(currentParamPtr.param_return_definition_name, C.int(currentParamPtr.param_return_definition_name_length)),
-					Type:          C.GoStringN(currentParamPtr.param_return_definition_type, C.int(currentParamPtr.param_return_definition_type_length)),
-					IsComplexType: currentParamPtr.is_complex_type != 0,
-					IsArray:       currentParamPtr.is_array != 0,
-				}
-
-				function.Parameters = append(function.Parameters, param)
-				currentParamPtr = C.get_next_param_return(currentParamPtr)
-			}
-
-			currentReturnValuePtr := currentFunctionPtr.return_values
-			for k=0 ; k<currentFunctionPtr.return_values_length ; k++{
-				retval := ParamReturnDefinition{
-					Name:          C.GoStringN(currentReturnValuePtr.param_return_definition_name, C.int(currentReturnValuePtr.param_return_definition_name_length)),
-					Type:          C.GoStringN(currentReturnValuePtr.param_return_definition_type, C.int(currentReturnValuePtr.param_return_definition_type_length)),
-					IsComplexType: currentReturnValuePtr.is_complex_type != 0,
-					IsArray:       currentReturnValuePtr.is_array != 0,
-				}
-
-				function.ReturnValues = append(function.ReturnValues, retval)
-				currentParamPtr = C.get_next_param_return(currentReturnValuePtr)
-			}
-
-			mod.Functions = append(mod.Functions, function)
-			currentFunctionPtr = C.get_next_function(currentFunctionPtr)
-		}
-
-
-		res.Modules = append(res.Modules, mod)
-		currentModulePtr = C.get_next_module(currentModulePtr)
-	}
-
-	return res
+	this.Tags[tag] = val
 }
 //--------------------------------------------------------------------
-func (this *IDLDefinition) ToCStruct() *C.idl_definition{
+func (this *FunctionDefinition) AppendComment(comment string){
+	this.Comment += (comment + "\n")
+}
+//--------------------------------------------------------------------
+func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]string) error{
 
-	var res *C.idl_definition
-	res = (*C.idl_definition)(C.malloc(C.sizeof_struct_idl_definition))
-
-	res.idl_filename = C.CString(this.IDLFilename)
-	res.idl_filename_length = C.uint(len(this.IDLFilename))
-
-	res.idl_code = C.CString(this.IDLCode)
-	res.idl_code_length = C.uint(len(this.IDLCode))
-
-	res.idl_extension = C.CString(this.IDLExtension)
-	res.idl_extension_length = C.uint(len(this.IDLExtension))
-
-	res.idl_full_path = C.CString(this.IDLFullPath)
-	res.idl_full_path_length = C.uint(len(this.IDLFullPath))
-
-	res.target_language = C.CString(this.TargetLanguage)
-	res.target_language_length = C.uint(len(this.TargetLanguage))
-
-	res.modules_length = C.uint(len(this.Modules))
-	res.modules = (*C.module_definition)(C.malloc(C.sizeof_struct_module_definition*C.ulong(res.modules_length)))
-
-	curModule := res.modules
-	for i:=0 ; i<len(this.Modules) ; i++{
-
-		curModule.module_name = C.CString(this.Modules[i].Name)
-		curModule.module_name_length = C.uint(len(this.Modules[i].Name))
-
-		curModule.functions_length = C.uint(len(this.Modules[i].Functions))
-		curModule.functions = (*C.function_definition)(C.malloc(C.sizeof_struct_function_definition*C.ulong(curModule.functions_length)))
-
-		curFunction := curModule.functions
-		for j:=0 ; j<len(this.Modules[i].Functions) ; j++{
-
-			curFunction.function_name = C.CString(this.Modules[i].Functions[j].Name)
-			curFunction.function_name_length = C.uint(len(this.Modules[i].Functions[j].Name))
-
-			curFunction.foreign_function_name = C.CString(this.Modules[i].Functions[j].ForeignFunctionName)
-			curFunction.foreign_function_name_length = C.uint(len(this.Modules[i].Functions[j].ForeignFunctionName))
-
-			curFunction.parameters_structure_name = C.CString(this.Modules[i].Functions[j].ParametersStructureName)
-			curFunction.parameters_structure_name_length = C.uint(len(this.Modules[i].Functions[j].ParametersStructureName))
-
-			curFunction.return_values_structure_name = C.CString(this.Modules[i].Functions[j].ReturnValuesStructureName)
-			curFunction.return_values_structure_name_length = C.uint(len(this.Modules[i].Functions[j].ReturnValuesStructureName))
-
-			// parameters
-
-			curFunction.parameters_length = C.uint(len(this.Modules[i].Functions[j].Parameters))
-			curFunction.parameters = (*C.param_return_definition)(C.malloc(C.sizeof_struct_param_return_definition*C.ulong(curFunction.parameters_length)))
-
-			curParameter := curFunction.parameters
-			for k:=0 ; k<len(this.Modules[i].Functions[j].Parameters) ; k++{
-
-				curParameter.param_return_definition_name = C.CString(this.Modules[i].Functions[j].Parameters[k].Name)
-				curParameter.param_return_definition_name_length = C.uint(len(this.Modules[i].Functions[j].Parameters[k].Name))
-
-				curParameter.param_return_definition_type = C.CString(this.Modules[i].Functions[j].Parameters[k].Type)
-				curParameter.param_return_definition_type_length = C.uint(len(this.Modules[i].Functions[j].Parameters[k].Type))
-
-				if this.Modules[i].Functions[j].Parameters[k].IsComplexType{
-					curParameter.is_complex_type = 1
-				} else {
-					curParameter.is_complex_type = 0
-				}
-
-				if this.Modules[i].Functions[j].Parameters[k].IsArray{
-					curParameter.is_array = 1
-				} else {
-					curParameter.is_array = 0
-				}
-
-				curParameter = C.get_next_param_return(curParameter)
-			}
-
-			// Return Values
-			curFunction.return_values_length = C.uint(len(this.Modules[i].Functions[j].ReturnValues))
-			curFunction.return_values = (*C.param_return_definition)(C.malloc(C.sizeof_struct_param_return_definition*C.ulong(curFunction.return_values_length)))
-
-			curReturnValue := curFunction.return_values
-			for k:=0 ; k<len(this.Modules[i].Functions[j].ReturnValues) ; k++{
-
-				curReturnValue.param_return_definition_name = C.CString(this.Modules[i].Functions[j].ReturnValues[k].Name)
-				curReturnValue.param_return_definition_name_length = C.uint(len(this.Modules[i].Functions[j].ReturnValues[k].Name))
-
-				curReturnValue.param_return_definition_type = C.CString(this.Modules[i].Functions[j].ReturnValues[k].Type)
-				curReturnValue.param_return_definition_type_length = C.uint(len(this.Modules[i].Functions[j].ReturnValues[k].Type))
-
-				if this.Modules[i].Functions[j].ReturnValues[k].IsComplexType{
-					curReturnValue.is_complex_type = 1
-				} else {
-					curReturnValue.is_complex_type = 0
-				}
-
-				if this.Modules[i].Functions[j].ReturnValues[k].IsArray{
-					curReturnValue.is_array = 1
-				} else {
-					curReturnValue.is_array = 0
-				}
-
-				curReturnValue = C.get_next_param_return(curReturnValue)
-			}
-
-
-			curFunction = C.get_next_function(curFunction)
+	var err error
+	for tagName, tagVal := range this.Tags{
+		switch tagName {
+		case "openffi_function_path":
+			pathToFunction, err = parsePathToFunction(tagVal, pathToFunction)
+			if err != nil{ return err }
 		}
-
-		curModule = C.get_next_module(curModule)
 	}
 
-	return res
+	// set function path to function definition
+	this.PathToForeignFunction = copyMap(pathToFunction)
+
+	for _, p := range this.Parameters{
+		err := p.parseWellKnownTags()
+		if err != nil{
+			return err
+		}
+	}
+
+	for _, r := range this.ReturnValues{
+		err := r.parseWellKnownTags()
+		if err != nil{
+			return err
+		}
+	}
+
+	return nil
+}
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
+type FieldDefinition struct{
+	Name string `json:"name"`
+	Type string `json:"type"`
+	MapKeyType string `json:"map_key_type,omitempty"`
+	MapValueType string `json:"map_value_type,omitempty"`
+	IsArray bool `json:"is_array"`
+	InnerTypes []*FieldDefinition `json:"inner_types"`
+	PassParameterMethod string `json:"pass_parameter_method"`
+	Comment string `json:"comment"`
+	Tags map[string]string `json:"tags"`
+}
+func (this *FieldDefinition) SetTag(tag string, val string){
+
+	if this.Tags == nil{
+		this.Tags = make(map[string]string)
+	}
+
+	this.Tags[tag] = val
+}
+func (this *FieldDefinition) AppendComment(comment string){
+	this.Comment += (comment + "\n")
+}
+//--------------------------------------------------------------------
+func (this *FieldDefinition) IsPrimitive() bool{
+	return len(this.InnerTypes) == 0
+}
+//--------------------------------------------------------------------
+func (this *FieldDefinition) parseWellKnownTags() error{
+
+	for tagName, _ := range this.Tags{
+		switch tagName {
+			case "openffi_function_path":
+				return fmt.Errorf("field level cannot hold openffi_function_path")
+		}
+	}
+
+	for _, inner := range this.InnerTypes{
+		err := inner.parseWellKnownTags()
+		if err != nil{
+			return err
+		}
+	}
+
+	return nil
 }
 //--------------------------------------------------------------------

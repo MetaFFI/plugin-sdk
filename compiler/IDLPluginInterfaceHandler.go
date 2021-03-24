@@ -8,7 +8,7 @@ import "C"
 var idlPluginInterfaceHandler *IDLPluginInterfaceHandler
 
 type IDLPluginInterface interface{
-	ParseIDL(idlName string, idl string) (*IDLDefinition, error)
+	ParseIDL(idlFilePath string, idl string) (*IDLDefinition, error)
 }
 //--------------------------------------------------------------------
 type IDLPluginInterfaceHandler struct{
@@ -19,11 +19,11 @@ func CreateIDLPluginInterfaceHandler(wrapped IDLPluginInterface){
 	idlPluginInterfaceHandler = &IDLPluginInterfaceHandler{wrapped: wrapped}
 }
 //--------------------------------------------------------------------
-func (this *IDLPluginInterfaceHandler) parse_idl(idl_name *C.char, idl_name_length C.uint,
+func (this *IDLPluginInterfaceHandler) parse_idl(idl_file_path *C.char, idl_file_path_length C.uint,
 												idl *C.char, idl_length C.uint,
 												out_err **C.char, out_err_len *C.uint) *C.idl_definition{
 
-	idlName := C.GoStringN(idl_name, C.int(idl_name_length))
+	idlName := C.GoStringN(idl_file_path, C.int(idl_file_path_length))
 	idlStr := C.GoStringN(idl, C.int(idl_length))
 
 	def, err := this.wrapped.ParseIDL(idlName, idlStr)
@@ -38,7 +38,7 @@ func (this *IDLPluginInterfaceHandler) parse_idl(idl_name *C.char, idl_name_leng
 }
 //--------------------------------------------------------------------
 //export parse_idl
-func parse_idl(idl_name *C.char, idl_name_length C.uint,
+func parse_idl(idl_file_path *C.char, idl_file_path_length C.uint,
 	idl *C.char, idl_length C.uint,
 	out_err **C.char, out_err_len *C.uint) *C.idl_definition{
 
@@ -46,6 +46,6 @@ func parse_idl(idl_name *C.char, idl_name_length C.uint,
 		panic("idlPluginInterfaceHandler is null!")
 	}
 
-	return idlPluginInterfaceHandler.parse_idl(idl_name, idl_name_length, idl, idl_length, out_err, out_err_len)
+	return idlPluginInterfaceHandler.parse_idl(idl_file_path, idl_file_path_length, idl, idl_length, out_err, out_err_len)
 }
 //--------------------------------------------------------------------
