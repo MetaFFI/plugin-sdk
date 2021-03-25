@@ -23,11 +23,17 @@ func (this *CompilerPluginInterfaceHandler) compile_to_guest(idl_def_json *C.cha
 															output_path *C.char, output_path_length C.uint,
 															serialization_code *C.char, serialization_code_length C.uint,
 															out_err **C.char, out_err_len *C.uint) {
-	def := NewIDLDefinition(C.GoStringN(idl_def_json, idl_def_json_length))
+	def, err := NewIDLDefinition(C.GoStringN(idl_def_json, C.int(idl_def_json_length)))
+	if err != nil{
+		*out_err = C.CString(err.Error())
+		*out_err_len = C.uint(len(err.Error()))
+		return
+	}
+
 	outPath := C.GoStringN(output_path, C.int(output_path_length))
 	serializationCode := C.GoStringN(serialization_code, C.int(serialization_code_length))
 
-	err := this.wrapped.CompileToGuest(def, outPath, serializationCode)
+	err = this.wrapped.CompileToGuest(def, outPath, serializationCode)
 
 	if err != nil{
 		*out_err = C.CString(err.Error())
@@ -40,11 +46,17 @@ func (this *CompilerPluginInterfaceHandler) compile_from_host(idl_def_json *C.ch
 															output_path *C.char, output_path_length C.uint,
 															serialization_code *C.char, serialization_code_length C.uint,
 															out_err **C.char, out_err_len *C.uint){
-	def := NewIDLDefinition(C.GoStringN(idl_def_json, idl_def_json_length))
+	def, err := NewIDLDefinition(C.GoStringN(idl_def_json, C.int(idl_def_json_length)))
+	if err != nil{
+		*out_err = C.CString(err.Error())
+		*out_err_len = C.uint(len(err.Error()))
+		return
+	}
+
 	outPath := C.GoStringN(output_path, C.int(output_path_length))
 	serializationCode := C.GoStringN(serialization_code, C.int(serialization_code_length))
 
-	err := this.wrapped.CompileFromHost(def, outPath, serializationCode)
+	err = this.wrapped.CompileFromHost(def, outPath, serializationCode)
 
 	if err != nil{
 		*out_err = C.CString(err.Error())

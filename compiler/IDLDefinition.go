@@ -76,9 +76,7 @@ type IDLDefinition struct {
 	IDLFilename string `json:"idl_filename"`
 	IDLExtension string `json:"idl_extension"`
 	IDLFullPath string `json:"idl_full_path"`
-	TargetLanguage string `json:"target_language"`
-	Tags map[string]string `json:"tags"`
-	Modules []ModuleDefinition `json:"modules"`
+	Modules []*ModuleDefinition `json:"modules"`
 	IDLCode string `json:"idl_code"`
 }
 //--------------------------------------------------------------------
@@ -103,14 +101,6 @@ func (this *IDLDefinition) ToJSON() (string, error){
 	return string(jsonStr), nil
 }
 //--------------------------------------------------------------------
-func (this *IDLDefinition) SetTag(tag string, val string){
-
-	if this.Tags == nil{
-		this.Tags = make(map[string]string)
-	}
-
-	this.Tags[tag] = val
-}
 /*
 The function iterates the definition and fills fields according to well-known tags.
 
@@ -120,24 +110,10 @@ Supported tags:
 */
 func (this *IDLDefinition) ParseWellKnownTags() error{
 
-	var pathToFunction map[string]string
-	var err error
-
-	for tagName, tagVal := range this.Tags{
-		switch tagName {
-			case "openffi_target_language":
-				this.TargetLanguage = strings.TrimSpace(tagVal)
-
-			case "openffi_function_path":
-				pathToFunction, err = parsePathToFunction(tagVal, nil)
-				if err != nil{ return err }
-		}
-	}
-
 	for _, m := range this.Modules{
 
 		// make a copy for each module so items can be overridden
-		modulePathToFunction := copyMap(pathToFunction)
+		modulePathToFunction := make(map[string]string)
 
 		err := m.parseWellKnownTags(modulePathToFunction)
 		if err != nil{
@@ -155,13 +131,14 @@ Validates:
  */
 func (this *IDLDefinition) Validate() error{
 
-	// validate Target language exists
-	if this.TargetLanguage == ""{
-		return fmt.Errorf("TargetLanguage is missing")
-	}
-
 	// validate function path is set for every function
 	for _, m := range this.Modules{
+
+		// validate Target language exists
+		if m.TargetLanguage == ""{
+			return fmt.Errorf("TargetLanguage is missing for module: %v", m.Name)
+		}
+
 		for _, f := range m.Functions{
 			if len(f.PathToForeignFunction) == 0{
 				return fmt.Errorf("Path to foreign function is not set to function %v", f.Name)
@@ -177,7 +154,8 @@ func (this *IDLDefinition) Validate() error{
 //--------------------------------------------------------------------
 type ModuleDefinition struct{
 	Name string `json:"name"`
-	Functions []FunctionDefinition `json:"functions"`
+	TargetLanguage string `json:"target_language"`
+	Functions []*FunctionDefinition `json:"functions"`
 	Tags map[string]string `json:"tags"`
 	Comment string `json:"comment"`
 }
@@ -201,6 +179,9 @@ func (this *ModuleDefinition) parseWellKnownTags(pathToFunction map[string]strin
 			case "openffi_function_path":
 				pathToFunction, err = parsePathToFunction(tagVal, pathToFunction)
 				if err != nil{ return err }
+
+			case "openffi_target_language":
+				this.TargetLanguage = strings.TrimSpace(tagVal)
 		}
 	}
 
@@ -247,9 +228,9 @@ func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]str
 	var err error
 	for tagName, tagVal := range this.Tags{
 		switch tagName {
-		case "openffi_function_path":
-			pathToFunction, err = parsePathToFunction(tagVal, pathToFunction)
-			if err != nil{ return err }
+			case "openffi_function_path":
+				pathToFunction, err = parsePathToFunction(tagVal, pathToFunction)
+				if err != nil{ return err }
 		}
 	}
 
