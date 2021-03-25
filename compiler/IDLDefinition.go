@@ -155,9 +155,9 @@ func (this *IDLDefinition) Validate() error{
 type ModuleDefinition struct{
 	Name string `json:"name"`
 	TargetLanguage string `json:"target_language"`
-	Functions []*FunctionDefinition `json:"functions"`
+	Comment string `json:"comment,omitempty"`
 	Tags map[string]string `json:"tags"`
-	Comment string `json:"comment"`
+	Functions []*FunctionDefinition `json:"functions"`
 }
 func (this *ModuleDefinition) SetTag(tag string, val string){
 
@@ -176,11 +176,11 @@ func (this *ModuleDefinition) parseWellKnownTags(pathToFunction map[string]strin
 	var err error
 	for tagName, tagVal := range this.Tags{
 		switch tagName {
-			case "openffi_function_path":
+			case FUNCTION_PATH:
 				pathToFunction, err = parsePathToFunction(tagVal, pathToFunction)
 				if err != nil{ return err }
 
-			case "openffi_target_language":
+			case TARGET_LANGUAGE:
 				this.TargetLanguage = strings.TrimSpace(tagVal)
 		}
 	}
@@ -202,13 +202,13 @@ func (this *ModuleDefinition) parseWellKnownTags(pathToFunction map[string]strin
 //--------------------------------------------------------------------
 type FunctionDefinition struct {
 	Name                  string             `json:"name"`
+	Comment               string             `json:"comment,omitempty"`
+	Tags                  map[string]string  `json:"tags"`
 	PathToForeignFunction map[string]string  `json:"path_to_foreign_function"`
 	ParametersType        string             `json:"parameter_type"`
 	ReturnValuesType      string             `json:"return_values_type"`
 	Parameters            []*FieldDefinition `json:"parameters"`
 	ReturnValues          []*FieldDefinition `json:"return_values"`
-	Tags                  map[string]string  `json:"tags"`
-	Comment               string             `json:"comment"`
 }
 func (this *FunctionDefinition) SetTag(tag string, val string){
 
@@ -228,7 +228,7 @@ func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]str
 	var err error
 	for tagName, tagVal := range this.Tags{
 		switch tagName {
-			case "openffi_function_path":
+			case FUNCTION_PATH:
 				pathToFunction, err = parsePathToFunction(tagVal, pathToFunction)
 				if err != nil{ return err }
 		}
@@ -259,13 +259,13 @@ func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]str
 type FieldDefinition struct{
 	Name string `json:"name"`
 	Type string `json:"type"`
+	Comment string `json:"comment,omitempty"`
+	Tags map[string]string `json:"tags"`
 	MapKeyType string `json:"map_key_type,omitempty"`
 	MapValueType string `json:"map_value_type,omitempty"`
 	IsArray bool `json:"is_array"`
-	InnerTypes []*FieldDefinition `json:"inner_types"`
-	PassParameterMethod string `json:"pass_parameter_method"`
-	Comment string `json:"comment"`
-	Tags map[string]string `json:"tags"`
+	InnerTypes []*FieldDefinition `json:"inner_types,omitempty"`
+	PassMethod string `json:"pass_method"`
 }
 func (this *FieldDefinition) SetTag(tag string, val string){
 
@@ -285,10 +285,12 @@ func (this *FieldDefinition) IsPrimitive() bool{
 //--------------------------------------------------------------------
 func (this *FieldDefinition) parseWellKnownTags() error{
 
-	for tagName, _ := range this.Tags{
+	for tagName, tagVal := range this.Tags{
 		switch tagName {
-			case "openffi_function_path":
+			case FUNCTION_PATH:
 				return fmt.Errorf("field level cannot hold openffi_function_path")
+			case PASS_METHOD:
+				this.PassMethod = tagVal
 		}
 	}
 
