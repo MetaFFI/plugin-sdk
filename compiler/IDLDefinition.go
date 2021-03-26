@@ -77,7 +77,6 @@ type IDLDefinition struct {
 	IDLExtension string `json:"idl_extension"`
 	IDLFullPath string `json:"idl_full_path"`
 	Modules []*ModuleDefinition `json:"modules"`
-	IDLCode string `json:"idl_code"`
 }
 //--------------------------------------------------------------------
 func NewIDLDefinition(idlDefinitionJson string) (*IDLDefinition, error){

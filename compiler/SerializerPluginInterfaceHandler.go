@@ -9,7 +9,7 @@ import "C"
 var serializerPluginInterfaceHandler *SerializerPluginInterfaceHandler
 
 type SerializerPluginInterface interface{
-	CompileSerialization(idlName string, idl string) (serializationCode string, err error)
+	CompileSerialization(idl string, language string) (serializationCodeJSON string, err error)
 }
 //--------------------------------------------------------------------
 type SerializerPluginInterfaceHandler struct{
@@ -20,15 +20,15 @@ func CreateSerializerPluginInterfaceHandler(wrapped SerializerPluginInterface){
 	serializerPluginInterfaceHandler = &SerializerPluginInterfaceHandler{wrapped: wrapped}
 }
 //--------------------------------------------------------------------
-func (this *SerializerPluginInterfaceHandler) compile_serialization(idl_name *C.char, idl_name_length C.uint,
-												idl *C.char, idl_length C.uint,
-												out_serialization_code **C.char, out_serialization_code_length *C.uint,
-												out_err **C.char, out_err_len *C.uint) {
+func (this *SerializerPluginInterfaceHandler) compile_serialization(idl *C.char, idl_length C.uint,
+																	language *C.char, language_length C.uint,
+																	out_serialization_code_json **C.char, out_serialization_code_json_length *C.uint,
+																	out_err **C.char, out_err_len *C.uint) {
 
-	idlName := C.GoStringN(idl_name, C.int(idl_name_length))
 	idlStr := C.GoStringN(idl, C.int(idl_length))
+	languageStr := C.GoStringN(language, C.int(language_length))
 
-	serializationCode, err := this.wrapped.CompileSerialization(idlName, idlStr)
+	serializationCodeJSON, err := this.wrapped.CompileSerialization(idlStr, languageStr)
 
 	if err != nil{
 		*out_err = C.CString(err.Error())
@@ -36,20 +36,20 @@ func (this *SerializerPluginInterfaceHandler) compile_serialization(idl_name *C.
 		return
 	}
 
-	*out_serialization_code = C.CString(serializationCode)
-	*out_serialization_code_length = C.uint(len(serializationCode))
+	*out_serialization_code_json = C.CString(serializationCodeJSON)
+	*out_serialization_code_json_length = C.uint(len(serializationCodeJSON))
 }
 //--------------------------------------------------------------------
 //export compile_serialization
-func compile_serialization(idl_name *C.char, idl_name_length C.uint,
-						idl *C.char, idl_length C.uint,
-						out_serialization_code **C.char, out_serialization_code_length *C.uint,
+func compile_serialization(idl *C.char, idl_length C.uint,
+						language *C.char, language_length C.uint,
+						out_serialization_code_json **C.char, out_serialization_code_json_length *C.uint,
 						out_err **C.char, out_err_len *C.uint) {
 
 	if serializerPluginInterfaceHandler == nil{
 		panic("serializerPluginInterfaceHandler is null!")
 	}
 
-	serializerPluginInterfaceHandler.compile_serialization(idl_name, idl_name_length, idl, idl_length, out_serialization_code, out_serialization_code_length, out_err, out_err_len)
+	serializerPluginInterfaceHandler.compile_serialization(idl, idl_length, language, language_length, out_serialization_code_json, out_serialization_code_json_length, out_err, out_err_len)
 }
 //--------------------------------------------------------------------
