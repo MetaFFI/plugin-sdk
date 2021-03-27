@@ -1,12 +1,10 @@
 #pragma once
 #include <stdint.h>
-#include "idl_plugin_interface.h"
-
 /**
  * Interface Compiler Plugin Implements
  */
 #ifdef __cplusplus
-struct compiler_plugin_interface
+struct language_plugin_interface
 {
 
 	/**
