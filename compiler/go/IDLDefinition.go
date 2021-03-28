@@ -75,6 +75,7 @@ type Commentable interface {
 type IDLDefinition struct {
 	IDLFilename string `json:"idl_filename"`
 	IDLExtension string `json:"idl_extension"`
+	IDLFilenameWithExtension string `json:"idl_filename_with_extension"`
 	IDLFullPath string `json:"idl_full_path"`
 	Modules []*ModuleDefinition `json:"modules"`
 }

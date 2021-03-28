@@ -1,7 +1,7 @@
 package compiler
 
 /*
-#include "idl_plugin_interface.h"
+#include "../idl_plugin_interface.h"
  */
 import "C"
 import "encoding/json"

@@ -1,14 +1,15 @@
 package compiler
 /*
-#include "language_plugin_interface.h"
+#include "../language_plugin_interface.h"
  */
 import "C"
+import "encoding/json"
 
 var languagePluginInterfaceHandler *LanguagePluginInterfaceHandler
 
 type LanguagePluginInterface interface{
-	CompileToGuest(idlDefinition *IDLDefinition, outputPath string, serializationCode string) error
-	CompileFromHost(idlDefinition *IDLDefinition, outputPath string, serializationCode string) error
+	CompileToGuest(idlDefinition *IDLDefinition, outputPath string, serializationCode map[string]string) error
+	CompileFromHost(idlDefinition *IDLDefinition, outputPath string, serializationCode map[string]string) error
 }
 //--------------------------------------------------------------------
 type LanguagePluginInterfaceHandler struct{
@@ -33,7 +34,15 @@ func (this *LanguagePluginInterfaceHandler) compile_to_guest(idl_def_json *C.cha
 	outPath := C.GoStringN(output_path, C.int(output_path_length))
 	serializationCode := C.GoStringN(serialization_code, C.int(serialization_code_length))
 
-	err = this.wrapped.CompileToGuest(def, outPath, serializationCode)
+	serializationCodeFiles := make(map[string]string)
+	err = json.Unmarshal([]byte(serializationCode), serializationCodeFiles)
+	if err != nil{
+		*out_err = C.CString(err.Error())
+		*out_err_len = C.uint(len(err.Error()))
+		return
+	}
+
+	err = this.wrapped.CompileToGuest(def, outPath, serializationCodeFiles)
 
 	if err != nil{
 		*out_err = C.CString(err.Error())
@@ -56,7 +65,15 @@ func (this *LanguagePluginInterfaceHandler) compile_from_host(idl_def_json *C.ch
 	outPath := C.GoStringN(output_path, C.int(output_path_length))
 	serializationCode := C.GoStringN(serialization_code, C.int(serialization_code_length))
 
-	err = this.wrapped.CompileFromHost(def, outPath, serializationCode)
+	serializationCodeFiles := make(map[string]string)
+	err = json.Unmarshal([]byte(serializationCode), serializationCodeFiles)
+	if err != nil{
+		*out_err = C.CString(err.Error())
+		*out_err_len = C.uint(len(err.Error()))
+		return
+	}
+
+	err = this.wrapped.CompileFromHost(def, outPath, serializationCodeFiles)
 
 	if err != nil{
 		*out_err = C.CString(err.Error())

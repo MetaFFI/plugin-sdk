@@ -2,7 +2,7 @@ package compiler
 
 
 /*
-#include "serializer_plugin_interface.h"
+#include "../serializer_plugin_interface.h"
  */
 import "C"
 
