@@ -46,8 +46,6 @@ func compile_serialization(idl *C.char, idl_length C.uint,
 						out_serialization_code_json **C.char, out_serialization_code_json_length *C.uint,
 						out_err **C.char, out_err_len *C.uint) {
 
-	println("I AM HERE")
-
 	if serializerPluginInterfaceHandler == nil{
 		panic("serializerPluginInterfaceHandler is null!")
 	}
