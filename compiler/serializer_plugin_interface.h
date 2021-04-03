@@ -7,6 +7,7 @@
 #ifdef __cplusplus
 struct serializer_plugin_interface
 {
+	virtual void init() = 0;
 
 	/**
 	 * Generates serialization code

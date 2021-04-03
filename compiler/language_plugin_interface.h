@@ -7,6 +7,8 @@
 struct language_plugin_interface
 {
 
+	virtual void init() = 0;
+	
 	/**
 	 * Compiles IDL to executable code called from XLLR to the foreign function
 	 */ 
