@@ -35,7 +35,7 @@ func (this *LanguagePluginInterfaceHandler) compile_to_guest(idl_def_json *C.cha
 	serializationCode := C.GoStringN(serialization_code, C.int(serialization_code_length))
 
 	serializationCodeFiles := make(map[string]string)
-	err = json.Unmarshal([]byte(serializationCode), serializationCodeFiles)
+	err = json.Unmarshal([]byte(serializationCode), &serializationCodeFiles)
 	if err != nil{
 		*out_err = C.CString(err.Error())
 		*out_err_len = C.uint(len(err.Error()))
@@ -66,7 +66,7 @@ func (this *LanguagePluginInterfaceHandler) compile_from_host(idl_def_json *C.ch
 	serializationCode := C.GoStringN(serialization_code, C.int(serialization_code_length))
 
 	serializationCodeFiles := make(map[string]string)
-	err = json.Unmarshal([]byte(serializationCode), serializationCodeFiles)
+	err = json.Unmarshal([]byte(serializationCode), &serializationCodeFiles)
 	if err != nil{
 		*out_err = C.CString(err.Error())
 		*out_err_len = C.uint(len(err.Error()))

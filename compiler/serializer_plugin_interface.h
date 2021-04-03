@@ -13,6 +13,7 @@ struct serializer_plugin_interface
 	 * Generates serialization code
 	 */
 	virtual	void compile_serialization(const char* idl, uint32_t idl_length,
+                                       const char* language, uint32_t language_length,
 	                                   char** out_serialization_code_json, uint32_t* out_serialization_code_json_length,
 	                                   char** out_err, uint32_t* out_err_len) = 0;
 };
