@@ -22,6 +22,4 @@ const(
 	STRING32 = "string-utf32"
 
 	BYTES = "bytes"
-
-	MAP = "map"
 )
