@@ -7,7 +7,7 @@
 /**
  * Interface XLLR Plugin Implements
  */ 
-struct xllr_plugin_interface
+struct runtime_plugin_interface
 {
 	/**
 	 * Load runtime runtime of foreign runtime
@@ -22,22 +22,19 @@ struct xllr_plugin_interface
 	/**
 	 * Load module of foreign language
 	 */ 
-	virtual void load_module(const char* module, uint32_t module_len, char** err, uint32_t* err_len) = 0;
+	virtual int64_t load_function(const char* function_path, uint32_t function_path_len, char** err, uint32_t* err_len) = 0;
 
 	/**
 	 * Free module of foreign language
 	 */ 
-	virtual void free_module(const char* module, uint32_t module_len, char** err, uint32_t* err_len) = 0;
+	virtual void free_function(int64_t function_id, char** err, uint32_t* err_len) = 0;
 
 	/***
 	 * Call foreign function
 	 */
 	virtual void call(
-			// module to load
-			const char* module_name, uint32_t module_name_len,
-			
-			// function name to call
-			const char* func_name, uint32_t func_name_len,
+			// function id to call
+			int64_t function_id,
 			
 			// serialized parameters
 			unsigned char* in_params, uint64_t in_params_len,

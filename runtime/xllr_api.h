@@ -20,26 +20,20 @@ void free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len
 /**
  * Load module of foreign language
  */
-void load_module(const char* runtime_plugin, uint32_t runtime_plugin_len, const char* module, uint32_t module_len, char** err, uint32_t* err_len);
+int64_t load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, const char* function_path, uint32_t function_path_len, int64_t function_id, char** err, uint32_t* err_len);
 
 /**
  * Free module of foreign language
  */
-void free_module(const char* runtime_plugin, uint32_t runtime_plugin_len, const char* module, uint32_t module_len, char** err, uint32_t* err_len);
+void free_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, int64_t function_id, char** err, uint32_t* err_len);
 
 
 /***
  * Call foreign function
  */
 void call(
-		// [in] language to call
-		const char* runtime_plugin, uint32_t runtime_plugin_len,
-		
-		// [in] module to load
-		const char* module_name, uint32_t module_name_len,
-		
-		// [in] function name to call
-		const char* func_name, uint32_t func_name_len,
+		// [in] function id to call
+		int64_t function_id,
 		
 		// [in] serialized parameters
 		unsigned char* in_params, uint64_t in_params_len,
