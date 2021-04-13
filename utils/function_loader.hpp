@@ -1,6 +1,7 @@
+#pragma once
 #include <boost/dll.hpp>
 
-namespace openffi{ namespace utils
+namespace openffi::utils
 {
 //--------------------------------------------------------------------
 template<typename T>
@@ -19,4 +20,4 @@ std::shared_ptr<typename boost::dll::detail::import_type<T>::type> load_func(con
 	);
 }
 //--------------------------------------------------------------------
-}}
+}
