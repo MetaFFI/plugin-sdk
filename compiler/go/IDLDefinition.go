@@ -223,6 +223,19 @@ func (this *FunctionDefinition) AppendComment(comment string){
 	this.Comment += (comment + "\n")
 }
 //--------------------------------------------------------------------
+func (this *FunctionDefinition) PathToForeignFunctionAsString() string{
+
+	res := ""
+
+	for k, v := range this.PathToForeignFunction{
+
+		if res != ""{ res += "," }
+		res += fmt.Sprintf("%v=%v", k, v)
+	}
+
+	return res
+}
+//--------------------------------------------------------------------
 func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]string) error{
 
 	var err error
