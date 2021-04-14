@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <boost/algorithm/string.hpp>
-#include <vector>
+#include <map>
 
 //-----------------------------------------------------
 namespace openffi { namespace utils
