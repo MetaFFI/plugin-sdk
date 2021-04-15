@@ -40,6 +40,3 @@ public:
 };
 //--------------------------------------------------------------------
 }}
-
-// to make this class a headers-only
-#include "xllr_api_wrapper.cpp"

@@ -1,13 +1,11 @@
 #pragma once
 #include <stdint.h>
-#include "xllr_api.h"
 
 // TODO: Make sure out_err must always be freed by the called (if non-null)
 
 /**
  * Interface XLLR Plugin Implements
  */
-#ifdef __cplusplus
 struct runtime_plugin_interface
 {
 	/**
@@ -50,7 +48,7 @@ struct runtime_plugin_interface
 			uint8_t* is_error
 	) = 0;
 };
-#else
+
 extern "C"
 {
 /**
@@ -93,4 +91,3 @@ void call(
 		uint8_t* is_error
 );
 }
-#endif

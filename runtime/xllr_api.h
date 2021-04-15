@@ -32,6 +32,9 @@ void free_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name
  * Call foreign function
  */
 void call(
+		// [in] runtime plugin name
+		const char* runtime_plugin_name, uint32_t runtime_plugin_name_len,
+		
 		// [in] function id to call
 		int64_t function_id,
 		

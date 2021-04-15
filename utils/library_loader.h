@@ -1,4 +1,6 @@
 #pragma once
+#include <memory>
+#include <boost/dll.hpp>
 
 namespace openffi { namespace utils
 {
