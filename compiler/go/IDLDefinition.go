@@ -101,6 +101,15 @@ func (this *IDLDefinition) ToJSON() (string, error){
 	return string(jsonStr), nil
 }
 //--------------------------------------------------------------------
+func (this *IDLDefinition) AddWellKnownFunctionPath(){
+	for _, m := range this.Modules{
+		for _, f := range m.Functions{
+			f.PathToForeignFunction[OPENFFI_GUEST_LIB] = m.Name+"_OpenFFIGuest"
+			f.PathToForeignFunction[ENTRYPOINT_FUNCTION] = "EntryPoint_"+f.Name
+		}
+	}
+}
+//--------------------------------------------------------------------
 /*
 The function iterates the definition and fills fields according to well-known tags.
 
