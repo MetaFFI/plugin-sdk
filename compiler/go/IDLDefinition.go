@@ -105,7 +105,7 @@ func (this *IDLDefinition) AddWellKnownFunctionPath(){
 	for _, m := range this.Modules{
 		for _, f := range m.Functions{
 			f.PathToForeignFunction[OPENFFI_GUEST_LIB] = m.Name+"_OpenFFIGuest"
-			f.PathToForeignFunction[ENTRYPOINT_FUNCTION] = "EntryPoint_"+f.Name
+			f.PathToForeignFunction[ENTRYPOINT_FUNCTION] = "EntryPoint_"+f.PathToForeignFunction[FOREIGN_FUNCTION_NAME]
 		}
 	}
 }

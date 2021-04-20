@@ -6,4 +6,5 @@ const(
 	PASS_METHOD="openffi_pass_method"
 	OPENFFI_GUEST_LIB="openffi_guest_lib"
 	ENTRYPOINT_FUNCTION="entrypoint_function"
+	FOREIGN_FUNCTION_NAME="function"
 )
