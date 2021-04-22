@@ -1,4 +1,5 @@
 #include "function_path_parser.h"
+#include "expand_env.h"
 
 namespace openffi { namespace utils
 {
@@ -18,7 +19,9 @@ function_path_parser::function_path_parser(const std::string &function_path)
 			throw std::runtime_error("function path is invalid, cannot split by '=' to key and value");
 		}
 		
-		function_path_items[keyval[0]] = keyval[1];
+		// expand environment variable in keyval[1]
+		std::string exp = expand_env(keyval[1]);
+		function_path_items[keyval[0]] = exp;
 	}
 }
 //--------------------------------------------------------------------
@@ -28,6 +31,9 @@ std::string function_path_parser::operator[](const std::string &key) const
 	if(i == function_path_items.end()){
 		return "";
 	}
+	
+	// expand environment variables
+	
 	
 	return i->second;
 }
