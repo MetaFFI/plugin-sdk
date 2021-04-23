@@ -1,4 +1,6 @@
 #include "expand_env.h"
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 #include <cstdlib>
 
 namespace openffi::utils
@@ -35,11 +37,26 @@ std::string expand_env(const std::string& str)
 			if(c == '%') // end of var
 #endif
 			{
+				// get current directory
 #ifndef _WIN32
-				res += c; // append "c" if not windows end symbol
+				if(curvar == "$PWD")
+#else
+				if(boost::algorithm::to_upper_copy(curvar) == "%CD")
 #endif
-				const char* tmp = std::getenv(curvar.c_str());
-				if(tmp){ res += tmp; };
+				{
+					res += boost::filesystem::current_path().string();
+				}
+				else
+				{
+					// get environment variable
+					const char* tmp = std::getenv(curvar.c_str());
+					if(tmp){ res += tmp; };
+				}
+
+#ifndef _WIN32
+				res += c; // append "c" to result if not windows end symbol
+#endif
+				
 				curvar.clear();
 				in_var = false;
 			}
