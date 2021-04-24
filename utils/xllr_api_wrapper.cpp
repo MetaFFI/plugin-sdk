@@ -25,7 +25,7 @@ xllr_api_wrapper::xllr_api_wrapper()
 		
 		this->pfree_runtime_plugin = load_func<void(const char*, uint32_t, char**, uint32_t*)>(*this->xllr_mod, "free_runtime_plugin");
 		
-		this->pload_function = load_func<int64_t(const char*, uint32_t, const char*, uint32_t, char**, uint32_t*)>(*this->xllr_mod, "load_function");
+		this->pload_function = load_func<int64_t(const char*, uint32_t, const char*, uint32_t, int64_t, char**, uint32_t*)>(*this->xllr_mod, "load_function");
 		this->pfree_function = load_func<void(const char*, uint32_t, int64_t, char**, uint32_t*)>(*this->xllr_mod, "free_function");
 		
 		this->pcall = load_func<void(const char*, uint32_t,
@@ -56,12 +56,13 @@ void xllr_api_wrapper::free_runtime_plugin(const char* runtime_plugin, uint32_t 
 	(*this->pfree_runtime_plugin)(runtime_plugin, runtime_plugin_len, err, err_len);
 }
 //--------------------------------------------------------------------
-int64_t xllr_api_wrapper::load_function(const char* runtime_plugin, uint32_t runtime_plugin_len, const char* function_path, uint32_t function_path_len, char** err, uint32_t* err_len)
+int64_t xllr_api_wrapper::load_function(const char* runtime_plugin, uint32_t runtime_plugin_len, const char* function_path, uint32_t function_path_len, int64_t function_id, char** err, uint32_t* err_len)
 {
 	*err = nullptr;
 	*err_len = 0;
 	return (*this->pload_function)(runtime_plugin, runtime_plugin_len,
 	                             function_path, function_path_len,
+			                      function_id,
 			                      err, err_len);
 }
 //--------------------------------------------------------------------

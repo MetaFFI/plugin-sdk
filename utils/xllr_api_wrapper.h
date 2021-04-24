@@ -11,7 +11,7 @@ private:
 	std::shared_ptr<boost::dll::detail::import_type<void(const char*, uint32_t, char**, uint32_t*)>::type> pload_runtime_plugin;
 	std::shared_ptr<boost::dll::detail::import_type<void(const char*, uint32_t, char**, uint32_t*)>::type> pfree_runtime_plugin;
 	
-	std::shared_ptr<boost::dll::detail::import_type<int64_t(const char*, uint32_t, const char*, uint32_t, char**, uint32_t*)>::type> pload_function;
+	std::shared_ptr<boost::dll::detail::import_type<int64_t(const char*, uint32_t, const char*, uint32_t, int64_t, char**, uint32_t*)>::type> pload_function;
 	std::shared_ptr<boost::dll::detail::import_type<void(const char*, uint32_t, int64_t, char**, uint32_t*)>::type> pfree_function;
 	
 	std::shared_ptr<boost::dll::detail::import_type<void(const char*, uint32_t,
@@ -27,7 +27,7 @@ public:
 	
 	void load_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len);
 	void free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len);
-	int64_t load_function(const char* runtime_plugin, uint32_t runtime_plugin_len, const char* function_path, uint32_t function_path_len, char** err, uint32_t* err_len);
+	int64_t load_function(const char* runtime_plugin, uint32_t runtime_plugin_len, const char* function_path, uint32_t function_path_len, int64_t function_id, char** err, uint32_t* err_len);
 	void free_function(const char* runtime_plugin, uint32_t runtime_plugin_len, int64_t, char** err, uint32_t* err_len);
 	void call(const char* runtime_plugin, uint32_t runtime_plugin_len,
 	          int64_t function_id,
