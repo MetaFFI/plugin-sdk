@@ -32,7 +32,7 @@ std::string expand_env(const std::string& str)
 		else
 		{
 #ifndef _WIN32
-			if(c == ' ' || c == '$' || c == '\\' || c == '/') // end of var
+			if(c == ' ' || c == '$' || c == '\\' || c == '/' || c == ':') // end of var
 #else
 			if(c == '%') // end of var
 #endif
