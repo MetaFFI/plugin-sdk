@@ -20,7 +20,7 @@ inline std::shared_ptr<boost::dll::shared_library> load_plugin(const std::string
 	
 	// load plugin
 	std::shared_ptr<boost::dll::shared_library> plugin_dll = std::make_shared<boost::dll::shared_library>();
-	plugin_dll->load( plugin_full_path );
+	plugin_dll->load( plugin_full_path, boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global );
 	
 	return plugin_dll;
 }

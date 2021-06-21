@@ -21,5 +21,5 @@ const(
 	STRING16 = "string-utf16"
 	STRING32 = "string-utf32"
 
-	BYTES = "bytes"
+	SIZE = "size"
 )

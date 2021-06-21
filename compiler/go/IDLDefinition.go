@@ -290,6 +290,9 @@ type FieldDefinition struct{
 	InnerTypes []*FieldDefinition `json:"inner_types,omitempty"`
 	PassMethod string `json:"pass_method"`
 }
+func (this *FieldDefinition) IsString() bool{
+	return strings.Index(this.Type, "string") == 0
+}
 func (this *FieldDefinition) SetTag(tag string, val string){
 
 	if this.Tags == nil{

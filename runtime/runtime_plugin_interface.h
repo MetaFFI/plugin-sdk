@@ -1,7 +1,6 @@
 #pragma once
-#include <stdint.h>
-
-// TODO: Make sure out_err must always be freed by the called (if non-null)
+#include <cstdint>
+#include <cstdarg>
 
 /**
  * Interface XLLR Plugin Implements
@@ -32,19 +31,16 @@ struct runtime_plugin_interface
 	 * Call foreign function
 	 */
 	virtual void call(
-			// function id to call
+			//function id to call
 			int64_t function_id,
 			
-			// serialized parameters
-			unsigned char* in_params, uint64_t in_params_len,
-
-			// serialized returned ref parameters
-			unsigned char** out_params, uint64_t* out_params_len,
+			// parameters
+			void** parameters, uint64_t parameters_len,
 			
-			// out - serialized result or error message
-			unsigned char** out_ret, uint64_t* out_ret_len,
+			// return values
+			void** return_values, uint64_t return_values_len,
 			
-			// out - 0 if not an error, otherwise an error
-			uint8_t* is_error
+			// out error
+			char** out_err, uint64_t* out_err_len
 	) = 0;
 };
