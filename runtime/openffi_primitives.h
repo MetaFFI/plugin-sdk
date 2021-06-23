@@ -50,3 +50,30 @@ enum openffi_types
 	
 	openffi_size_type = 262144ULL,
 };
+
+enum openffi_types_size
+{
+	openffi_type_type_size = 1ULL,
+	
+	openffi_float64_type_size = 1ULL,
+	openffi_float32_type_size = 1ULL,
+	openffi_int8_type_size = 1ULL,
+	openffi_int16_type_size = 1ULL,
+	openffi_int32_type_size = 1ULL,
+	openffi_int64_type_size = 1ULL,
+	openffi_uint8_type_size = 1ULL,
+	openffi_uint16_type_size = 1ULL,
+	openffi_uint32_type_size = 1ULL,
+	openffi_uint64_type_size = 1ULL,
+	openffi_bool_type_size = 1ULL,
+	openffi_size_type_size = 1ULL,
+	
+	openffi_string_type_size = 2ULL,
+	openffi_string8_type_size = 2ULL,
+	openffi_string16_type_size = 2ULL,
+	openffi_string32_type_size = 2ULL,
+	
+	openffi_handle_type_size = 2ULL,
+	
+	openffi_array_type_size = 2ULL,
+};
