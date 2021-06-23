@@ -13,18 +13,18 @@ private:
 	T* array = nullptr;
 
 public:
-	openffi_size* dimensions = nullptr;
-	openffi_size dimensions_length = 0;
+	openffi_size* dimensions_lengths = nullptr;
+	openffi_size dimensions = 0;
 
 public:
 	numeric_n_array_wrapper()= default;
-	numeric_n_array_wrapper(T* array, openffi_size* dimensions, openffi_size dimensions_length): array(array), dimensions(dimensions), dimensions_length(dimensions_length){}
+	numeric_n_array_wrapper(T* array, openffi_size* dimensions_lengths, openffi_size dimensions): array(array), dimensions_lengths(dimensions_lengths), dimensions(dimensions){}
 	numeric_n_array_wrapper(const numeric_n_array_wrapper& other) = default;
 	
 	numeric_n_array_wrapper& operator = (const numeric_n_array_wrapper& other) = default;
 	
-	bool is_simple_array(){ return this->dimensions_length == 1; }
-	openffi_size get_simple_array_length(){ return dimensions[0]; }
+	bool is_simple_array(){ return this->dimensions == 1; }
+	openffi_size get_simple_array_length(){ return dimensions_lengths[0]; }
 	
 	T get_elem_at(openffi_size index[], openffi_size index_length)
 	{
@@ -32,9 +32,9 @@ public:
 		T res;
 		for(int i=0 ; i<index_length ; i++)
 		{
-			if(index[i] >= dimensions[i]){
+			if(index[i] >= dimensions_lengths[i]){
 				std::stringstream ss;
-				ss << "Array out of bounds. Requested index: " << index[i] << ". Array size: " << dimensions[i];
+				ss << "Array out of bounds. Requested index: " << index[i] << ". Array size: " << dimensions_lengths[i];
 				throw std::runtime_error(ss.str());
 			}
 			
@@ -56,14 +56,14 @@ class string_n_array_wrapper
 private:
 	T* array = nullptr;
     openffi_size* string_lengths = nullptr;
-	openffi_size* dimensions = nullptr;
+	openffi_size* dimensions_lengths = nullptr;
 	openffi_size dimensions_count = 0;
 
 public:
 	string_n_array_wrapper() = default;
 	string_n_array_wrapper(const string_n_array_wrapper& other) = default;
-	string_n_array_wrapper(T* array, openffi_size* string_lengths, openffi_size* dimensions, openffi_size dimensions_length):
-			array(array), string_lengths(string_lengths), dimensions(dimensions), dimensions_count(dimensions_length){}
+	string_n_array_wrapper(T* array, openffi_size* string_lengths, openffi_size* dimensions_lengths, openffi_size dimensions):
+			array(array), string_lengths(string_lengths), dimensions_lengths(dimensions_lengths), dimensions_count(dimensions){}
 	
 	string_n_array_wrapper& operator = (const string_n_array_wrapper& other) = default;
 	//--------------------------------------------------------------------
@@ -76,7 +76,7 @@ public:
 			ss << "requested dimension length of dimension " << dimindex << " while highest dimension is " << dimensions_count - 1;
 			throw std::runtime_error(ss.str());
 		}
-		return dimensions[dimindex];
+		return dimensions_lengths[dimindex];
 	}
 	//--------------------------------------------------------------------
 	void get_elem_at(openffi_size index[], openffi_size index_length, T* out_res, openffi_size* out_length)
@@ -85,9 +85,9 @@ public:
 		openffi_size** sizeptr = (openffi_size**)string_lengths;
 		for(int i=0 ; i<index_length ; i++)
 		{
-			if(index[i] >= dimensions[i]){
+			if(index[i] >= dimensions_lengths[i]){
 				std::stringstream ss;
-				ss << "Array out of bounds. Requested index: " << index[i] << ". Array size: " << dimensions[i];
+				ss << "Array out of bounds. Requested index: " << index[i] << ". Array size: " << dimensions_lengths[i];
 				throw std::runtime_error(ss.str());
 			}
 			

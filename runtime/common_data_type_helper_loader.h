@@ -16,10 +16,10 @@ int get_arg_##type(void** data_array, int index, type* out_res, openffi_size* le
 int get_arg_##type(void** data_array, int index, type* out_res)
 
 #define get_arg_type_str_array_decl_fptr(type) \
-int get_arg_##type##_array(void** data_array, int index, type** array, openffi_size** sizes_array, openffi_size** dimensions, openffi_size* dimensions_length)
+int get_arg_##type##_array(void** data_array, int index, type** array, openffi_size** sizes_array, openffi_size** dimensions_lengths, openffi_size* dimensions)
 
 #define get_arg_type_array_decl_fptr(type) \
-int get_arg_##type##_array(void** data_array, int index, type** out_res, openffi_size** dimensions, openffi_size* dimensions_length)
+int get_arg_##type##_array(void** data_array, int index, type** out_res, openffi_size** dimensionss_lengths, openffi_size* dimensions)
 
 #define set_arg_openffi_str_decl_fptr(type)\
 int set_arg_##type(void** data_array, int index, openffi_string val, openffi_size* string_length)
@@ -28,10 +28,10 @@ int set_arg_##type(void** data_array, int index, openffi_string val, openffi_siz
 int set_arg_##type(void** data_array, int index, type* val)
 
 #define set_arg_openffi_str_array_decl_fptr(type)\
-int set_arg_##type##_array(void** data_array, int index, type* array, openffi_size* string_sizes, openffi_size* dimensions, openffi_size* dimensions_length)
+int set_arg_##type##_array(void** data_array, int index, type* array, openffi_size* string_sizes, openffi_size* dimensions_lengths, openffi_size* dimensions)
 
 #define set_arg_type_array_decl_fptr(type) \
-int set_arg_##type##_array(void** data_array, int index, type* array, openffi_size* dimensions, openffi_size* dimensions_length)
+int set_arg_##type##_array(void** data_array, int index, type* array, openffi_size* dimensions_lengths, openffi_size* dimensions)
 
 #define get_numeric_element_decl_fptr(type) type get_##type##_element(type* arr, int index)
 
@@ -46,8 +46,8 @@ int set_arg_##type##_array(void** data_array, int index, type* array, openffi_si
 //int8_t (*pis_arg_overflow) (uint64_t*, int);
 int8_t is_arg_overflow(uint64_t* size_left, int size);
 
-//int (*pget_type)(void** data_array, int index, uint64_t* out_type);
-int get_type(void** data_array, int index, uint64_t* out_type);
+//int (*pget_type)(void** data_array, int index, openffi_type* out_type);
+int get_type(void** data_array, int index, openffi_type* out_type);
 
 //void** (*palloc_args_buffer)(int size);
 void** alloc_args_buffer(int size);
@@ -111,8 +111,6 @@ set_arg_type_decl_fptr(openffi_uint16);
 set_arg_type_decl_fptr(openffi_uint8);
 set_arg_type_decl_fptr(openffi_size);
 set_arg_type_decl_fptr(openffi_bool);
-
-int set_arg_array(void** data_array, int index, void** array, openffi_size** dimensions, openffi_size* dimensions_length);
 
 set_arg_openffi_str_array_decl_fptr(openffi_string);
 set_arg_openffi_str_array_decl_fptr(openffi_string8);

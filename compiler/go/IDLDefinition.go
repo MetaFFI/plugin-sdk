@@ -286,13 +286,22 @@ type FieldDefinition struct{
 	Tags map[string]string `json:"tags"`
 	MapKeyType string `json:"map_key_type,omitempty"`
 	MapValueType string `json:"map_value_type,omitempty"`
-	IsArray bool `json:"is_array"`
+	Dimensions int `json:"dimensions"`
 	InnerTypes []*FieldDefinition `json:"inner_types,omitempty"`
 	PassMethod string `json:"pass_method"`
 }
 func (this *FieldDefinition) IsString() bool{
 	return strings.Index(this.Type, "string") == 0
 }
+
+func (this *FieldDefinition) IsBool() bool{
+	return this.Type == "bool"
+}
+
+func (this *FieldDefinition) IsArray() bool{
+	return this.Dimensions > 0
+}
+
 func (this *FieldDefinition) SetTag(tag string, val string){
 
 	if this.Tags == nil{
@@ -303,10 +312,6 @@ func (this *FieldDefinition) SetTag(tag string, val string){
 }
 func (this *FieldDefinition) AppendComment(comment string){
 	this.Comment += (comment + "\n")
-}
-//--------------------------------------------------------------------
-func (this *FieldDefinition) IsPrimitive() bool{
-	return len(this.InnerTypes) == 0
 }
 //--------------------------------------------------------------------
 func (this *FieldDefinition) parseWellKnownTags() error{

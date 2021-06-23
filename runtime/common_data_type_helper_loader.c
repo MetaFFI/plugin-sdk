@@ -14,15 +14,15 @@ int get_arg_##type(void** data_array, int index, type* out_res){ return pget_arg
 #define get_arg_type_str_array_impl_fptr(type) \
 typedef int (*pget_arg_##type##_array_t) (void**, int, type**, openffi_size**, openffi_size**, openffi_size*); \
 pget_arg_##type##_array_t pget_arg_##type##_array; \
-int get_arg_##type##_array(void** data_array, int index, type** array, openffi_size** sizes_array, openffi_size** dimensions, openffi_size* dimensions_length){ \
-	return pget_arg_##type##_array(data_array, index, array, sizes_array, dimensions, dimensions_length); \
+int get_arg_##type##_array(void** data_array, int index, type** array, openffi_size** sizes_array, openffi_size** dimensions_lengths, openffi_size* dimensions){ \
+	return pget_arg_##type##_array(data_array, index, array, sizes_array, dimensions_lengths, dimensions); \
 }
 
 #define get_arg_type_array_impl_fptr(type) \
 typedef int(*pget_arg_##type##_array_t)(void**, int, type**, openffi_size**, openffi_size*); \
 pget_arg_##type##_array_t pget_arg_##type##_array; \
-int get_arg_##type##_array(void** data_array, int index, type** out_res, openffi_size** dimensions, openffi_size* dimensions_length){ \
-	return pget_arg_##type##_array(data_array, index, out_res, dimensions, dimensions_length); \
+int get_arg_##type##_array(void** data_array, int index, type** out_res, openffi_size** dimensions_lengths, openffi_size* dimensions){ \
+	return pget_arg_##type##_array(data_array, index, out_res, dimensions_lengths, dimensions); \
 }
 
 #define set_arg_openffi_str_impl_fptr(type)\
@@ -38,12 +38,12 @@ int set_arg_##type(void** data_array, int index, type* val){ return pset_arg_##t
 #define set_arg_openffi_str_array_impl_fptr(type)\
 typedef int (*pset_arg_##type##_array_t) (void**, int, type*, openffi_size*, openffi_size*, openffi_size*); \
 pset_arg_##type##_array_t pset_arg_##type##_array; \
-int set_arg_##type##_array(void** data_array, int index, type* array, openffi_size* string_sizes, openffi_size* dimensions, openffi_size* dimensions_length){ return pset_arg_##type##_array(data_array, index, array, string_sizes, dimensions, dimensions_length); }
+int set_arg_##type##_array(void** data_array, int index, type* array, openffi_size* string_sizes, openffi_size* dimensions_lengths, openffi_size* dimensions){ return pset_arg_##type##_array(data_array, index, array, string_sizes, dimensions_lengths, dimensions); }
 
 #define set_arg_type_array_impl_fptr(type) \
 typedef int (*pset_arg_##type##_array_t) (void**, int, type*, openffi_size*, openffi_size*); \
 pset_arg_##type##_array_t pset_arg_##type##_array; \
-int set_arg_##type##_array(void** data_array, int index, type* array, openffi_size* dimensions, openffi_size* dimensions_length){ return pset_arg_##type##_array(data_array, index, array, dimensions, dimensions_length); }
+int set_arg_##type##_array(void** data_array, int index, type* array, openffi_size* dimensions_lengths, openffi_size* dimensions){ return pset_arg_##type##_array(data_array, index, array, dimensions_lengths, dimensions); }
 
 #define get_numeric_element_impl_fptr(type) \
 typedef type (*pget_##type##_element_t) (type*, int); \
@@ -72,9 +72,9 @@ typedef int8_t (*pis_arg_overflow_t) (uint64_t*, int);
 pis_arg_overflow_t pis_arg_overflow;
 int8_t is_arg_overflow(uint64_t* size_left, int size){ return pis_arg_overflow(size_left, size); }
 
-typedef int (*pget_type_t)(void** data_array, int index, uint64_t* out_type);
+typedef int (*pget_type_t)(void** data_array, int index, openffi_type* out_type);
 pget_type_t pget_type;
-int get_type(void** data_array, int index, uint64_t* out_type){ return pget_type(data_array, index, out_type); }
+int get_type(void** data_array, int index, openffi_type* out_type){ return pget_type(data_array, index, out_type); }
 
 typedef void** (*palloc_args_buffer_t)(int size);
 palloc_args_buffer_t palloc_args_buffer;
@@ -141,10 +141,6 @@ set_arg_type_impl_fptr(openffi_uint16);
 set_arg_type_impl_fptr(openffi_uint8);
 set_arg_type_impl_fptr(openffi_size);
 set_arg_type_impl_fptr(openffi_bool);
-
-typedef int (*pset_arg_array_t)(void**, int, void**, openffi_size**, openffi_size*);
-pset_arg_array_t pset_arg_array;
-int set_arg_array(void** data_array, int index, void** array, openffi_size** dimensions, openffi_size* dimensions_length){ return pset_arg_array(data_array, index, array, dimensions, dimensions_length); }
 
 set_arg_openffi_str_array_impl_fptr(openffi_string);
 set_arg_openffi_str_array_impl_fptr(openffi_string8);
@@ -342,7 +338,7 @@ void* load_symbol(void* handle, const char* name, char** out_err)
 	if(!res)
 	{
 		*out_err = dlerror();
-		printf("Failed to load symbol %s. %s\n", name, *out_err);
+		printf("Failed to load symbol from handle. %s. %s\n", name, *out_err);
 		return NULL;
 	}
 	
@@ -455,7 +451,6 @@ const char* load_args_helpers()
 	load_helper_function(alloc_args_buffer);
 	load_helper_function(get_arg_pointer_type);
 	load_helper_function(set_arg);
-	load_helper_function(set_arg_array);
 	load_helper_function(get_openffi_string_element);
 	load_helper_function(set_openffi_string_element);
 	load_helper_function(get_type);
@@ -600,6 +595,7 @@ const char* load_args_helpers()
 	alloc_numeric_on_heap_impl_fptr_assign(openffi_uint16);
 	alloc_numeric_on_heap_impl_fptr_assign(openffi_uint8);
 	alloc_numeric_on_heap_impl_fptr_assign(openffi_size);
+	alloc_numeric_on_heap_impl_fptr_assign(openffi_bool);
 
 #define alloc_str_on_heap_impl_fptr_assign(type) \
 	load_helper_function(alloc_##type##_on_heap)
@@ -608,7 +604,7 @@ const char* load_args_helpers()
 	alloc_str_on_heap_impl_fptr_assign(openffi_string8);
 	alloc_str_on_heap_impl_fptr_assign(openffi_string16);
 	alloc_str_on_heap_impl_fptr_assign(openffi_string32);
-	
+
 	return NULL;
 }
 
