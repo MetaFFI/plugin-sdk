@@ -17,14 +17,19 @@ typedef uint64_t openffi_uint64;
 
 typedef uint8_t openffi_bool;
 
-typedef char* openffi_string;
-typedef char* openffi_string8;
-typedef char16_t* openffi_string16;
-typedef char32_t* openffi_string32;
+typedef char openffi_char;
+typedef char openffi_char8;
+typedef char16_t openffi_char16;
+typedef char32_t openffi_char32;
+
+typedef openffi_char* openffi_string;
+typedef openffi_char8* openffi_string8;
+typedef openffi_char16* openffi_string16;
+typedef openffi_char32* openffi_string32;
 
 typedef uint64_t openffi_size; // sizes of array and/or strings passed by this type
 typedef void* openffi_handle;
-typedef uint64_t openffi_type;
+typedef openffi_size openffi_type;
 
 enum openffi_types
 {
@@ -46,34 +51,43 @@ enum openffi_types
 	openffi_handle_type = 32768ULL,
 	
 	openffi_array_type = 65536ULL,
-	openffi_pointer_type = 131072ULL,
 	
 	openffi_size_type = 262144ULL,
-};
-
-enum openffi_types_size
-{
-	openffi_type_type_size = 1ULL,
 	
-	openffi_float64_type_size = 1ULL,
-	openffi_float32_type_size = 1ULL,
-	openffi_int8_type_size = 1ULL,
-	openffi_int16_type_size = 1ULL,
-	openffi_int32_type_size = 1ULL,
-	openffi_int64_type_size = 1ULL,
-	openffi_uint8_type_size = 1ULL,
-	openffi_uint16_type_size = 1ULL,
-	openffi_uint32_type_size = 1ULL,
-	openffi_uint64_type_size = 1ULL,
-	openffi_bool_type_size = 1ULL,
-	openffi_size_type_size = 1ULL,
+	openffi_pointer_type = 131072ULL,
 	
-	openffi_string_type_size = 2ULL,
-	openffi_string8_type_size = 2ULL,
-	openffi_string16_type_size = 2ULL,
-	openffi_string32_type_size = 2ULL,
+	openffi_float64_ptr_type = openffi_float64_type | openffi_pointer_type,
+	openffi_float32_ptr_type = openffi_float32_type | openffi_pointer_type,
+	openffi_int8_ptr_type = openffi_int8_type | openffi_pointer_type,
+	openffi_int16_ptr_type = openffi_int16_type | openffi_pointer_type,
+	openffi_int32_ptr_type = openffi_int32_type | openffi_pointer_type,
+	openffi_int64_ptr_type = openffi_int64_type | openffi_pointer_type,
+	openffi_uint8_ptr_type = openffi_uint8_type | openffi_pointer_type,
+	openffi_uint16_ptr_type = openffi_uint16_type | openffi_pointer_type,
+	openffi_uint32_ptr_type = openffi_uint32_type | openffi_pointer_type,
+	openffi_uint64_ptr_type = openffi_uint64_type | openffi_pointer_type,
+	openffi_bool_ptr_type = openffi_bool_type | openffi_pointer_type,
+	openffi_string_ptr_type = openffi_string_type | openffi_pointer_type,
+	openffi_string8_ptr_type = openffi_string8_type | openffi_pointer_type,
+	openffi_string16_ptr_type = openffi_string16_type | openffi_pointer_type,
+	openffi_string32_ptr_type = openffi_string32_type | openffi_pointer_type,
 	
-	openffi_handle_type_size = 2ULL,
+	openffi_float64_array_type = openffi_float64_type | openffi_array_type,
+	openffi_float32_array_type = openffi_float32_type | openffi_array_type,
+	openffi_int8_array_type = openffi_int8_type | openffi_array_type,
+	openffi_int16_array_type = openffi_int16_type | openffi_array_type,
+	openffi_int32_array_type = openffi_int32_type | openffi_array_type,
+	openffi_int64_array_type = openffi_int64_type | openffi_array_type,
+	openffi_uint8_array_type = openffi_uint8_type | openffi_array_type,
+	openffi_uint16_array_type = openffi_uint16_type | openffi_array_type,
+	openffi_uint32_array_type = openffi_uint32_type | openffi_array_type,
+	openffi_uint64_array_type = openffi_uint64_type | openffi_array_type,
+	openffi_bool_array_type = openffi_bool_type | openffi_array_type,
+	openffi_string_array_type = openffi_string_type | openffi_array_type,
+	openffi_string8_array_type = openffi_string8_type | openffi_array_type,
+	openffi_string16_array_type = openffi_string16_type | openffi_array_type,
+	openffi_string32_array_type = openffi_string32_type | openffi_array_type,
 	
-	openffi_array_type_size = 2ULL,
+	openffi_handle_array_type = openffi_handle_type | openffi_array_type,
+	openffi_size_array_type = openffi_size_type | openffi_array_type
 };

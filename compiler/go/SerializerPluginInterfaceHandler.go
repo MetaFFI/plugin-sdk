@@ -8,11 +8,11 @@ import "C"
 
 var serializerPluginInterfaceHandler *SerializerPluginInterfaceHandler
 
-type SerializerPluginInterface interface{
+otype SerializerPluginInterface interface{
 	CompileSerialization(idl string, language string) (serializationCodeJSON string, err error)
 }
 //--------------------------------------------------------------------
-type SerializerPluginInterfaceHandler struct{
+otype SerializerPluginInterfaceHandler struct{
 	wrapped SerializerPluginInterface
 }
 //--------------------------------------------------------------------

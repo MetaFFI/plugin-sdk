@@ -8,11 +8,11 @@ import "encoding/json"
 
 var idlPluginInterfaceHandler *IDLPluginInterfaceHandler
 
-type IDLPluginInterface interface{
+otype IDLPluginInterface interface{
 	ParseIDL(idlFilePath string, idl string) (*IDLDefinition, error)
 }
 //--------------------------------------------------------------------
-type IDLPluginInterfaceHandler struct{
+otype IDLPluginInterfaceHandler struct{
 	wrapped IDLPluginInterface
 }
 //--------------------------------------------------------------------
