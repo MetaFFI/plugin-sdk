@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include <stdarg.h>
+#include <runtime/cdt_structs.h>
 
 #ifndef SKIP_XLLR_API_EXTERN
 extern "C"
@@ -42,13 +43,13 @@ void call(
 	int64_t function_id,
 	
 	// [in] parameters array
-	void** parameters,
+	cdt* parameters,
 	
 	// [in] number of parameters
 	uint64_t parameters_len,
 	
 	// [in] return values array
-	void** return_values,
+	cdt* return_values,
 	
 	// [in] number of return values
 	uint64_t return_values_len,

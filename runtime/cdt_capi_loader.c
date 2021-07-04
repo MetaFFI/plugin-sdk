@@ -201,11 +201,11 @@ set_string_element_impl_fptr(openffi_string32);
 /************************************************
 *   XLLR functions
 *************************************************/
-void (*pxllr_call)(const char*, uint32_t, int64_t, void**, uint64_t, void**, uint64_t, char**, uint64_t*);
+void (*pxllr_call)(const char*, uint32_t, int64_t, struct cdt*, uint64_t, struct cdt*, uint64_t, char**, uint64_t*);
 void xllr_call(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len,
 				int64_t function_id,
-				void** parameters, uint64_t parameters_length,
-				void** return_values, uint64_t return_values_length,
+				struct cdt* parameters, uint64_t parameters_length,
+				struct cdt* return_values, uint64_t return_values_length,
 				char** out_err, uint64_t* out_err_len
 )
 {
@@ -340,7 +340,7 @@ void* load_symbol(void* handle, const char* name, char** out_err)
 const char* load_xllr_api()
 {
 	char* out_err = NULL;
-	pxllr_call = (void (*)(const char*, uint32_t, int64_t, void**, uint64_t, void**, uint64_t, char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "call", &out_err);
+	pxllr_call = (void (*)(const char*, uint32_t, int64_t, struct cdt*, uint64_t, struct cdt*, uint64_t, char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "call", &out_err);
 	if(!pxllr_call)
 	{
 		return out_err;

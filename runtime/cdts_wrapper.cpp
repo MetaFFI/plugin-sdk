@@ -108,11 +108,13 @@ void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callba
 	}
 }
 //--------------------------------------------------------------------
-void cdts_wrapper::build(openffi_types types[], openffi_size types_length, void* values_to_set, cdts_build_callbacks& callbacks) const
+void cdts_wrapper::build(const openffi_types types[], openffi_size types_length, void* values_to_set, cdts_build_callbacks& callbacks) const
 {
 	if(types_length != this->cdts_length)
 	{
-		throw std::runtime_error("given types_array length is different the CDTS length");
+		std::stringstream ss;
+		ss << "given types_array length=" << types_length << " is different then CDTS length=" <<this->cdts_length;
+		throw std::runtime_error(ss.str());
 	}
 
 #define if_build_numeric_type(otype) \
@@ -236,6 +238,16 @@ cdt* cdts_wrapper::operator[](int index) const
 	}
 	
 	return &this->cdts[index];
+}
+//--------------------------------------------------------------------
+cdt* cdts_wrapper::get_cdts() const
+{
+	return this->cdts;
+}
+//--------------------------------------------------------------------
+openffi_size cdts_wrapper::get_cdts_length() const
+{
+	return this->cdts_length;
 }
 //--------------------------------------------------------------------
 }

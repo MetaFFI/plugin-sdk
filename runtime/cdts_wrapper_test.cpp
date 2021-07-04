@@ -10,7 +10,7 @@ int main()
 	{
 		
 		
-		cdts_wrapper cdts(13);
+		cdts_wrapper cdts(14);
 		
 		std::vector<openffi_types> vec_types =
 		{
@@ -24,6 +24,7 @@ int main()
 			openffi_uint16_type,
 			openffi_uint32_type,
 			openffi_uint64_type,
+			openffi_bool_type,
 			openffi_string_type,
 			openffi_string_array_type,
 			openffi_uint8_array_type

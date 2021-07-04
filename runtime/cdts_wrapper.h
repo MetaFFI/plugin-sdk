@@ -22,9 +22,8 @@ public:
 
 public:
 	numeric_n_array_wrapper()= default;
-	numeric_n_array_wrapper(T* array, openffi_size* dimensions_lengths, openffi_size dimensions): array(array), dimensions_lengths(dimensions_lengths), dimensions(dimensions){}
+	numeric_n_array_wrapper(T* array, openffi_size* dimensions_lengths, openffi_size& dimensions): array(array), dimensions_lengths(dimensions_lengths), dimensions(dimensions){}
 	numeric_n_array_wrapper(const numeric_n_array_wrapper& other) = default;
-	
 	numeric_n_array_wrapper& operator = (const numeric_n_array_wrapper& other) = default;
 	
 	bool is_simple_array(){ return this->dimensions == 1; }
@@ -284,6 +283,9 @@ public:
 	explicit cdts_wrapper(openffi_size cdt_count);
 	~cdts_wrapper() = default;
 	
+	[[nodiscard]] cdt* get_cdts() const;
+	[[nodiscard]] openffi_size get_cdts_length() const;
+	
 	cdt* operator[](int index) const;
 	
 	/**
@@ -299,7 +301,8 @@ public:
 	 * @param values_to_set is passed to the callbacks. Parameter should contain the data to convert.
 	 * @param callbacks
 	 */
-	void build(openffi_types types[], openffi_size types_length, void* values_to_set, cdts_build_callbacks& callbacks) const;
+	void build(const openffi_types types[], openffi_size types_length, void* values_to_set, cdts_build_callbacks& callbacks) const;
+
 };
 
 };

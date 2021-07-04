@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <cstdarg>
+#include <runtime/cdt_structs.h>
 
 /**
  * Interface XLLR Plugin Implements
@@ -35,10 +36,10 @@ struct runtime_plugin_interface
 			int64_t function_id,
 			
 			// parameters
-			void** parameters, uint64_t parameters_len,
+			cdt* parameters, uint64_t parameters_len,
 			
 			// return values
-			void** return_values, uint64_t return_values_len,
+			cdt* return_values, uint64_t return_values_len,
 			
 			// out error
 			char** out_err, uint64_t* out_err_len
