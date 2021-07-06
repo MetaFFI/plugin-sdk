@@ -9,12 +9,12 @@ import (
 
 var languagePluginInterfaceHandler *LanguagePluginInterfaceHandler
 
-otype LanguagePluginInterface interface{
+type LanguagePluginInterface interface{
 	CompileToGuest(idlDefinition *IDLDefinition, outputPath string) error
 	CompileFromHost(idlDefinition *IDLDefinition, outputPath string, hostOptions map[string]string) error
 }
 //--------------------------------------------------------------------
-otype LanguagePluginInterfaceHandler struct{
+type LanguagePluginInterfaceHandler struct{
 	wrapped LanguagePluginInterface
 }
 //--------------------------------------------------------------------

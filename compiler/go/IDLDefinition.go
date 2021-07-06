@@ -60,19 +60,19 @@ func copyMap(source map[string]string) (target map[string]string){
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
-otype Taggable interface {
+type Taggable interface {
 	SetTag(tag string, val string)
 }
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
-otype Commentable interface {
+type Commentable interface {
 	AppendComment(comment string)
 }
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
-otype IDLDefinition struct {
+type IDLDefinition struct {
 	IDLFilename string `json:"idl_filename"`
 	IDLExtension string `json:"idl_extension"`
 	IDLFilenameWithExtension string `json:"idl_filename_with_extension"`
@@ -162,7 +162,7 @@ func (this *IDLDefinition) Validate() error{
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
-otype ModuleDefinition struct{
+type ModuleDefinition struct{
 	Name string `json:"name"`
 	TargetLanguage string `json:"target_language"`
 	Comment string `json:"comment,omitempty"`
@@ -210,7 +210,7 @@ func (this *ModuleDefinition) parseWellKnownTags(pathToFunction map[string]strin
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
-otype FunctionDefinition struct {
+type FunctionDefinition struct {
 	Name                  string             `json:"name"`
 	Comment               string             `json:"comment,omitempty"`
 	Tags                  map[string]string  `json:"tags"`
@@ -279,9 +279,9 @@ func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]str
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
-otype FieldDefinition struct{
+type FieldDefinition struct{
 	Name string `json:"name"`
-	Type string `json:"otype"`
+	Type string `json:"type"`
 	Comment string `json:"comment,omitempty"`
 	Tags map[string]string `json:"tags"`
 	MapKeyType string `json:"map_key_type,omitempty"`
