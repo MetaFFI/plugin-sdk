@@ -335,3 +335,7 @@ func (this *FieldDefinition) parseWellKnownTags() error{
 	return nil
 }
 //--------------------------------------------------------------------
+func (this *FieldDefinition) IsInteger() bool{
+	return strings.Index(this.Type, "int") == 0
+}
+//--------------------------------------------------------------------
