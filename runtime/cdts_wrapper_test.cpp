@@ -43,7 +43,7 @@ int main()
 		openffi_bool p11 = 1;
 		std::string p12("This is an input");
 		size_t p12_len = p12.size();
-		std::vector<openffi_string> p13 = {(char*) "element one", (char*) "element two"};
+		std::vector<openffi_string8> p13 = {(char*) "element one", (char*) "element two"};
 		std::vector<openffi_size> p13_sizes = {strlen("element one"), strlen("element two")};
 		std::vector<openffi_size> p13_dimensions_lengths = {p13.size()};
 		
@@ -146,13 +146,13 @@ int main()
 			},
 			[&](void* values_to_set, int index, openffi_bool*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
-			[&](void* values_to_set, int index, openffi_string& val, openffi_size& s)
+			[&](void* values_to_set, int index, openffi_string8& val, openffi_size& s)
 			{
 				val = (char*) p12.c_str();
 				s = p12_len;
 			},
-			[&](void* values_to_set, int index, openffi_string*& val, openffi_size*& s, openffi_bool& free_required) {},
-			[&](void* values_to_set, int index, openffi_string*& array, openffi_size*& strings_lengths, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required)
+			[&](void* values_to_set, int index, openffi_string8*& val, openffi_size*& s, openffi_bool& free_required) {},
+			[&](void* values_to_set, int index, openffi_string8*& array, openffi_size*& strings_lengths, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required)
 			{
 				array = &p13[0];
 				strings_lengths = &p13_sizes[0];
@@ -160,10 +160,6 @@ int main()
 				dimensions = 1;
 				free_required = false;
 			},
-			
-			[&](void* values_to_set, int index, openffi_string8& val, openffi_size& s) {},
-			[&](void* values_to_set, int index, openffi_string8*& val, openffi_size*& s, openffi_bool& free_required) {},
-			[&](void* values_to_set, int index, openffi_string8*&, openffi_size*&, openffi_size*&, openffi_size&, openffi_bool&) {},
 			
 			[&](void* values_to_set, int index, openffi_string16& val, openffi_size& s) {},
 			[&](void* values_to_set, int index, openffi_string16*& val, openffi_size*& s, openffi_bool& free_required) {},
@@ -239,13 +235,13 @@ int main()
 			[&](void* values_to_set, int index, const openffi_bool* val){ asset_and_throw(*val == p11); },
 			[&](void* values_to_set, int index, const openffi_bool* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
-			[&](void* values_to_set, int index, const openffi_string& val, const openffi_size& s)
+			[&](void* values_to_set, int index, const openffi_string8& val, const openffi_size& s)
 			{
 				asset_and_throw(p12 == val);
 				asset_and_throw(s == p12.length());
 			},
-			[&](void* values_to_set, int index, const openffi_string* val, const openffi_size* s) {},
-			[&](void* values_to_set, int index, const openffi_string* array, const openffi_size* strings_lengths, const openffi_size* dimensions_lengths, const openffi_size& dimensions)
+			[&](void* values_to_set, int index, const openffi_string8* val, const openffi_size* s) {},
+			[&](void* values_to_set, int index, const openffi_string8* array, const openffi_size* strings_lengths, const openffi_size* dimensions_lengths, const openffi_size& dimensions)
 			{
 				asset_and_throw(strcmp(p13[0], array[0]) == 0);
 				asset_and_throw(strcmp(p13[1], array[1]) == 0);
@@ -259,11 +255,7 @@ int main()
 				asset_and_throw(dimensions == 1);
 				
 			},
-			
-			[&](void* values_to_set, int index, const openffi_string8& val, const openffi_size& s) {},
-			[&](void* values_to_set, int index, const openffi_string8* val, const openffi_size* s) {},
-			[&](void* values_to_set, int index, const openffi_string8*, const openffi_size*, const openffi_size*, const openffi_size&) {},
-			
+
 			[&](void* values_to_set, int index, const openffi_string16& val, const openffi_size& s) {},
 			[&](void* values_to_set, int index, const openffi_string16* val, const openffi_size* s) {},
 			[&](void* values_to_set, int index, const openffi_string16*, const openffi_size*, const openffi_size*, const openffi_size&) {},

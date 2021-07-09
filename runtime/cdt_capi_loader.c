@@ -36,7 +36,6 @@ alloc_numeric_on_heap_impl_fptr(openffi_uint16);
 alloc_numeric_on_heap_impl_fptr(openffi_uint8);
 alloc_numeric_on_heap_impl_fptr(openffi_size);
 alloc_numeric_on_heap_impl_fptr(openffi_bool);
-alloc_string_on_heap_impl_fptr(openffi_string);
 alloc_string_on_heap_impl_fptr(openffi_string8);
 alloc_string_on_heap_impl_fptr(openffi_string16);
 alloc_string_on_heap_impl_fptr(openffi_string32);
@@ -55,83 +54,7 @@ openffi_type get_type(struct cdt* data_array, int index){ return pget_type(data_
 typedef struct cdt* (*pget_cdt_t)(struct cdt* data_array, int index);
 pget_cdt_t pget_cdt;
 struct cdt* get_cdt(struct cdt* data_array, int index){ return pget_cdt(data_array, index); }
-//
-//#define get_cdt_numeric_type_impl_fptr(type) \
-//typedef int (*pget_cdt_##type##_t)(struct cdt*, int, type**); \
-//pget_cdt_##type##_t pget_cdt_##type;\
-//int get_cdt_##type(struct cdt* data_array, int index, type** out_res){ return pget_cdt_##type(data_array, index, out_res); }\
-//typedef int(*pget_cdt_##type##_array_t)(struct cdt*, int, type**, openffi_size**, openffi_size*); \
-//pget_cdt_##type##_array_t pget_cdt_##type##_array; \
-//int get_cdt_##type##_array(struct cdt* data_array, int index, type** out_res, openffi_size** dimensions_lengths, openffi_size* dimensions){ \
-//	return pget_cdt_##type##_array(data_array, index, out_res, dimensions_lengths, dimensions); \
-//}
-//
-//#define get_cdt_string_type_impl_fptr(type) \
-//typedef int (*pget_cdt_##type##_t) (struct cdt*, int, type*, openffi_size**); \
-//pget_cdt_##type##_t pget_cdt_##type; \
-//int get_cdt_##type(struct cdt* data_array, int index, type* out_res, openffi_size** length){ return pget_cdt_##type(data_array, index, out_res, length); }\
-//typedef int (*pget_cdt_##type##_array_t) (struct cdt*, int, type**, openffi_size**, openffi_size**, openffi_size*); \
-//pget_cdt_##type##_array_t pget_cdt_##type##_array; \
-//int get_cdt_##type##_array(struct cdt* data_array, int index, type** array, openffi_size** sizes_array, openffi_size** dimensions_lengths, openffi_size* dimensions){ \
-//	return pget_cdt_##type##_array(data_array, index, array, sizes_array, dimensions_lengths, dimensions); \
-//}
-//
-//get_cdt_numeric_type_impl_fptr(openffi_float64);
-//get_cdt_numeric_type_impl_fptr(openffi_float32);
-//get_cdt_numeric_type_impl_fptr(openffi_int64);
-//get_cdt_numeric_type_impl_fptr(openffi_int32);
-//get_cdt_numeric_type_impl_fptr(openffi_int16);
-//get_cdt_numeric_type_impl_fptr(openffi_int8);
-//get_cdt_numeric_type_impl_fptr(openffi_uint64);
-//get_cdt_numeric_type_impl_fptr(openffi_uint32);
-//get_cdt_numeric_type_impl_fptr(openffi_uint16);
-//get_cdt_numeric_type_impl_fptr(openffi_uint8);
-//get_cdt_numeric_type_impl_fptr(openffi_size);
-//get_cdt_numeric_type_impl_fptr(openffi_bool);
-//get_cdt_string_type_impl_fptr(openffi_string);
-//get_cdt_string_type_impl_fptr(openffi_string8);
-//get_cdt_string_type_impl_fptr(openffi_string16);
-//get_cdt_string_type_impl_fptr(openffi_string32);
-//
-////====================================================================
-//
-///************************************************
-//*   Setters
-//*************************************************/
-//
-//#define set_cdt_numeric_type_impl_fptr(type) \
-//typedef int (*pset_cdt_##type##_t) (struct cdt*, int, type*, openffi_bool); \
-//pset_cdt_##type##_t pset_cdt_##type; \
-//int set_cdt_##type(struct cdt* data_array, int index, type* val, openffi_bool free_required){ return pset_cdt_##type(data_array, index, val, free_required); }\
-//typedef int (*pset_cdt_##type##_array_t) (struct cdt*, int, type*, openffi_size*, openffi_size, openffi_bool); \
-//pset_cdt_##type##_array_t pset_cdt_##type##_array; \
-//int set_cdt_##type##_array(struct cdt* data_array, int index, type* array, openffi_size* dimensions_lengths, openffi_size dimensions, openffi_bool free_required){ return pset_cdt_##type##_array(data_array, index, array, dimensions_lengths, dimensions, free_required); }
-//
-//#define set_cdt_string_type_impl_fptr(type)\
-//typedef int (*pset_cdt_##type##_t) (struct cdt*, int, type, openffi_size*, openffi_bool); \
-//pset_cdt_##type##_t pset_cdt_##type; \
-//int set_cdt_##type(struct cdt* data_array, int index, type val, openffi_size* string_length, openffi_bool free_required){ return pset_cdt_##type(data_array, index, val, string_length, free_required); }\
-//typedef int (*pset_cdt_##type##_array_t) (struct cdt*, int, type*, openffi_size*, openffi_size*, openffi_size, openffi_bool); \
-//pset_cdt_##type##_array_t pset_cdt_##type##_array; \
-//int set_cdt_##type##_array(struct cdt* data_array, int index, type* array, openffi_size* string_sizes, openffi_size* dimensions_lengths, openffi_size dimensions, openffi_bool free_required){ return pset_cdt_##type##_array(data_array, index, array, string_sizes, dimensions_lengths, dimensions, free_required); }
-//
-//set_cdt_numeric_type_impl_fptr(openffi_float64);
-//set_cdt_numeric_type_impl_fptr(openffi_float32);
-//set_cdt_numeric_type_impl_fptr(openffi_int64);
-//set_cdt_numeric_type_impl_fptr(openffi_int32);
-//set_cdt_numeric_type_impl_fptr(openffi_int16);
-//set_cdt_numeric_type_impl_fptr(openffi_int8);
-//set_cdt_numeric_type_impl_fptr(openffi_uint64);
-//set_cdt_numeric_type_impl_fptr(openffi_uint32);
-//set_cdt_numeric_type_impl_fptr(openffi_uint16);
-//set_cdt_numeric_type_impl_fptr(openffi_uint8);
-//set_cdt_numeric_type_impl_fptr(openffi_size);
-//set_cdt_numeric_type_impl_fptr(openffi_bool);
-//set_cdt_string_type_impl_fptr(openffi_string);
-//set_cdt_string_type_impl_fptr(openffi_string8);
-//set_cdt_string_type_impl_fptr(openffi_string16);
-//set_cdt_string_type_impl_fptr(openffi_string32);
-//
+
 
 //====================================================================
 
@@ -160,7 +83,7 @@ get_numeric_element_impl_fptr(openffi_uint32);
 get_numeric_element_impl_fptr(openffi_uint16);
 get_numeric_element_impl_fptr(openffi_uint8);
 get_numeric_element_impl_fptr(openffi_size);
-get_string_element_impl_fptr(openffi_string);
+get_numeric_element_impl_fptr(openffi_handle);
 get_string_element_impl_fptr(openffi_string8);
 get_string_element_impl_fptr(openffi_string16);
 get_string_element_impl_fptr(openffi_string32);
@@ -191,7 +114,7 @@ set_numeric_element_impl_fptr(openffi_uint32);
 set_numeric_element_impl_fptr(openffi_uint16);
 set_numeric_element_impl_fptr(openffi_uint8);
 set_numeric_element_impl_fptr(openffi_size);
-set_string_element_impl_fptr(openffi_string);
+set_numeric_element_impl_fptr(openffi_handle);
 set_string_element_impl_fptr(openffi_string8);
 set_string_element_impl_fptr(openffi_string16);
 set_string_element_impl_fptr(openffi_string32);
@@ -434,110 +357,9 @@ const char* load_cdt_capi()
 	if(err){ return err; }
 
 	load_helper_function(alloc_cdts_buffer);
-	load_helper_function(get_openffi_string_element);
-	load_helper_function(set_openffi_string_element);
 	load_helper_function(get_type);
 	load_helper_function(get_cdt);
 	
-#define get_cdt_string_type_impl_fptr_assign(type) \
-	load_helper_function(get_cdt_##type)
-	
-	/*
-	get_cdt_string_type_impl_fptr_assign(openffi_string);
-	get_cdt_string_type_impl_fptr_assign(openffi_string8);
-	get_cdt_string_type_impl_fptr_assign(openffi_string16);
-	get_cdt_string_type_impl_fptr_assign(openffi_string32);
-	*/
-	
-#define get_cdt_numeric_type_impl_fptr_assign(type) \
-	load_helper_function(get_cdt_##type)
-	
-	/*
-	get_cdt_numeric_type_impl_fptr_assign(openffi_float64);
-	get_cdt_numeric_type_impl_fptr_assign(openffi_float32);
-	get_cdt_numeric_type_impl_fptr_assign(openffi_int64);
-	get_cdt_numeric_type_impl_fptr_assign(openffi_int32);
-	get_cdt_numeric_type_impl_fptr_assign(openffi_int16);
-	get_cdt_numeric_type_impl_fptr_assign(openffi_int8);
-	get_cdt_numeric_type_impl_fptr_assign(openffi_uint64);
-	get_cdt_numeric_type_impl_fptr_assign(openffi_uint32);
-	get_cdt_numeric_type_impl_fptr_assign(openffi_uint16);
-	get_cdt_numeric_type_impl_fptr_assign(openffi_uint8);
-	get_cdt_numeric_type_impl_fptr_assign(openffi_size);
-	get_cdt_numeric_type_impl_fptr_assign(openffi_bool);
-
-#define get_cdt_type_str_array_impl_fptr_assign(type) \
-	load_helper_function(get_cdt_##type##_array)
-	
-	get_cdt_type_str_array_impl_fptr_assign(openffi_string);
-	get_cdt_type_str_array_impl_fptr_assign(openffi_string8);
-	get_cdt_type_str_array_impl_fptr_assign(openffi_string16);
-	get_cdt_type_str_array_impl_fptr_assign(openffi_string32);
-
-#define get_cdt_type_array_impl_fptr_assign(type) \
-	load_helper_function(get_cdt_##type##_array);
-	
-	get_cdt_type_array_impl_fptr_assign(openffi_float64);
-	get_cdt_type_array_impl_fptr_assign(openffi_float32);
-	get_cdt_type_array_impl_fptr_assign(openffi_int64);
-	get_cdt_type_array_impl_fptr_assign(openffi_int32);
-	get_cdt_type_array_impl_fptr_assign(openffi_int16);
-	get_cdt_type_array_impl_fptr_assign(openffi_int8);
-	get_cdt_type_array_impl_fptr_assign(openffi_uint64);
-	get_cdt_type_array_impl_fptr_assign(openffi_uint32);
-	get_cdt_type_array_impl_fptr_assign(openffi_uint16);
-	get_cdt_type_array_impl_fptr_assign(openffi_uint8);
-	get_cdt_type_array_impl_fptr_assign(openffi_size);
-	get_cdt_type_array_impl_fptr_assign(openffi_bool);
-
-#define set_cdt_string_type_impl_fptr_assign(type) \
-	load_helper_function(set_cdt_##type);
-	
-	set_cdt_string_type_impl_fptr_assign(openffi_string);
-	set_cdt_string_type_impl_fptr_assign(openffi_string8);
-	set_cdt_string_type_impl_fptr_assign(openffi_string16);
-	set_cdt_string_type_impl_fptr_assign(openffi_string32);
-
-#define set_cdt_numeric_type_impl_fptr_assign(type) \
-	load_helper_function(set_cdt_##type);
-	
-	set_cdt_numeric_type_impl_fptr_assign(openffi_float64);
-	set_cdt_numeric_type_impl_fptr_assign(openffi_float32);
-	set_cdt_numeric_type_impl_fptr_assign(openffi_int64);
-	set_cdt_numeric_type_impl_fptr_assign(openffi_int32);
-	set_cdt_numeric_type_impl_fptr_assign(openffi_int16);
-	set_cdt_numeric_type_impl_fptr_assign(openffi_int8);
-	set_cdt_numeric_type_impl_fptr_assign(openffi_uint64);
-	set_cdt_numeric_type_impl_fptr_assign(openffi_uint32);
-	set_cdt_numeric_type_impl_fptr_assign(openffi_uint16);
-	set_cdt_numeric_type_impl_fptr_assign(openffi_uint8);
-	set_cdt_numeric_type_impl_fptr_assign(openffi_size);
-	set_cdt_numeric_type_impl_fptr_assign(openffi_bool);
-
-#define set_cdt_openffi_str_array_impl_fptr_assign(type) \
-	load_helper_function(set_cdt_##type##_array);
-	
-	set_cdt_openffi_str_array_impl_fptr_assign(openffi_string);
-	set_cdt_openffi_str_array_impl_fptr_assign(openffi_string8);
-	set_cdt_openffi_str_array_impl_fptr_assign(openffi_string16);
-	set_cdt_openffi_str_array_impl_fptr_assign(openffi_string32);
-
-#define set_cdt_type_array_impl_fptr_assign(type) \
-	load_helper_function(set_cdt_##type##_array);
-	
-	set_cdt_type_array_impl_fptr_assign(openffi_float64);
-	set_cdt_type_array_impl_fptr_assign(openffi_float32);
-	set_cdt_type_array_impl_fptr_assign(openffi_int64);
-	set_cdt_type_array_impl_fptr_assign(openffi_int32);
-	set_cdt_type_array_impl_fptr_assign(openffi_int16);
-	set_cdt_type_array_impl_fptr_assign(openffi_int8);
-	set_cdt_type_array_impl_fptr_assign(openffi_uint64);
-	set_cdt_type_array_impl_fptr_assign(openffi_uint32);
-	set_cdt_type_array_impl_fptr_assign(openffi_uint16);
-	set_cdt_type_array_impl_fptr_assign(openffi_uint8);
-	set_cdt_type_array_impl_fptr_assign(openffi_size);
-	set_cdt_type_array_impl_fptr_assign(openffi_bool);
-	*/
 #define get_numeric_element_impl_fptr_assign(type) \
 	load_helper_function(get_##type##_element);
 	
@@ -552,6 +374,11 @@ const char* load_cdt_capi()
 	get_numeric_element_impl_fptr_assign(openffi_uint16);
 	get_numeric_element_impl_fptr_assign(openffi_uint8);
 	get_numeric_element_impl_fptr_assign(openffi_size);
+	get_numeric_element_impl_fptr_assign(openffi_handle);
+	
+	load_helper_function(get_openffi_string8_element);
+	load_helper_function(get_openffi_string16_element);
+	load_helper_function(get_openffi_string32_element);
 
 #define set_numeric_element_impl_fptr_assign(type) \
 	load_helper_function(set_##type##_element);
@@ -567,6 +394,10 @@ const char* load_cdt_capi()
 	set_numeric_element_impl_fptr_assign(openffi_uint16);
 	set_numeric_element_impl_fptr_assign(openffi_uint8);
 	set_numeric_element_impl_fptr_assign(openffi_size);
+	
+	load_helper_function(set_openffi_string8_element);
+	load_helper_function(set_openffi_string16_element);
+	load_helper_function(set_openffi_string32_element);
 	
 #define alloc_numeric_on_heap_impl_fptr_assign(type) \
 	load_helper_function(alloc_##type##_on_heap)
@@ -587,7 +418,6 @@ const char* load_cdt_capi()
 #define alloc_str_on_heap_impl_fptr_assign(type) \
 	load_helper_function(alloc_##type##_on_heap)
 	
-	alloc_str_on_heap_impl_fptr_assign(openffi_string);
 	alloc_str_on_heap_impl_fptr_assign(openffi_string8);
 	alloc_str_on_heap_impl_fptr_assign(openffi_string16);
 	alloc_str_on_heap_impl_fptr_assign(openffi_string32);

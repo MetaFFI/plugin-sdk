@@ -165,7 +165,8 @@ func (this *IDLDefinition) Validate() error{
 type ModuleDefinition struct{
 	Name string `json:"name"`
 	TargetLanguage string `json:"target_language"`
-	Comment string `json:"comment,omitempty"`
+	Comment string `json:"comment"`
+	TypeAliases map[string]OpenFFIType `json:"type_aliases"` // aliases can be used as parameters in functions
 	Tags map[string]string `json:"tags"`
 	Functions []*FunctionDefinition `json:"functions"`
 }
@@ -212,11 +213,11 @@ func (this *ModuleDefinition) parseWellKnownTags(pathToFunction map[string]strin
 //--------------------------------------------------------------------
 type FunctionDefinition struct {
 	Name                  string             `json:"name"`
-	Comment               string             `json:"comment,omitempty"`
+	Comment               string             `json:"comment"`
+	Operator              Operator           `json:"operator"` // in case function is an operator overloading
+	Type                  FunctionType       `json:"function_type"`
 	Tags                  map[string]string  `json:"tags"`
 	PathToForeignFunction map[string]string  `json:"path_to_foreign_function"`
-	ParametersType        string             `json:"parameter_type"`
-	ReturnValuesType      string             `json:"return_values_type"`
 	Parameters            []*FieldDefinition `json:"parameters"`
 	ReturnValues          []*FieldDefinition `json:"return_values"`
 }
@@ -281,17 +282,13 @@ func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]str
 //--------------------------------------------------------------------
 type FieldDefinition struct{
 	Name string `json:"name"`
-	Type string `json:"type"`
-	Comment string `json:"comment,omitempty"`
+	Type OpenFFIType `json:"type"`
+	Comment string `json:"comment"`
 	Tags map[string]string `json:"tags"`
-	MapKeyType string `json:"map_key_type,omitempty"`
-	MapValueType string `json:"map_value_type,omitempty"`
 	Dimensions int `json:"dimensions"`
-	InnerTypes []*FieldDefinition `json:"inner_types,omitempty"`
-	PassMethod string `json:"pass_method"`
 }
 func (this *FieldDefinition) IsString() bool{
-	return strings.Index(this.Type, "string") == 0
+	return strings.Index(string(this.Type), "string") == 0
 }
 
 func (this *FieldDefinition) IsBool() bool{
@@ -316,19 +313,10 @@ func (this *FieldDefinition) AppendComment(comment string){
 //--------------------------------------------------------------------
 func (this *FieldDefinition) parseWellKnownTags() error{
 
-	for tagName, tagVal := range this.Tags{
+	for tagName, _ := range this.Tags{
 		switch tagName {
 			case FUNCTION_PATH:
 				return fmt.Errorf("field level cannot hold openffi_function_path")
-			case PASS_METHOD:
-				this.PassMethod = tagVal
-		}
-	}
-
-	for _, inner := range this.InnerTypes{
-		err := inner.parseWellKnownTags()
-		if err != nil{
-			return err
 		}
 	}
 
@@ -336,6 +324,6 @@ func (this *FieldDefinition) parseWellKnownTags() error{
 }
 //--------------------------------------------------------------------
 func (this *FieldDefinition) IsInteger() bool{
-	return strings.Index(this.Type, "int") == 0
+	return strings.Index(string(this.Type), "int") == 0
 }
 //--------------------------------------------------------------------

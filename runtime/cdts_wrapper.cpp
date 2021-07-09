@@ -38,13 +38,6 @@ void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callba
                                             this->cdts[index].cdt_val.otype##_array_val.dimensions); \
             continue;\
 		} \
-		else if(cur_type & openffi_pointer_type)\
-		{ \
-			 callbacks.on_##otype##_ptr(values_to_set,   \
-                                        index,          \
-                                        this->cdts[index].cdt_val.otype##_ptr_val.val); \
-			 continue; \
-		} \
 		else \
         { \
 			callbacks.on_##otype(values_to_set, index, this->cdts[index].cdt_val.otype##_val.val); \
@@ -65,14 +58,6 @@ void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callba
 										this->cdts[index].cdt_val.otype##_array_val.dimensions); \
 			continue; \
 		} \
-		else if(cur_type & openffi_pointer_type)\
-		{ \
-			callbacks.on_##otype##_ptr(values_to_set,  \
-										index,\
-							            this->cdts[index].cdt_val.otype##_ptr_val.val,                  \
-							            this->cdts[index].cdt_val.otype##_ptr_val.length); \
-            continue; \
-		}\
 		else\
         {\
             callbacks.on_##otype(values_to_set,\
@@ -94,7 +79,6 @@ void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callba
 		else if_parse_numeric_type(openffi_uint32)
 		else if_parse_numeric_type(openffi_uint64)
 		else if_parse_numeric_type(openffi_bool)
-		else if_parse_string_type(openffi_string)
 		else if_parse_string_type(openffi_string8)
 		else if_parse_string_type(openffi_string16)
 		else if_parse_string_type(openffi_string32)
@@ -134,16 +118,6 @@ void cdts_wrapper::build(const openffi_types types[], openffi_size types_length,
             this->cdts[index].cdt_val.otype##_array_val.dimensions = dimensions;\
             continue; \
 		} \
-		else if(cur_type & openffi_pointer_type)\
-		{ \
-			otype* pval; \
-            openffi_bool free_required; \
-            callbacks.set_##otype##_ptr(values_to_set, index, pval, free_required); \
-			this->cdts[index].type = otype##_ptr_type;\
-            this->cdts[index].free_required = free_required; \
-			this->cdts[index].cdt_val.otype##_ptr_val.val = pval;\
-			continue; \
-		} \
 		else \
         { \
 			otype val; \
@@ -174,18 +148,6 @@ void cdts_wrapper::build(const openffi_types types[], openffi_size types_length,
             this->cdts[index].cdt_val.otype##_array_val.dimensions = dimensions;\
             continue; \
 		} \
-		else if(cur_type & openffi_pointer_type)\
-		{ \
-			otype* pval; \
-            openffi_size* length; \
-            openffi_bool free_required; \
-            callbacks.set_##otype##_ptr(values_to_set, index, pval, length, free_required); \
-			this->cdts[index].type = otype##_ptr_type;\
-            this->cdts[index].free_required = free_required; \
-			this->cdts[index].cdt_val.otype##_ptr_val.val = pval;\
-            this->cdts[index].cdt_val.otype##_ptr_val.length = length;\
-            continue; \
-		}\
 		else\
         {\
 			otype val; \
@@ -216,7 +178,6 @@ void cdts_wrapper::build(const openffi_types types[], openffi_size types_length,
 		else if_build_numeric_type(openffi_uint32)
 		else if_build_numeric_type(openffi_uint64)
 		else if_build_numeric_type(openffi_bool)
-		else if_build_string_type(openffi_string)
 		else if_build_string_type(openffi_string8)
 		else if_build_string_type(openffi_string16)
 		else if_build_string_type(openffi_string32)

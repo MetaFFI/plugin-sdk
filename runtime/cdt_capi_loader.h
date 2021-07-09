@@ -36,8 +36,8 @@ alloc_numeric_on_heap_decl_fptr(openffi_uint8);
 alloc_numeric_on_heap_decl_fptr(openffi_size);
 alloc_numeric_on_heap_decl_fptr(openffi_bool);
 alloc_numeric_on_heap_decl_fptr(openffi_type);
+alloc_numeric_on_heap_decl_fptr(openffi_handle);
 
-alloc_string_on_heap_decl_fptr(openffi_string);
 alloc_string_on_heap_decl_fptr(openffi_string8);
 alloc_string_on_heap_decl_fptr(openffi_string16);
 alloc_string_on_heap_decl_fptr(openffi_string32);
@@ -51,63 +51,6 @@ alloc_string_on_heap_decl_fptr(openffi_string32);
 
 openffi_type get_type(struct cdt* data_array, int index);
 struct cdt* get_cdt(struct cdt* data_array, int index);
-//
-//#define get_cdt_numeric_type_decl_fptr(type) \
-//int get_cdt_##type(struct cdt* data_array, int index, type** out_res); \
-//int get_cdt_##type##_array(struct cdt* data_array, int index, type** out_res, openffi_size** dimensions_lengths, openffi_size* dimensions);
-//
-//#define get_cdt_string_type_decl_fptr(type)\
-//int get_cdt_##type(struct cdt* data_array, int index, type* out_res, openffi_size** length); \
-//int get_cdt_##type##_array(struct cdt* data_array, int index, type** array, openffi_size** sizes_array, openffi_size** dimensions_lengths, openffi_size* dimensions);
-//
-//get_cdt_numeric_type_decl_fptr(openffi_float64);
-//get_cdt_numeric_type_decl_fptr(openffi_float32);
-//get_cdt_numeric_type_decl_fptr(openffi_int64);
-//get_cdt_numeric_type_decl_fptr(openffi_int32);
-//get_cdt_numeric_type_decl_fptr(openffi_int16);
-//get_cdt_numeric_type_decl_fptr(openffi_int8);
-//get_cdt_numeric_type_decl_fptr(openffi_uint64);
-//get_cdt_numeric_type_decl_fptr(openffi_uint32);
-//get_cdt_numeric_type_decl_fptr(openffi_uint16);
-//get_cdt_numeric_type_decl_fptr(openffi_uint8);
-//get_cdt_numeric_type_decl_fptr(openffi_size);
-//get_cdt_numeric_type_decl_fptr(openffi_bool);
-//get_cdt_string_type_decl_fptr(openffi_string);
-//get_cdt_string_type_decl_fptr(openffi_string8);
-//get_cdt_string_type_decl_fptr(openffi_string16);
-//get_cdt_string_type_decl_fptr(openffi_string32);
-//
-//
-////====================================================================
-//
-///************************************************
-//*   Setters
-//*************************************************/
-//
-//#define set_cdt_numeric_type_decl_fptr(type) \
-//int set_cdt_##type(struct cdt* data_array, int index, type* val, openffi_bool free_required); \
-//int set_cdt_##type##_array(struct cdt* data_array, int index, type* array, openffi_size* dimensions_lengths, openffi_size dimensions, openffi_bool free_required);
-//
-//#define set_cdt_string_type_decl_fptr(type)\
-//int set_cdt_##type(struct cdt* data_array, int index, type val, openffi_size* length, openffi_bool free_required); \
-//int set_cdt_##type##_array(struct cdt* data_array, int index, type* array, openffi_size* string_sizes, openffi_size* dimensions_lengths, openffi_size dimensions, openffi_bool free_required);
-//
-//set_cdt_numeric_type_decl_fptr(openffi_float64);
-//set_cdt_numeric_type_decl_fptr(openffi_float32);
-//set_cdt_numeric_type_decl_fptr(openffi_int64);
-//set_cdt_numeric_type_decl_fptr(openffi_int32);
-//set_cdt_numeric_type_decl_fptr(openffi_int16);
-//set_cdt_numeric_type_decl_fptr(openffi_int8);
-//set_cdt_numeric_type_decl_fptr(openffi_uint64);
-//set_cdt_numeric_type_decl_fptr(openffi_uint32);
-//set_cdt_numeric_type_decl_fptr(openffi_uint16);
-//set_cdt_numeric_type_decl_fptr(openffi_uint8);
-//set_cdt_numeric_type_decl_fptr(openffi_size);
-//set_cdt_numeric_type_decl_fptr(openffi_bool);
-//set_cdt_string_type_decl_fptr(openffi_string);
-//set_cdt_string_type_decl_fptr(openffi_string8);
-//set_cdt_string_type_decl_fptr(openffi_string16);
-//set_cdt_string_type_decl_fptr(openffi_string32);
 
 //====================================================================
 
@@ -132,7 +75,7 @@ get_numeric_element_decl_fptr(openffi_uint32);
 get_numeric_element_decl_fptr(openffi_uint16);
 get_numeric_element_decl_fptr(openffi_uint8);
 get_numeric_element_decl_fptr(openffi_size);
-get_string_element_decl_fptr(openffi_string);
+get_numeric_element_decl_fptr(openffi_handle);
 get_string_element_decl_fptr(openffi_string8);
 get_string_element_decl_fptr(openffi_string16);
 get_string_element_decl_fptr(openffi_string32);
@@ -159,7 +102,7 @@ set_numeric_element_decl_fptr(openffi_uint32);
 set_numeric_element_decl_fptr(openffi_uint16);
 set_numeric_element_decl_fptr(openffi_uint8);
 set_numeric_element_decl_fptr(openffi_size);
-set_string_element_decl_fptr(openffi_string);
+set_numeric_element_decl_fptr(openffi_handle);
 set_string_element_decl_fptr(openffi_string8);
 set_string_element_decl_fptr(openffi_string16);
 set_string_element_decl_fptr(openffi_string32);
@@ -168,7 +111,6 @@ set_string_element_decl_fptr(openffi_string32);
 /************************************************
 *   XLLR functions
 *************************************************/
-//extern void (*pxllr_call)(const char*, uint32_t, int64_t, void**, uint64_t, void**, uint64_t, char**, uint64_t*);
 void xllr_call(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len,
 				int64_t function_id,
 				struct cdt* parameters, uint64_t parameters_length,
@@ -176,13 +118,11 @@ void xllr_call(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len
 				char** out_err, uint64_t* out_err_len
 );
 
-//extern int64_t (*pxllr_load_function)(const char*, uint32_t, const char*, uint32_t, int64_t, char**, uint32_t*);
 int64_t xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
 							 const char* function_path, uint32_t function_path_len,
 							 int64_t function_id_opt,
 							 char** out_err, uint32_t* out_err_len);
 
-//extern void (*pxllr_free_runtime_plugin)(const char*, uint32_t, char**, uint32_t*);
 void xllr_free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len);
 
 /************************************************

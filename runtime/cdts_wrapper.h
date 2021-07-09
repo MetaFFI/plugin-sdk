@@ -139,7 +139,6 @@ struct cdts_parse_callbacks
 	on_parse_numeric(openffi_uint32);
 	on_parse_numeric(openffi_uint64);
 	on_parse_numeric(openffi_bool);
-	on_parse_string(openffi_string);
 	on_parse_string(openffi_string8);
 	on_parse_string(openffi_string16);
 	on_parse_string(openffi_string32);
@@ -167,7 +166,6 @@ struct cdts_parse_callbacks
 		prase_constructor_param(openffi_uint32),
 		prase_constructor_param(openffi_uint64),
 		prase_constructor_param(openffi_bool),
-		prase_constructor_param(openffi_string),
 		prase_constructor_param(openffi_string8),
 		prase_constructor_param(openffi_string16),
 		prase_constructor_param(openffi_string32)
@@ -182,7 +180,6 @@ struct cdts_parse_callbacks
 	   parse_constructor_init_param(openffi_uint32),
 	   parse_constructor_init_param(openffi_uint64),
 	   parse_constructor_init_param(openffi_bool),
-	   parse_constructor_init_param(openffi_string),
 	   parse_constructor_init_param(openffi_string8),
 	   parse_constructor_init_param(openffi_string16),
 	   parse_constructor_init_param(openffi_string32)
@@ -216,7 +213,6 @@ struct cdts_build_callbacks
 	set_build_numeric(openffi_uint32);
 	set_build_numeric(openffi_uint64);
 	set_build_numeric(openffi_bool);
-	set_build_string(openffi_string);
 	set_build_string(openffi_string8);
 	set_build_string(openffi_string16);
 	set_build_string(openffi_string32);
@@ -246,7 +242,6 @@ struct cdts_build_callbacks
 		build_constructor_param(openffi_uint32),
 		build_constructor_param(openffi_uint64),
 		build_constructor_param(openffi_bool),
-		build_constructor_param(openffi_string),
 		build_constructor_param(openffi_string8),
 		build_constructor_param(openffi_string16),
 		build_constructor_param(openffi_string32)
@@ -261,7 +256,6 @@ struct cdts_build_callbacks
 	   build_constructor_init_param(openffi_uint32),
 	   build_constructor_init_param(openffi_uint64),
 	   build_constructor_init_param(openffi_bool),
-	   build_constructor_init_param(openffi_string),
 	   build_constructor_init_param(openffi_string8),
 	   build_constructor_init_param(openffi_string16),
 	   build_constructor_init_param(openffi_string32)
