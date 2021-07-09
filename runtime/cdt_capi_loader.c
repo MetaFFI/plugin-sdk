@@ -432,12 +432,13 @@ const char* load_cdt_capi()
 #define load_helper_function(name) \
 	p##name = (p##name##_t)load_symbol(cdt_helper_xllr_handle, #name, &err); \
 	if(err){ return err; }
-	
+
 	load_helper_function(alloc_cdts_buffer);
 	load_helper_function(get_openffi_string_element);
 	load_helper_function(set_openffi_string_element);
 	load_helper_function(get_type);
-
+	load_helper_function(get_cdt);
+	
 #define get_cdt_string_type_impl_fptr_assign(type) \
 	load_helper_function(get_cdt_##type)
 	

@@ -25,7 +25,7 @@ void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callba
 	for(int index=0 ; index<this->cdts_length ; index++)
 	{
 		openffi_type cur_type = get_type(this->cdts, index);
-
+		
 #define if_parse_numeric_type(otype) \
 	if(cur_type & otype##_type) \
 	{ \
@@ -102,7 +102,7 @@ void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callba
 		{
 			// if got here - type is not handled!
 			std::stringstream ss;
-			ss << "Type: " << cur_type << " is not handled";
+			ss << "Type: " << cur_type << " is not supported";
 			throw std::runtime_error(ss.str());
 		}
 	}
@@ -224,7 +224,7 @@ void cdts_wrapper::build(const openffi_types types[], openffi_size types_length,
 		{
 			// if got here - type is not handled!
 			std::stringstream ss;
-			ss << "Type: " << cur_type << " is not handled";
+			ss << "Type: " << cur_type << " is not supported";
 			throw std::runtime_error(ss.str());
 		}
 	}

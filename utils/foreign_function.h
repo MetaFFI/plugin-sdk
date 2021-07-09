@@ -1,9 +1,10 @@
 #pragma once
 
 #include <boost/dll.hpp>
+#include "../runtime/cdt_structs.h"
 
-#define foreign_function_entrypoint_signature void(void**, uint64_t,    \
-                                                   void**, uint64_t,    \
+#define foreign_function_entrypoint_signature void(cdt*, uint64_t,    \
+                                                   cdt*, uint64_t,    \
                                                    char**, uint64_t*)
 
 typedef boost::dll::detail::library_function<foreign_function_entrypoint_signature> foreign_function_entrypoint;

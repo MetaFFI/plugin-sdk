@@ -131,8 +131,3 @@ struct cdt
 	openffi_bool free_required;
 	union cdt_types cdt_val;
 };
-
-
-
-
-
