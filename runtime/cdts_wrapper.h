@@ -120,13 +120,11 @@ struct cdts_parse_callbacks
 {
 #define on_parse_numeric(type) \
 	std::function<void(void* values_to_set, int index, const type& val_to_set)> on_##type;\
-    std::function<void(void* values_to_set, int index, const type* pval_to_set)> on_##type##_ptr;\
 	std::function<void(void* values_to_set, int index, const type* parray_to_set, const openffi_size* parray_dimensions_lengths, const openffi_size& array_dimensions)> on_##type##_array;
 
 #define on_parse_string(type) \
 	std::function<void(void* values_to_set, int index, const type& val_to_set, const openffi_size& val_length)> on_##type; \
-    std::function<void(void* values_to_set, int index, const type* pval_to_set, const openffi_size* pval_length)>  on_##type##_ptr;\
-	std::function<void(void* values_to_set, int index, const type* parray_to_set, const openffi_size* pelements_lengths_to_set, const openffi_size* parray_dimensions_lengths, const openffi_size& array_dimensions)>  on_##type##_array;
+    std::function<void(void* values_to_set, int index, const type* parray_to_set, const openffi_size* pelements_lengths_to_set, const openffi_size* parray_dimensions_lengths, const openffi_size& array_dimensions)>  on_##type##_array;
 	
 	on_parse_numeric(openffi_float32);
 	on_parse_numeric(openffi_float64);
@@ -145,12 +143,10 @@ struct cdts_parse_callbacks
 
 #define prase_constructor_param(type) \
 	typeof(on_##type) on_##type, \
-    typeof(on_##type##_ptr) on_##type##_ptr, \
 	typeof(on_##type##_array) on_##type##_array
 
 #define parse_constructor_init_param(type) \
 	on_##type(std::move(on_##type)),          \
-	on_##type##_ptr(std::move(on_##type##_ptr)), \
 	on_##type##_array(std::move(on_##type##_array))
 	
 	cdts_parse_callbacks
@@ -194,13 +190,11 @@ struct cdts_build_callbacks
 {
 #define set_build_numeric(type) \
 	std::function<void(void* values_to_set, int index, type& val_to_set)> set_##type;\
-    std::function<void(void* values_to_set, int index, type*& pval_to_set, openffi_bool& is_free_required)> set_##type##_ptr;\
-	std::function<void(void* values_to_set, int index, type*& parray_to_set, openffi_size*& parray_dimensions_lengths, openffi_size& array_dimensions, openffi_bool& is_free_required)> set_##type##_array;
+    std::function<void(void* values_to_set, int index, type*& parray_to_set, openffi_size*& parray_dimensions_lengths, openffi_size& array_dimensions, openffi_bool& is_free_required)> set_##type##_array;
 	
 #define set_build_string(type) \
 	std::function<void(void* values_to_set, int index, type& val_to_set, openffi_size& val_length)> set_##type; \
-    std::function<void(void* values_to_set, int index, type*& pval_to_set, openffi_size*& pval_length, openffi_bool& is_free_required)>  set_##type##_ptr;\
-	std::function<void(void* values_to_set, int index, type*& parray_to_set, openffi_size*& pelements_lengths_to_set, openffi_size*& parray_dimensions_lengths, openffi_size& array_dimensions, openffi_bool& is_free_required)>  set_##type##_array;
+    std::function<void(void* values_to_set, int index, type*& parray_to_set, openffi_size*& pelements_lengths_to_set, openffi_size*& parray_dimensions_lengths, openffi_size& array_dimensions, openffi_bool& is_free_required)>  set_##type##_array;
 		
 	set_build_numeric(openffi_float32);
 	set_build_numeric(openffi_float64);
@@ -221,12 +215,10 @@ struct cdts_build_callbacks
 	
 #define build_constructor_param(type) \
 	const typeof(set_##type)& set_##type, \
-    const typeof(set_##type##_ptr)& set_##type##_ptr, \
-	const typeof(set_##type##_array)& set_##type##_array
+    const typeof(set_##type##_array)& set_##type##_array
 
 #define build_constructor_init_param(type) \
 	set_##type(std::move(set_##type)),\
-	set_##type##_ptr(std::move(set_##type##_ptr)),\
 	set_##type##_array(std::move(set_##type##_array))
 		
 	cdts_build_callbacks

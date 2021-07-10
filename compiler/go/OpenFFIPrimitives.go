@@ -134,7 +134,6 @@ var TypeStringToTypeEnum = map[string]uint64{
 	"uint32": uint64(C.openffi_uint32_type),
 	"uint64": uint64(C.openffi_uint64_type),
 	"bool": uint64(C.openffi_bool_type),
-	"string": uint64(C.openffi_string_type),
 	"string8": uint64(C.openffi_string8_type),
 	"string16": uint64(C.openffi_string16_type),
 	"string32": uint64(C.openffi_string32_type),
@@ -164,4 +163,9 @@ var TypeStringToTypeEnum = map[string]uint64{
 
 	"handle_array": uint64(C.openffi_handle_array_type),
 	"size_array": uint64(C.openffi_size_array_type),
+}
+
+func IsOpenFFIType(openffiType string) bool{
+	_, found := TypeStringToTypeEnum[openffiType]
+	return found
 }

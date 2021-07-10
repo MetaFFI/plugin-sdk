@@ -25,8 +25,8 @@ int main()
 			openffi_uint32_type,
 			openffi_uint64_type,
 			openffi_bool_type,
-			openffi_string_type,
-			openffi_string_array_type,
+			openffi_string8_type,
+			openffi_string8_array_type,
 			openffi_uint8_array_type
 		};
 		
@@ -53,59 +53,24 @@ int main()
 		cdts_build_callbacks cbs
 		(
 			[&](void* values_to_set, int index, openffi_float32& val) { val = p1; },
-			[&](void* values_to_set, int index, openffi_float32*& val, openffi_bool& free_required)
-			{
-				val = &p1;
-				free_required = 0;
-			},
 			[&](void* values_to_set, int index, openffi_float32*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
 			[&](void* values_to_set, int index, openffi_float64& val) { val = p2; },
-			[&](void* values_to_set, int index, openffi_float64*& val, openffi_bool& free_required)
-			{
-				val = &p2;
-				free_required = 0;
-			},
 			[&](void* values_to_set, int index, openffi_float64*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
 			[&](void* values_to_set, int index, openffi_int8& val) { val = p3; },
-			[&](void* values_to_set, int index, openffi_int8*& val, openffi_bool& free_required)
-			{
-				val = &p3;
-				free_required = 0;
-			},
 			[&](void* values_to_set, int index, openffi_int8*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
 			[&](void* values_to_set, int index, openffi_int16& val) { val = p4; },
-			[&](void* values_to_set, int index, openffi_int16*& val, openffi_bool& free_required)
-			{
-				val = &p4;
-				free_required = 0;
-			},
 			[&](void* values_to_set, int index, openffi_int16*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
 			[&](void* values_to_set, int index, openffi_int32& val) { val = p5; },
-			[&](void* values_to_set, int index, openffi_int32*& val, openffi_bool& free_required)
-			{
-				val = &p5;
-				free_required = 0;
-			},
 			[&](void* values_to_set, int index, openffi_int32*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
 			[&](void* values_to_set, int index, openffi_int64& val) { val = p6; },
-			[&](void* values_to_set, int index, openffi_int64*& val, openffi_bool& free_required)
-			{
-				val = &p6;
-				free_required = 0;
-			},
 			[&](void* values_to_set, int index, openffi_int64*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
 			[&](void* values_to_set, int index, openffi_uint8& val) { val = p7; },
-			[&](void* values_to_set, int index, openffi_uint8*& val, openffi_bool& free_required)
-			{
-				val = &p7;
-				free_required = 0;
-			},
 			[&](void* values_to_set, int index, openffi_uint8*& array, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required)
 			{
 				array = &p14[0];
@@ -115,35 +80,15 @@ int main()
 			},
 			
 			[&](void* values_to_set, int index, openffi_uint16& val) { val = p8; },
-			[&](void* values_to_set, int index, openffi_uint16*& val, openffi_bool& free_required)
-			{
-				val = &p8;
-				free_required = 0;
-			},
 			[&](void* values_to_set, int index, openffi_uint16*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
 			[&](void* values_to_set, int index, openffi_uint32& val) { val = p9; },
-			[&](void* values_to_set, int index, openffi_uint32*& val, openffi_bool& free_required)
-			{
-				val = &p9;
-				free_required = 0;
-			},
 			[&](void* values_to_set, int index, openffi_uint32*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
 			[&](void* values_to_set, int index, openffi_uint64& val) { val = p10; },
-			[&](void* values_to_set, int index, openffi_uint64*& val, openffi_bool& free_required)
-			{
-				val = &p10;
-				free_required = 0;
-			},
 			[&](void* values_to_set, int index, openffi_uint64*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
 			[&](void* values_to_set, int index, openffi_bool& val) { val = p11; },
-			[&](void* values_to_set, int index, openffi_bool*& val, openffi_bool& free_required)
-			{
-				val = &p11;
-				free_required = 0;
-			},
 			[&](void* values_to_set, int index, openffi_bool*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
 			[&](void* values_to_set, int index, openffi_string8& val, openffi_size& s)
@@ -151,7 +96,6 @@ int main()
 				val = (char*) p12.c_str();
 				s = p12_len;
 			},
-			[&](void* values_to_set, int index, openffi_string8*& val, openffi_size*& s, openffi_bool& free_required) {},
 			[&](void* values_to_set, int index, openffi_string8*& array, openffi_size*& strings_lengths, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required)
 			{
 				array = &p13[0];
@@ -162,11 +106,9 @@ int main()
 			},
 			
 			[&](void* values_to_set, int index, openffi_string16& val, openffi_size& s) {},
-			[&](void* values_to_set, int index, openffi_string16*& val, openffi_size*& s, openffi_bool& free_required) {},
 			[&](void* values_to_set, int index, openffi_string16*&, openffi_size*&, openffi_size*&, openffi_size&, openffi_bool&) {},
 			
 			[&](void* values_to_set, int index, openffi_string32& val, openffi_size& s) {},
-			[&](void* values_to_set, int index, openffi_string32*& val, openffi_size*& s, openffi_bool& free_required) {},
 			[&](void* values_to_set, int index, openffi_string32*&, openffi_size*&, openffi_size*&, openffi_size&, openffi_bool&) {}
 		);
 		
@@ -181,31 +123,24 @@ int main()
 		cdts_parse_callbacks cps
 		(
 			[&](void* values_to_set, int index, const openffi_float32& val) { asset_and_throw(val == p1); },
-			[&](void* values_to_set, int index, const openffi_float32* val){ asset_and_throw(*val != p1); },
 			[&](void* values_to_set, int index, const openffi_float32* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
 			[&](void* values_to_set, int index, const openffi_float64& val) { asset_and_throw(val == p2); },
-			[&](void* values_to_set, int index, const openffi_float64* val){ asset_and_throw(*val == p1); },
 			[&](void* values_to_set, int index, const openffi_float64* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
 			[&](void* values_to_set, int index, const openffi_int8& val) { asset_and_throw(val == p3); },
-			[&](void* values_to_set, int index, const openffi_int8* val){ asset_and_throw(*val == p3); },
 			[&](void* values_to_set, int index, const openffi_int8* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
 			[&](void* values_to_set, int index, const openffi_int16& val) { asset_and_throw(val == p4); },
-			[&](void* values_to_set, int index, const openffi_int16* val){ asset_and_throw(val == &p4); },
 			[&](void* values_to_set, int index, const openffi_int16* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
 			[&](void* values_to_set, int index, const openffi_int32& val) { asset_and_throw(val == p5); },
-			[&](void* values_to_set, int index, const openffi_int32* val){ asset_and_throw(*val == p5); },
 			[&](void* values_to_set, int index, const openffi_int32* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
 			[&](void* values_to_set, int index, const openffi_int64& val) { asset_and_throw(val == p6); },
-			[&](void* values_to_set, int index, const openffi_int64* val){ asset_and_throw(*val == p6); },
 			[&](void* values_to_set, int index, const openffi_int64* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
 			[&](void* values_to_set, int index, const openffi_uint8& val) { asset_and_throw(val == p7); },
-			[&](void* values_to_set, int index, const openffi_uint8* val){ asset_and_throw(*val == p7); },
 			[&](void* values_to_set, int index, const openffi_uint8* array, const openffi_size* dimensions_lengths, const openffi_size& dimensions)
 			{
 				asset_and_throw(array[0] == p14[0]);
@@ -220,19 +155,15 @@ int main()
 			},
 			
 			[&](void* values_to_set, int index, const openffi_uint16& val) { asset_and_throw(val == p8); },
-			[&](void* values_to_set, int index, const openffi_uint16* val){ asset_and_throw(*val == p8); },
 			[&](void* values_to_set, int index, const openffi_uint16* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
 			[&](void* values_to_set, int index, const openffi_uint32& val) { asset_and_throw(val == p9); },
-			[&](void* values_to_set, int index, const openffi_uint32* val){ asset_and_throw(*val == p9); },
 			[&](void* values_to_set, int index, const openffi_uint32* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
 			[&](void* values_to_set, int index, const openffi_uint64& val) { asset_and_throw(val == p10); },
-			[&](void* values_to_set, int index, const openffi_uint64* val) { asset_and_throw(*val == p10); },
 			[&](void* values_to_set, int index, const openffi_uint64* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
 			[&](void* values_to_set, int index, const openffi_bool& val) { asset_and_throw(val == p11); },
-			[&](void* values_to_set, int index, const openffi_bool* val){ asset_and_throw(*val == p11); },
 			[&](void* values_to_set, int index, const openffi_bool* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
 			[&](void* values_to_set, int index, const openffi_string8& val, const openffi_size& s)
@@ -240,7 +171,6 @@ int main()
 				asset_and_throw(p12 == val);
 				asset_and_throw(s == p12.length());
 			},
-			[&](void* values_to_set, int index, const openffi_string8* val, const openffi_size* s) {},
 			[&](void* values_to_set, int index, const openffi_string8* array, const openffi_size* strings_lengths, const openffi_size* dimensions_lengths, const openffi_size& dimensions)
 			{
 				asset_and_throw(strcmp(p13[0], array[0]) == 0);
@@ -257,11 +187,9 @@ int main()
 			},
 
 			[&](void* values_to_set, int index, const openffi_string16& val, const openffi_size& s) {},
-			[&](void* values_to_set, int index, const openffi_string16* val, const openffi_size* s) {},
 			[&](void* values_to_set, int index, const openffi_string16*, const openffi_size*, const openffi_size*, const openffi_size&) {},
 			
 			[&](void* values_to_set, int index, const openffi_string32& val, const openffi_size& s) {},
-			[&](void* values_to_set, int index, const openffi_string32* val, const openffi_size* s) {},
 			[&](void* values_to_set, int index, const openffi_string32*, const openffi_size*, const openffi_size*, const openffi_size&) {}
 		);
 		

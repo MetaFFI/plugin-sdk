@@ -47,7 +47,6 @@ enum openffi_types
 	openffi_char16_type = 1048576ULL,
 	openffi_char32_type = 2097152ULL,
 	
-	openffi_string_type = 2048ULL,
 	openffi_string8_type = 4096ULL,
 	openffi_string16_type = 8192ULL,
 	openffi_string32_type = 16384ULL,
@@ -69,7 +68,6 @@ enum openffi_types
 	openffi_uint32_array_type = openffi_uint32_type | openffi_array_type,
 	openffi_uint64_array_type = openffi_uint64_type | openffi_array_type,
 	openffi_bool_array_type = openffi_bool_type | openffi_array_type,
-	openffi_string_array_type = openffi_string_type | openffi_array_type,
 	openffi_string8_array_type = openffi_string8_type | openffi_array_type,
 	openffi_string16_array_type = openffi_string16_type | openffi_array_type,
 	openffi_string32_array_type = openffi_string32_type | openffi_array_type,

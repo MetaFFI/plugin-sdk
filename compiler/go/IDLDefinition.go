@@ -166,7 +166,6 @@ type ModuleDefinition struct{
 	Name string `json:"name"`
 	TargetLanguage string `json:"target_language"`
 	Comment string `json:"comment"`
-	TypeAliases map[string]OpenFFIType `json:"type_aliases"` // aliases can be used as parameters in functions
 	Tags map[string]string `json:"tags"`
 	Functions []*FunctionDefinition `json:"functions"`
 }
@@ -261,6 +260,8 @@ func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]str
 	// set function path to function definition
 	this.PathToForeignFunction = copyMap(pathToFunction)
 
+
+	// parse well known tags in parameter
 	for _, p := range this.Parameters{
 		err := p.parseWellKnownTags()
 		if err != nil{
@@ -268,6 +269,7 @@ func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]str
 		}
 	}
 
+	// parse well known tags in parameter
 	for _, r := range this.ReturnValues{
 		err := r.parseWellKnownTags()
 		if err != nil{
@@ -283,10 +285,24 @@ func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]str
 type FieldDefinition struct{
 	Name string `json:"name"`
 	Type OpenFFIType `json:"type"`
+	TypeAlias string `json:"type_alias"`
 	Comment string `json:"comment"`
 	Tags map[string]string `json:"tags"`
 	Dimensions int `json:"dimensions"`
 }
+
+func (this *FieldDefinition) GetTypeOrAlias() string{
+	if this.TypeAlias != ""{
+		return this.TypeAlias
+	} else {
+		return string(this.Type)
+	}
+}
+
+func (this *FieldDefinition) IsTypeAlias() bool{
+	return this.TypeAlias != ""
+}
+
 func (this *FieldDefinition) IsString() bool{
 	return strings.Index(string(this.Type), "string") == 0
 }
@@ -313,10 +329,13 @@ func (this *FieldDefinition) AppendComment(comment string){
 //--------------------------------------------------------------------
 func (this *FieldDefinition) parseWellKnownTags() error{
 
-	for tagName, _ := range this.Tags{
+	for tagName, tagVal := range this.Tags{
 		switch tagName {
 			case FUNCTION_PATH:
 				return fmt.Errorf("field level cannot hold openffi_function_path")
+
+			case TYPE_ALIAS:
+				this.TypeAlias = tagVal
 		}
 	}
 
