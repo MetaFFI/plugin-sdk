@@ -122,7 +122,7 @@ const(
 	SIZE_ARRAY OpenFFIType = "size_array"
 )
 
-var TypeStringToTypeEnum = map[string]uint64{
+var TypeStringToTypeEnum = map[OpenFFIType]uint64{
 	"float64": uint64(C.openffi_float64_type),
 	"float32": uint64(C.openffi_float32_type),
 	"int8": uint64(C.openffi_int8_type),
@@ -166,6 +166,6 @@ var TypeStringToTypeEnum = map[string]uint64{
 }
 
 func IsOpenFFIType(openffiType string) bool{
-	_, found := TypeStringToTypeEnum[openffiType]
+	_, found := TypeStringToTypeEnum[OpenFFIType(openffiType)]
 	return found
 }
