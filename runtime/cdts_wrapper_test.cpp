@@ -50,6 +50,8 @@ int main()
 		std::vector<openffi_uint8> p14 = {2, 4, 6, 8, 10};
 		std::vector<openffi_size> p14_dimensions_lengths = {p14.size()};
 		
+		openffi_handle p15 = (void*)0xABDEF;
+		
 		cdts_build_callbacks cbs
 		(
 			[&](void* values_to_set, int index, openffi_float32& val) { val = p1; },
@@ -90,6 +92,9 @@ int main()
 			
 			[&](void* values_to_set, int index, openffi_bool& val) { val = p11; },
 			[&](void* values_to_set, int index, openffi_bool*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
+			
+			[&](void* values_to_set, int index, openffi_handle& val) { val = (void*)0xABDEF; },
+			[&](void* values_to_set, int index, openffi_handle*& arr, openffi_size*& dimensions_lengths, openffi_size& dimensions, openffi_bool& free_required) {},
 			
 			[&](void* values_to_set, int index, openffi_string8& val, openffi_size& s)
 			{
@@ -165,6 +170,9 @@ int main()
 			
 			[&](void* values_to_set, int index, const openffi_bool& val) { asset_and_throw(val == p11); },
 			[&](void* values_to_set, int index, const openffi_bool* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
+			
+			[&](void* values_to_set, int index, const openffi_handle& val) { asset_and_throw(val == p15); },
+			[&](void* values_to_set, int index, const openffi_handle* arr, const openffi_size* dimensions_lengths, const openffi_size& dimensions) {},
 			
 			[&](void* values_to_set, int index, const openffi_string8& val, const openffi_size& s)
 			{
