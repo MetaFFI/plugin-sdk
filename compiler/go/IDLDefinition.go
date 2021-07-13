@@ -307,8 +307,12 @@ func (this *FieldDefinition) IsString() bool{
 	return strings.Index(string(this.Type), "string") == 0
 }
 
+func (this *FieldDefinition) IsHandle() bool{
+	return this.Type == HANDLE
+}
+
 func (this *FieldDefinition) IsBool() bool{
-	return this.Type == "bool"
+	return this.Type == BOOL
 }
 
 func (this *FieldDefinition) IsArray() bool{
