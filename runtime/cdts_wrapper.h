@@ -2,6 +2,7 @@
 #include "cdt_structs.h"
 #include <sstream>
 #include <functional>
+#include <utility>
 
 namespace openffi::runtime
 {
@@ -214,7 +215,7 @@ struct cdts_build_callbacks
 	set_build_string(openffi_string8);
 	set_build_string(openffi_string16);
 	set_build_string(openffi_string32);
-
+	std::function<void(void* values_to_set, int index, cdt* cdt_elem_to_set)> set_any;
 	
 	
 #define build_constructor_param(type) \

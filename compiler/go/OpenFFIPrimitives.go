@@ -90,6 +90,8 @@ const(
 
 	HANDLE OpenFFIType = "handle"
 
+	ANY OpenFFIType = "any" // Parameter can receive any OpenFFI type
+
 	SIZE OpenFFIType = "size"
 
 	//--------------------------------------------------------------------
@@ -123,46 +125,48 @@ const(
 )
 
 var TypeStringToTypeEnum = map[OpenFFIType]uint64{
-	"float64": uint64(C.openffi_float64_type),
-	"float32": uint64(C.openffi_float32_type),
-	"int8": uint64(C.openffi_int8_type),
-	"int16": uint64(C.openffi_int16_type),
-	"int32": uint64(C.openffi_int32_type),
-	"int64": uint64(C.openffi_int64_type),
-	"uint8": uint64(C.openffi_uint8_type),
-	"uint16": uint64(C.openffi_uint16_type),
-	"uint32": uint64(C.openffi_uint32_type),
-	"uint64": uint64(C.openffi_uint64_type),
-	"bool": uint64(C.openffi_bool_type),
-	"string8": uint64(C.openffi_string8_type),
-	"string16": uint64(C.openffi_string16_type),
-	"string32": uint64(C.openffi_string32_type),
-	"char8": uint64(C.openffi_char8_type),
-	"char16": uint64(C.openffi_char16_type),
-	"char32": uint64(C.openffi_char32_type),
-	"handle": uint64(C.openffi_handle_type),
+	FLOAT64: uint64(C.openffi_float64_type),
+	FLOAT32: uint64(C.openffi_float32_type),
+	INT8: uint64(C.openffi_int8_type),
+	INT16: uint64(C.openffi_int16_type),
+	INT32: uint64(C.openffi_int32_type),
+	INT64: uint64(C.openffi_int64_type),
+	UINT8: uint64(C.openffi_uint8_type),
+	UINT16: uint64(C.openffi_uint16_type),
+	UINT32: uint64(C.openffi_uint32_type),
+	UINT64: uint64(C.openffi_uint64_type),
+	BOOL: uint64(C.openffi_bool_type),
+	STRING8: uint64(C.openffi_string8_type),
+	STRING16: uint64(C.openffi_string16_type),
+	STRING32: uint64(C.openffi_string32_type),
+	CHAR8: uint64(C.openffi_char8_type),
+	CHAR16: uint64(C.openffi_char16_type),
+	CHAR32: uint64(C.openffi_char32_type),
+	HANDLE: uint64(C.openffi_handle_type),
 
 	"array": uint64(C.openffi_array_type),
 
-	"size": uint64(C.openffi_size_type),
+	SIZE: uint64(C.openffi_size_type),
 
-	"float64_array": uint64(C.openffi_float64_array_type),
-	"float32_array": uint64(C.openffi_float32_array_type),
-	"int8_array": uint64(C.openffi_int8_array_type),
-	"int16_array": uint64(C.openffi_int16_array_type),
-	"int32_array": uint64(C.openffi_int32_array_type),
-	"int64_array": uint64(C.openffi_int64_array_type),
-	"uint8_array": uint64(C.openffi_uint8_array_type),
-	"uint16_array": uint64(C.openffi_uint16_array_type),
-	"uint32_array": uint64(C.openffi_uint32_array_type),
-	"uint64_array": uint64(C.openffi_uint64_array_type),
-	"bool_array": uint64(C.openffi_bool_array_type),
-	"string8_array": uint64(C.openffi_string8_array_type),
-	"string16_array": uint64(C.openffi_string16_array_type),
-	"string32_array": uint64(C.openffi_string32_array_type),
+	ANY: uint64(C.openffi_any_type),
 
-	"handle_array": uint64(C.openffi_handle_array_type),
-	"size_array": uint64(C.openffi_size_array_type),
+	FLOAT64_ARRAY: uint64(C.openffi_float64_array_type),
+	FLOAT32_ARRAY: uint64(C.openffi_float32_array_type),
+	INT8_ARRAY: uint64(C.openffi_int8_array_type),
+	INT16_ARRAY: uint64(C.openffi_int16_array_type),
+	INT32_ARRAY: uint64(C.openffi_int32_array_type),
+	INT64_ARRAY: uint64(C.openffi_int64_array_type),
+	UINT8_ARRAY: uint64(C.openffi_uint8_array_type),
+	UINT16_ARRAY: uint64(C.openffi_uint16_array_type),
+	UINT32_ARRAY: uint64(C.openffi_uint32_array_type),
+	UINT64_ARRAY: uint64(C.openffi_uint64_array_type),
+	BOOL_ARRAY: uint64(C.openffi_bool_array_type),
+	STRING8_ARRAY: uint64(C.openffi_string8_array_type),
+	STRING16_ARRAY: uint64(C.openffi_string16_array_type),
+	STRING32_ARRAY: uint64(C.openffi_string32_array_type),
+
+	HANDLE_ARRAY: uint64(C.openffi_handle_array_type),
+	SIZE_ARRAY: uint64(C.openffi_size_array_type),
 }
 
 func IsOpenFFIType(openffiType string) bool{

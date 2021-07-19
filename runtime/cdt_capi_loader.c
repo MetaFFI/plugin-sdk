@@ -84,6 +84,7 @@ get_numeric_element_impl_fptr(openffi_uint16);
 get_numeric_element_impl_fptr(openffi_uint8);
 get_numeric_element_impl_fptr(openffi_size);
 get_numeric_element_impl_fptr(openffi_handle);
+get_numeric_element_impl_fptr(openffi_bool);
 get_string_element_impl_fptr(openffi_string8);
 get_string_element_impl_fptr(openffi_string16);
 get_string_element_impl_fptr(openffi_string32);
@@ -115,6 +116,7 @@ set_numeric_element_impl_fptr(openffi_uint16);
 set_numeric_element_impl_fptr(openffi_uint8);
 set_numeric_element_impl_fptr(openffi_size);
 set_numeric_element_impl_fptr(openffi_handle);
+set_numeric_element_impl_fptr(openffi_bool);
 set_string_element_impl_fptr(openffi_string8);
 set_string_element_impl_fptr(openffi_string16);
 set_string_element_impl_fptr(openffi_string32);
@@ -374,6 +376,7 @@ const char* load_cdt_capi()
 	get_numeric_element_impl_fptr_assign(openffi_uint16);
 	get_numeric_element_impl_fptr_assign(openffi_uint8);
 	get_numeric_element_impl_fptr_assign(openffi_size);
+	get_numeric_element_impl_fptr_assign(openffi_bool);
 	get_numeric_element_impl_fptr_assign(openffi_handle);
 	
 	load_helper_function(get_openffi_string8_element);
@@ -394,6 +397,7 @@ const char* load_cdt_capi()
 	set_numeric_element_impl_fptr_assign(openffi_uint16);
 	set_numeric_element_impl_fptr_assign(openffi_uint8);
 	set_numeric_element_impl_fptr_assign(openffi_size);
+	set_numeric_element_impl_fptr_assign(openffi_bool);
 	
 	load_helper_function(set_openffi_string8_element);
 	load_helper_function(set_openffi_string16_element);

@@ -220,6 +220,10 @@ type FunctionDefinition struct {
 	Parameters            []*FieldDefinition `json:"parameters"`
 	ReturnValues          []*FieldDefinition `json:"return_values"`
 }
+func (this *FunctionDefinition) IsMethod() bool{
+	return this.Type == METHOD
+}
+
 func (this *FunctionDefinition) SetTag(tag string, val string){
 
 	if this.Tags == nil{
@@ -254,6 +258,9 @@ func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]str
 			case FUNCTION_PATH:
 				pathToFunction, err = parsePathToFunction(tagVal, pathToFunction)
 				if err != nil{ return err }
+
+			case FUNCTION_TYPE:
+				this.Type = FunctionType(tagVal)
 		}
 	}
 
@@ -309,6 +316,10 @@ func (this *FieldDefinition) IsString() bool{
 
 func (this *FieldDefinition) IsHandle() bool{
 	return this.Type == HANDLE
+}
+
+func (this *FieldDefinition) IsAny() bool{
+	return this.Type == ANY
 }
 
 func (this *FieldDefinition) IsBool() bool{

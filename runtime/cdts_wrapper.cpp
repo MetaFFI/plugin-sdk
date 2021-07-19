@@ -67,6 +67,7 @@ void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callba
             continue; \
         }\
 	}
+
 		
 		if_parse_numeric_type(openffi_float64)
 		else if_parse_numeric_type(openffi_float32)
@@ -167,7 +168,7 @@ void cdts_wrapper::build(const openffi_types types[], openffi_size types_length,
 	for(int index=0 ; index<types_length ; index++)
 	{
 		openffi_type cur_type = types[index];
-		
+
 		if_build_numeric_type(openffi_float64)
 		else if_build_numeric_type(openffi_float32)
 		else if_build_numeric_type(openffi_int8)

@@ -56,6 +56,8 @@ enum openffi_types
 	openffi_array_type = 65536ULL,
 	
 	openffi_size_type = 262144ULL,
+	
+	openffi_any_type = 4194304ULL,
 
 	openffi_float64_array_type = openffi_float64_type | openffi_array_type,
 	openffi_float32_array_type = openffi_float32_type | openffi_array_type,
