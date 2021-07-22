@@ -127,6 +127,9 @@ int64_t xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_l
 
 void xllr_free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len);
 
+void xllr_set_runtime_flag(const char* flag_name, uint64_t flag_name_len);
+int xllr_is_runtime_flag_set(const char* flag_name, uint64_t flag_name_len);
+
 /************************************************
 *   Misc
 *************************************************/

@@ -31,7 +31,6 @@ int64_t load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_n
  */
 void free_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, int64_t function_id, char** err, uint32_t* err_len);
 
-
 /***
  * Call foreign function
  */
@@ -57,6 +56,16 @@ void call(
 	// [out] error
 	char** out_err, uint64_t* out_err_len
 );
+
+/**
+ * @brief Sets a flag in XLLR
+ */
+void set_runtime_flag(const char* flag_name, uint64_t flag_name_length);
+
+/**
+ * @brief Test a flag in XLLR
+ */
+int is_runtime_flag_set(const char* flag_name, uint64_t flag_name_length);
 
 #ifndef SKIP_XLLR_API_EXTERN
 }

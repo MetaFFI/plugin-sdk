@@ -159,6 +159,18 @@ void xllr_free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugi
 	pxllr_free_runtime_plugin(runtime_plugin, runtime_plugin_len, err, err_len);
 }
 
+void (*pxllr_set_runtime_flag)(const char*, uint64_t);
+void xllr_set_runtime_flag(const char* flag_name, uint64_t flag_name_len)
+{
+	pxllr_set_runtime_flag(flag_name, flag_name_len);
+}
+
+int (*pxllr_is_runtime_flag_set)(const char*, uint64_t);
+int xllr_is_runtime_flag_set(const char* flag_name, uint64_t flag_name_len)
+{
+	return pxllr_is_runtime_flag_set(flag_name, flag_name_len);
+}
+
 // === Handlers ===
 void* cdt_helper_xllr_handle = NULL;
 
@@ -278,7 +290,19 @@ const char* load_xllr_api()
 	}
 
 	pxllr_free_runtime_plugin = (void (*)(const char*, uint32_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "free_runtime_plugin", &out_err);
-	if(!pxllr_load_function)
+	if(!pxllr_free_runtime_plugin)
+	{
+		return out_err;
+	}
+	
+	pxllr_is_runtime_flag_set = (int (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "is_runtime_flag_set", &out_err);
+	if(!pxllr_is_runtime_flag_set)
+	{
+		return out_err;
+	}
+	
+	pxllr_set_runtime_flag = (void (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "set_runtime_flag", &out_err);
+	if(!pxllr_set_runtime_flag)
 	{
 		return out_err;
 	}

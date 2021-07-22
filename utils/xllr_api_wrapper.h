@@ -20,10 +20,16 @@ private:
 	                                                     unsigned char**, uint64_t*,
 	                                                     unsigned char**, uint64_t*,
 	                                                     uint8_t*)>::type> pcall;
+	
+	std::shared_ptr<boost::dll::detail::import_type<void(const char*, uint64_t)>::type> pset_runtime_flag;
+	std::shared_ptr<boost::dll::detail::import_type<int(const char*, uint64_t)>::type> pis_runtime_flag_set;
 
 public:
 	xllr_api_wrapper();
 	~xllr_api_wrapper() = default;
+	
+	void set_runtime_flag(const char* flag, uint64_t flag_len);
+	bool is_runtime_flag_set(const char* flag, uint64_t flag_len);
 	
 	void load_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len);
 	void free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len);

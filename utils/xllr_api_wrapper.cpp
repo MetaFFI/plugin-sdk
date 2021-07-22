@@ -34,6 +34,9 @@ xllr_api_wrapper::xllr_api_wrapper()
 									unsigned char**, uint64_t*,
 									unsigned char**, uint64_t*,
 									uint8_t*)>(*this->xllr_mod, "call");
+		
+		this->pset_runtime_flag = load_func<void(const char*, uint64_t)>(*this->xllr_mod, "set_runtime_flag");
+		this->pis_runtime_flag_set = load_func<int(const char*, uint64_t)>(*this->xllr_mod, "is_runtime_flag_set");
 	}
 	catch(std::exception& e)
 	{
@@ -92,6 +95,16 @@ void xllr_api_wrapper::call(const char* runtime_plugin, uint32_t runtime_plugin_
 	               out_params, out_params_len,
 	               out_ret, out_ret_len,
 	               out_is_error);
+}
+//--------------------------------------------------------------------
+void xllr_api_wrapper::set_runtime_flag(const char* flag, uint64_t flag_len)
+{
+	(*this->pset_runtime_flag)(flag, flag_len);
+}
+//--------------------------------------------------------------------
+bool xllr_api_wrapper::is_runtime_flag_set(const char* flag, uint64_t flag_len)
+{
+	return (*this->pis_runtime_flag_set)(flag, flag_len) != 0;
 }
 //--------------------------------------------------------------------
 

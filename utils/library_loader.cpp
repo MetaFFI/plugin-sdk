@@ -4,7 +4,26 @@ namespace openffi { namespace utils
 {
 std::shared_ptr <boost::dll::shared_library> load_library(const std::string& library_name)
 {
-	// load library and add to "modules"
+	// first try to load from OPENFFI_HOME
+	std::string openffi_home = std::getenv("OPENFFI_HOME");
+	if(openffi_home.empty()){
+		throw std::runtime_error("OPENFFI_HOME environment variable is not set");
+	}
+	
+	// prepend OPENFFI_HOME directory to the file name
+	boost::filesystem::path lib_in_openffi_home(openffi_home);
+	lib_in_openffi_home.append(library_name + boost::dll::shared_library::suffix().generic_string());
+	
+	if(boost::filesystem::exists(lib_in_openffi_home))
+	{
+		// load plugin
+		std::shared_ptr<boost::dll::shared_library> plugin_dll = std::make_shared<boost::dll::shared_library>();
+		plugin_dll->load(lib_in_openffi_home, boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global );
+		
+		return plugin_dll;
+	}
+	
+	// load library from different locations
 	std::string module_filename = library_name + boost::dll::shared_library::suffix().generic_string();
 	
 	std::shared_ptr <boost::dll::shared_library> mod = std::make_shared<boost::dll::shared_library>();
