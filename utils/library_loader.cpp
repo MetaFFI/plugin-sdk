@@ -2,7 +2,7 @@
 
 namespace openffi { namespace utils
 {
-std::shared_ptr <boost::dll::shared_library> load_library(const std::string& library_name)
+std::shared_ptr<boost::dll::shared_library> load_library(const std::string& library_name)
 {
 	// first try to load from OPENFFI_HOME
 	std::string openffi_home = std::getenv("OPENFFI_HOME");
