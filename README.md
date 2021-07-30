@@ -1,2 +1,2 @@
 # plugin-sdk
-SDK for OpenFFI plugins
+SDK for MetaFFI plugins

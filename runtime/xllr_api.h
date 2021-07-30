@@ -1,6 +1,6 @@
 #pragma once
 /***
- * OpenFFI XLLR API 
+ * MetaFFI XLLR API 
  */
 
 #include <stdint.h>

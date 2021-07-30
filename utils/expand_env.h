@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-namespace openffi::utils
+namespace metaffi::utils
 {
 	std::string expand_env(const std::string& str);
 }

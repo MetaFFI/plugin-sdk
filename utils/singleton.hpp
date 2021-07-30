@@ -1,6 +1,6 @@
 #include <memory>
 
-namespace openffi{ namespace utils
+namespace metaffi{ namespace utils
 {
 template<typename T>
 class singleton

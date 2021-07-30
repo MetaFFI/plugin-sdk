@@ -3,7 +3,7 @@
 #include <boost/algorithm/string.hpp>
 #include <cstdlib>
 
-namespace openffi::utils
+namespace metaffi::utils
 {
 //--------------------------------------------------------------------
 std::string expand_env(const std::string& str)

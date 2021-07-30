@@ -2,13 +2,13 @@ package compiler
 
 /*
 #cgo !windows LDFLAGS: -L. -ldl
-#include <../../runtime/openffi_primitives.h>
+#include <../../runtime/metaffi_primitives.h>
 */
 import "C"
 
 type FunctionType string
 type Operator string
-type OpenFFIType string
+type MetaFFIType string
 
 const(
 	FUNCTION FunctionType = "function"
@@ -65,111 +65,111 @@ const(
 )
 
 const(
-	FLOAT64 OpenFFIType = "float64"
-	FLOAT32 OpenFFIType = "float32"
+	FLOAT64 MetaFFIType = "float64"
+	FLOAT32 MetaFFIType = "float32"
 
-	INT8 OpenFFIType = "int8"
-	INT16 OpenFFIType = "int16"
-	INT32 OpenFFIType = "int32"
-	INT64 OpenFFIType = "int64"
+	INT8 MetaFFIType = "int8"
+	INT16 MetaFFIType = "int16"
+	INT32 MetaFFIType = "int32"
+	INT64 MetaFFIType = "int64"
 
-	UINT8 OpenFFIType = "uint8"
-	UINT16 OpenFFIType = "uint16"
-	UINT32 OpenFFIType = "uint32"
-	UINT64 OpenFFIType = "uint64"
+	UINT8 MetaFFIType = "uint8"
+	UINT16 MetaFFIType = "uint16"
+	UINT32 MetaFFIType = "uint32"
+	UINT64 MetaFFIType = "uint64"
 
-	BOOL OpenFFIType = "bool"
+	BOOL MetaFFIType = "bool"
 
-	CHAR8 OpenFFIType = "char8"
-	CHAR16 OpenFFIType = "char16"
-	CHAR32 OpenFFIType = "char32"
+	CHAR8 MetaFFIType = "char8"
+	CHAR16 MetaFFIType = "char16"
+	CHAR32 MetaFFIType = "char32"
 
-	STRING8 OpenFFIType = "string8"
-	STRING16 OpenFFIType = "string16"
-	STRING32 OpenFFIType = "string32"
+	STRING8 MetaFFIType = "string8"
+	STRING16 MetaFFIType = "string16"
+	STRING32 MetaFFIType = "string32"
 
-	HANDLE OpenFFIType = "handle"
+	HANDLE MetaFFIType = "handle"
 
-	ANY OpenFFIType = "any" // Parameter can receive any OpenFFI type
+	ANY MetaFFIType = "any" // Parameter can receive any MetaFFI type
 
-	SIZE OpenFFIType = "size"
+	SIZE MetaFFIType = "size"
 
 	//--------------------------------------------------------------------
 	
-	FLOAT64_ARRAY OpenFFIType = "float64_array"
-	FLOAT32_ARRAY OpenFFIType = "float32_array"
+	FLOAT64_ARRAY MetaFFIType = "float64_array"
+	FLOAT32_ARRAY MetaFFIType = "float32_array"
 
-	INT8_ARRAY OpenFFIType = "int8_array"
-	INT16_ARRAY OpenFFIType = "int16_array"
-	INT32_ARRAY OpenFFIType = "int32_array"
-	INT64_ARRAY OpenFFIType = "int64_array"
+	INT8_ARRAY MetaFFIType = "int8_array"
+	INT16_ARRAY MetaFFIType = "int16_array"
+	INT32_ARRAY MetaFFIType = "int32_array"
+	INT64_ARRAY MetaFFIType = "int64_array"
 
-	UINT8_ARRAY OpenFFIType = "uint8_array"
-	UINT16_ARRAY OpenFFIType = "uint16_array"
-	UINT32_ARRAY OpenFFIType = "uint32_array"
-	UINT64_ARRAY OpenFFIType = "uint64_array"
+	UINT8_ARRAY MetaFFIType = "uint8_array"
+	UINT16_ARRAY MetaFFIType = "uint16_array"
+	UINT32_ARRAY MetaFFIType = "uint32_array"
+	UINT64_ARRAY MetaFFIType = "uint64_array"
 
-	BOOL_ARRAY OpenFFIType = "bool_array"
+	BOOL_ARRAY MetaFFIType = "bool_array"
 
-	CHAR8_ARRAY OpenFFIType = "char8_array"
-	CHAR16_ARRAY OpenFFIType = "char16_array"
-	CHAR32_ARRAY OpenFFIType = "char32_array"
+	CHAR8_ARRAY MetaFFIType = "char8_array"
+	CHAR16_ARRAY MetaFFIType = "char16_array"
+	CHAR32_ARRAY MetaFFIType = "char32_array"
 
-	STRING8_ARRAY OpenFFIType = "string8_array"
-	STRING16_ARRAY OpenFFIType = "string16_array"
-	STRING32_ARRAY OpenFFIType = "string32_array"
+	STRING8_ARRAY MetaFFIType = "string8_array"
+	STRING16_ARRAY MetaFFIType = "string16_array"
+	STRING32_ARRAY MetaFFIType = "string32_array"
 
-	HANDLE_ARRAY OpenFFIType = "handle_array"
+	HANDLE_ARRAY MetaFFIType = "handle_array"
 
-	SIZE_ARRAY OpenFFIType = "size_array"
+	SIZE_ARRAY MetaFFIType = "size_array"
 )
 
-var TypeStringToTypeEnum = map[OpenFFIType]uint64{
-	FLOAT64: uint64(C.openffi_float64_type),
-	FLOAT32: uint64(C.openffi_float32_type),
-	INT8: uint64(C.openffi_int8_type),
-	INT16: uint64(C.openffi_int16_type),
-	INT32: uint64(C.openffi_int32_type),
-	INT64: uint64(C.openffi_int64_type),
-	UINT8: uint64(C.openffi_uint8_type),
-	UINT16: uint64(C.openffi_uint16_type),
-	UINT32: uint64(C.openffi_uint32_type),
-	UINT64: uint64(C.openffi_uint64_type),
-	BOOL: uint64(C.openffi_bool_type),
-	STRING8: uint64(C.openffi_string8_type),
-	STRING16: uint64(C.openffi_string16_type),
-	STRING32: uint64(C.openffi_string32_type),
-	CHAR8: uint64(C.openffi_char8_type),
-	CHAR16: uint64(C.openffi_char16_type),
-	CHAR32: uint64(C.openffi_char32_type),
-	HANDLE: uint64(C.openffi_handle_type),
+var TypeStringToTypeEnum = map[MetaFFIType]uint64{
+	FLOAT64: uint64(C.metaffi_float64_type),
+	FLOAT32: uint64(C.metaffi_float32_type),
+	INT8: uint64(C.metaffi_int8_type),
+	INT16: uint64(C.metaffi_int16_type),
+	INT32: uint64(C.metaffi_int32_type),
+	INT64: uint64(C.metaffi_int64_type),
+	UINT8: uint64(C.metaffi_uint8_type),
+	UINT16: uint64(C.metaffi_uint16_type),
+	UINT32: uint64(C.metaffi_uint32_type),
+	UINT64: uint64(C.metaffi_uint64_type),
+	BOOL: uint64(C.metaffi_bool_type),
+	STRING8: uint64(C.metaffi_string8_type),
+	STRING16: uint64(C.metaffi_string16_type),
+	STRING32: uint64(C.metaffi_string32_type),
+	CHAR8: uint64(C.metaffi_char8_type),
+	CHAR16: uint64(C.metaffi_char16_type),
+	CHAR32: uint64(C.metaffi_char32_type),
+	HANDLE: uint64(C.metaffi_handle_type),
 
-	"array": uint64(C.openffi_array_type),
+	"array": uint64(C.metaffi_array_type),
 
-	SIZE: uint64(C.openffi_size_type),
+	SIZE: uint64(C.metaffi_size_type),
 
-	ANY: uint64(C.openffi_any_type),
+	ANY: uint64(C.metaffi_any_type),
 
-	FLOAT64_ARRAY: uint64(C.openffi_float64_array_type),
-	FLOAT32_ARRAY: uint64(C.openffi_float32_array_type),
-	INT8_ARRAY: uint64(C.openffi_int8_array_type),
-	INT16_ARRAY: uint64(C.openffi_int16_array_type),
-	INT32_ARRAY: uint64(C.openffi_int32_array_type),
-	INT64_ARRAY: uint64(C.openffi_int64_array_type),
-	UINT8_ARRAY: uint64(C.openffi_uint8_array_type),
-	UINT16_ARRAY: uint64(C.openffi_uint16_array_type),
-	UINT32_ARRAY: uint64(C.openffi_uint32_array_type),
-	UINT64_ARRAY: uint64(C.openffi_uint64_array_type),
-	BOOL_ARRAY: uint64(C.openffi_bool_array_type),
-	STRING8_ARRAY: uint64(C.openffi_string8_array_type),
-	STRING16_ARRAY: uint64(C.openffi_string16_array_type),
-	STRING32_ARRAY: uint64(C.openffi_string32_array_type),
+	FLOAT64_ARRAY: uint64(C.metaffi_float64_array_type),
+	FLOAT32_ARRAY: uint64(C.metaffi_float32_array_type),
+	INT8_ARRAY: uint64(C.metaffi_int8_array_type),
+	INT16_ARRAY: uint64(C.metaffi_int16_array_type),
+	INT32_ARRAY: uint64(C.metaffi_int32_array_type),
+	INT64_ARRAY: uint64(C.metaffi_int64_array_type),
+	UINT8_ARRAY: uint64(C.metaffi_uint8_array_type),
+	UINT16_ARRAY: uint64(C.metaffi_uint16_array_type),
+	UINT32_ARRAY: uint64(C.metaffi_uint32_array_type),
+	UINT64_ARRAY: uint64(C.metaffi_uint64_array_type),
+	BOOL_ARRAY: uint64(C.metaffi_bool_array_type),
+	STRING8_ARRAY: uint64(C.metaffi_string8_array_type),
+	STRING16_ARRAY: uint64(C.metaffi_string16_array_type),
+	STRING32_ARRAY: uint64(C.metaffi_string32_array_type),
 
-	HANDLE_ARRAY: uint64(C.openffi_handle_array_type),
-	SIZE_ARRAY: uint64(C.openffi_size_array_type),
+	HANDLE_ARRAY: uint64(C.metaffi_handle_array_type),
+	SIZE_ARRAY: uint64(C.metaffi_size_array_type),
 }
 
-func IsOpenFFIType(openffiType string) bool{
-	_, found := TypeStringToTypeEnum[OpenFFIType(openffiType)]
+func IsMetaFFIType(metaffiType string) bool{
+	_, found := TypeStringToTypeEnum[MetaFFIType(metaffiType)]
 	return found
 }

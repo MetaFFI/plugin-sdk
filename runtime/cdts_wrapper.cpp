@@ -2,12 +2,12 @@
 #include "cdt_capi_loader.h"
 #include <mutex>
 
-namespace openffi::runtime
+namespace metaffi::runtime
 {
 std::once_flag load_cdt_capi_once;
 
 //--------------------------------------------------------------------
-cdts_wrapper::cdts_wrapper(openffi_size cdt_count)
+cdts_wrapper::cdts_wrapper(metaffi_size cdt_count)
 {
 	std::call_once(load_cdt_capi_once, [](){ load_cdt_capi(); });
 	
@@ -15,7 +15,7 @@ cdts_wrapper::cdts_wrapper(openffi_size cdt_count)
 	this->cdts_length = cdt_count;
 }
 //--------------------------------------------------------------------
-cdts_wrapper::cdts_wrapper(cdt* cdts, openffi_size cdts_length):cdts(cdts),cdts_length(cdts_length)
+cdts_wrapper::cdts_wrapper(cdt* cdts, metaffi_size cdts_length):cdts(cdts),cdts_length(cdts_length)
 {
 	std::call_once(load_cdt_capi_once, [](){ load_cdt_capi(); });
 }
@@ -24,12 +24,12 @@ void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callba
 {
 	for(int index=0 ; index<this->cdts_length ; index++)
 	{
-		openffi_type cur_type = get_type(this->cdts, index);
+		metaffi_type cur_type = get_type(this->cdts, index);
 		
 #define if_parse_numeric_type(otype) \
 	if(cur_type & otype##_type) \
 	{ \
-		if(cur_type & openffi_array_type) \
+		if(cur_type & metaffi_array_type) \
 		{ \
             callbacks.on_##otype##_array(values_to_set, \
                                             index,         \
@@ -48,7 +48,7 @@ void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callba
 #define if_parse_string_type(otype) \
 	if(cur_type & otype##_type) \
 	{ \
-		if(cur_type & openffi_array_type) \
+		if(cur_type & metaffi_array_type) \
 		{ \
 			callbacks.on_##otype##_array(values_to_set, \
 										index,                           \
@@ -69,21 +69,21 @@ void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callba
 	}
 
 		
-		if_parse_numeric_type(openffi_float64)
-		else if_parse_numeric_type(openffi_float32)
-		else if_parse_numeric_type(openffi_int8)
-		else if_parse_numeric_type(openffi_int16)
-		else if_parse_numeric_type(openffi_int32)
-		else if_parse_numeric_type(openffi_int64)
-		else if_parse_numeric_type(openffi_uint8)
-		else if_parse_numeric_type(openffi_uint16)
-		else if_parse_numeric_type(openffi_uint32)
-		else if_parse_numeric_type(openffi_uint64)
-		else if_parse_numeric_type(openffi_bool)
-		else if_parse_numeric_type(openffi_handle)
-		else if_parse_string_type(openffi_string8)
-		else if_parse_string_type(openffi_string16)
-		else if_parse_string_type(openffi_string32)
+		if_parse_numeric_type(metaffi_float64)
+		else if_parse_numeric_type(metaffi_float32)
+		else if_parse_numeric_type(metaffi_int8)
+		else if_parse_numeric_type(metaffi_int16)
+		else if_parse_numeric_type(metaffi_int32)
+		else if_parse_numeric_type(metaffi_int64)
+		else if_parse_numeric_type(metaffi_uint8)
+		else if_parse_numeric_type(metaffi_uint16)
+		else if_parse_numeric_type(metaffi_uint32)
+		else if_parse_numeric_type(metaffi_uint64)
+		else if_parse_numeric_type(metaffi_bool)
+		else if_parse_numeric_type(metaffi_handle)
+		else if_parse_string_type(metaffi_string8)
+		else if_parse_string_type(metaffi_string16)
+		else if_parse_string_type(metaffi_string32)
 		else
 		{
 			// if got here - type is not handled!
@@ -94,7 +94,7 @@ void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callba
 	}
 }
 //--------------------------------------------------------------------
-void cdts_wrapper::build(const openffi_types types[], openffi_size types_length, void* values_to_set, cdts_build_callbacks& callbacks) const
+void cdts_wrapper::build(const metaffi_types types[], metaffi_size types_length, void* values_to_set, cdts_build_callbacks& callbacks) const
 {
 	if(types_length != this->cdts_length)
 	{
@@ -106,12 +106,12 @@ void cdts_wrapper::build(const openffi_types types[], openffi_size types_length,
 #define if_build_numeric_type(otype) \
 	if(cur_type & otype##_type) \
 	{ \
-		if(cur_type & openffi_array_type) \
+		if(cur_type & metaffi_array_type) \
 		{ \
 			otype* array; \
-			openffi_size dimensions; \
-			openffi_size* dimensions_lengths; \
-            openffi_bool free_required; \
+			metaffi_size dimensions; \
+			metaffi_size* dimensions_lengths; \
+            metaffi_bool free_required; \
             callbacks.set_##otype##_array(values_to_set, index, array, dimensions_lengths, dimensions, free_required); \
 			this->cdts[index].type = otype##_array_type;\
             this->cdts[index].free_required = free_required; \
@@ -134,13 +134,13 @@ void cdts_wrapper::build(const openffi_types types[], openffi_size types_length,
 #define if_build_string_type(otype) \
 	if(cur_type & otype##_type) \
 	{ \
-		if(cur_type & openffi_array_type) \
+		if(cur_type & metaffi_array_type) \
 		{ \
 			otype* array; \
-            openffi_size* string_lengths; \
-            openffi_size* dimensions_lengths; \
-			openffi_size dimensions; \
-            openffi_bool free_required; \
+            metaffi_size* string_lengths; \
+            metaffi_size* dimensions_lengths; \
+			metaffi_size dimensions; \
+            metaffi_bool free_required; \
             callbacks.set_##otype##_array(values_to_set, index, array, string_lengths, dimensions_lengths, dimensions, free_required); \
 			this->cdts[index].type = otype##_array_type;\
             this->cdts[index].free_required = free_required; \
@@ -153,8 +153,8 @@ void cdts_wrapper::build(const openffi_types types[], openffi_size types_length,
 		else\
         {\
 			otype val; \
-            openffi_size length; \
-            openffi_bool free_required; \
+            metaffi_size length; \
+            metaffi_bool free_required; \
             callbacks.set_##otype(values_to_set, index, val, length); \
 			this->cdts[index].type = otype##_type;\
             this->cdts[index].free_required = 0; \
@@ -167,23 +167,23 @@ void cdts_wrapper::build(const openffi_types types[], openffi_size types_length,
 	
 	for(int index=0 ; index<types_length ; index++)
 	{
-		openffi_type cur_type = types[index];
+		metaffi_type cur_type = types[index];
 
-		if_build_numeric_type(openffi_float64)
-		else if_build_numeric_type(openffi_float32)
-		else if_build_numeric_type(openffi_int8)
-		else if_build_numeric_type(openffi_int16)
-		else if_build_numeric_type(openffi_int32)
-		else if_build_numeric_type(openffi_int64)
-		else if_build_numeric_type(openffi_uint8)
-		else if_build_numeric_type(openffi_uint16)
-		else if_build_numeric_type(openffi_uint32)
-		else if_build_numeric_type(openffi_uint64)
-		else if_build_numeric_type(openffi_bool)
-		else if_build_numeric_type(openffi_handle)
-		else if_build_string_type(openffi_string8)
-		else if_build_string_type(openffi_string16)
-		else if_build_string_type(openffi_string32)
+		if_build_numeric_type(metaffi_float64)
+		else if_build_numeric_type(metaffi_float32)
+		else if_build_numeric_type(metaffi_int8)
+		else if_build_numeric_type(metaffi_int16)
+		else if_build_numeric_type(metaffi_int32)
+		else if_build_numeric_type(metaffi_int64)
+		else if_build_numeric_type(metaffi_uint8)
+		else if_build_numeric_type(metaffi_uint16)
+		else if_build_numeric_type(metaffi_uint32)
+		else if_build_numeric_type(metaffi_uint64)
+		else if_build_numeric_type(metaffi_bool)
+		else if_build_numeric_type(metaffi_handle)
+		else if_build_string_type(metaffi_string8)
+		else if_build_string_type(metaffi_string16)
+		else if_build_string_type(metaffi_string32)
 		else
 		{
 			// if got here - type is not handled!
@@ -209,7 +209,7 @@ cdt* cdts_wrapper::get_cdts() const
 	return this->cdts;
 }
 //--------------------------------------------------------------------
-openffi_size cdts_wrapper::get_cdts_length() const
+metaffi_size cdts_wrapper::get_cdts_length() const
 {
 	return this->cdts_length;
 }

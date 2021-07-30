@@ -1,7 +1,7 @@
 #pragma once
 #include <boost/dll.hpp>
 
-namespace openffi{ namespace utils
+namespace metaffi{ namespace utils
 {
 //--------------------------------------------------------------------
 class xllr_api_wrapper

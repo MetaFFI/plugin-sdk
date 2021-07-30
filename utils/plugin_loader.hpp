@@ -4,18 +4,18 @@
 #include <memory>
 #include <string>
 
-namespace openffi::utils
+namespace metaffi::utils
 {
 //--------------------------------------------------------------------
 inline std::shared_ptr<boost::dll::shared_library> load_plugin(const std::string& plugin_filename_without_extension)
 {
-	std::string openffi_home = std::getenv("OPENFFI_HOME");
-	if(openffi_home.empty()){
-		throw std::runtime_error("OPENFFI_HOME environment variable is not set");
+	std::string metaffi_home = std::getenv("METAFFI_HOME");
+	if(metaffi_home.empty()){
+		throw std::runtime_error("METAFFI_HOME environment variable is not set");
 	}
 	
-	// prepend OPENFFI_HOME directory to the file name
-	boost::filesystem::path plugin_full_path(openffi_home);
+	// prepend METAFFI_HOME directory to the file name
+	boost::filesystem::path plugin_full_path(metaffi_home);
 	plugin_full_path.append(plugin_filename_without_extension+boost::dll::shared_library::suffix().generic_string());
 	
 	// load plugin

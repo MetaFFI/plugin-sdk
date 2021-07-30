@@ -8,7 +8,7 @@ import (
 
 //--------------------------------------------------------------------
 // The expected syntax:
-// openffi_function_path: "key1=val1,key2=val2...."
+// metaffi_function_path: "key1=val1,key2=val2...."
 func parsePathToFunction(pathToFunction string, pathMap map[string]string) (map[string]string, error){
 
 	var res map[string]string
@@ -28,14 +28,14 @@ func parsePathToFunction(pathToFunction string, pathMap map[string]string) (map[
 		elems := strings.Split(pair, "=")
 
 		if len(elems) != 2{
-			return nil, fmt.Errorf("Failed parsing openffi_function_path tag. The pair \"%v\" is invalid.", pair)
+			return nil, fmt.Errorf("Failed parsing metaffi_function_path tag. The pair \"%v\" is invalid.", pair)
 		}
 
 		elems[0] = strings.TrimSpace(elems[0])
 		elems[1] = strings.TrimSpace(elems[1])
 
 		if elems[0] == "" || elems[1] == ""{
-			return nil, fmt.Errorf("Failed parsing openffi_function_path tag. The pair \"%v\" is invalid.", pair)
+			return nil, fmt.Errorf("Failed parsing metaffi_function_path tag. The pair \"%v\" is invalid.", pair)
 		}
 
 		res[elems[0]] = elems[1]
@@ -104,7 +104,7 @@ func (this *IDLDefinition) ToJSON() (string, error){
 func (this *IDLDefinition) AddWellKnownFunctionPath(){
 	for _, m := range this.Modules{
 		for _, f := range m.Functions{
-			f.PathToForeignFunction[OPENFFI_GUEST_LIB] = m.Name+"_OpenFFIGuest"
+			f.PathToForeignFunction[METAFFI_GUEST_LIB] = m.Name+"_MetaFFIGuest"
 			f.PathToForeignFunction[ENTRYPOINT_FUNCTION] = "EntryPoint_"+f.PathToForeignFunction[FOREIGN_FUNCTION_NAME]
 			f.PathToForeignFunction[ENTRYPOINT_CLASS] = m.Name
 		}
@@ -115,8 +115,8 @@ func (this *IDLDefinition) AddWellKnownFunctionPath(){
 The function iterates the definition and fills fields according to well-known tags.
 
 Supported tags:
-//openffi_target_language
-//openffi_function_path
+//metaffi_target_language
+//metaffi_function_path
 */
 func (this *IDLDefinition) ParseWellKnownTags() error{
 
@@ -291,7 +291,7 @@ func (this *FunctionDefinition) parseWellKnownTags(pathToFunction map[string]str
 //--------------------------------------------------------------------
 type FieldDefinition struct{
 	Name string `json:"name"`
-	Type OpenFFIType `json:"type"`
+	Type MetaFFIType `json:"type"`
 	TypeAlias string `json:"type_alias"`
 	Comment string `json:"comment"`
 	Tags map[string]string `json:"tags"`
@@ -347,7 +347,7 @@ func (this *FieldDefinition) parseWellKnownTags() error{
 	for tagName, tagVal := range this.Tags{
 		switch tagName {
 			case FUNCTION_PATH:
-				return fmt.Errorf("field level cannot hold openffi_function_path")
+				return fmt.Errorf("field level cannot hold metaffi_function_path")
 
 			case TYPE_ALIAS:
 				this.TypeAlias = tagVal

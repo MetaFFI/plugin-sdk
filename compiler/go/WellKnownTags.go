@@ -1,13 +1,13 @@
 package compiler
 
 const(
-	TARGET_LANGUAGE="openffi_target_language"
-	FUNCTION_PATH="openffi_function_path"
-	OPENFFI_GUEST_LIB="openffi_guest_lib"
+	TARGET_LANGUAGE="metaffi_target_language"
+	FUNCTION_PATH="metaffi_function_path"
+	METAFFI_GUEST_LIB="metaffi_guest_lib"
 	ENTRYPOINT_FUNCTION="entrypoint_function"
 	ENTRYPOINT_CLASS = "entrypoint_class"
-	TYPE_ALIAS = "openffi_type_alias"
+	TYPE_ALIAS = "metaffi_type_alias"
 
 	FOREIGN_FUNCTION_NAME="function"
-	FUNCTION_TYPE="openffi_function_type"
+	FUNCTION_TYPE="metaffi_function_type"
 )

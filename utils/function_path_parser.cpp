@@ -1,7 +1,7 @@
 #include "function_path_parser.h"
 #include "expand_env.h"
 
-namespace openffi { namespace utils
+namespace metaffi { namespace utils
 {
 //--------------------------------------------------------------------
 function_path_parser::function_path_parser(const std::string &function_path)

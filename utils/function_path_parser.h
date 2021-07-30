@@ -4,7 +4,7 @@
 #include <map>
 
 //-----------------------------------------------------
-namespace openffi { namespace utils
+namespace metaffi { namespace utils
 {
 class function_path_parser
 {

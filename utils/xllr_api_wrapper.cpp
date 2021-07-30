@@ -2,7 +2,7 @@
 #include <boost/filesystem.hpp>
 #include "function_loader.hpp"
 
-namespace openffi{ namespace utils
+namespace metaffi{ namespace utils
 {
 
 //--------------------------------------------------------------------
@@ -10,12 +10,12 @@ xllr_api_wrapper::xllr_api_wrapper()
 {
 	try
 	{
-		std::string openffi_home = std::getenv("OPENFFI_HOME");
-		if(openffi_home.empty()){
-			throw std::runtime_error("OPENFFI_HOME environment variable is not set");
+		std::string metaffi_home = std::getenv("METAFFI_HOME");
+		if(metaffi_home.empty()){
+			throw std::runtime_error("METAFFI_HOME environment variable is not set");
 		}
 		
-		boost::filesystem::path xllr_fullname = boost::filesystem::path(openffi_home).append(std::string("xllr")+boost::dll::shared_library::suffix().generic_string());
+		boost::filesystem::path xllr_fullname = boost::filesystem::path(metaffi_home).append(std::string("xllr")+boost::dll::shared_library::suffix().generic_string());
 		
 		this->xllr_mod = std::make_unique<boost::dll::shared_library>();
 		

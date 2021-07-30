@@ -1,24 +1,24 @@
 #include "library_loader.h"
 
-namespace openffi { namespace utils
+namespace metaffi { namespace utils
 {
 std::shared_ptr<boost::dll::shared_library> load_library(const std::string& library_name)
 {
-	// first try to load from OPENFFI_HOME
-	std::string openffi_home = std::getenv("OPENFFI_HOME");
-	if(openffi_home.empty()){
-		throw std::runtime_error("OPENFFI_HOME environment variable is not set");
+	// first try to load from METAFFI_HOME
+	std::string metaffi_home = std::getenv("METAFFI_HOME");
+	if(metaffi_home.empty()){
+		throw std::runtime_error("METAFFI_HOME environment variable is not set");
 	}
 	
-	// prepend OPENFFI_HOME directory to the file name
-	boost::filesystem::path lib_in_openffi_home(openffi_home);
-	lib_in_openffi_home.append(library_name + boost::dll::shared_library::suffix().generic_string());
+	// prepend METAFFI_HOME directory to the file name
+	boost::filesystem::path lib_in_metaffi_home(metaffi_home);
+	lib_in_metaffi_home.append(library_name + boost::dll::shared_library::suffix().generic_string());
 	
-	if(boost::filesystem::exists(lib_in_openffi_home))
+	if(boost::filesystem::exists(lib_in_metaffi_home))
 	{
 		// load plugin
 		std::shared_ptr<boost::dll::shared_library> plugin_dll = std::make_shared<boost::dll::shared_library>();
-		plugin_dll->load(lib_in_openffi_home, boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global );
+		plugin_dll->load(lib_in_metaffi_home, boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global );
 		
 		return plugin_dll;
 	}

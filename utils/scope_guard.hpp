@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
 
-namespace openffi{ namespace utils
+namespace metaffi{ namespace utils
 {
 //--------------------------------------------------------------------
 template<typename _T>

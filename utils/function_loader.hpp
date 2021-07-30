@@ -1,7 +1,7 @@
 #pragma once
 #include <boost/dll.hpp>
 
-namespace openffi::utils
+namespace metaffi::utils
 {
 //--------------------------------------------------------------------
 template<typename T>

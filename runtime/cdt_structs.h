@@ -1,5 +1,5 @@
 #pragma once
-#include "openffi_primitives.h"
+#include "metaffi_primitives.h"
 
 // It is important that the structs will hold a pointer to the primitives and NOT the primitives themselves.
 // this is to avoid needless copy and the ability to pass by reference.
@@ -12,100 +12,100 @@ struct cdt_##type\
 struct cdt_##type##_array\
 {\
 	type* vals;\
-    openffi_size* dimensions_lengths; \
-    openffi_size dimensions;\
+    metaffi_size* dimensions_lengths; \
+    metaffi_size dimensions;\
 };
 
 #define cdt_string(type) \
 struct cdt_##type\
 {\
 	type val;\
-	openffi_size length;\
+	metaffi_size length;\
 };\
 struct cdt_##type##_array\
 {\
 	type* vals;\
-    openffi_size* vals_sizes;\
-    openffi_size* dimensions_lengths; \
-    openffi_size dimensions;\
+    metaffi_size* vals_sizes;\
+    metaffi_size* dimensions_lengths; \
+    metaffi_size dimensions;\
 };
 
-cdt_numeric(openffi_float32);
-cdt_numeric(openffi_float64);
-cdt_numeric(openffi_int8);
-cdt_numeric(openffi_int16);
-cdt_numeric(openffi_int32);
-cdt_numeric(openffi_int64);
-cdt_numeric(openffi_uint8);
-cdt_numeric(openffi_uint16);
-cdt_numeric(openffi_uint32);
-cdt_numeric(openffi_uint64);
-cdt_numeric(openffi_bool);
-cdt_numeric(openffi_size);
-cdt_numeric(openffi_type);
+cdt_numeric(metaffi_float32);
+cdt_numeric(metaffi_float64);
+cdt_numeric(metaffi_int8);
+cdt_numeric(metaffi_int16);
+cdt_numeric(metaffi_int32);
+cdt_numeric(metaffi_int64);
+cdt_numeric(metaffi_uint8);
+cdt_numeric(metaffi_uint16);
+cdt_numeric(metaffi_uint32);
+cdt_numeric(metaffi_uint64);
+cdt_numeric(metaffi_bool);
+cdt_numeric(metaffi_size);
+cdt_numeric(metaffi_type);
 
-cdt_numeric(openffi_handle);
+cdt_numeric(metaffi_handle);
 
-cdt_string(openffi_string8);
-cdt_string(openffi_string16);
-cdt_string(openffi_string32);
+cdt_string(metaffi_string8);
+cdt_string(metaffi_string16);
+cdt_string(metaffi_string32);
 
 
 
 union cdt_types
 {
-	struct cdt_openffi_float32 openffi_float32_val;
-	struct cdt_openffi_float32_array openffi_float32_array_val;
+	struct cdt_metaffi_float32 metaffi_float32_val;
+	struct cdt_metaffi_float32_array metaffi_float32_array_val;
 	
-	struct cdt_openffi_float64 openffi_float64_val;
-	struct cdt_openffi_float64_array openffi_float64_array_val;
+	struct cdt_metaffi_float64 metaffi_float64_val;
+	struct cdt_metaffi_float64_array metaffi_float64_array_val;
 	
-	struct cdt_openffi_int8 openffi_int8_val;
-	struct cdt_openffi_int8_array openffi_int8_array_val;
+	struct cdt_metaffi_int8 metaffi_int8_val;
+	struct cdt_metaffi_int8_array metaffi_int8_array_val;
 	
-	struct cdt_openffi_int16 openffi_int16_val;
-	struct cdt_openffi_int16_array openffi_int16_array_val;
+	struct cdt_metaffi_int16 metaffi_int16_val;
+	struct cdt_metaffi_int16_array metaffi_int16_array_val;
 	
-	struct cdt_openffi_int32 openffi_int32_val;
-	struct cdt_openffi_int32_array openffi_int32_array_val;
+	struct cdt_metaffi_int32 metaffi_int32_val;
+	struct cdt_metaffi_int32_array metaffi_int32_array_val;
 	
-	struct cdt_openffi_int64 openffi_int64_val;
-	struct cdt_openffi_int64_array openffi_int64_array_val;
+	struct cdt_metaffi_int64 metaffi_int64_val;
+	struct cdt_metaffi_int64_array metaffi_int64_array_val;
 	
-	struct cdt_openffi_uint8 openffi_uint8_val;
-	struct cdt_openffi_uint8_array openffi_uint8_array_val;
+	struct cdt_metaffi_uint8 metaffi_uint8_val;
+	struct cdt_metaffi_uint8_array metaffi_uint8_array_val;
 	
-	struct cdt_openffi_uint16 openffi_uint16_val;
-	struct cdt_openffi_uint16_array openffi_uint16_array_val;
+	struct cdt_metaffi_uint16 metaffi_uint16_val;
+	struct cdt_metaffi_uint16_array metaffi_uint16_array_val;
 	
-	struct cdt_openffi_uint32 openffi_uint32_val;
-	struct cdt_openffi_uint32_array openffi_uint32_array_val;
+	struct cdt_metaffi_uint32 metaffi_uint32_val;
+	struct cdt_metaffi_uint32_array metaffi_uint32_array_val;
 	
-	struct cdt_openffi_uint64 openffi_uint64_val;
-	struct cdt_openffi_uint64_array openffi_uint64_array_val;
+	struct cdt_metaffi_uint64 metaffi_uint64_val;
+	struct cdt_metaffi_uint64_array metaffi_uint64_array_val;
 	
-	struct cdt_openffi_bool openffi_bool_val;
-	struct cdt_openffi_bool_array openffi_bool_array_val;
+	struct cdt_metaffi_bool metaffi_bool_val;
+	struct cdt_metaffi_bool_array metaffi_bool_array_val;
 
-	struct cdt_openffi_string8 openffi_string8_val;
-	struct cdt_openffi_string8_array openffi_string8_array_val;
+	struct cdt_metaffi_string8 metaffi_string8_val;
+	struct cdt_metaffi_string8_array metaffi_string8_array_val;
 	
-	struct cdt_openffi_string16 openffi_string16_val;
-	struct cdt_openffi_string16_array openffi_string16_array_val;
+	struct cdt_metaffi_string16 metaffi_string16_val;
+	struct cdt_metaffi_string16_array metaffi_string16_array_val;
 	
-	struct cdt_openffi_string32 openffi_string32_val;
-	struct cdt_openffi_string32_array openffi_string32_array_val;
+	struct cdt_metaffi_string32 metaffi_string32_val;
+	struct cdt_metaffi_string32_array metaffi_string32_array_val;
 	
-	struct cdt_openffi_size openffi_size_val;
-	struct cdt_openffi_size_array openffi_size_array_val;
+	struct cdt_metaffi_size metaffi_size_val;
+	struct cdt_metaffi_size_array metaffi_size_array_val;
 	
-	struct cdt_openffi_handle openffi_handle_val;
-	struct cdt_openffi_handle_array openffi_handle_array_val;
+	struct cdt_metaffi_handle metaffi_handle_val;
+	struct cdt_metaffi_handle_array metaffi_handle_array_val;
 };
 
 struct cdt
 {
-	openffi_type type;
-	openffi_bool free_required;
+	metaffi_type type;
+	metaffi_bool free_required;
 	union cdt_types cdt_val;
 };
