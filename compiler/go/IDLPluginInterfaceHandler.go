@@ -4,12 +4,15 @@ package compiler
 #include "../idl_plugin_interface.h"
  */
 import "C"
-import "encoding/json"
+import (
+	"encoding/json"
+	"github.com/MetaFFI/plugin-sdk/compiler/go/IDL"
+)
 
 var idlPluginInterfaceHandler *IDLPluginInterfaceHandler
 
 type IDLPluginInterface interface{
-	ParseIDL(idlFilePath string, idl string) (*IDLDefinition, error)
+	ParseIDL(idlFilePath string, idl string) (*IDL.IDLDefinition, error)
 }
 //--------------------------------------------------------------------
 type IDLPluginInterfaceHandler struct{

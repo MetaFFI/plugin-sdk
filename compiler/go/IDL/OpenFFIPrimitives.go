@@ -1,67 +1,19 @@
-package compiler
+package IDL
 
 /*
 #cgo !windows LDFLAGS: -L. -ldl
-#include <../../runtime/metaffi_primitives.h>
+#include <../../../runtime/metaffi_primitives.h>
 */
 import "C"
 
-type FunctionType string
-type Operator string
+type MethodType string
 type MetaFFIType string
 
 const(
-	FUNCTION FunctionType = "function"
-	METHOD FunctionType = "method"
-	CONSTRUCTOR FunctionType = "constructor"
-	DESTRUCTOR FunctionType = "destructor"
-)
-
-const(
-	ASSIGN Operator = "="
-	DOT Operator = "."
-
-	ADD Operator = "BI+"
-	SUB Operator = "BI-"
-	MULT Operator = "BI*"
-	DIV Operator = "BI/"
-	MOD Operator = "BI%"
-	ADD_ASSIGN Operator = "+="
-	SUB_ASSIGN Operator = "-="
-	MULT_ASSIGN Operator = "*="
-	DIV_ASSIGN Operator = "/="
-	MOD_ASSIGN Operator = "%="
-
-	INC Operator = "++"
-	DEC Operator = "--"
-
-	AFFIRMATION Operator = "UN+"
-	NEGATION Operator = "UN-"
-
-	LEFT_SHIFT Operator = "<<"
-	RIGHT_SHIFT Operator = ">>"
-	LEFT_SHIFT_ASSIGN Operator = "<<="
-	RIGHT_SHIFT_ASSIGN Operator = ">>="
-
-	BITWISE_OR Operator = "|"
-	BITWISE_AND Operator = "&"
-	BITWISE_XOR Operator = "^"
-	BITWISE_COMPLIMENT Operator = "~"
-	BITWISE_OR_ASSIGN Operator = "|="
-	BITWISE_AND_ASSIGN Operator = "&="
-	BITWISE_XOR_ASSIGN Operator = "^="
-
-	EQUAL Operator = "=="
-	NOT_EQUAL Operator = "!="
-	LESS Operator = "<"
-	LESS_OR_EQUAL Operator = "<="
-	GREATER Operator = ">"
-	GREATER_OR_EQUAL Operator = ">="
-	AND Operator = "&&"
-	OR Operator = "||"
-	NOT Operator = "!"
-
-	ARRAY Operator = "[]"
+	FUNCTION    MethodType = "function"
+	METHOD      MethodType = "method"
+	CONSTRUCTOR MethodType = "constructor"
+	DESTRUCTOR  MethodType = "destructor"
 )
 
 const(

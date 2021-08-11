@@ -1,0 +1,1176 @@
+
+
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "idl_filename": {
+      "type": "string"
+    },
+    "idl_extension": {
+      "type": "string"
+    },
+    "idl_filename_with_extension": {
+      "type": "string"
+    },
+    "idl_full_path": {
+      "type": "string"
+    },
+    "modules": {
+      "type": "array",
+      "items": [
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "target_language": {
+              "type": "string"
+            },
+            "comment": {
+              "type": "string"
+            },
+            "tags": {
+              "type": "object"
+            },
+            "functions": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "comment": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    },
+                    "function_path": {
+                      "type": "object",
+                      "properties": {
+                        "module": {
+                          "type": "string"
+                        },
+                        "package": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "module",
+                        "package"
+                      ]
+                    },
+                    "parameters": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "return_values": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "comment",
+                    "tags",
+                    "function_path",
+                    "parameters",
+                    "return_values"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "comment": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    },
+                    "function_path": {
+                      "type": "object",
+                      "properties": {
+                        "module": {
+                          "type": "string"
+                        },
+                        "package": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "module",
+                        "package"
+                      ]
+                    },
+                    "parameters": {
+                      "type": "array",
+                      "items": {}
+                    },
+                    "return_values": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "comment",
+                    "tags",
+                    "function_path",
+                    "parameters",
+                    "return_values"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "comment": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    },
+                    "function_path": {
+                      "type": "object",
+                      "properties": {
+                        "module": {
+                          "type": "string"
+                        },
+                        "package": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "module",
+                        "package"
+                      ]
+                    },
+                    "parameters": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "type_alias": {
+                              "type": "string"
+                            },
+                            "comment": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "dimensions": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "type",
+                            "type_alias",
+                            "comment",
+                            "tags",
+                            "dimensions"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "type_alias": {
+                              "type": "string"
+                            },
+                            "comment": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "dimensions": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "type",
+                            "type_alias",
+                            "comment",
+                            "tags",
+                            "dimensions"
+                          ]
+                        }
+                      ]
+                    },
+                    "return_values": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "type_alias": {
+                              "type": "string"
+                            },
+                            "comment": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "dimensions": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "type",
+                            "type_alias",
+                            "comment",
+                            "tags",
+                            "dimensions"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "comment",
+                    "tags",
+                    "function_path",
+                    "parameters",
+                    "return_values"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "comment": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    },
+                    "function_path": {
+                      "type": "object",
+                      "properties": {
+                        "module": {
+                          "type": "string"
+                        },
+                        "package": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "module",
+                        "package"
+                      ]
+                    },
+                    "parameters": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "type_alias": {
+                              "type": "string"
+                            },
+                            "comment": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "dimensions": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "type",
+                            "type_alias",
+                            "comment",
+                            "tags",
+                            "dimensions"
+                          ]
+                        }
+                      ]
+                    },
+                    "return_values": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "type_alias": {
+                              "type": "string"
+                            },
+                            "comment": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "dimensions": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "type",
+                            "type_alias",
+                            "comment",
+                            "tags",
+                            "dimensions"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "comment",
+                    "tags",
+                    "function_path",
+                    "parameters",
+                    "return_values"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "comment": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    },
+                    "function_path": {
+                      "type": "object",
+                      "properties": {
+                        "module": {
+                          "type": "string"
+                        },
+                        "package": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "module",
+                        "package"
+                      ]
+                    },
+                    "parameters": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "type_alias": {
+                              "type": "string"
+                            },
+                            "comment": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "dimensions": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "type",
+                            "type_alias",
+                            "comment",
+                            "tags",
+                            "dimensions"
+                          ]
+                        }
+                      ]
+                    },
+                    "return_values": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "string"
+                            },
+                            "type_alias": {
+                              "type": "string"
+                            },
+                            "comment": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "dimensions": {
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "type",
+                            "type_alias",
+                            "comment",
+                            "tags",
+                            "dimensions"
+                          ]
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "comment",
+                    "tags",
+                    "function_path",
+                    "parameters",
+                    "return_values"
+                  ]
+                }
+              ]
+            },
+            "classes": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "comment": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    },
+                    "constructors": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "comment": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "function_path": {
+                              "type": "object",
+                              "properties": {
+                                "module": {
+                                  "type": "string"
+                                },
+                                "package": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "module",
+                                "package"
+                              ]
+                            },
+                            "parameters": {
+                              "type": "array",
+                              "items": {}
+                            },
+                            "return_values": {
+                              "type": "array",
+                              "items": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "type_alias": {
+                                      "type": "string"
+                                    },
+                                    "comment": {
+                                      "type": "string"
+                                    },
+                                    "tags": {
+                                      "type": "object"
+                                    },
+                                    "dimensions": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "type",
+                                    "type_alias",
+                                    "comment",
+                                    "tags",
+                                    "dimensions"
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "comment",
+                            "tags",
+                            "function_path",
+                            "parameters",
+                            "return_values"
+                          ]
+                        }
+                      ]
+                    },
+                    "release": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "comment": {
+                          "type": "string"
+                        },
+                        "tags": {
+                          "type": "object"
+                        },
+                        "function_path": {
+                          "type": "object",
+                          "properties": {
+                            "module": {
+                              "type": "string"
+                            },
+                            "package": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "module",
+                            "package"
+                          ]
+                        },
+                        "parameters": {
+                          "type": "array",
+                          "items": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "type": {
+                                  "type": "string"
+                                },
+                                "type_alias": {
+                                  "type": "string"
+                                },
+                                "comment": {
+                                  "type": "string"
+                                },
+                                "tags": {
+                                  "type": "object"
+                                },
+                                "dimensions": {
+                                  "type": "integer"
+                                }
+                              },
+                              "required": [
+                                "name",
+                                "type",
+                                "type_alias",
+                                "comment",
+                                "tags",
+                                "dimensions"
+                              ]
+                            }
+                          ]
+                        },
+                        "return_values": {
+                          "type": "array",
+                          "items": {}
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "comment",
+                        "tags",
+                        "function_path",
+                        "parameters",
+                        "return_values"
+                      ]
+                    },
+                    "methods": {
+                      "type": "array",
+                      "items": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "comment": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "function_path": {
+                              "type": "object",
+                              "properties": {
+                                "module": {
+                                  "type": "string"
+                                },
+                                "package": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "module",
+                                "package"
+                              ]
+                            },
+                            "parameters": {
+                              "type": "array",
+                              "items": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "type_alias": {
+                                      "type": "string"
+                                    },
+                                    "comment": {
+                                      "type": "string"
+                                    },
+                                    "tags": {
+                                      "type": "object"
+                                    },
+                                    "dimensions": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "type",
+                                    "type_alias",
+                                    "comment",
+                                    "tags",
+                                    "dimensions"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "type_alias": {
+                                      "type": "string"
+                                    },
+                                    "comment": {
+                                      "type": "string"
+                                    },
+                                    "tags": {
+                                      "type": "object"
+                                    },
+                                    "dimensions": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "type",
+                                    "type_alias",
+                                    "comment",
+                                    "tags",
+                                    "dimensions"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "type_alias": {
+                                      "type": "string"
+                                    },
+                                    "comment": {
+                                      "type": "string"
+                                    },
+                                    "tags": {
+                                      "type": "object"
+                                    },
+                                    "dimensions": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "type",
+                                    "type_alias",
+                                    "comment",
+                                    "tags",
+                                    "dimensions"
+                                  ]
+                                }
+                              ]
+                            },
+                            "return_values": {
+                              "type": "array",
+                              "items": {}
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "comment",
+                            "tags",
+                            "function_path",
+                            "parameters",
+                            "return_values"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "comment": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "function_path": {
+                              "type": "object",
+                              "properties": {
+                                "module": {
+                                  "type": "string"
+                                },
+                                "package": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "module",
+                                "package"
+                              ]
+                            },
+                            "parameters": {
+                              "type": "array",
+                              "items": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "type_alias": {
+                                      "type": "string"
+                                    },
+                                    "comment": {
+                                      "type": "string"
+                                    },
+                                    "tags": {
+                                      "type": "object"
+                                    },
+                                    "dimensions": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "type",
+                                    "type_alias",
+                                    "comment",
+                                    "tags",
+                                    "dimensions"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "type_alias": {
+                                      "type": "string"
+                                    },
+                                    "comment": {
+                                      "type": "string"
+                                    },
+                                    "tags": {
+                                      "type": "object"
+                                    },
+                                    "dimensions": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "type",
+                                    "type_alias",
+                                    "comment",
+                                    "tags",
+                                    "dimensions"
+                                  ]
+                                }
+                              ]
+                            },
+                            "return_values": {
+                              "type": "array",
+                              "items": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "type_alias": {
+                                      "type": "string"
+                                    },
+                                    "comment": {
+                                      "type": "string"
+                                    },
+                                    "tags": {
+                                      "type": "object"
+                                    },
+                                    "dimensions": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "type",
+                                    "type_alias",
+                                    "comment",
+                                    "tags",
+                                    "dimensions"
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "comment",
+                            "tags",
+                            "function_path",
+                            "parameters",
+                            "return_values"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "comment": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "type": "object"
+                            },
+                            "function_path": {
+                              "type": "object",
+                              "properties": {
+                                "module": {
+                                  "type": "string"
+                                },
+                                "package": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": [
+                                "module",
+                                "package"
+                              ]
+                            },
+                            "parameters": {
+                              "type": "array",
+                              "items": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "type_alias": {
+                                      "type": "string"
+                                    },
+                                    "comment": {
+                                      "type": "string"
+                                    },
+                                    "tags": {
+                                      "type": "object"
+                                    },
+                                    "dimensions": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "type",
+                                    "type_alias",
+                                    "comment",
+                                    "tags",
+                                    "dimensions"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "type_alias": {
+                                      "type": "string"
+                                    },
+                                    "comment": {
+                                      "type": "string"
+                                    },
+                                    "tags": {
+                                      "type": "object"
+                                    },
+                                    "dimensions": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "type",
+                                    "type_alias",
+                                    "comment",
+                                    "tags",
+                                    "dimensions"
+                                  ]
+                                }
+                              ]
+                            },
+                            "return_values": {
+                              "type": "array",
+                              "items": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "name": {
+                                      "type": "string"
+                                    },
+                                    "type": {
+                                      "type": "string"
+                                    },
+                                    "type_alias": {
+                                      "type": "string"
+                                    },
+                                    "comment": {
+                                      "type": "string"
+                                    },
+                                    "tags": {
+                                      "type": "object"
+                                    },
+                                    "dimensions": {
+                                      "type": "integer"
+                                    }
+                                  },
+                                  "required": [
+                                    "name",
+                                    "type",
+                                    "type_alias",
+                                    "comment",
+                                    "tags",
+                                    "dimensions"
+                                  ]
+                                }
+                              ]
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "comment",
+                            "tags",
+                            "function_path",
+                            "parameters",
+                            "return_values"
+                          ]
+                        }
+                      ]
+                    },
+                    "constants": {
+                      "type": "array",
+                      "items": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "comment",
+                    "tags",
+                    "constructors",
+                    "release",
+                    "methods",
+                    "constants"
+                  ]
+                }
+              ]
+            },
+            "constants": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "type_alias": {
+                      "type": "string"
+                    },
+                    "comment": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "type": "object"
+                    },
+                    "dimensions": {
+                      "type": "integer"
+                    },
+                    "value": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type",
+                    "type_alias",
+                    "comment",
+                    "tags",
+                    "dimensions",
+                    "value"
+                  ]
+                }
+              ]
+            },
+            "external_resources": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "required": [
+            "name",
+            "target_language",
+            "comment",
+            "tags",
+            "functions",
+            "classes",
+            "constants",
+            "external_resources"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "idl_filename",
+    "idl_extension",
+    "idl_filename_with_extension",
+    "idl_full_path",
+    "modules"
+  ]
+}
+

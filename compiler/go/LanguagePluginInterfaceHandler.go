@@ -4,6 +4,7 @@ package compiler
  */
 import "C"
 import (
+	. "github.com/MetaFFI/plugin-sdk/compiler/go/IDL"
 	"strings"
 )
 
@@ -25,7 +26,7 @@ func CreateLanguagePluginInterfaceHandler(wrapped LanguagePluginInterface){
 func (this *LanguagePluginInterfaceHandler) compile_to_guest(idl_def_json *C.char, idl_def_json_length C.uint,
 															output_path *C.char, output_path_length C.uint,
 															out_err **C.char, out_err_len *C.uint) {
-	def, err := NewIDLDefinition(C.GoStringN(idl_def_json, C.int(idl_def_json_length)))
+	def, err := NewIDLDefinitionFromJSON(C.GoStringN(idl_def_json, C.int(idl_def_json_length)))
 	if err != nil{
 		*out_err = C.CString(err.Error())
 		*out_err_len = C.uint(len(err.Error()))
@@ -47,7 +48,7 @@ func (this *LanguagePluginInterfaceHandler) compile_from_host(idl_def_json *C.ch
 															output_path *C.char, output_path_length C.uint,
 															host_options *C.char, host_options_length C.int,
 															out_err **C.char, out_err_len *C.uint){
-	def, err := NewIDLDefinition(C.GoStringN(idl_def_json, C.int(idl_def_json_length)))
+	def, err := NewIDLDefinitionFromJSON(C.GoStringN(idl_def_json, C.int(idl_def_json_length)))
 	if err != nil{
 		*out_err = C.CString(err.Error())
 		*out_err_len = C.uint(len(err.Error()))

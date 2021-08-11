@@ -1,4 +1,4 @@
-package compiler
+package IDL
 
 const(
 	TARGET_LANGUAGE="metaffi_target_language"
