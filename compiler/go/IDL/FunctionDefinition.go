@@ -54,7 +54,6 @@ func (this *FunctionDefinition) FunctionPathAsString() string{
 	res := ""
 
 	for k, v := range this.FunctionPath{
-
 		if res != ""{ res += "," }
 		res += fmt.Sprintf("%v=%v", k, v)
 	}

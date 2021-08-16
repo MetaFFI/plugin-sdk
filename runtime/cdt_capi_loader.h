@@ -8,10 +8,11 @@
 extern "C"{
 #endif
 
+#define METAFFI_NULL_HANDLE (metaffi_handle)NULL;
+
 /************************************************
 *   Allocations
 *************************************************/
-
 struct cdt* alloc_cdts_buffer(metaffi_size cdt_count);
 
 // Declarations

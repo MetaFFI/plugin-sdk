@@ -151,29 +151,29 @@ func (this *IDLDefinition) FinalizeConstruction(){
 			for _, f := range c.Fields{
 				if f.Getter != nil{
 					f.Getter.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-					f.Getter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+f.Getter.Name
+					f.Getter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+c.Name+"_get_"+f.Getter.Name
 				}
 
 				if f.Setter != nil{
 					f.Setter.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-					f.Setter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+f.Setter.Name
+					f.Setter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+c.Name+"_get_"+f.Setter.Name
 				}
 			}
 
 			for _, cstr := range c.Constructors{
 				cstr.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-				cstr.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+cstr.Name
+				cstr.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+c.Name+"_"+cstr.Name
 			}
 
 			for _, method := range c.Methods{
 				method.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-				method.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+method.Name
+				method.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+c.Name+"_"+method.Name
 				method.FunctionPath[ENTRYPOINT_CLASS] = c.Name
 			}
 
 			if c.Releaser != nil{
 				c.Releaser.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-				c.Releaser.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+c.Releaser.Name
+				c.Releaser.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+c.Name+"_"+c.Releaser.Name
 			}
 		}
 	}
