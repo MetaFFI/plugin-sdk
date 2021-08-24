@@ -62,16 +62,34 @@ func (this *ModuleDefinition) parseWellKnownTags(pathToFunction map[string]strin
 	return nil
 }
 //--------------------------------------------------------------------
+func (this *ModuleDefinition) AddFunctions(fs []*FunctionDefinition) {
+	for _, f := range fs{
+		this.AddFunction(f)
+	}
+}
+//--------------------------------------------------------------------
 func (this *ModuleDefinition) AddFunction(f *FunctionDefinition) {
 	this.Functions = append(this.Functions, f)
+}
+//--------------------------------------------------------------------
+func (this *ModuleDefinition) AddClasses(cs []*ClassDefinition) {
+	for _, c := range cs{
+		this.AddClass(c)
+	}
 }
 //--------------------------------------------------------------------
 func (this *ModuleDefinition) AddClass(c *ClassDefinition) {
 	this.Classes = append(this.Classes, c)
 }
 //--------------------------------------------------------------------
-func (this *ModuleDefinition) AddGlobal(c *GlobalDefinition) {
-	this.Globals = append(this.Globals, c)
+func (this *ModuleDefinition) AddGlobals(gs []*GlobalDefinition) {
+	for _, g := range gs{
+		this.AddGlobal(g)
+	}
+}
+//--------------------------------------------------------------------
+func (this *ModuleDefinition) AddGlobal(g *GlobalDefinition) {
+	this.Globals = append(this.Globals, g)
 }
 //--------------------------------------------------------------------
 func (this *ModuleDefinition) AddExternalResource(r string) {

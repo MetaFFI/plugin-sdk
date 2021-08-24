@@ -19,6 +19,10 @@ func NewConstructorDefinition(name string) *ConstructorDefinition{
 	return cstr
 }
 //--------------------------------------------------------------------
+func NewConstructorDefinitionFromFunctionDefinition(f *FunctionDefinition) *ConstructorDefinition{
+	return &ConstructorDefinition{FunctionDefinition: *f}
+}
+//--------------------------------------------------------------------
 func (this *ConstructorDefinition) IsMethod() bool{
 	return false
 }

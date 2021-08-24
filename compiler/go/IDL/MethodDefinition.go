@@ -8,6 +8,19 @@ type MethodDefinition struct{
 	parent *ClassDefinition
 }
 //--------------------------------------------------------------------
+func NewMethodDefinitionWithFunction(parent *ClassDefinition, function *FunctionDefinition, instanceRequired bool) *MethodDefinition{
+	m := &MethodDefinition{
+		FunctionDefinition: *function,
+		InstanceRequired:   instanceRequired,
+		parent:             parent,
+	}
+
+	// set first parameter as class instance
+	m.Parameters = append([]*ArgDefinition{ NewArgDefinition("this_instance", HANDLE) }, m.Parameters...)
+
+	return m
+}
+//--------------------------------------------------------------------
 func NewMethodDefinition(parent *ClassDefinition, name string, instanceRequired bool) *MethodDefinition{
 	m := &MethodDefinition{
 		FunctionDefinition: *NewFunctionDefinition(name),

@@ -23,7 +23,7 @@ func NewClassDefinition(name string) *ClassDefinition{
 		Fields:       make([]*FieldDefinition, 0),
 	}
 
-	c.Releaser = NewReleaserDefinition("ReleaseTestMap")
+	c.Releaser = NewReleaserDefinition("Release"+c.Name)
 
 	return c
 }
