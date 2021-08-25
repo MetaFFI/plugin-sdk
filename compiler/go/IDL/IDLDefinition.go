@@ -151,12 +151,12 @@ func (this *IDLDefinition) FinalizeConstruction(){
 			for _, f := range c.Fields{
 				if f.Getter != nil{
 					f.Getter.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-					f.Getter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+c.Name+"_get_"+f.Getter.Name
+					f.Getter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+c.Name+"_"+f.Getter.Name
 				}
 
 				if f.Setter != nil{
 					f.Setter.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-					f.Setter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+c.Name+"_get_"+f.Setter.Name
+					f.Setter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_"+c.Name+"_"+f.Setter.Name
 				}
 			}
 
