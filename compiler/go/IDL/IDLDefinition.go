@@ -92,6 +92,9 @@ func NewIDLDefinition(idlFullPath string, targetLanguage string) *IDLDefinition{
 	}
 
 	idl.MetaFFIGuestLib = idl.IDLFilename + "_MetaFFIGuest"
+	if strings.Contains(idl.MetaFFIGuestLib, "#"){
+		idl.MetaFFIGuestLib = idl.MetaFFIGuestLib[strings.Index(idl.MetaFFIGuestLib, "#")+1:]
+	}
 
 	return idl
 }
