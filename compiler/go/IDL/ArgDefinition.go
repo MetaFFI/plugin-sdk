@@ -55,12 +55,16 @@ func (this *ArgDefinition) IsTypeAlias() bool{
 	return this.TypeAlias != ""
 }
 //--------------------------------------------------------------------
+func (this *ArgDefinition) IsHandleTypeAlias() bool{
+	return this.IsHandle() && this.IsTypeAlias()
+}
+//--------------------------------------------------------------------
 func (this *ArgDefinition) IsString() bool{
 	return strings.Index(string(this.Type), "string") == 0
 }
 //--------------------------------------------------------------------
 func (this *ArgDefinition) IsHandle() bool{
-	return this.Type == HANDLE
+	return this.Type == HANDLE || this.Type == HANDLE_ARRAY
 }
 //--------------------------------------------------------------------
 func (this *ArgDefinition) IsAny() bool{

@@ -27,3 +27,19 @@ func NewFieldDefinitionWithAlias(cls *ClassDefinition, name string, ffiType Meta
 	return g
 }
 //--------------------------------------------------------------------
+func NewFieldArrayDefinitionWithAlias(cls *ClassDefinition, name string, ffiType MetaFFIType, dimensions int, alias string, getter string, setter string, instanceRequired bool) *FieldDefinition {
+	g := &FieldDefinition{
+		ArgDefinition: *NewArgArrayDefinitionWithAlias(name, ffiType, dimensions, alias),
+	}
+
+	if getter != ""{
+		g.Getter = NewMethodDefinition(cls, getter, instanceRequired).AddReturnValues(&g.ArgDefinition)
+	}
+
+	if setter != ""{
+		g.Setter = NewMethodDefinition(cls, setter, instanceRequired).AddParameter(&g.ArgDefinition)
+	}
+
+	return g
+}
+//--------------------------------------------------------------------

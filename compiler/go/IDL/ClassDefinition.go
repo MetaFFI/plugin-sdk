@@ -55,6 +55,11 @@ func (this *ClassDefinition) AddMethod(def *MethodDefinition) {
 //--------------------------------------------------------------------
 func (this *ClassDefinition) SetFunctionPath(key string, val string) {
 
+	for _, f := range this.Fields{
+		if f.Getter != nil{ f.Getter.SetFunctionPath(key, val) }
+		if f.Setter != nil{ f.Setter.SetFunctionPath(key, val) }
+	}
+
 	for _, cstr := range this.Constructors{
 		cstr.SetFunctionPath(key, val)
 	}

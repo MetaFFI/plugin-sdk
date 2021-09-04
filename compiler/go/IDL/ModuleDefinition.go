@@ -10,7 +10,7 @@ type ModuleDefinition struct{
 	ExternalResources []string           `json:"external_resources"`
 }
 //--------------------------------------------------------------------
-func NewModuleDefinition(name string, targetLanguage string) *ModuleDefinition{
+func NewModuleDefinition(name string) *ModuleDefinition{
 	return &ModuleDefinition{
 		Name:              name,
 		Tags:              make(map[string]string),
@@ -98,6 +98,10 @@ func (this *ModuleDefinition) AddExternalResource(r string) {
 //--------------------------------------------------------------------
 func (this *ModuleDefinition) SetFunctionPath(key string, val string) {
 
+	for _, g := range this.Globals{
+		if g.Getter != nil{ g.Getter.SetFunctionPath(key, val) }
+	}
+
 	for _, f := range this.Functions{
 		f.SetFunctionPath(key, val)
 	}
@@ -106,5 +110,48 @@ func (this *ModuleDefinition) SetFunctionPath(key string, val string) {
 		c.SetFunctionPath(key, val)
 	}
 
+}
+//--------------------------------------------------------------------
+// get set of all contained function paths
+func (this *ModuleDefinition) GetFunctionPathSet(key string) []string{
+
+	resmap := make(map[string]bool)
+
+	for _, g := range this.Globals{
+		if g.Getter != nil{ resmap[g.Getter.GetFunctionPath(key)] = true }
+		if g.Setter != nil{ resmap[g.Setter.GetFunctionPath(key)] = true }
+	}
+
+	for _, f := range this.Functions{
+		resmap[f.GetFunctionPath(key)] = true
+	}
+
+	for _, c := range this.Classes{
+
+		for _, f := range c.Fields{
+			if f.Getter != nil{ resmap[f.Getter.GetFunctionPath(key)] = true }
+			if f.Setter != nil{ resmap[f.Setter.GetFunctionPath(key)] = true }
+		}
+
+		for _, cstr := range c.Constructors{
+			resmap[cstr.GetFunctionPath(key)] = true
+		}
+
+		if c.Releaser != nil{
+			resmap[c.Releaser.GetFunctionPath(key)] = true
+		}
+
+		for _, m := range c.Methods{
+			resmap[m.GetFunctionPath(key)] = true
+		}
+
+	}
+
+	res := make([]string, 0)
+	for k, _ := range resmap{
+		if k != ""{ res = append(res, k) }
+	}
+
+	return res
 }
 //--------------------------------------------------------------------

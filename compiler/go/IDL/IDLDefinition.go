@@ -71,6 +71,13 @@ type Commentable interface {
 	AppendComment(comment string)
 }
 //--------------------------------------------------------------------
+//--------------------------------------------------------------------
+//--------------------------------------------------------------------
+type FunctionPather interface {
+	SetFunctionPath(key string, val string)
+	GetFunctionPath(key string) string
+}
+//--------------------------------------------------------------------
 type IDLDefinition struct {
 	IDLFilename string `json:"idl_filename"`
 	IDLExtension string `json:"idl_extension"`
@@ -211,5 +218,104 @@ func (this *IDLDefinition) AddModule(m *ModuleDefinition) {
 	}
 
 	this.Modules = append(this.Modules, m)
+}
+//--------------------------------------------------------------------
+// in case a name is a keyword, it must be replaced
+// use this method to replace keywords
+func (this *IDLDefinition) ReplaceKeywords(mapping map[string]string){
+
+	for _, m := range this.Modules{
+		for _, g := range m.Globals{
+			if _, found := mapping[g.Name]; found{ g.Name = mapping[g.Name] }
+
+			if g.Getter != nil{
+
+				if _, found := mapping[g.Getter.Name]; found{ g.Getter.Name = mapping[g.Getter.Name] }
+
+				for _, p := range g.Getter.Parameters{
+					if _, found := mapping[p.Name]; found{ p.Name = mapping[p.Name] }
+				}
+
+				for _, r := range g.Getter.ReturnValues{
+					if _, found := mapping[r.Name]; found{ r.Name = mapping[r.Name] }
+				}
+			}
+
+			if g.Setter != nil{
+
+				if _, found := mapping[g.Setter.Name]; found{ g.Name = mapping[g.Setter.Name] }
+
+				for _, p := range g.Setter.Parameters{
+					if _, found := mapping[p.Name]; found{ p.Name = mapping[p.Name] }
+				}
+
+				for _, r := range g.Setter.ReturnValues{
+					if _, found := mapping[r.Name]; found{ r.Name = mapping[r.Name] }
+				}
+			}
+		}
+
+		for _, f := range m.Functions{
+			if _, found := mapping[f.Name]; found{ f.Name = mapping[f.Name] }
+
+			for _, p := range f.Parameters{
+				if _, found := mapping[p.Name]; found{ p.Name = mapping[p.Name] }
+			}
+
+			for _, r := range f.ReturnValues{
+				if _, found := mapping[r.Name]; found{ r.Name = mapping[r.Name] }
+			}
+		}
+
+		for _, c := range m.Classes{
+
+			if _, found := mapping[c.Name]; found{ c.Name = mapping[c.Name] }
+
+			for _, f := range c.Fields{
+				if _, found := mapping[f.Name]; found{ f.Name = mapping[f.Name] }
+
+				if f.Getter != nil{
+
+					if _, found := mapping[f.Getter.Name]; found{ f.Getter.Name = mapping[f.Getter.Name] }
+
+					for _, p := range f.Getter.Parameters{
+						if _, found := mapping[p.Name]; found{ p.Name = mapping[p.Name] }
+					}
+
+					for _, r := range f.Getter.ReturnValues{
+						if _, found := mapping[r.Name]; found{ r.Name = mapping[r.Name] }
+					}
+				}
+
+				if f.Setter != nil{
+
+					if _, found := mapping[f.Setter.Name]; found{ f.Setter.Name = mapping[f.Setter.Name] }
+
+					for _, p := range f.Setter.Parameters{
+						if _, found := mapping[p.Name]; found{ p.Name = mapping[p.Name] }
+					}
+
+					for _, r := range f.Setter.ReturnValues{
+						if _, found := mapping[r.Name]; found{ r.Name = mapping[r.Name] }
+					}
+				}
+			}
+
+			for _, m := range c.Methods{
+
+				if _, found := mapping[m.Name]; found{ m.Name = mapping[m.Name] }
+
+				for _, p := range m.Parameters{
+					if _, found := mapping[p.Name]; found{
+						p.Name = mapping[p.Name]
+					}
+				}
+
+				for _, r := range m.ReturnValues{
+					if _, found := mapping[r.Name]; found{ r.Name = mapping[r.Name] }
+				}
+			}
+		}
+	}
 }
 //--------------------------------------------------------------------

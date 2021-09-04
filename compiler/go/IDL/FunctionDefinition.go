@@ -99,6 +99,11 @@ func (this *FunctionDefinition) SetFunctionPath(key string, val string) {
 	this.FunctionPath[key] = val
 }
 //--------------------------------------------------------------------
+func (this *FunctionDefinition) GetFunctionPath(key string) string{
+	val, found := this.FunctionPath[key]
+	if !found{ return "" } else { return val }
+}
+//--------------------------------------------------------------------
 func (this *FunctionDefinition) IsMethod() bool{
 	return false
 }

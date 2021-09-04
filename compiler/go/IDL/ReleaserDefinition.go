@@ -16,6 +16,10 @@ func NewReleaserDefinition(name string) *ReleaseDefinition{
 	return r
 }
 //--------------------------------------------------------------------
+func NewReleaserDefinitionFromFunctionDefinition(f *FunctionDefinition) *ReleaseDefinition{
+	return &ReleaseDefinition{FunctionDefinition: *f}
+}
+//--------------------------------------------------------------------
 func (this *ReleaseDefinition) IsMethod() bool{
 	return false
 }
