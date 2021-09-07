@@ -100,6 +100,7 @@ func (this *ModuleDefinition) SetFunctionPath(key string, val string) {
 
 	for _, g := range this.Globals{
 		if g.Getter != nil{ g.Getter.SetFunctionPath(key, val) }
+		if g.Setter != nil{ g.Setter.SetFunctionPath(key, val) }
 	}
 
 	for _, f := range this.Functions{
