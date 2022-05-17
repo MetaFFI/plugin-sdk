@@ -1,4 +1,5 @@
 #include "cdts_wrapper.h"
+#include "cdts_alloc.h"
 #include <vector>
 #include <cstring>
 
@@ -8,7 +9,8 @@ int main()
 {
 	try
 	{
-		cdts_wrapper cdts(15);
+		cdt* pcdts = (cdt*)alloca(sizeof(cdt)*15);
+		cdts_wrapper cdts(pcdts, 15);
 		
 		std::vector<metaffi_types> vec_types =
 		{

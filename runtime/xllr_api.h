@@ -32,29 +32,16 @@ int64_t load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_n
 void free_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, int64_t function_id, char** err, uint32_t* err_len);
 
 /***
- * Call foreign function
+ * Call foreign entity
  */
-void call(
-	// [in] runtime plugin name
-	const char* runtime_plugin_name, uint32_t runtime_plugin_name_len,
-	
-	// [in] function id to call
-	int64_t function_id,
-	
-	// [in] parameters array
-	cdt* parameters,
-	
-	// [in] number of parameters
-	uint64_t parameters_len,
-	
-	// [in] return values array
-	cdt* return_values,
-	
-	// [in] number of return values
-	uint64_t return_values_len,
-	
-	// [out] error
-	char** out_err, uint64_t* out_err_len
+void xcall(
+	const char* runtime_plugin_name, uint32_t runtime_plugin_name_len,  // [in] runtime plugin name
+	int64_t function_id,                                                // [in] function id to call
+	cdt* parameters,                                                    // [in] parameters array
+	uint64_t parameters_len,                                            // [in] number of parameters
+	cdt* return_values,                                                 // [in] return values array
+	uint64_t return_values_len,                                         // [in] number of return values
+	char** out_err, uint64_t* out_err_len                               // [out] error
 );
 
 /**

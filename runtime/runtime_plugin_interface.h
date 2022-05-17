@@ -31,7 +31,7 @@ struct runtime_plugin_interface
 	/***
 	 * Call foreign function
 	 */
-	virtual void call(
+	virtual void xcall(
 			//function id to call
 			int64_t function_id,
 			

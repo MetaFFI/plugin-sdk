@@ -1,19 +1,12 @@
 #include "cdts_wrapper.h"
 #include "cdt_capi_loader.h"
 #include <mutex>
+#include "cdts_alloc.h"
 
 namespace metaffi::runtime
 {
 std::once_flag load_cdt_capi_once;
 
-//--------------------------------------------------------------------
-cdts_wrapper::cdts_wrapper(metaffi_size cdt_count)
-{
-	std::call_once(load_cdt_capi_once, [](){ load_cdt_capi(); });
-	
-	this->cdts = alloc_cdts_buffer(cdt_count);
-	this->cdts_length = cdt_count;
-}
 //--------------------------------------------------------------------
 cdts_wrapper::cdts_wrapper(cdt* cdts, metaffi_size cdts_length):cdts(cdts),cdts_length(cdts_length)
 {

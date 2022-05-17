@@ -4,10 +4,6 @@
 *   Allocations
 *************************************************/
 
-typedef struct cdt* (*palloc_cdts_buffer_t)(metaffi_size cdt_count);
-palloc_cdts_buffer_t palloc_cdts_buffer;
-struct cdt* alloc_cdts_buffer(metaffi_size cdt_count){ return palloc_cdts_buffer(cdt_count); }
-
 #define alloc_numeric_on_heap_impl_fptr(type) \
 typedef type* (*palloc_##type##_on_heap_t)(type val); \
 palloc_##type##_on_heap_t palloc_##type##_on_heap; \
@@ -277,7 +273,7 @@ void* load_symbol(void* handle, const char* name, char** out_err)
 const char* load_xllr_api()
 {
 	char* out_err = NULL;
-	pxllr_call = (void (*)(const char*, uint32_t, int64_t, struct cdt*, uint64_t, struct cdt*, uint64_t, char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "call", &out_err);
+	pxllr_call = (void (*)(const char*, uint32_t, int64_t, struct cdt*, uint64_t, struct cdt*, uint64_t, char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "xcall", &out_err);
 	if(!pxllr_call)
 	{
 		return out_err;
@@ -344,8 +340,8 @@ const char* load_xllr()
 	
 	const char* err = load_xllr_api();
 	if(err){
-		printf("Failed to load call function: %s", err);
-		return "Failed to load call function";
+		printf("Failed to load xcall function: %s", err);
+		return "Failed to load xcall function";
 	}
 	
 	return NULL;
@@ -382,7 +378,6 @@ const char* load_cdt_capi()
 	p##name = (p##name##_t)load_symbol(cdt_helper_xllr_handle, #name, &err); \
 	if(err){ return err; }
 
-	load_helper_function(alloc_cdts_buffer);
 	load_helper_function(get_type);
 	load_helper_function(get_cdt);
 	

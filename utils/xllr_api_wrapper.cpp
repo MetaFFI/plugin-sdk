@@ -33,7 +33,7 @@ xllr_api_wrapper::xllr_api_wrapper()
 									unsigned char*, uint64_t,
 									unsigned char**, uint64_t*,
 									unsigned char**, uint64_t*,
-									uint8_t*)>(*this->xllr_mod, "call");
+									uint8_t*)>(*this->xllr_mod, "xcall");
 		
 		this->pset_runtime_flag = load_func<void(const char*, uint64_t)>(*this->xllr_mod, "set_runtime_flag");
 		this->pis_runtime_flag_set = load_func<int(const char*, uint64_t)>(*this->xllr_mod, "is_runtime_flag_set");

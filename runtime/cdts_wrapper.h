@@ -273,7 +273,6 @@ private:
 	
 public:
 	explicit cdts_wrapper(cdt* cdts, metaffi_size cdts_length);
-	explicit cdts_wrapper(metaffi_size cdt_count);
 	~cdts_wrapper() = default;
 	
 	[[nodiscard]] cdt* get_cdts() const;
@@ -283,12 +282,12 @@ public:
 	
 	/**
 	 * @brief Parses CDTS and for each CDT calls the relevant callback function
-	 * @param callbacks with functions to call with CDT values
+	 * @param callbacks with functions to xcall with CDT values
 	 */
 	void parse(void* values_to_set, const cdts_parse_callbacks& callbacks);
 	
 	/**
-	 @brief For each element in CDTS, call revelant cdts_build_callback based on given types[]. types[] length must equal CDTS length.
+	 @brief For each element in CDTS, xcall revelant cdts_build_callback based on given types[]. types[] length must equal CDTS length.
 	 * @param types
 	 * @param types_length
 	 * @param values_to_set is passed to the callbacks. Parameter should contain the data to convert.

@@ -13,7 +13,6 @@ extern "C"{
 /************************************************
 *   Allocations
 *************************************************/
-struct cdt* alloc_cdts_buffer(metaffi_size cdt_count);
 
 // Declarations
 #define alloc_numeric_on_heap_decl_fptr(type) \

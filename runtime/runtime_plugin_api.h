@@ -28,7 +28,7 @@ void free_function(int64_t function_id, char** err, uint32_t* err_len);
 /***
  * Call foreign function
  */
-void call(
+void xcall(
 		int64_t function_id,
 		cdt* parameters, uint64_t parameters_len,
 		cdt* return_values, uint64_t return_values_len,
