@@ -136,12 +136,12 @@ int xllr_is_runtime_flag_set(const char* flag_name, uint64_t flag_name_len);
 
 #ifdef _WIN32 //// --- START WINDOWS ---
 #include <Windows.h>
-void get_last_error_string(DWORD err, char** out_err_str)
+void get_last_error_string(DWORD err, char** out_err_str, uint64_t* out_err_size);
 #endif
 
-void* load_library(const char* name, char** out_err);
+void* load_library(const char* name, char** out_err, uint64_t* out_err_size);
 const char* free_library(void* lib);
-void* load_symbol(void* handle, const char* name, char** out_err);
+void* load_symbol(void* handle, const char* name, char** out_err, uint64_t* out_err_len);
 const char* load_xllr_api();
 const char* load_xllr();
 const char* free_xllr();

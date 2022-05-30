@@ -10,7 +10,7 @@ std::once_flag load_cdt_capi_once;
 //--------------------------------------------------------------------
 cdts_wrapper::cdts_wrapper(cdt* cdts, metaffi_size cdts_length):cdts(cdts),cdts_length(cdts_length)
 {
-	std::call_once(load_cdt_capi_once, [](){ load_cdt_capi(); });
+	std::call_once(load_cdt_capi_once, [](){ const char* err = load_cdt_capi(); if(err){ throw std::runtime_error(err);} });
 }
 //--------------------------------------------------------------------
 void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callbacks)

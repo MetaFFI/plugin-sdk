@@ -144,8 +144,8 @@ struct cdts_parse_callbacks
 	on_parse_string(metaffi_string32);
 
 #define prase_constructor_param(type) \
-	typeof(on_##type) on_##type, \
-	typeof(on_##type##_array) on_##type##_array
+    decltype(on_##type) on_##type,         \
+	decltype(on_##type##_array) on_##type##_array
 
 #define parse_constructor_init_param(type) \
 	on_##type(std::move(on_##type)),          \
@@ -219,8 +219,8 @@ struct cdts_build_callbacks
 	
 	
 #define build_constructor_param(type) \
-	const typeof(set_##type)& set_##type, \
-    const typeof(set_##type##_array)& set_##type##_array
+	const decltype(set_##type)& set_##type, \
+    const decltype(set_##type##_array)& set_##type##_array
 
 #define build_constructor_init_param(type) \
 	set_##type(std::move(set_##type)),\

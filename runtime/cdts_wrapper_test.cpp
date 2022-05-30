@@ -189,7 +189,6 @@ int main()
 				asset_and_throw(p13_sizes[1] == strings_lengths[1]);
 				
 				asset_and_throw(p13_dimensions_lengths[0] == dimensions_lengths[0]);
-				asset_and_throw(p13_dimensions_lengths[1] == dimensions_lengths[1]);
 				
 				asset_and_throw(dimensions == 1);
 				

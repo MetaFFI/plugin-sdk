@@ -93,12 +93,12 @@ get_string_element_impl_fptr(metaffi_string32);
 #define set_numeric_element_impl_fptr(type) \
 typedef void (*pset_##type##_element_t) (type*, int, type); \
 pset_##type##_element_t pset_##type##_element; \
-void set_##type##_element(type* arr, int index, type val){ return pset_##type##_element(arr, index, val); }
+void set_##type##_element(type* arr, int index, type val){ pset_##type##_element(arr, index, val); }
 
 #define set_string_element_impl_fptr(type) \
 typedef void (*pset_##type##_element_t) (type*, metaffi_size*, int, type, metaffi_size); \
 pset_##type##_element_t pset_##type##_element; \
-void set_##type##_element(type* arr, metaffi_size* sizes_array, int index, type str, metaffi_size str_size){ return pset_##type##_element(arr, sizes_array, index, str, str_size); }
+void set_##type##_element(type* arr, metaffi_size* sizes_array, int index, type str, metaffi_size str_size){ pset_##type##_element(arr, sizes_array, index, str, str_size); }
 
 set_numeric_element_impl_fptr(metaffi_float64);
 set_numeric_element_impl_fptr(metaffi_float32);
@@ -177,7 +177,7 @@ void* cdt_helper_xllr_handle = NULL;
 // === Functions ===
 #ifdef _WIN32 //// --- START WINDOWS ---
 #include <Windows.h>
-void get_last_error_string(DWORD err, char** out_err_str)
+void get_last_error_string(DWORD err, char** out_err_str, uint64_t* out_err_size)
 {
 	DWORD bufLen = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
 								 FORMAT_MESSAGE_FROM_SYSTEM |
@@ -189,15 +189,16 @@ void get_last_error_string(DWORD err, char** out_err_str)
 								 0,
 								 NULL );
 
-	// TODO: out_err_str should get cleaned up!
+	*out_err_size = bufLen;
 }
 
-void* load_library(const char* name, char** out_err)
+void* load_library(const char* name, char** out_err, uint64_t* out_err_size)
 {
 	void* handle = LoadLibraryA(name);
 	if(!handle)
 	{
-		get_last_error_string(GetLastError(), out_err);
+		get_last_error_string(GetLastError(), out_err, out_err_size);
+		printf("Failed to load %s. Error: %s\n", name, *out_err);
 	}
 
 	return handle;
@@ -213,19 +214,20 @@ const char* free_library(void* lib) // return error string. null if no error.
 	if(!FreeLibrary(lib))
 	{
 		char* out_err;
-		get_last_error_string(GetLastError(), &out_err);
+		uint64_t out_err_len;
+		get_last_error_string(GetLastError(), &out_err, &out_err_len);
 		return out_err;
 	}
 
 	return NULL;
 }
 
-void* load_symbol(void* handle, const char* name, char** out_err)
+void* load_symbol(void* handle, const char* name, char** out_err, uint64_t* out_err_len)
 {
 	void* res = GetProcAddress(handle, name);
 	if(!res)
 	{
-		get_last_error_string(GetLastError(), out_err);
+		get_last_error_string(GetLastError(), out_err, out_err_len);
 		return NULL;
 	}
 
@@ -273,31 +275,32 @@ void* load_symbol(void* handle, const char* name, char** out_err)
 const char* load_xllr_api()
 {
 	char* out_err = NULL;
-	pxllr_call = (void (*)(const char*, uint32_t, int64_t, struct cdt*, uint64_t, struct cdt*, uint64_t, char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "xcall", &out_err);
+	uint64_t out_err_len;
+	pxllr_call = (void (*)(const char*, uint32_t, int64_t, struct cdt*, uint64_t, struct cdt*, uint64_t, char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "xcall", &out_err, &out_err_len);
 	if(!pxllr_call)
 	{
 		return out_err;
 	}
 	
-	pxllr_load_function = (int64_t (*)(const char*, uint32_t, const char*, uint32_t, int64_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "load_function", &out_err);
+	pxllr_load_function = (int64_t (*)(const char*, uint32_t, const char*, uint32_t, int64_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "load_function", &out_err, &out_err_len);
 	if(!pxllr_load_function)
 	{
 		return out_err;
 	}
 
-	pxllr_free_runtime_plugin = (void (*)(const char*, uint32_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "free_runtime_plugin", &out_err);
+	pxllr_free_runtime_plugin = (void (*)(const char*, uint32_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "free_runtime_plugin", &out_err, &out_err_len);
 	if(!pxllr_free_runtime_plugin)
 	{
 		return out_err;
 	}
 	
-	pxllr_is_runtime_flag_set = (int (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "is_runtime_flag_set", &out_err);
+	pxllr_is_runtime_flag_set = (int (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "is_runtime_flag_set", &out_err, &out_err_len);
 	if(!pxllr_is_runtime_flag_set)
 	{
 		return out_err;
 	}
 	
-	pxllr_set_runtime_flag = (void (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "set_runtime_flag", &out_err);
+	pxllr_set_runtime_flag = (void (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "set_runtime_flag", &out_err, &out_err_len);
 	if(!pxllr_set_runtime_flag)
 	{
 		return out_err;
@@ -312,10 +315,11 @@ const char* load_xllr()
 		return NULL;
 	}
 	
-	const char* metaffi_home = getenv("METAFFI_HOME");
-	if(!metaffi_home)
+	size_t metaffi_home_size = 320;
+	char metaffi_home[320] = {0};
+	if(getenv_s(&metaffi_home_size, metaffi_home, metaffi_home_size, "METAFFI_HOME") != 0)
 	{
-		return "METAFFI_HOME is not set";
+		return "Failed getting METAFFI_HOME. Is it set?";
 	}
 
 #ifdef _WIN32
@@ -330,11 +334,21 @@ const char* load_xllr()
 	sprintf(xllr_full_path, "%s/xllr%s", metaffi_home, ext);
 	
 	char* out_err;
-	cdt_helper_xllr_handle = load_library(xllr_full_path, &out_err);
+	uint64_t out_err_size;
+	cdt_helper_xllr_handle = load_library(xllr_full_path, &out_err, &out_err_size);
 	if(!cdt_helper_xllr_handle)
 	{
 		// error has occurred
+		//char* err_buf = calloc(1, (23+out_err_size+1)*sizeof(char));
 		printf("Failed to load XLLR: %s", out_err);
+		#ifdef _WIN32
+			LocalFree(out_err);
+		#else
+			free(out_err);
+		#endif
+		
+		// Returning non-allocated string so caller does not have to free anything
+		// Error is printed to "printf"
 		return "Failed to load XLLR";
 	}
 	
@@ -373,9 +387,10 @@ const char* load_cdt_capi()
 	}
 	
 	char* err = NULL;
+	uint64_t out_err_len = 0;
 
 #define load_helper_function(name) \
-	p##name = (p##name##_t)load_symbol(cdt_helper_xllr_handle, #name, &err); \
+	p##name = (p##name##_t)load_symbol(cdt_helper_xllr_handle, #name, &err, &out_err_len); \
 	if(err){ return err; }
 
 	load_helper_function(get_type);

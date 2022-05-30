@@ -18,6 +18,9 @@ add_executable(cdts_wrapper_test
 			${CMAKE_CURRENT_LIST_DIR}/runtime/cdt_capi_loader.c
 		)
 
-target_link_libraries(cdts_wrapper_test PUBLIC dl Threads::Threads)
+target_link_libraries(cdts_wrapper_test PUBLIC Threads::Threads)
+if(NOT WIN32)
+	target_link_libraries(cdts_wrapper_test PUBLIC dl)
+endif()
 
 add_test(NAME cdts_wrapper_test COMMAND cdts_wrapper_test)
