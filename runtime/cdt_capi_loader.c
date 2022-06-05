@@ -1,5 +1,10 @@
 #include "cdt_capi_loader.h"
 
+#ifndef WIN32
+	#include <stdlib.h>
+	#include <stdio.h>
+	#include <string.h>
+#endif
 /************************************************
 *   Allocations
 *************************************************/
@@ -236,12 +241,15 @@ void* load_symbol(void* handle, const char* name, char** out_err, uint64_t* out_
 
 #else // ------ START POSIX ----
 #include <dlfcn.h>
-void* load_library(const char* name, char** out_err)
+#include <string.h>
+
+void* load_library(const char* name, char** out_err, uint64_t* out_err_len)
 {
 	void* handle = dlopen(name, RTLD_GLOBAL | RTLD_NOW);
 	if(!handle)
 	{
 		*out_err = dlerror();
+		*out_err_len = strlen(*out_err);
 	}
 	
 	return handle;
@@ -257,13 +265,14 @@ const char* free_library(void* lib)
 	return NULL;
 }
 
-void* load_symbol(void* handle, const char* name, char** out_err)
+void* load_symbol(void* handle, const char* name, char** out_err, uint64_t* out_err_len)
 {
 	void* res = dlsym(handle, name);
 	if(!res)
 	{
 		*out_err = dlerror();
 		printf("Failed to load symbol from handle. %s. %s\n", name, *out_err);
+		*out_err_len = strlen(*out_err);
 		return NULL;
 	}
 	
@@ -317,7 +326,13 @@ const char* load_xllr()
 	
 	size_t metaffi_home_size = 320;
 	char metaffi_home[320] = {0};
+#ifdef _WIN32
 	if(getenv_s(&metaffi_home_size, metaffi_home, metaffi_home_size, "METAFFI_HOME") != 0)
+#else
+	const char* metaffi_home_tmp = getenv("METAFFI_HOME");
+	if(metaffi_home_tmp){ strcpy(metaffi_home, metaffi_home_tmp); }
+	else
+#endif
 	{
 		return "Failed getting METAFFI_HOME. Is it set?";
 	}
@@ -330,8 +345,12 @@ const char* load_xllr()
 	const char* ext = ".so";
 #endif
 	
-	char xllr_full_path[300] = {0};
+	char xllr_full_path[400] = {0};
+#ifdef _WIN32
+	sprintf_s(xllr_full_path, sizeof(xllr_full_path), "%s/xllr%s", metaffi_home, ext);
+#else
 	sprintf(xllr_full_path, "%s/xllr%s", metaffi_home, ext);
+#endif
 	
 	char* out_err;
 	uint64_t out_err_size;
