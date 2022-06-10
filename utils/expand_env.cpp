@@ -18,7 +18,7 @@ std::string expand_env(const std::string& str)
 #ifndef _WIN32
 			if( c == '$' ) // start of var
 #else
-			if( c == '%' ) // start of var
+			if( c == '%' || c == '$' ) // start of var
 #endif
 			{
 				in_var = true;
@@ -34,17 +34,20 @@ std::string expand_env(const std::string& str)
 #ifndef _WIN32
 			if(c == ' ' || c == '$' || c == '\\' || c == '/' || c == ':') // end of var
 #else
-			if(c == '%') // end of var
+			if(c == '%' || c == ' ' || c == '$' || c == '\\' || c == '/' || c == ':') // end of var
 #endif
 			{
 				// get current directory
 #ifndef _WIN32
 				if(curvar == "$PWD")
 #else
-				if(boost::algorithm::to_upper_copy(curvar) == "%CD")
+				if(boost::algorithm::to_upper_copy(curvar) == "%CD" || curvar == "$PWD")
 #endif
 				{
 					res += boost::filesystem::current_path().string();
+					if(c == '\\' || c == '/'){
+						res += c;
+					}
 				}
 				else
 				{
