@@ -3,14 +3,22 @@
 #include <mutex>
 #include "cdts_alloc.h"
 
+// NOLINT(bugprone-macro-parentheses)
+
+
 namespace metaffi::runtime
 {
 std::once_flag load_cdt_capi_once;
 
 //--------------------------------------------------------------------
-cdts_wrapper::cdts_wrapper(cdt* cdts, metaffi_size cdts_length):cdts(cdts),cdts_length(cdts_length)
+cdts_wrapper::cdts_wrapper(cdt* cdts, metaffi_size cdts_length, bool is_free_cdts /*= false*/):cdts(cdts),cdts_length(cdts_length), is_free_cdts(is_free_cdts)
 {
 	std::call_once(load_cdt_capi_once, [](){ const char* err = load_cdt_capi(); if(err){ throw std::runtime_error(err);} });
+}
+//--------------------------------------------------------------------
+cdts_wrapper::~cdts_wrapper()
+{
+	if(is_free_cdts){ free(this->cdts); }
 }
 //--------------------------------------------------------------------
 void cdts_wrapper::parse(void* values_to_set, const cdts_parse_callbacks& callbacks)

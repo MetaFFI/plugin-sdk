@@ -270,10 +270,11 @@ class cdts_wrapper
 private:
 	cdt* cdts;
 	metaffi_size cdts_length;
+	bool is_free_cdts;
 	
 public:
-	explicit cdts_wrapper(cdt* cdts, metaffi_size cdts_length);
-	~cdts_wrapper() = default;
+	explicit cdts_wrapper(cdt* cdts, metaffi_size cdts_length, bool is_free_cdts = false);
+	~cdts_wrapper();
 	
 	[[nodiscard]] cdt* get_cdts() const;
 	[[nodiscard]] metaffi_size get_cdts_length() const;
