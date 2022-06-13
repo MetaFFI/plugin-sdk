@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.16.3)
 project(metaffi-plugin-sdk VERSION 0.0.1)
+set(Boost_NO_WARN_NEW_VERSIONS 1)
 
 set(CMAKE_CXX_STANDARD 17)
 
