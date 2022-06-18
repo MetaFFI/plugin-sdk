@@ -20,7 +20,16 @@ inline std::shared_ptr<boost::dll::shared_library> load_plugin(const std::string
 	
 	// load plugin
 	std::shared_ptr<boost::dll::shared_library> plugin_dll = std::make_shared<boost::dll::shared_library>();
-	plugin_dll->load( plugin_full_path, boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global );
+	try
+	{
+		plugin_dll->load( plugin_full_path, boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global );
+	}
+	catch(std::exception& ex)
+	{
+		std::stringstream ss;
+		ss << ex.what() << " Failed to load " << plugin_full_path;
+		throw std::runtime_error(ss.str());
+	}
 	
 	return plugin_dll;
 }
