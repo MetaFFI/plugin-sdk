@@ -3,16 +3,19 @@
 #include <boost/dll.hpp>
 #include <memory>
 #include <string>
+#include <sstream>
 
 namespace metaffi::utils
 {
 //--------------------------------------------------------------------
 inline std::shared_ptr<boost::dll::shared_library> load_plugin(const std::string& plugin_filename_without_extension)
 {
-	std::string metaffi_home = std::getenv("METAFFI_HOME");
-	if(metaffi_home.empty()){
+	const char* mhome_env = std::getenv("METAFFI_HOME");
+	if(mhome_env == nullptr){
 		throw std::runtime_error("METAFFI_HOME environment variable is not set");
 	}
+	
+	std::string metaffi_home(mhome_env);
 	
 	// prepend METAFFI_HOME directory to the file name
 	boost::filesystem::path plugin_full_path(metaffi_home);
