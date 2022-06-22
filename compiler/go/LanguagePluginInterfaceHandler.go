@@ -6,6 +6,8 @@ import "C"
 import (
 	. "github.com/MetaFFI/plugin-sdk/compiler/go/IDL"
 	"strings"
+	"fmt"
+	"time"
 )
 
 var languagePluginInterfaceHandler *LanguagePluginInterfaceHandler
@@ -94,10 +96,20 @@ func compile_to_guest(idl_def_json *C.char, idl_def_json_length C.uint,
 	block_name *C.char, block_name_length C.uint,
 	block_code *C.char, block_code_length C.uint,
 	out_err **C.char, out_err_len *C.uint) {
-
+	
 	if languagePluginInterfaceHandler == nil{
-		panic("languagePluginInterfaceHandler is null!")
+		*out_err = C.CString("Go Compiler plugin not initialised!")
+		*out_err_len = C.uint(len("Go Compiler plugin not initialised!"))
+		return
 	}
+	
+	defer func() {
+		if err := recover(); err != nil {
+			msg := fmt.Sprintf("%v", err)
+			*out_err = C.CString(msg)
+			*out_err_len = C.uint(len(msg))
+		}
+	}()
 
 	languagePluginInterfaceHandler.compile_to_guest(idl_def_json, idl_def_json_length, output_path, output_path_length, block_name, block_name_length, block_code, block_code_length, out_err, out_err_len)
 }
@@ -108,10 +120,28 @@ func compile_from_host(idl_def_json *C.char, idl_def_json_length C.uint,
 	host_options *C.char, host_options_length C.int,
 	out_err **C.char, out_err_len *C.uint){
 
-	if languagePluginInterfaceHandler == nil{
-		panic("languagePluginInterfaceHandler is null!")
-	}
+	println("+++++++ TEST")
 
+	time.Sleep(10*time.Second)
+
+	if languagePluginInterfaceHandler == nil{
+		*out_err = C.CString("Go Compiler plugin not initialised!")
+		*out_err_len = C.uint(len("Go Compiler plugin not initialised!"))
+		return
+	}
+	
+	println("+++++++ TEST 2")
+	
+	defer func() {
+		if err := recover(); err != nil {
+			msg := fmt.Sprintf("%v", err)
+			*out_err = C.CString(msg)
+			*out_err_len = C.uint(len(msg))
+		}
+	}()
+	
 	languagePluginInterfaceHandler.compile_from_host(idl_def_json, idl_def_json_length, output_path, output_path_length, host_options, host_options_length, out_err, out_err_len)
+	
+	println("+++++++ TEST 3")
 }
 //--------------------------------------------------------------------
