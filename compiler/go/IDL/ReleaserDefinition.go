@@ -12,7 +12,7 @@ func NewReleaserDefinition(parent *ClassDefinition, name string) *ReleaseDefinit
 	}
 	
 	r.AppendComment("Releases object")
-	r.AddParameter(NewArgDefinition("this_instance", HANDLE))
+	//r.AddParameter(NewArgDefinition("this_instance", HANDLE))
 	
 	return r
 }

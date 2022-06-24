@@ -120,8 +120,6 @@ func compile_from_host(idl_def_json *C.char, idl_def_json_length C.uint,
 	host_options *C.char, host_options_length C.int,
 	out_err **C.char, out_err_len *C.uint){
 
-	println("+++++++ TEST")
-
 	time.Sleep(10*time.Second)
 
 	if languagePluginInterfaceHandler == nil{
@@ -129,9 +127,7 @@ func compile_from_host(idl_def_json *C.char, idl_def_json_length C.uint,
 		*out_err_len = C.uint(len("Go Compiler plugin not initialised!"))
 		return
 	}
-	
-	println("+++++++ TEST 2")
-	
+
 	defer func() {
 		if err := recover(); err != nil {
 			msg := fmt.Sprintf("%v", err)
@@ -141,7 +137,6 @@ func compile_from_host(idl_def_json *C.char, idl_def_json_length C.uint,
 	}()
 	
 	languagePluginInterfaceHandler.compile_from_host(idl_def_json, idl_def_json_length, output_path, output_path_length, host_options, host_options_length, out_err, out_err_len)
-	
-	println("+++++++ TEST 3")
+
 }
 //--------------------------------------------------------------------
