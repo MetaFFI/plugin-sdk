@@ -193,12 +193,12 @@ struct cdts_parse_callbacks
 struct cdts_build_callbacks
 {
 #define set_build_numeric(type) \
-	std::function<void(void* values_to_set, int index, type& val_to_set)> set_##type;\
-    std::function<void(void* values_to_set, int index, type*& parray_to_set, metaffi_size*& parray_dimensions_lengths, metaffi_size& array_dimensions, metaffi_bool& is_free_required)> set_##type##_array;
+	std::function<void(void* values_to_set, int index, type& val_to_set, int starting_index)> set_##type;\
+    std::function<void(void* values_to_set, int index, type*& parray_to_set, metaffi_size*& parray_dimensions_lengths, metaffi_size& array_dimensions, metaffi_bool& is_free_required, int starting_index)> set_##type##_array;
 	
 #define set_build_string(type) \
-	std::function<void(void* values_to_set, int index, type& val_to_set, metaffi_size& val_length)> set_##type; \
-    std::function<void(void* values_to_set, int index, type*& parray_to_set, metaffi_size*& pelements_lengths_to_set, metaffi_size*& parray_dimensions_lengths, metaffi_size& array_dimensions, metaffi_bool& is_free_required)>  set_##type##_array;
+	std::function<void(void* values_to_set, int index, type& val_to_set, metaffi_size& val_length, int starting_index)> set_##type; \
+    std::function<void(void* values_to_set, int index, type*& parray_to_set, metaffi_size*& pelements_lengths_to_set, metaffi_size*& parray_dimensions_lengths, metaffi_size& array_dimensions, metaffi_bool& is_free_required, int starting_index)>  set_##type##_array;
 		
 	set_build_numeric(metaffi_float32);
 	set_build_numeric(metaffi_float64);
@@ -215,7 +215,7 @@ struct cdts_build_callbacks
 	set_build_string(metaffi_string8);
 	set_build_string(metaffi_string16);
 	set_build_string(metaffi_string32);
-	std::function<void(void* values_to_set, int index, cdt* cdt_elem_to_set)> set_any;
+	std::function<void(void* values_to_set, int index, cdt* cdt_elem_to_set, int starting_index)> set_any;
 	
 	
 #define build_constructor_param(type) \
@@ -294,7 +294,7 @@ public:
 	 * @param values_to_set is passed to the callbacks. Parameter should contain the data to convert.
 	 * @param callbacks
 	 */
-	void build(const metaffi_types types[], metaffi_size types_length, void* values_to_set, cdts_build_callbacks& callbacks) const;
+	void build(const metaffi_types types[], metaffi_size types_length, void* values_to_set, int starting_index, cdts_build_callbacks& callbacks) const;
 
 };
 

@@ -21,7 +21,7 @@ struct runtime_plugin_interface
 	/**
 	 * Load module of foreign language
 	 */ 
-	virtual int64_t load_function(const char* function_path, uint32_t function_path_len, char** err, uint32_t* err_len) = 0;
+	virtual int64_t load_function(const char* function_path, uint32_t function_path_len, int8_t params_count, int8_t retval_count, char** err, uint32_t* err_len) = 0;
 
 	/**
 	 * Free module of foreign language
@@ -31,15 +31,45 @@ struct runtime_plugin_interface
 	/***
 	 * Call foreign function
 	 */
-	virtual void xcall(
+	virtual void xcall_params_ret(
 			//function id to call
 			int64_t function_id,
 			
 			// parameters
-			cdt* parameters, uint64_t parameters_len,
+			cdts params_ret[2],
+			
+			// out error
+			char** out_err, uint64_t* out_err_len
+	) = 0;
+	
+	/***
+	 * Call foreign function
+	 */
+	virtual void xcall_params_no_ret(
+			//function id to call
+			int64_t function_id,
+			
+			// parameters
+			cdts parameters[1],
+			
+			// out error
+			char** out_err, uint64_t* out_err_len
+	) = 0;
+	
+	virtual void xcall_no_params_ret(
+			//function id to call
+			int64_t function_id,
 			
 			// return values
-			cdt* return_values, uint64_t return_values_len,
+			cdts return_values[1],
+			
+			// out error
+			char** out_err, uint64_t* out_err_len
+	) = 0;
+	
+	virtual void xcall_no_params_no_ret(
+			//function id to call
+			int64_t function_id,
 			
 			// out error
 			char** out_err, uint64_t* out_err_len

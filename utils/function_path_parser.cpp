@@ -38,4 +38,9 @@ std::string function_path_parser::operator[](const std::string &key) const
 	return i->second;
 }
 //--------------------------------------------------------------------
+bool function_path_parser::contains(const std::string& key) const
+{
+	return function_path_items.find(key) != function_path_items.end();
+}
+//--------------------------------------------------------------------
 }}

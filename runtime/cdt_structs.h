@@ -103,9 +103,16 @@ union cdt_types
 	struct cdt_metaffi_handle_array metaffi_handle_array_val;
 };
 
-struct cdt
+typedef struct cdt
 {
 	metaffi_type type;
 	metaffi_bool free_required;
 	union cdt_types cdt_val;
-};
+}cdt;
+
+typedef struct cdts
+{
+	cdt* pcdt;
+	uint64_t len;
+	char is_free;
+}cdts;

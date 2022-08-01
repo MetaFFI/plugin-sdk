@@ -1,5 +1,4 @@
 #include "cdts_wrapper.h"
-#include "cdts_alloc.h"
 #include <vector>
 #include <cstring>
 
@@ -55,26 +54,26 @@ int main()
 		
 		cdts_build_callbacks cbs
 		(
-			[&](void* values_to_set, int index, metaffi_float32& val) { val = p1; },
-			[&](void* values_to_set, int index, metaffi_float32*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required) {},
+			[&](void* values_to_set, int index, metaffi_float32& val, int starting_index) { val = p1; },
+			[&](void* values_to_set, int index, metaffi_float32*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 			
-			[&](void* values_to_set, int index, metaffi_float64& val) { val = p2; },
-			[&](void* values_to_set, int index, metaffi_float64*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required) {},
+			[&](void* values_to_set, int index, metaffi_float64& val, int starting_index) { val = p2; },
+			[&](void* values_to_set, int index, metaffi_float64*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 			
-			[&](void* values_to_set, int index, metaffi_int8& val) { val = p3; },
-			[&](void* values_to_set, int index, metaffi_int8*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required) {},
+			[&](void* values_to_set, int index, metaffi_int8& val, int starting_index) { val = p3; },
+			[&](void* values_to_set, int index, metaffi_int8*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 			
-			[&](void* values_to_set, int index, metaffi_int16& val) { val = p4; },
-			[&](void* values_to_set, int index, metaffi_int16*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required) {},
+			[&](void* values_to_set, int index, metaffi_int16& val, int starting_index) { val = p4; },
+			[&](void* values_to_set, int index, metaffi_int16*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 			
-			[&](void* values_to_set, int index, metaffi_int32& val) { val = p5; },
-			[&](void* values_to_set, int index, metaffi_int32*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required) {},
+			[&](void* values_to_set, int index, metaffi_int32& val, int starting_index) { val = p5; },
+			[&](void* values_to_set, int index, metaffi_int32*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 			
-			[&](void* values_to_set, int index, metaffi_int64& val) { val = p6; },
-			[&](void* values_to_set, int index, metaffi_int64*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required) {},
+			[&](void* values_to_set, int index, metaffi_int64& val, int starting_index) { val = p6; },
+			[&](void* values_to_set, int index, metaffi_int64*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 			
-			[&](void* values_to_set, int index, metaffi_uint8& val) { val = p7; },
-			[&](void* values_to_set, int index, metaffi_uint8*& array, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required)
+			[&](void* values_to_set, int index, metaffi_uint8& val, int starting_index) { val = p7; },
+			[&](void* values_to_set, int index, metaffi_uint8*& array, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index)
 			{
 				array = &p14[0];
 				dimensions_lengths = &p14_dimensions_lengths[0];
@@ -82,27 +81,27 @@ int main()
 				free_required = false;
 			},
 			
-			[&](void* values_to_set, int index, metaffi_uint16& val) { val = p8; },
-			[&](void* values_to_set, int index, metaffi_uint16*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required) {},
+			[&](void* values_to_set, int index, metaffi_uint16& val, int starting_index) { val = p8; },
+			[&](void* values_to_set, int index, metaffi_uint16*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 			
-			[&](void* values_to_set, int index, metaffi_uint32& val) { val = p9; },
-			[&](void* values_to_set, int index, metaffi_uint32*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required) {},
+			[&](void* values_to_set, int index, metaffi_uint32& val, int starting_index) { val = p9; },
+			[&](void* values_to_set, int index, metaffi_uint32*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 			
-			[&](void* values_to_set, int index, metaffi_uint64& val) { val = p10; },
-			[&](void* values_to_set, int index, metaffi_uint64*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required) {},
+			[&](void* values_to_set, int index, metaffi_uint64& val, int starting_index) { val = p10; },
+			[&](void* values_to_set, int index, metaffi_uint64*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 			
-			[&](void* values_to_set, int index, metaffi_bool& val) { val = p11; },
-			[&](void* values_to_set, int index, metaffi_bool*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required) {},
+			[&](void* values_to_set, int index, metaffi_bool& val, int starting_index) { val = p11; },
+			[&](void* values_to_set, int index, metaffi_bool*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 			
-			[&](void* values_to_set, int index, metaffi_handle& val) { val = (void*)0xABDEF; },
-			[&](void* values_to_set, int index, metaffi_handle*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required) {},
+			[&](void* values_to_set, int index, metaffi_handle& val, int starting_index) { val = (void*)0xABDEF; },
+			[&](void* values_to_set, int index, metaffi_handle*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 			
-			[&](void* values_to_set, int index, metaffi_string8& val, metaffi_size& s)
+			[&](void* values_to_set, int index, metaffi_string8& val, metaffi_size& s, int starting_index)
 			{
 				val = (char*) p12.c_str();
 				s = p12_len;
 			},
-			[&](void* values_to_set, int index, metaffi_string8*& array, metaffi_size*& strings_lengths, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required)
+			[&](void* values_to_set, int index, metaffi_string8*& array, metaffi_size*& strings_lengths, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index)
 			{
 				array = &p13[0];
 				strings_lengths = &p13_sizes[0];
@@ -111,14 +110,14 @@ int main()
 				free_required = false;
 			},
 			
-			[&](void* values_to_set, int index, metaffi_string16& val, metaffi_size& s) {},
-			[&](void* values_to_set, int index, metaffi_string16*&, metaffi_size*&, metaffi_size*&, metaffi_size&, metaffi_bool&) {},
+			[&](void* values_to_set, int index, metaffi_string16& val, metaffi_size& s, int starting_index) {},
+			[&](void* values_to_set, int index, metaffi_string16*&, metaffi_size*&, metaffi_size*&, metaffi_size&, metaffi_bool&, int) {},
 			
-			[&](void* values_to_set, int index, metaffi_string32& val, metaffi_size& s) {},
-			[&](void* values_to_set, int index, metaffi_string32*&, metaffi_size*&, metaffi_size*&, metaffi_size&, metaffi_bool&) {}
+			[&](void* values_to_set, int index, metaffi_string32& val, metaffi_size& s, int starting_index) {},
+			[&](void* values_to_set, int index, metaffi_string32*&, metaffi_size*&, metaffi_size*&, metaffi_size&, metaffi_bool&, int) {}
 		);
 		
-		cdts.build(&vec_types[0], vec_types.size(), nullptr, cbs);
+		cdts.build(&vec_types[0], vec_types.size(), nullptr, 0, cbs);
 		
 		//--------------------------------------------------------------------
 

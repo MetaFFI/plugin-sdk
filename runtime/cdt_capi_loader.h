@@ -113,16 +113,29 @@ set_string_element_decl_fptr(metaffi_string32);
 /************************************************
 *   XLLR functions
 *************************************************/
-void xllr_xcall(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len,
-				int64_t function_id,
-				struct cdt* parameters, uint64_t parameters_length,
-                struct cdt* return_values, uint64_t return_values_length,
+void xllr_xcall_params_ret(int64_t function_id,
+				struct cdts parameters[2],
 				char** out_err, uint64_t* out_err_len
+);
+
+void xllr_xcall_no_params_ret(int64_t function_id,
+                struct cdts return_values[1],
+                char** out_err, uint64_t* out_err_len
+);
+
+void xllr_xcall_params_no_ret(int64_t function_id,
+                struct cdts parameters[1],
+                char** out_err, uint64_t* out_err_len
+);
+
+void xllr_xcall_no_params_no_ret(int64_t function_id,
+                char** out_err, uint64_t* out_err_len
 );
 
 int64_t xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
 							 const char* function_path, uint32_t function_path_len,
 							 int64_t function_id_opt,
+                            int8_t params_count, int8_t retval_count,
 							 char** out_err, uint32_t* out_err_len);
 
 void xllr_free_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
@@ -135,7 +148,7 @@ void xllr_free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugi
 void xllr_set_runtime_flag(const char* flag_name, uint64_t flag_name_len);
 int xllr_is_runtime_flag_set(const char* flag_name, uint64_t flag_name_len);
 
-struct cdt* xllr_alloc_cdts_buffer(metaffi_size cdt_count);
+struct cdts* xllr_alloc_cdts_buffer(metaffi_size params, metaffi_size rets);
 
 /************************************************
 *   Misc

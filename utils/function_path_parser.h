@@ -17,6 +17,7 @@ public:
 	~function_path_parser() = default;
 	
 	[[nodiscard]] std::string operator[](const std::string &key) const;
+	[[nodiscard]] bool contains(const std::string& key) const;
 };
 }}
 //--------------------------------------------------------------------
