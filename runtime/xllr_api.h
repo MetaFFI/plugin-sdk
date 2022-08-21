@@ -25,18 +25,18 @@ void free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len
 /**
  * Load module of foreign language
  */
-int64_t load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, const char* function_path, uint32_t function_path_len, int64_t function_id, int8_t params_count, int8_t retval_count, char** err, uint32_t* err_len);
+void* load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, const char* function_path, uint32_t function_path_len, void* pff, int8_t params_count, int8_t retval_count, char** err, uint32_t* err_len);
 
 /**
  * Free module of foreign language
  */
-void free_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, int64_t function_id, char** err, uint32_t* err_len);
+void free_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, void* pff, char** err, uint32_t* err_len);
 
 /***
  * Call foreign entity
  */
 void xcall_params_ret(
-	int64_t function_id,                                                // [in] function id to call
+	void* pff,                                                // [in] function id to call
 	cdts params_ret[2],                                                 // [in/out] parameters array
 	char** out_err, uint64_t* out_err_len                               // [out] error
 );
@@ -45,7 +45,7 @@ void xcall_params_ret(
  * Call foreign entity
  */
 void xcall_no_params_ret(
-		int64_t function_id,                                                // [in] function id to call
+		void* pff,                                                // [in] function id to call
 		cdts return_values[1],                                              // [in] return values array
 		char** out_err, uint64_t* out_err_len                               // [out] error
 );
@@ -54,7 +54,7 @@ void xcall_no_params_ret(
  * Call foreign entity
  */
 void xcall_params_no_ret(
-		int64_t function_id,                                                // [in] function id to call
+		void* pff,                                                // [in] function id to call
 		cdts parameters[1],                                                 // [in] parameters array
 		char** out_err, uint64_t* out_err_len                               // [out] error
 );
@@ -63,7 +63,7 @@ void xcall_params_no_ret(
  * Call foreign entity
  */
 void xcall_no_params_no_ret(
-		int64_t function_id,                                                // [in] function id to call
+		void* pff,                                                // [in] function id to call
 		char** out_err, uint64_t* out_err_len                               // [out] error
 );
 

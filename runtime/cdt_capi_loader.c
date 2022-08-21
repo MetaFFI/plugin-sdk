@@ -127,68 +127,68 @@ set_string_element_impl_fptr(metaffi_string32);
 /************************************************
 *   XLLR functions
 *************************************************/
-void (*pxllr_xcall_params_ret)(int64_t, struct cdts[2], char**, uint64_t*);
-void xllr_xcall_params_ret(int64_t function_id,
-				struct cdts params_ret[2],
-				char** out_err, uint64_t* out_err_len
+void (*pxllr_xcall_params_ret)(void*, struct cdts[2], char**, uint64_t*);
+void xllr_xcall_params_ret(void* pff,
+                           struct cdts params_ret[2],
+                           char** out_err, uint64_t* out_err_len
 )
 {
-	pxllr_xcall_params_ret(function_id,
-						  params_ret,
-						  out_err, out_err_len);
+	pxllr_xcall_params_ret(pff,
+	                       params_ret,
+	                       out_err, out_err_len);
 }
 
-void (*pxllr_xcall_no_params_ret)(int64_t, struct cdts[1], char**, uint64_t*);
-void xllr_xcall_no_params_ret(int64_t function_id,
-			                struct cdts return_values[1],
-			                char** out_err, uint64_t* out_err_len
+void (*pxllr_xcall_no_params_ret)(void*, struct cdts[1], char**, uint64_t*);
+void xllr_xcall_no_params_ret(void* pff,
+                              struct cdts return_values[1],
+                              char** out_err, uint64_t* out_err_len
 )
 {
-	pxllr_xcall_no_params_ret(function_id,
-				            return_values,
-				            out_err, out_err_len);
+	pxllr_xcall_no_params_ret(pff,
+	                          return_values,
+	                          out_err, out_err_len);
 }
 
-void (*pxllr_xcall_params_no_ret)(int64_t, struct cdts[1], char**, uint64_t*);
-void xllr_xcall_params_no_ret(int64_t function_id,
-			                struct cdts parameters[1],
-			                char** out_err, uint64_t* out_err_len
+void (*pxllr_xcall_params_no_ret)(void*, struct cdts[1], char**, uint64_t*);
+void xllr_xcall_params_no_ret(void* pff,
+                              struct cdts parameters[1],
+                              char** out_err, uint64_t* out_err_len
 )
 {
-	pxllr_xcall_params_no_ret(function_id,
+	pxllr_xcall_params_no_ret(pff,
 	                          parameters,
-				            out_err, out_err_len);
+	                          out_err, out_err_len);
 }
 
-void (*pxllr_xcall_no_params_no_ret)(int64_t, char**, uint64_t*);
-void xllr_xcall_no_params_no_ret(int64_t function_id,
-                                char** out_err, uint64_t* out_err_len
+void (*pxllr_xcall_no_params_no_ret)(void*, char**, uint64_t*);
+void xllr_xcall_no_params_no_ret(void* pff,
+                                 char** out_err, uint64_t* out_err_len
 )
 {
-	pxllr_xcall_no_params_no_ret(function_id, out_err, out_err_len);
+	pxllr_xcall_no_params_no_ret(pff, out_err, out_err_len);
 }
 
-int64_t (*pxllr_load_function)(const char*, uint32_t, const char*, uint32_t, int64_t, int8_t, int8_t, char**, uint32_t*);
-int64_t xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
+void* (*pxllr_load_function)(const char*, uint32_t, const char*, uint32_t, void*, int8_t, int8_t, char**, uint32_t*);
+void* xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
 							 const char* function_path, uint32_t function_path_len,
-							 int64_t function_id_opt,
+							 void* pff,
 	                           int8_t params_count, int8_t retval_count,
 	                           char** out_err, uint32_t* out_err_len)
 {
 	return pxllr_load_function(runtime_plugin, runtime_plugin_len,
 						  function_path, function_path_len,
-						  function_id_opt, params_count, retval_count,
+					       pff, params_count, retval_count,
 						  out_err, out_err_len);
 }
 
-void (*pxllr_free_function)(const char*, uint32_t, int64_t, char**, uint32_t*);
+void (*pxllr_free_function)(const char*, uint32_t, void*, char**, uint32_t*);
 void xllr_free_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
-                           int64_t function_id_opt,
+                           void* pff,
                            char** out_err, uint32_t* out_err_len)
 {
 	pxllr_free_function(runtime_plugin, runtime_plugin_len,
-	                           function_id_opt,
-	                           out_err, out_err_len);
+	                    pff,
+                       out_err, out_err_len);
 }
 
 void (*pxllr_load_runtime_plugin)(const char*, uint32_t, char**, uint32_t*);
@@ -334,42 +334,43 @@ const char* load_xllr_api()
 {
 	char* out_err = NULL;
 	uint64_t out_err_len;
-	pxllr_xcall_params_ret = (void (*)(int64_t, struct cdts[2], char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "xcall_params_ret", &out_err, &out_err_len);
+	
+	pxllr_xcall_params_ret = (void (*)(void*, struct cdts[2], char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "xcall_params_ret", &out_err, &out_err_len);
 	if(!pxllr_xcall_params_ret)
 	{
 		printf("Failed to load xllr_xcall_params_ret: %s\n", out_err);
 		return out_err;
 	}
 	
-	pxllr_xcall_no_params_ret = (void (*)(int64_t, struct cdts[1], char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "xcall_no_params_ret", &out_err, &out_err_len);
+	pxllr_xcall_no_params_ret = (void (*)(void*, struct cdts[1], char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "xcall_no_params_ret", &out_err, &out_err_len);
 	if(!pxllr_xcall_no_params_ret)
 	{
 		printf("Failed to load xllr_xcall_no_params_ret: %s\n", out_err);
 		return out_err;
 	}
 	
-	pxllr_xcall_params_no_ret = (void (*)(int64_t, struct cdts[1], char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "xcall_params_no_ret", &out_err, &out_err_len);
+	pxllr_xcall_params_no_ret = (void (*)(void*, struct cdts[1], char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "xcall_params_no_ret", &out_err, &out_err_len);
 	if(!pxllr_xcall_params_no_ret)
 	{
 		printf("Failed to load xllr_xcall_params_no_ret: %s\n", out_err);
 		return out_err;
 	}
 	
-	pxllr_xcall_no_params_no_ret = (void (*)(int64_t, char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "xcall_no_params_no_ret", &out_err, &out_err_len);
+	pxllr_xcall_no_params_no_ret = (void (*)(void*, char**, uint64_t*)) load_symbol(cdt_helper_xllr_handle, "xcall_no_params_no_ret", &out_err, &out_err_len);
 	if(!pxllr_xcall_no_params_no_ret)
 	{
 		printf("Failed to load xllr_xcall_no_params_no_ret: %s\n", out_err);
 		return out_err;
 	}
 	
-	pxllr_load_function = (int64_t (*)(const char*, uint32_t, const char*, uint32_t, int64_t, int8_t, int8_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "load_function", &out_err, &out_err_len);
+	pxllr_load_function = (void* (*)(const char*, uint32_t, const char*, uint32_t, void*, int8_t, int8_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "load_function", &out_err, &out_err_len);
 	if(!pxllr_load_function)
 	{
 		printf("Failed to load load_function: %s\n", out_err);
 		return out_err;
 	}
 	
-	pxllr_free_function = (void (*)(const char*, uint32_t, int64_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "free_function", &out_err, &out_err_len);
+	pxllr_free_function = (void (*)(const char*, uint32_t, void*, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "free_function", &out_err, &out_err_len);
 	if(!pxllr_free_function)
 	{
 		printf("Failed to load free_function: %s\n", out_err);

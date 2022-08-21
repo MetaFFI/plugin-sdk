@@ -13,6 +13,11 @@
 #define pforeign_function_entrypoint_signature_no_params_ret void(*)(cdts[1], char**, uint64_t*)
 #define pforeign_function_entrypoint_signature_params_ret void(*)(cdts[2], char**, uint64_t*)
 
+typedef std::function<void(cdts[2], char**, uint64_t*)> foreign_function_entrypoint_signature_params_ret_t;
+typedef std::function<void(cdts[1], char**, uint64_t*)> foreign_function_entrypoint_signature_no_params_ret_t;
+typedef std::function<void(cdts[1], char**, uint64_t*)> foreign_function_entrypoint_signature_params_no_ret_t;
+typedef std::function<void(char**, uint64_t*)> foreign_function_entrypoint_signature_no_params_no_ret_t;
+
 #define ppforeign_function_entrypoint_signature_no_params_no_ret void(**)(char**, uint64_t*)
 #define ppforeign_function_entrypoint_signature_params_no_ret void(**)(cdts[1], char**, uint64_t*)
 #define ppforeign_function_entrypoint_signature_no_params_ret void(**)(cdts[1], char**, uint64_t*)
