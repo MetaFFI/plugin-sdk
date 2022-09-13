@@ -30,6 +30,29 @@ public:
 	bool is_simple_array(){ return this->dimensions == 1; }
 	metaffi_size get_simple_array_length(){ return dimensions_lengths[0]; }
 	
+	T* get_array_at(metaffi_size index[], metaffi_size index_length) const
+	{
+		T** itemptr = (T**)array;
+		T* res;
+		for(int i=0 ; i<index_length ; i++)
+		{
+			if(index[i] >= dimensions_lengths[i]){
+				std::stringstream ss;
+				ss << "Array out of bounds. Requested index: " << index[i] << ". Array size: " << dimensions_lengths[i];
+				throw std::runtime_error(ss.str());
+			}
+			
+			if(i + 1 == index_length){ // if last item - get number
+				res = (T*)itemptr;
+			}
+			else{ // else, get next pointer
+				itemptr = ((T***)itemptr)[index[i]];
+			}
+		}
+		
+		return res;
+	}
+	
 	T get_elem_at(metaffi_size index[], metaffi_size index_length) const
 	{
 		T** itemptr = (T**)array;

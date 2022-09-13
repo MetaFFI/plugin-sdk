@@ -64,6 +64,15 @@ func (this *LanguagePluginInterfaceHandler) compile_to_guest(idl_def_json *C.cha
 	blockName := C.GoStringN(block_name, C.int(block_name_length))
 	blockCode := C.GoStringN(block_code, C.int(block_code_length))
 	
+	if outFilename == "" {
+		outFilename = def.IDLFilename
+	}
+	
+	if strings.Contains(outFilename, "#") {
+		toRemove := outFilename[strings.LastIndex(outFilename, string(os.PathSeparator))+1 : strings.Index(outFilename, "#")+1]
+		outFilename = strings.ReplaceAll(outFilename, toRemove, "")
+	}
+	
 	err = this.wrapped.CompileToGuest(def, outPath, outFilename, blockName, blockCode)
 	
 	if err != nil {
@@ -120,6 +129,10 @@ func (this *LanguagePluginInterfaceHandler) compile_from_host(idl_def_json *C.ch
 			
 			hostOptionsMap[keyval[0]] = keyval[1]
 		}
+	}
+	
+	if outFilename == "" {
+		outFilename = def.IDLFilename
 	}
 	
 	err = this.wrapped.CompileFromHost(def, outPath, outFilename, hostOptionsMap)

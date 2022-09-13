@@ -5,6 +5,7 @@
 #include "cdt_structs.h"
 
 #ifdef __cplusplus
+#include <vector>
 extern "C"{
 #endif
 
@@ -150,6 +151,18 @@ void xllr_set_runtime_flag(const char* flag_name, uint64_t flag_name_len);
 int xllr_is_runtime_flag_set(const char* flag_name, uint64_t flag_name_len);
 
 struct cdts* xllr_alloc_cdts_buffer(metaffi_size params, metaffi_size rets);
+
+#ifdef __cplusplus
+typedef void(*pforeign_function_entrypoint_signature_no_params_no_ret_t)(char**, uint64_t*);
+typedef void(*pforeign_function_entrypoint_signature_params_no_ret_t)(cdts[1], char**, uint64_t*);
+typedef void(*pforeign_function_entrypoint_signature_no_params_ret_t)(cdts[1], char**, uint64_t*);
+typedef void(*pforeign_function_entrypoint_signature_params_ret_t)(cdts[2], char**, uint64_t*);
+
+pforeign_function_entrypoint_signature_params_ret_t xllr_create_xcall_params_ret(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func);
+pforeign_function_entrypoint_signature_no_params_ret_t xllr_create_xcall_no_params_ret(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func);
+pforeign_function_entrypoint_signature_params_no_ret_t xllr_create_xcall_params_no_ret(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func);
+pforeign_function_entrypoint_signature_no_params_no_ret_t xllr_create_xcall_no_params_no_ret(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func);
+#endif
 
 /************************************************
 *   Misc
