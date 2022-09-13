@@ -17,7 +17,7 @@ var idlPluginInterfaceHandler *IDLPluginInterfaceHandler
 var IDLPluginMain IDLPluginInterface
 
 type IDLPluginInterface interface {
-	ParseIDL(sourceCode string, filePath string) (*IDL.IDLDefinition, error)
+	ParseIDL(sourceCode string, filePath string, isEmbeddedCode bool) (*IDL.IDLDefinition, bool, error)
 }
 
 //--------------------------------------------------------------------
@@ -47,8 +47,11 @@ func (this *IDLPluginInterfaceHandler) parse_idl(idl_file_path *C.char, idl_file
 	}
 	
 	// if filePath is a code block, write the code to tmp
+	isEmbeddedCode := false
+	isDeleteGeneratedFile := true
 	if strings.Contains(idlName, "#") {
-		
+		isEmbeddedCode = true
+
 		// extract file path to write source block
 		sourceBlockFile := filepath.Dir(idlName) + string(os.PathSeparator)
 		sourceBlockFile += idlName[strings.LastIndex(idlName, "#")+1:]
@@ -60,9 +63,10 @@ func (this *IDLPluginInterfaceHandler) parse_idl(idl_file_path *C.char, idl_file
 			*out_err_len = C.uint(len(err.Error()))
 			return
 		}
+		defer func(){ if isDeleteGeneratedFile{ os.Remove(idlName) } }()
 	}
 	
-	def, err := this.wrapped.ParseIDL(idlName, idlStr)
+	def, isDeleteGeneratedFile, err := this.wrapped.ParseIDL(idlName, idlStr, isEmbeddedCode)
 	
 	if err != nil {
 		*out_err = C.CString(err.Error())
