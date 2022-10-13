@@ -5,6 +5,7 @@ type ClassDefinition struct {
 	Name         string                   `json:"name"`
 	Comment      string                   `json:"comment"`
 	Tags         map[string]string        `json:"tags"`
+	FunctionPath map[string]string        `json:"function_path"`
 	Constructors []*ConstructorDefinition `json:"constructors"`
 	Releaser     *ReleaseDefinition       `json:"release"`
 	Methods      []*MethodDefinition      `json:"methods"`

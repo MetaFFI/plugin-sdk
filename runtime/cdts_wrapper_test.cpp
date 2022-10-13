@@ -11,7 +11,7 @@ int main()
 		cdt* pcdts = (cdt*)alloca(sizeof(cdt)*15);
 		cdts_wrapper cdts(pcdts, 15);
 		
-		std::vector<metaffi_types> vec_types =
+		std::vector<metaffi_type_t> vec_types =
 		{
 			metaffi_float64_type,
 			metaffi_float32_type,
@@ -117,7 +117,7 @@ int main()
 			[&](void* values_to_set, int index, metaffi_string32*&, metaffi_size*&, metaffi_size*&, metaffi_size&, metaffi_bool&, int) {}
 		);
 		
-		cdts.build(&vec_types[0], vec_types.size(), nullptr, 0, cbs);
+		cdts.build((metaffi_types_ptr)vec_types.data(), vec_types.size(), nullptr, 0, cbs);
 		
 		//--------------------------------------------------------------------
 

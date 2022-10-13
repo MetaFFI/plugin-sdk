@@ -29,6 +29,9 @@ typedef uint64_t metaffi_size; // sizes of array and/or strings passed by this t
 typedef void* metaffi_handle;
 typedef metaffi_size metaffi_type;
 
+typedef uint64_t* metaffi_types_ptr;
+typedef uint64_t metaffi_type_t;
+
 enum metaffi_types
 {
 	metaffi_float64_type = 1ULL,

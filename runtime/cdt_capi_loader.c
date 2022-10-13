@@ -221,31 +221,6 @@ struct cdts* xllr_alloc_cdts_buffer(metaffi_size params, metaffi_size rets)
 	return palloc_cdts_buffer(params, rets);
 }
 
-#ifdef __cplusplus
-pforeign_function_entrypoint_signature_params_ret_t (*pxllr_create_xcall_params_ret)(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func);
-pforeign_function_entrypoint_signature_params_ret_t xllr_create_xcall_params_ret(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func)
-{
-	return pxllr_create_xcall_params_ret(constant_sizes, constant_values, function_path, func);
-}
-
-pforeign_function_entrypoint_signature_no_params_ret_t (*pxllr_create_xcall_no_params_ret)(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func);
-pforeign_function_entrypoint_signature_no_params_ret_t xllr_create_xcall_no_params_ret(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func)
-{
-	return pxllr_create_xcall_no_params_ret(constant_sizes, constant_values, function_path, func);
-}
-
-pforeign_function_entrypoint_signature_params_no_ret_t (*pxllr_create_xcall_params_no_ret)(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func);
-pforeign_function_entrypoint_signature_params_no_ret_t xllr_create_xcall_params_no_ret(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func)
-{
-	return pxllr_create_xcall_params_no_ret(constant_sizes, constant_values, function_path, func);
-}
-
-pforeign_function_entrypoint_signature_no_params_no_ret_t (*pxllr_create_xcall_params_ret)(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func);
-pforeign_function_entrypoint_signature_no_params_no_ret_t xllr_create_xcall_params_ret(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func)
-{
-	return pxllr_create_xcall_no_params_no_ret(constant_sizes, constant_values, function_path, func);
-}
-#endif
 
 // === Handlers ===
 void* cdt_helper_xllr_handle = NULL;
@@ -438,36 +413,6 @@ const char* load_xllr_api()
 		return out_err;
 	}
 
-#ifdef __cplusplus
-	pxllr_create_xcall_params_ret = (pforeign_function_entrypoint_signature_params_ret_t (*)(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func))load_symbol(pxllr_create_xcall_params_ret, "xllr_create_xcall_params_ret", &out_err, &out_err_len);
-	if(!pxllr_create_xcall_params_ret)
-	{
-		printf("Failed to load create_xcall_params_ret: %s\n", out_err);
-		return out_err;
-	}
-	
-	pxllr_create_xcall_params_no_ret = (pforeign_function_entrypoint_signature_params_no_ret_t (*)(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func))load_symbol(pxllr_create_xcall_params_ret, "xllr_create_xcall_params_ret", &out_err, &out_err_len);
-	if(!pxllr_create_xcall_params_no_ret)
-	{
-		printf("Failed to load create_xcall_params_no_ret: %s\n", out_err);
-		return out_err;
-	}
-	
-	pxllr_create_xcall_no_params_ret = (pforeign_function_entrypoint_signature_no_params_ret_t (*)(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func))load_symbol(pxllr_create_xcall_params_ret, "xllr_create_xcall_params_ret", &out_err, &out_err_len);
-	if(!pxllr_create_xcall_no_params_ret)
-	{
-		printf("Failed to load create_xcall_no_params_ret: %s\n", out_err);
-		return out_err;
-	}
-	
-	pxllr_create_xcall_no_params_no_ret = (pforeign_function_entrypoint_signature_no_params_no_ret_t (*)(const std::vector<uint32_t>& constant_sizes, const std::vector<int64_t>& constant_values, const char* function_path, void* func))load_symbol(pxllr_create_xcall_params_ret, "xllr_create_xcall_params_ret", &out_err, &out_err_len);
-	if(!pxllr_create_xcall_no_params_no_ret)
-	{
-		printf("Failed to load create_xcall_no_params_no_ret: %s\n", out_err);
-		return out_err;
-	}
-#endif
-
 	return NULL;
 }
 
@@ -487,7 +432,9 @@ const char* load_xllr()
 	else
 #endif
 	{
-		return "Failed getting METAFFI_HOME. Is it set?";
+		// TODO: UNDO ME!
+		strcpy(metaffi_home, "/mnt/c/src/github.com/MetaFFI/out/ubuntu/x64/debug");
+		//return "Failed getting METAFFI_HOME. Is it set?";
 	}
 
 #ifdef _WIN32
