@@ -18,7 +18,7 @@ void free_runtime(char** err, uint32_t* err_len);
 /**
  * Load module of foreign language
  */
-void* load_function(const char* function_path, uint32_t function_path_len, int8_t params_count, int8_t retval_count, char** err, uint32_t* err_len);
+void* load_function(const char* function_path, uint32_t function_path_len, int8_t params_count, int8_t retval_count, /*void** out_params,*/ char** err, uint32_t* err_len);
 
 /**
  * Free module of foreign language
