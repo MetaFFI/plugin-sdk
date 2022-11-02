@@ -1,5 +1,10 @@
 package IDL
 
+import (
+	"fmt"
+	"sort"
+)
+
 //--------------------------------------------------------------------
 type MethodDefinition struct {
 	FunctionDefinition
@@ -64,7 +69,34 @@ func (this *MethodDefinition) AddReturnValues(definition *ArgDefinition) *Method
 
 //--------------------------------------------------------------------
 func (this *MethodDefinition) GetEntityIDName() string {
+	if this.parent == nil {
+		panic(fmt.Sprintf("parent class is not set for method %v", this.Name))
+	}
+	
 	return this.parent.Name + "_" + this.Name + "ID"
+}
+
+//--------------------------------------------------------------------
+func (this *MethodDefinition) FunctionPathAsString() string {
+	
+	res := ""
+	
+	sortedKeys := make([]string, 0, len(this.FunctionPath))
+	for k := range this.FunctionPath {
+		sortedKeys = append(sortedKeys, k)
+	}
+	
+	sort.Strings(sortedKeys)
+	
+	for _, k := range sortedKeys {
+		v := this.FunctionPath[k]
+		if res != "" {
+			res += ","
+		}
+		res += fmt.Sprintf("%v=%v", k, v)
+	}
+
+	return res
 }
 
 //--------------------------------------------------------------------

@@ -1,5 +1,7 @@
 package IDL
 
+import "fmt"
+
 //--------------------------------------------------------------------
 type FieldDefinition struct {
 	ArgDefinition
@@ -51,5 +53,9 @@ func NewFieldArrayDefinitionWithAlias(cls *ClassDefinition, name string, ffiType
 
 //--------------------------------------------------------------------
 func (this *FieldDefinition) GetEntityIDName() string {
+	if this.parent == nil {
+		panic(fmt.Sprintf("parent class is not set for field %v", this.Name))
+	}
+	
 	return this.parent.Name + "_" + this.Name + "ID"
 }

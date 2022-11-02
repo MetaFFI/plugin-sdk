@@ -1,6 +1,9 @@
 package IDL
 
-import "fmt"
+import (
+	"fmt"
+	"sort"
+)
 
 type FunctionDefinition struct {
 	Name         string            `json:"name"`
@@ -59,50 +62,22 @@ func (this *FunctionDefinition) FunctionPathAsString() string {
 	
 	res := ""
 	
-	for k, v := range this.FunctionPath {
+	sortedKeys := make([]string, 0, len(this.FunctionPath))
+	for k := range this.FunctionPath {
+		sortedKeys = append(sortedKeys, k)
+	}
+	
+	sort.Strings(sortedKeys)
+	
+	for _, k := range sortedKeys {
+		v := this.FunctionPath[k]
 		if res != "" {
 			res += ","
 		}
 		res += fmt.Sprintf("%v=%v", k, v)
 	}
-	
-	return res
-}
 
-//--------------------------------------------------------------------
-func (this *FunctionDefinition) ParseWellKnownTags(pathToFunction map[string]string) error {
-	
-	var err error
-	for tagName, tagVal := range this.Tags {
-		switch tagName {
-		case FUNCTION_PATH:
-			pathToFunction, err = parseFunctionPath(tagVal, pathToFunction)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	
-	// set function path to function definition
-	this.FunctionPath = copyMap(pathToFunction)
-	
-	// parse well known tags in parameter
-	for _, p := range this.Parameters {
-		err := p.parseWellKnownTags()
-		if err != nil {
-			return err
-		}
-	}
-	
-	// parse well known tags in parameter
-	for _, r := range this.ReturnValues {
-		err := r.parseWellKnownTags()
-		if err != nil {
-			return err
-		}
-	}
-	
-	return nil
+	return res
 }
 
 //--------------------------------------------------------------------
@@ -129,3 +104,5 @@ func (this *FunctionDefinition) IsMethod() bool {
 func (this *FunctionDefinition) GetEntityIDName() string {
 	return this.Name + "ID"
 }
+
+//--------------------------------------------------------------------

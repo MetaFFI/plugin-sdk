@@ -1,7 +1,6 @@
 package IDL
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -94,21 +93,6 @@ func (this *ArgDefinition) AppendComment(comment string){
 	}
 
 	this.Comment += comment
-}
-//--------------------------------------------------------------------
-func (this *ArgDefinition) parseWellKnownTags() error{
-
-	for tagName, tagVal := range this.Tags{
-		switch tagName {
-		case FUNCTION_PATH:
-			return fmt.Errorf("arg level cannot hold metaffi_function_path")
-
-		case TYPE_ALIAS:
-			this.TypeAlias = tagVal
-		}
-	}
-
-	return nil
 }
 //--------------------------------------------------------------------
 func (this *ArgDefinition) IsInteger() bool{

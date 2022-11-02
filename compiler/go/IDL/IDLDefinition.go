@@ -126,6 +126,8 @@ func NewIDLDefinitionFromJSON(idlDefinitionJson string) (*IDLDefinition, error) 
 		return nil, fmt.Errorf("Failed to unmarshal IDL definition JSON: %v", err)
 	}
 	
+	def.FinalizeConstruction()
+	
 	return &def, nil
 }
 
@@ -152,80 +154,32 @@ func (this *IDLDefinition) String() string {
 
 //--------------------------------------------------------------------
 func (this *IDLDefinition) FinalizeConstruction() {
+	
 	for _, m := range this.Modules {
-		
-		for _, g := range m.Globals {
-			if g.Getter != nil {
-				g.Getter.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-				g.Getter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_" + g.Getter.Name
-			}
-			
-			if g.Setter != nil {
-				g.Setter.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-				g.Setter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_" + g.Setter.Name
-			}
-		}
-		
-		for _, f := range m.Functions {
-			f.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-			f.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_" + f.Name
-		}
-		
 		for _, c := range m.Classes {
 			
 			for _, f := range c.Fields {
+				
+				f.parent = c
+				
 				if f.Getter != nil {
-					f.Getter.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-					f.Getter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_" + c.Name + "_" + f.Getter.Name
+					f.Getter.parent = c
 				}
 				
 				if f.Setter != nil {
-					f.Setter.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-					f.Setter.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_" + c.Name + "_" + f.Setter.Name
+					f.Setter.parent = c
 				}
 			}
 			
-			for _, cstr := range c.Constructors {
-				cstr.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-				cstr.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_" + c.Name + "_" + cstr.Name
-			}
-			
 			for _, method := range c.Methods {
-				method.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-				method.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_" + c.Name + "_" + method.Name
-				method.FunctionPath[ENTRYPOINT_CLASS] = c.Name
+				method.parent = c
 			}
 			
 			if c.Releaser != nil {
-				c.Releaser.FunctionPath[METAFFI_GUEST_LIB] = this.MetaFFIGuestLib
-				c.Releaser.FunctionPath[ENTRYPOINT_FUNCTION] = "EntryPoint_" + c.Name + "_" + c.Releaser.Name
+				c.Releaser.parent = c
 			}
 		}
 	}
-}
-
-//--------------------------------------------------------------------
-/*
-The function iterates the definition and fills fields according to well-known tags.
-
-Supported tags:
-//metaffi_target_language
-//metaffi_function_path
-*/
-func (this *IDLDefinition) ParseWellKnownTags() error {
-	
-	for _, m := range this.Modules {
-		
-		// make a copy for each module so items can be overridden
-		modulePathToFunction := make(map[string]string)
-		
-		err := m.parseWellKnownTags(modulePathToFunction)
-		if err != nil {
-			return err
-		}
-	}
-	
-	return nil
 }
 
 //--------------------------------------------------------------------

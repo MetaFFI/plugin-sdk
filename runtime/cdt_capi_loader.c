@@ -580,5 +580,3 @@ const char* load_cdt_capi()
 
 	return NULL;
 }
-
-#undef common_data_type_helper_loader_c

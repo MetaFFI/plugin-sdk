@@ -8,6 +8,11 @@ if(NOT DEFINED SDK_INCLUDE_ONCE)
 
 	set(CMAKE_CXX_STANDARD 17)
 
+	find_program(GOEXEC go)
+	if(NOT GOEXEC)
+		message(FATAL "Go not found")
+	endif()
+
 	set(THREADS_PREFER_PTHREAD_FLAG ON)
 	find_package(Threads REQUIRED)
 
@@ -29,5 +34,9 @@ if(NOT DEFINED SDK_INCLUDE_ONCE)
 	endif()
 
 	add_test(NAME cdts_wrapper_ctest COMMAND cdts_wrapper_test_sdk)
+
+	add_test(NAME idl_go_test
+			COMMAND ${GOEXEC} test
+			WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/compiler/go/IDL)
 
 endif()
