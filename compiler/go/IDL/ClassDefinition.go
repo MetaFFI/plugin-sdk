@@ -61,6 +61,12 @@ func (this *ClassDefinition) AddMethod(def *MethodDefinition) {
 //--------------------------------------------------------------------
 func (this *ClassDefinition) SetFunctionPath(key string, val string) {
 	
+	if this.FunctionPath == nil {
+		this.FunctionPath = make(map[string]string)
+	}
+	
+	this.FunctionPath[key] = val
+	
 	for _, f := range this.Fields {
 		if f.Getter != nil {
 			f.Getter.SetFunctionPath(key, val)

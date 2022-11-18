@@ -26,7 +26,9 @@ func NewMethodDefinitionWithFunction(parent *ClassDefinition, function *Function
 	}
 	
 	// set first parameter as class instance
-	m.Parameters = append([]*ArgDefinition{NewArgDefinition("this_instance", HANDLE)}, m.Parameters...)
+	if instanceRequired {
+		m.Parameters = append([]*ArgDefinition{NewArgDefinition("this_instance", HANDLE)}, m.Parameters...)
+	}
 	
 	return m
 }
@@ -45,8 +47,10 @@ func NewMethodDefinition(parent *ClassDefinition, name string, instanceRequired 
 	}
 	
 	// set first parameter as class instance
-	m.AddParameter(NewArgDefinition("this_instance", HANDLE))
-	
+	if instanceRequired {
+		m.AddParameter(NewArgDefinition("this_instance", HANDLE))
+	}
+
 	return m
 }
 
@@ -77,26 +81,55 @@ func (this *MethodDefinition) GetEntityIDName() string {
 }
 
 //--------------------------------------------------------------------
-func (this *MethodDefinition) FunctionPathAsString() string {
+func (this *MethodDefinition) FunctionPathAsString(definition *IDLDefinition) string {
 	
 	res := ""
 	
-	sortedKeys := make([]string, 0, len(this.FunctionPath))
+	keys := make(map[string]bool)
 	for k := range this.FunctionPath {
+		keys[k] = true
+	}
+	for k := range this.GetParent().FunctionPath {
+		keys[k] = true
+	}
+	keys["metaffi_guest_lib"] = true
+	
+	sortedKeys := make([]string, 0, len(keys))
+	for k := range keys {
 		sortedKeys = append(sortedKeys, k)
 	}
 	
 	sort.Strings(sortedKeys)
 	
 	for _, k := range sortedKeys {
-		v := this.FunctionPath[k]
+		v, found := this.FunctionPath[k]
+		
+		if !found { // if key not found, take from parent (notice, method has priority over parent)
+			v, found = this.parent.FunctionPath[k]
+			
+			if !found {
+				switch k {
+				case "metaffi_guest_lib":
+					v = definition.MetaFFIGuestLib
+				default:
+					panic(fmt.Sprintf("Unexpected key %v", k))
+					
+				}
+			}
+		}
+		
 		if res != "" {
 			res += ","
 		}
 		res += fmt.Sprintf("%v=%v", k, v)
 	}
-
+	
 	return res
+}
+
+//--------------------------------------------------------------------
+func (this *MethodDefinition) GetParent() *ClassDefinition {
+	return this.parent
 }
 
 //--------------------------------------------------------------------

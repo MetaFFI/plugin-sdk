@@ -3,6 +3,7 @@ package IDL
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -156,6 +157,11 @@ func (this *IDLDefinition) String() string {
 func (this *IDLDefinition) FinalizeConstruction() {
 	
 	for _, m := range this.Modules {
+		
+		for i, ex := range m.ExternalResources {
+			m.ExternalResources[i] = os.ExpandEnv(ex)
+		}
+		
 		for _, c := range m.Classes {
 			
 			for _, f := range c.Fields {

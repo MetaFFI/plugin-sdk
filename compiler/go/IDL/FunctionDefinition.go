@@ -58,25 +58,41 @@ func (this *FunctionDefinition) AppendComment(comment string) {
 }
 
 //--------------------------------------------------------------------
-func (this *FunctionDefinition) FunctionPathAsString() string {
+func (this *FunctionDefinition) FunctionPathAsString(definition *IDLDefinition) string {
 	
 	res := ""
 	
-	sortedKeys := make([]string, 0, len(this.FunctionPath))
+	keys := make(map[string]bool)
 	for k := range this.FunctionPath {
+		keys[k] = true
+	}
+	keys["metaffi_guest_lib"] = true
+	
+	sortedKeys := make([]string, 0, len(keys))
+	for k := range keys {
 		sortedKeys = append(sortedKeys, k)
 	}
-	
 	sort.Strings(sortedKeys)
 	
 	for _, k := range sortedKeys {
-		v := this.FunctionPath[k]
+		v, found := this.FunctionPath[k]
+		
+		if !found {
+			switch k {
+			case "metaffi_guest_lib":
+				v = definition.MetaFFIGuestLib
+			default:
+				panic(fmt.Sprintf("Unexpected key %v", k))
+				
+			}
+		}
+		
 		if res != "" {
 			res += ","
 		}
 		res += fmt.Sprintf("%v=%v", k, v)
 	}
-
+	
 	return res
 }
 

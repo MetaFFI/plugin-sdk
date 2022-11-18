@@ -475,7 +475,7 @@ case otype##_type: \
 {                                   \
     otype val; \
     callbacks.set_##otype(values_to_set, index, val, starting_index); \
-    this->cdts[index].type = otype##_type;\
+    this->cdts[index].type = otype##_type;                            \
     this->cdts[index].cdt_val.otype##_val.val = val;\
     this->cdts[index].free_required = 0; \
     continue;                          \
@@ -555,6 +555,7 @@ case otype##_type | metaffi_array_type: \
 			}
 		}
 	}
+	
 }
 //--------------------------------------------------------------------
 

@@ -7,10 +7,10 @@ import "C"
 import (
 	"encoding/json"
 	"github.com/MetaFFI/plugin-sdk/compiler/go/IDL"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
-	"io/ioutil"
-    "os"
 )
 
 var idlPluginInterfaceHandler *IDLPluginInterfaceHandler
@@ -51,22 +51,26 @@ func (this *IDLPluginInterfaceHandler) parse_idl(idl_file_path *C.char, idl_file
 	isDeleteGeneratedFile := true
 	if strings.Contains(idlName, "#") {
 		isEmbeddedCode = true
-
+		
 		// extract file path to write source block
 		sourceBlockFile := filepath.Dir(idlName) + string(os.PathSeparator)
 		sourceBlockFile += idlName[strings.LastIndex(idlName, "#")+1:]
 		idlName = sourceBlockFile
-
+		
 		err := ioutil.WriteFile(idlName, []byte(idlStr), 0700)
 		if err != nil {
 			*out_err = C.CString(err.Error())
 			*out_err_len = C.uint(len(err.Error()))
 			return
 		}
-		defer func(){ if isDeleteGeneratedFile{ os.Remove(idlName) } }()
+		defer func() {
+			if isDeleteGeneratedFile {
+				_ = os.Remove(idlName)
+			}
+		}()
 	}
 	
-	def, isDeleteGeneratedFile, err := this.wrapped.ParseIDL(idlName, idlStr, isEmbeddedCode)
+	def, isDeleteGeneratedFile, err := this.wrapped.ParseIDL(idlStr, idlName, isEmbeddedCode)
 	
 	if err != nil {
 		*out_err = C.CString(err.Error())
