@@ -267,6 +267,8 @@ struct cdts_build_callbacks_interface
 	on_build_string_interface(metaffi_string8);
 	on_build_string_interface(metaffi_string16);
 	on_build_string_interface(metaffi_string32);
+	
+	virtual metaffi_type resolve_dynamic_type(int index, void* values_to_set) = 0;
 };
 
 struct cdts_build_callbacks
@@ -338,6 +340,8 @@ struct cdts_build_callbacks
 	   build_constructor_init_param(metaffi_string16),
 	   build_constructor_init_param(metaffi_string32)
 	{}
+	
+	metaffi_type resolve_dynamic_type(int index, void* values_to_set){ return metaffi_any_type; }
 };
 
 /************************************************
@@ -528,6 +532,10 @@ case otype##_type | metaffi_array_type: \
 	for(int index=0 ; index<types_length ; index++)
 	{
 		metaffi_type cur_type = types[index];
+		if(cur_type == metaffi_any_type)
+		{
+			cur_type = callbacks.resolve_dynamic_type(index, values_to_set);
+		}
 		
 		switch(cur_type)
 		{

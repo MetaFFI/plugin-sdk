@@ -23,6 +23,17 @@ func NewModuleDefinition(name string) *ModuleDefinition {
 }
 
 //--------------------------------------------------------------------
+func (this *ModuleDefinition) IsContainsClass(clsName string) bool {
+	for _, c := range this.Classes {
+		if c.Name == clsName {
+			return true
+		}
+	}
+	
+	return false
+}
+
+//--------------------------------------------------------------------
 func (this *ModuleDefinition) SetTag(tag string, val string) {
 	
 	if this.Tags == nil {
