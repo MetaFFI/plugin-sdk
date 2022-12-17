@@ -1,7 +1,7 @@
 #include "cdt_capi_loader.h"
 
+#include <stdlib.h>
 #ifndef WIN32
-	#include <stdlib.h>
 	#include <stdio.h>
 	#include <string.h>
 #endif
@@ -432,9 +432,7 @@ const char* load_xllr()
 	else
 #endif
 	{
-		// TODO: UNDO ME!
-		strcpy(metaffi_home, "/mnt/c/src/github.com/MetaFFI/out/ubuntu/x64/debug");
-		//return "Failed getting METAFFI_HOME. Is it set?";
+		return "Failed getting METAFFI_HOME. Is it set?";
 	}
 
 #ifdef _WIN32

@@ -3,6 +3,7 @@ package TemplateFunctions
 import (
 	"fmt"
 	"github.com/MetaFFI/plugin-sdk/compiler/go/IDL"
+	"os"
 )
 
 var templatesFuncMap = map[string]interface{}{
@@ -10,6 +11,16 @@ var templatesFuncMap = map[string]interface{}{
 	"GetCDTParametersIndex":  getCDTParametersIndex,
 	"XcallFunctionName":      XCallFunctionName,
 	"DoNotEditText":          doNotEditText,
+	"Env":                    env,
+}
+
+func env(envName string) string{
+	res := os.Getenv(envName)
+	if res == ""{
+		panic("Cannot find Environment variable: "+envName)
+	}
+
+	return res
 }
 
 //--------------------------------------------------------------------

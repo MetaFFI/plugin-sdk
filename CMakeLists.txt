@@ -1,23 +1,23 @@
 
+cmake_minimum_required(VERSION 3.16.3)
+project(metaffi-plugin-sdk VERSION 0.0.1)
+set(Boost_NO_WARN_NEW_VERSIONS 1)
+
+set(CMAKE_CXX_STANDARD 17)
+
+find_program(GOEXEC go)
+if(NOT GOEXEC)
+	message(FATAL "Go not found")
+endif()
+
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
+
+include_directories(${CMAKE_CURRENT_LIST_DIR})
+
 if(NOT DEFINED SDK_INCLUDE_ONCE)
 	set(SDK_INCLUDE_ONCE TRUE)
-
-	cmake_minimum_required(VERSION 3.16.3)
-	project(metaffi-plugin-sdk VERSION 0.0.1)
-	set(Boost_NO_WARN_NEW_VERSIONS 1)
-
-	set(CMAKE_CXX_STANDARD 17)
-
-	find_program(GOEXEC go)
-	if(NOT GOEXEC)
-		message(FATAL "Go not found")
-	endif()
-
-	set(THREADS_PREFER_PTHREAD_FLAG ON)
-	find_package(Threads REQUIRED)
-
-
-	include_directories(${CMAKE_CURRENT_LIST_DIR})
 
 	include(CTest)
 	enable_testing()
