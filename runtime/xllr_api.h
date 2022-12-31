@@ -25,7 +25,7 @@ void free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len
 /**
  * Load module of foreign language
  */
-void* load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, const char* function_path, uint32_t function_path_len, void* pff, int8_t params_count, int8_t retval_count, char** err, uint32_t* err_len);
+void* load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, void* pff, int8_t params_count, int8_t retval_count, char** err, uint32_t* err_len);
 
 /**
  * Free module of foreign language

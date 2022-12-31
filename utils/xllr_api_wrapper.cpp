@@ -25,7 +25,7 @@ xllr_api_wrapper::xllr_api_wrapper()
 		
 		this->pfree_runtime_plugin = load_func<void(const char*, uint32_t, char**, uint32_t*)>(*this->xllr_mod, "free_runtime_plugin");
 		
-		this->pload_function = load_func<void*(const char*, uint32_t, const char*, uint32_t, void*, int8_t, int8_t, char**, uint32_t*)>(*this->xllr_mod, "load_function");
+		this->pload_function = load_func<void*(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, void*, int8_t, int8_t, char**, uint32_t*)>(*this->xllr_mod, "load_function");
 		this->pfree_function = load_func<void(const char*, uint32_t, void*, char**, uint32_t*)>(*this->xllr_mod, "free_function");
 		
 		this->pset_runtime_flag = load_func<void(const char*, uint64_t)>(*this->xllr_mod, "set_runtime_flag");
@@ -52,14 +52,15 @@ void xllr_api_wrapper::free_runtime_plugin(const char* runtime_plugin, uint32_t 
 	(*this->pfree_runtime_plugin)(runtime_plugin, runtime_plugin_len, err, err_len);
 }
 //--------------------------------------------------------------------
-void* xllr_api_wrapper::load_function(const char* runtime_plugin, uint32_t runtime_plugin_len, const char* function_path, uint32_t function_path_len, void* pff, int8_t params_count, int8_t retval_count, char** err, uint32_t* err_len)
+void* xllr_api_wrapper::load_function(const char* runtime_plugin, uint32_t runtime_plugin_len, const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, void* pff, int8_t params_count, int8_t retval_count, char** err, uint32_t* err_len)
 {
 	*err = nullptr;
 	*err_len = 0;
 	return (*this->pload_function)(runtime_plugin, runtime_plugin_len,
-	                             function_path, function_path_len,
-			                      pff, params_count, retval_count,
-			                      err, err_len);
+	                                module_path, module_path_len,
+	                                function_path, function_path_len,
+			                        pff, params_count, retval_count,
+			                        err, err_len);
 }
 //--------------------------------------------------------------------
 void xllr_api_wrapper::free_function(const char* runtime_plugin, uint32_t runtime_plugin_len, void* pff, char** err, uint32_t* err_len)

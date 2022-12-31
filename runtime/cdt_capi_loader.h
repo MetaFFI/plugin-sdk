@@ -135,6 +135,7 @@ void xllr_xcall_no_params_no_ret(void* pff,
 );
 
 void* xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
+                         const char* module_path, uint32_t module_path_len,
 							 const char* function_path, uint32_t function_path_len,
 							 void* pff,
                             int8_t params_count, int8_t retval_count,

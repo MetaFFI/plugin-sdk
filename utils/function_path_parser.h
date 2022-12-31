@@ -12,7 +12,7 @@ private:
 	std::map<std::string, std::string> function_path_items;
 	
 public:
-	explicit function_path_parser(const std::string &function_path);
+	explicit function_path_parser(const std::string& function_path);
 	
 	~function_path_parser() = default;
 	
