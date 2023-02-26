@@ -5,6 +5,10 @@
 	#include <stdio.h>
 	#include <string.h>
 #endif
+
+// === Handlers ===
+void* cdt_helper_xllr_handle = NULL;
+
 /************************************************
 *   Allocations
 *************************************************/
@@ -54,7 +58,21 @@ metaffi_type get_type(struct cdt* data_array, int index){ return pget_type(data_
 
 typedef struct cdt* (*pget_cdt_t)(struct cdt* data_array, int index);
 pget_cdt_t pget_cdt;
-struct cdt* get_cdt(struct cdt* data_array, int index){ return pget_cdt(data_array, index); }
+struct cdt* get_cdt(struct cdt* data_array, int index)
+{
+//  TODO: DEL ME!
+//	printf("+++ pget_cdt: %p ; &pget_cdt: %p. Line: %d\r\n", pget_cdt, &pget_cdt, __LINE__);
+//	if(!pget_cdt)
+//	{
+//		const char* err = load_cdt_capi();
+//		if(err)
+//		{
+//			printf("+++ Failed loading CDT C-API. Error: %s\r\n", err);
+//		}
+//	}
+//	printf("+++ pget_cdt: %p ; &pget_cdt: %p. Line: %d\r\n", pget_cdt, &pget_cdt, __LINE__);
+	return pget_cdt(data_array, index);
+}
 
 
 //====================================================================
@@ -224,9 +242,6 @@ struct cdts* xllr_alloc_cdts_buffer(metaffi_size params, metaffi_size rets)
 	return palloc_cdts_buffer(params, rets);
 }
 
-
-// === Handlers ===
-void* cdt_helper_xllr_handle = NULL;
 
 /************************************************
 *   Misc
@@ -427,13 +442,12 @@ const char* load_xllr()
 	
 	size_t metaffi_home_size = 320;
 	char metaffi_home[320] = {0};
-#ifdef _WIN32
-	if(getenv_s(&metaffi_home_size, metaffi_home, metaffi_home_size, "METAFFI_HOME") != 0)
-#else
 	const char* metaffi_home_tmp = getenv("METAFFI_HOME");
-	if(metaffi_home_tmp){ strcpy(metaffi_home, metaffi_home_tmp); }
+	if(metaffi_home_tmp)
+	{
+		strcpy(metaffi_home, metaffi_home_tmp);
+	}
 	else
-#endif
 	{
 		return "Failed getting METAFFI_HOME. Is it set?";
 	}
@@ -448,7 +462,7 @@ const char* load_xllr()
 	
 	char xllr_full_path[400] = {0};
 #ifdef _WIN32
-	sprintf_s(xllr_full_path, sizeof(xllr_full_path), "%s/xllr%s", metaffi_home, ext);
+	sprintf_s(xllr_full_path, sizeof(xllr_full_path), "%s\\xllr%s", metaffi_home, ext);
 #else
 	sprintf(xllr_full_path, "%s/xllr%s", metaffi_home, ext);
 #endif
@@ -500,7 +514,9 @@ const char* load_cdt_capi()
 	if(!cdt_helper_xllr_handle)
 	{
 		const char* err = load_xllr();
-		if(err){
+		if(err)
+		{
+			printf("++++ Loading CDT API - cdt_helper_xllr_handle (%p) ERROR %s\r\n", cdt_helper_xllr_handle, err);
 			return err;
 		}
 	}
@@ -510,7 +526,7 @@ const char* load_cdt_capi()
 
 #define load_helper_function(name) \
 	p##name = (p##name##_t)load_symbol(cdt_helper_xllr_handle, #name, &err, &out_err_len); \
-	if(err){ return err; }
+	if(err){ printf("++++ Error loading %s. Error %s.", #name, err); return err; }
 
 	load_helper_function(get_type);
 	load_helper_function(get_cdt);

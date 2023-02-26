@@ -1,71 +1,59 @@
 #include "expand_env.h"
-#include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
-#include <cstdlib>
+#include <regex>
+#include <algorithm>
+
+#ifdef _WIN32
+	#include <Windows.h>
+#endif
 
 namespace metaffi::utils
 {
 //--------------------------------------------------------------------
+// https://stackoverflow.com/questions/11635/case-insensitive-string-comparison-in-c
+bool iequals(const std::string& a, const std::string& b)
+{
+	return std::equal(a.begin(), a.end(),
+	                  b.begin(), b.end(),
+	                  [](char a, char b) {
+		                  return tolower(a) == tolower(b);
+	                  });
+}
+//--------------------------------------------------------------------
 std::string expand_env(const std::string& str)
 {
-	bool in_var = false;
-	std::string res;
-	std::string curvar;
-	for(char c : str)
+	static std::regex re(R"(%([A-Z0-9_\(\){}\[\]\$\*\+\\\/\"#',;\.!@\?-]+)%|\$ENV:([A-Z0-9_]+)|\$([A-Z_]{1}[A-Z0-9_]+)|\$\{([^}]+)\})", std::regex::icase);
+	static std::string cur_dir_win("CD");
+	static std::string cur_dir_nix("PWD");
+	
+	std::string working_copy_str = str;
+	std::string res = str;
+	for(std::smatch m; std::regex_search(working_copy_str, m, re); working_copy_str = m.suffix())
 	{
-		if(!in_var)
+		std::string env_var_name;
+		if(m[1].matched){ env_var_name = m[1].str(); }
+		else if(m[2].matched){ env_var_name = m[2].str(); }
+		else if(m[3].matched){ env_var_name = m[3].str(); }
+		else if(m[4].matched){ env_var_name = m[4].str(); }
+		
+		if(env_var_name.length() == 2 && iequals(env_var_name, cur_dir_win) ||
+				env_var_name.length() == 3 && iequals(env_var_name, cur_dir_nix))
 		{
-#ifndef _WIN32
-			if( c == '$' ) // start of var
+			char cwd[1024] = {0};
+
+#ifdef _WIN32
+			GetCurrentDirectory(1024,cwd);
 #else
-			if( c == '%' || c == '$' ) // start of var
+			getcwd(cwd, 1024);
 #endif
-			{
-				in_var = true;
-				curvar += c;
-			}
-			else
-			{
-				res += c;
-			}
+			boost::algorithm::replace_all(res, m.str(), cwd);
 		}
 		else
 		{
-#ifndef _WIN32
-			if(c == ' ' || c == '$' || c == '\\' || c == '/' || c == ':') // end of var
-#else
-			if(c == '%' || c == ' ' || c == '$' || c == '\\' || c == '/' || c == ':') // end of var
-#endif
+			const char* tmp = std::getenv(env_var_name.c_str());
+			if(tmp)
 			{
-				// get current directory
-#ifndef _WIN32
-				if(curvar == "$PWD")
-#else
-				if(boost::algorithm::to_upper_copy(curvar) == "%CD" || curvar == "$PWD")
-#endif
-				{
-					res += boost::filesystem::current_path().string();
-					if(c == '\\' || c == '/'){
-						res += c;
-					}
-				}
-				else
-				{
-					// get environment variable
-					const char* tmp = std::getenv(curvar.c_str());
-					if(tmp){ res += tmp; };
-				}
-
-#ifndef _WIN32
-				res += c; // append "c" to result if not windows end symbol
-#endif
-				
-				curvar.clear();
-				in_var = false;
-			}
-			else
-			{
-				curvar += c;
+				boost::algorithm::replace_all(res, m.str(), tmp);
 			}
 		}
 	}

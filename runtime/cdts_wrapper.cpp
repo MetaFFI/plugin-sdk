@@ -3,15 +3,19 @@
 
 
 // NOLINT(bugprone-macro-parentheses)
-
+bool capi_loaded = false;
+const char* capi_loader_err = nullptr;
 struct capi_loader
 {
 	capi_loader()
 	{
-		const char* err = load_cdt_capi();
-		if(err){
-			throw std::runtime_error(err);
+		capi_loader_err = load_cdt_capi();
+		if(capi_loader_err)
+		{
+			printf("FATAL ERROR! Failed to load CDT C-API. Error: %s\n", capi_loader_err);
 		}
+		
+		capi_loaded = true;
 	}
 };
 static capi_loader _l; // load statically the CDTS CAPI-API
@@ -22,6 +26,10 @@ namespace metaffi::runtime
 //--------------------------------------------------------------------
 cdts_wrapper::cdts_wrapper(cdt* cdts, metaffi_size cdts_length, bool is_free_cdts /*= false*/):cdts(cdts),cdts_length(cdts_length), is_free_cdts(is_free_cdts)
 {
+	if(!capi_loaded)
+	{
+		throw std::runtime_error("Failed to load CDT C-API");
+	}
 }
 //--------------------------------------------------------------------
 cdts_wrapper::~cdts_wrapper()
