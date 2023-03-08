@@ -1,15 +1,16 @@
 
 #------------------------------- metaffi-plugin-sdk Project ------------------------------------------
+cmake_minimum_required(VERSION 3.16.3)
 project(metaffi-plugin-sdk VERSION 0.0.1)
 
 add_Threads_package()
 
 # Copy "include" code to METAFFI_HOME
 add_custom_target(sdk_copy_headers_to_include)
-copy_file_from_project_binary(sdk_copy_headers_to_include "runtime/metaffi_primitives.h" "$ENV{METAFFI_HOME}/include/metaffi_primitives.h")
-copy_file_from_project_binary(sdk_copy_headers_to_include "runtime/cdt_structs.h" "$ENV{METAFFI_HOME}/include/cdt_structs.h")
-copy_file_from_project_binary(sdk_copy_headers_to_include "runtime/cdt_capi_loader.h" "$ENV{METAFFI_HOME}/include/cdt_capi_loader.h")
-copy_file_from_project_binary(sdk_copy_headers_to_include "runtime/cdt_capi_loader.c.h" "$ENV{METAFFI_HOME}/include/cdt_capi_loader.c.h")
+#copy_file_from_project_binary(sdk_copy_headers_to_include "runtime/metaffi_primitives.h" "$ENV{METAFFI_HOME}/include/metaffi_primitives.h")
+#copy_file_from_project_binary(sdk_copy_headers_to_include "runtime/cdt_structs.h" "$ENV{METAFFI_HOME}/include/cdt_structs.h")
+#copy_file_from_project_binary(sdk_copy_headers_to_include "runtime/cdt_capi_loader.h" "$ENV{METAFFI_HOME}/include/cdt_capi_loader.h")
+#copy_file_from_project_binary(sdk_copy_headers_to_include "runtime/cdt_capi_loader.c.h" "$ENV{METAFFI_HOME}/include/cdt_capi_loader.c.h")
 
 # unitests
 
