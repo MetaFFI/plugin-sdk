@@ -1,4 +1,4 @@
-include(Utils.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/Utils.cmake)
 get_app_path("go" GOEXEC)
 
 macro(add_go_target NAME)

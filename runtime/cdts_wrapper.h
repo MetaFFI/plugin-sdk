@@ -3,7 +3,6 @@
 #include <sstream>
 #include <functional>
 #include <utility>
-#include "../../metaffi-core/XLLR/cdts_alloc.h"
 #include "cdt_capi_loader.h"
 
 namespace metaffi::runtime

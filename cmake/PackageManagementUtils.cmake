@@ -1,11 +1,11 @@
 
-macro(load_hunter_pm)
+macro(load_hunter_pm METAFFI_CMAKE_SCRIPTS_DIR)
 	# Hunter CMake package manager https://hunter.readthedocs.io/
-	include("${CMAKE_CURRENT_LIST_DIR}/cmake/HunterGate.cmake")
+	include("${METAFFI_CMAKE_SCRIPTS_DIR}/HunterGate.cmake")
 	HunterGate(
 			URL "https://github.com/cpp-pm/hunter/archive/v0.24.15.tar.gz"
 			SHA1 "8010d63d5ae611c564889d5fe12d3cb7a45703ac"
-			FILEPATH "${CMAKE_CURRENT_LIST_DIR}/cmake/config.cmake"
+			FILEPATH "${METAFFI_CMAKE_SCRIPTS_DIR}/config.cmake"
 	)
 
 	set(HUNTER_BUILD_SHARED_LIBS ON)

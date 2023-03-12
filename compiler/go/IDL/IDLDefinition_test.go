@@ -1,18 +1,15 @@
 package IDL
 
 import (
-	"os"
 	"testing"
 )
 
 // Creates IDL definition for sanity test (specifically, with Go's function names)
 
-const PICKED_LANG = "go"
-
 //--------------------------------------------------------------------
 func TestIDL(t *testing.T) {
 	
-	idl := NewIDLDefinition(os.Getenv("SRC_HOME")+"/github.com/MetaFFI/Tests/Guests/Go/sanity/Test.json", PICKED_LANG)
+	idl := NewIDLDefinition("test.json", "testlang")
 	idl.AddModule(createModule())
 	
 	idl.FinalizeConstruction()

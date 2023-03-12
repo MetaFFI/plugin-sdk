@@ -1,4 +1,4 @@
-include(Utils.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/Utils.cmake)
 get_app_path("metaffi" METAFFI_EXEC)
 
 macro(metaffi_compile_host TARGET IDL HOST_LANG)
