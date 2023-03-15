@@ -6,17 +6,18 @@ macro(add_go_target NAME)
 endmacro()
 
 function(go_get TARGET)
-	cmake_parse_arguments("add_go_test"
+	cmake_parse_arguments("go_get"
 			"" # bool vals
 			"WORKING_DIRECTORY" # single val
 			"" # multi-vals
 			${ARGN})
 
-	if("${add_go_test_WORKING_DIRECTORY}" STREQUAL "")
-		set(add_go_test_WORKING_DIRECTORY ".")
+	if("${go_get_WORKING_DIRECTORY}" STREQUAL "")
+		set(go_get_WORKING_DIRECTORY ".")
 	endif()
+
 	add_custom_command(TARGET ${TARGET}
-			WORKING_DIRECTORY ${add_go_test_WORKING_DIRECTORY}
+			WORKING_DIRECTORY "${go_get_WORKING_DIRECTORY}"
 			COMMAND ${GOEXEC} get -v
 			COMMENT "Running \"go get\" for target ${target_name}"
 			USES_TERMINAL )
@@ -29,7 +30,7 @@ macro(go_build TARGET)
 			"" # multi-vals
 			${ARGN})
 
-	if("${NAME}" STREQUAL "")
+	if("${go_build_NAME}" STREQUAL "")
 		set(output_file ${TARGET})
 	else()
 		set(output_file ${go_build_NAME})
