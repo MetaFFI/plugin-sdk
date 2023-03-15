@@ -16,7 +16,7 @@ function(go_get TARGET)
 		set(add_go_test_WORKING_DIRECTORY ".")
 	endif()
 	add_custom_command(TARGET ${TARGET}
-			WORKING_DIRECTORY .
+			WORKING_DIRECTORY ${add_go_test_WORKING_DIRECTORY}
 			COMMAND ${GOEXEC} get -v
 			COMMENT "Running \"go get\" for target ${target_name}"
 			USES_TERMINAL )
