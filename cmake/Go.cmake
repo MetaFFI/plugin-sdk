@@ -24,9 +24,10 @@ function(go_get TARGET)
 endfunction()
 
 macro(go_build TARGET)
+	set(oneValueArgs NAME WORKING_DIRECTORY)
 	cmake_parse_arguments("go_build"
 			"" # bool vals
-			"NAME" # single val
+			"${oneValueArgs}" # single val
 			"" # multi-vals
 			${ARGN})
 
@@ -36,8 +37,12 @@ macro(go_build TARGET)
 		set(output_file ${go_build_NAME})
 	endif()
 
+	if("${go_build_WORKING_DIRECTORY}" STREQUAL "")
+		set(go_build_WORKING_DIRECTORY ".")
+	endif()
+
 	add_custom_command(TARGET ${TARGET}
-			WORKING_DIRECTORY .
+			WORKING_DIRECTORY ${go_build_WORKING_DIRECTORY}
 			COMMAND ${GOEXEC} build -buildmode=c-shared -gcflags=-shared -o ${PROJECT_BINARY_DIR}/${output_file}${CMAKE_SHARED_LIBRARY_SUFFIX}
 			COMMENT "Building go C-Shared dynamic library for target ${target_name} to ${PROJECT_BINARY_DIR}/${output_file}${CMAKE_SHARED_LIBRARY_SUFFIX}"
 			USES_TERMINAL )
