@@ -20,17 +20,17 @@ TEST_CASE( "Expand Environment Variable", "[sdk]" )
 	{
 		REQUIRE(expand_env("Text $METAFFI_HOME Text") == original);
 	}
-
+	
 	SECTION("PowerShell Style ($ENV:X)")
 	{
 		REQUIRE(expand_env("Text $Env:METAFFI_HOME Text") == original);
 	}
-
+	
 	SECTION("*nix Style 2 (${X})")
 	{
 		REQUIRE(expand_env("Text ${METAFFI_HOME} Text") == original);
 	}
-
+	
 	char cwd[1024] = {0};
 
 #ifdef _WIN32
