@@ -15,22 +15,22 @@ TEST_CASE( "Expand Environment Variable", "[sdk]" )
 	{
 		REQUIRE(expand_env("Text %METAFFI_HOME% Text") == original);
 	}
-	printf("+++++ %s:%d\n", __FILE__, __LINE__);
+
 	SECTION("*nix Style ($X)")
 	{
 		REQUIRE(expand_env("Text $METAFFI_HOME Text") == original);
 	}
-	printf("+++++ %s:%d\n", __FILE__, __LINE__);
+
 	SECTION("PowerShell Style ($ENV:X)")
 	{
 		REQUIRE(expand_env("Text $Env:METAFFI_HOME Text") == original);
 	}
-	printf("+++++ %s:%d\n", __FILE__, __LINE__);
+
 	SECTION("*nix Style 2 (${X})")
 	{
 		REQUIRE(expand_env("Text ${METAFFI_HOME} Text") == original);
 	}
-	printf("+++++ %s:%d\n", __FILE__, __LINE__);
+
 	char cwd[1024] = {0};
 
 #ifdef _WIN32
