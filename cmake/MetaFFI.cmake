@@ -37,3 +37,40 @@ macro(metaffi_compile_guest TARGET IDL)
 			USES_TERMINAL )
 endmacro()
 
+macro(metaffi_pack ROOT FILES)
+	cmake_parse_arguments("metaffi_pack"
+			"" # bool vals
+			"WORKING_DIRECTORY" # single val
+			"" # multi-vals
+			${ARGN})
+
+	if("${metaffi_pack_WORKING_DIRECTORY}" STREQUAL "")
+		set(metaffi_pack_WORKING_DIRECTORY .)
+	endif()
+
+	execute_process(
+			WORKING_DIRECTORY ${metaffi_pack_WORKING_DIRECTORY}
+			COMMAND ${METAFFI_EXEC} --plugin --pack --root ${ROOT} --files ${FILES}
+			COMMAND_ECHO STDOUT
+			COMMAND_ERROR_IS_FATAL ANY
+	)
+endmacro()
+
+macro(metaffi_confirm_plugin plugin_name)
+	cmake_parse_arguments("metaffi_pack"
+			"" # bool vals
+			"WORKING_DIRECTORY" # single val
+			"" # multi-vals
+			${ARGN})
+
+	if("${metaffi_pack_WORKING_DIRECTORY}" STREQUAL "")
+		set(metaffi_pack_WORKING_DIRECTORY .)
+	endif()
+
+	execute_process(
+			WORKING_DIRECTORY ${metaffi_pack_WORKING_DIRECTORY}
+			COMMAND ${METAFFI_EXEC} --plugin --confirm ${plugin_name}
+			COMMAND_ECHO STDOUT
+			COMMAND_ERROR_IS_FATAL ANY
+	)
+endmacro()

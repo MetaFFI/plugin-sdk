@@ -29,10 +29,10 @@ macro(install_target TARGET DESTINATION)
 			PRE_EXCLUDE_REGEXES
 				[[api-ms-win-.*]] [[ext-ms-.*]] [[kernel32\.dll]]
 				[[bcrypt.dll]] [[mfplat.dll]] [[msvcrt.dll]] [[ole32.dll]] [[secur32.dll]] [[user32.dll]] [[vcruntime140.dll]]
-				[[ws2_32.dll]]
-				[[libgcc_s_seh-1\.dll]] [[libstdc\+\+\-6.dll]]
+				[[ws2_32.dll]] [[wpaxholder.dll]] [[vaultcli.dll]] [[urlmon.dll]] [[unenrollhook.dll]] [[ucrtbased.dll]] [[twinapi.appcore.dll]]
+				[[libgcc_s_seh-1\.dll]] [[libstdc\+\+\-6.dll]] [[certca.dll]] [[credui.dll]] [[cryptnet.dll]] [[crypttpmeksvc.dll]]
 			POST_EXCLUDE_REGEXES
-				[[.*/system32/.*\.dll]]
+				[[.*/[Ss][Yy][Ss][Tt][Ee][Mm]32/.*\.[Dd][Ll][Ll]]
 			DIRECTORIES ${SEARCH_DIRS})
 
 endmacro()
