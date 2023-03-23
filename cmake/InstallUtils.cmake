@@ -32,7 +32,7 @@ macro(install_target TARGET DESTINATION)
 				[[ws2_32.dll]] [[wpaxholder.dll]] [[vaultcli.dll]] [[urlmon.dll]] [[unenrollhook.dll]] [[ucrtbased.dll]] [[twinapi.appcore.dll]]
 				[[libgcc_s_seh-1\.dll]] [[libstdc\+\+\-6.dll]] [[certca.dll]] [[credui.dll]] [[cryptnet.dll]] [[crypttpmeksvc.dll]]
 			POST_EXCLUDE_REGEXES
-				[[.*/[Ss][Yy][Ss][Tt][Ee][Mm]32/.*\.[Dd][Ll][Ll]]
+				".*/[Ss][Yy][Ss][Tt][Ee][Mm]32/.*\\.[Dd][Ll][Ll]"
 			DIRECTORIES ${SEARCH_DIRS})
 
 endmacro()
