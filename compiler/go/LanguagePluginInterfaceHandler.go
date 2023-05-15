@@ -166,7 +166,7 @@ func compile_to_guest(idl_def_json *C.char, idl_def_json_length C.uint,
 		}
 	}()
 	
-	languagePluginInterfaceHandler.compile_guest(idl_def_json, idl_def_json_length, output_path, output_path_length, block_name, block_name_length, block_code, block_code_length, out_err, out_err_len)
+	languagePluginInterfaceHandler.compile_to_guest(idl_def_json, idl_def_json_length, output_path, output_path_length, block_name, block_name_length, block_code, block_code_length, out_err, out_err_len)
 }
 
 //--------------------------------------------------------------------
@@ -192,7 +192,7 @@ func compile_from_host(idl_def_json *C.char, idl_def_json_length C.uint,
 		}
 	}()
 	
-	languagePluginInterfaceHandler.compile_host(idl_def_json, idl_def_json_length, output_path, output_path_length, host_options, host_options_length, out_err, out_err_len)
+	languagePluginInterfaceHandler.compile_from_host(idl_def_json, idl_def_json_length, output_path, output_path_length, host_options, host_options_length, out_err, out_err_len)
 	
 }
 
