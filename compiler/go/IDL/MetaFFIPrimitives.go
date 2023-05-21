@@ -74,6 +74,7 @@ const (
 	STRING32_ARRAY MetaFFIType = "string32_array"
 	
 	HANDLE_ARRAY MetaFFIType = "handle_array"
+	ANY_ARRAY MetaFFIType = "any_array"
 	
 	SIZE_ARRAY MetaFFIType = "size_array"
 )
@@ -118,6 +119,8 @@ var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 	STRING8_ARRAY:  uint64(C.metaffi_string8_array_type),
 	STRING16_ARRAY: uint64(C.metaffi_string16_array_type),
 	STRING32_ARRAY: uint64(C.metaffi_string32_array_type),
+
+	ANY_ARRAY: uint64(C.metaffi_any_array_type),
 	
 	HANDLE_ARRAY: uint64(C.metaffi_handle_array_type),
 	SIZE_ARRAY:   uint64(C.metaffi_size_array_type),
