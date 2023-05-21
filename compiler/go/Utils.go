@@ -23,26 +23,27 @@ func ModifyKeywords(definition *IDL.IDLDefinition, keywords map[string]bool, mod
 		return
 	}
 
+	replaceIfNeeded := func(input string)string{
+		_, exists := keywords[input]
+        if exists {
+            return modifyKeyword(input)
+        }
+        return input
+	}
+
 	for _, m := range definition.Modules {
 		if m.Functions != nil {
 			for _, f := range m.Functions {
-				_, exists := keywords[f.Name]
-				if exists {
-					f.Name = modifyKeyword(f.Name)
-				}
+				f.Name = replaceIfNeeded(f.Name)
 
 				for _, p := range f.Parameters {
-					_, exists = keywords[p.Name]
-					if exists {
-						p.Name = modifyKeyword(p.Name)
-					}
+					p.Name = replaceIfNeeded(p.Name)
+					p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 				}
 
 				for _, p := range f.ReturnValues {
-					_, exists = keywords[p.Name]
-					if exists {
-						p.Name = modifyKeyword(p.Name)
-					}
+					p.Name = replaceIfNeeded(p.Name)
+					p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 				}
 			}
 		}
@@ -50,113 +51,84 @@ func ModifyKeywords(definition *IDL.IDLDefinition, keywords map[string]bool, mod
 		if m.Classes != nil {
 			for _, c := range m.Classes {
 
+				c.Name = replaceIfNeeded(c.Name)
+
 				for _, f := range c.Fields {
+
 	                if f.Getter != nil {
-	                    _, exists := keywords[f.Getter.Name]
-	                    if exists {
-	                        f.Getter.Name = modifyKeyword(f.Getter.Name)
-	                    }
+	                    f.Getter.Name = replaceIfNeeded(f.Getter.Name)
 
 	                    for _, p := range f.Getter.Parameters {
-	                        _, exists = keywords[p.Name]
-	                        if exists {
-	                            p.Name = modifyKeyword(p.Name)
-	                        }
+	                        p.Name = replaceIfNeeded(p.Name)
+                            p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 	                    }
 
 	                    for _, p := range f.Getter.ReturnValues {
-	                        _, exists = keywords[p.Name]
-	                        if exists {
-	                            p.Name = modifyKeyword(p.Name)
-	                        }
+	                        p.Name = replaceIfNeeded(p.Name)
+                            p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 	                    }
 	                }
 	                if f.Setter != nil {
-	                    _, exists := keywords[f.Setter.Name]
-	                    if exists {
-	                        f.Setter.Name = modifyKeyword(f.Setter.Name)
-	                    }
+	                    f.Setter.Name = replaceIfNeeded(f.Setter.Name)
 
 	                    for _, p := range f.Setter.Parameters {
-	                        _, exists = keywords[p.Name]
-	                        if exists {
-	                            p.Name = modifyKeyword(p.Name)
-	                        }
+	                        p.Name = replaceIfNeeded(p.Name)
+                            p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 	                    }
 
 	                    for _, p := range f.Setter.ReturnValues {
-	                        _, exists = keywords[p.Name]
-	                        if exists {
-	                            p.Name = modifyKeyword(p.Name)
-	                        }
+	                        p.Name = replaceIfNeeded(p.Name)
+                            p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 	                    }
 	                }
 	            }
 
 				if c.Constructors != nil {
 					for _, cstr := range c.Constructors {
-						_, exists := keywords[cstr.Name]
-						if exists {
-							cstr.Name = modifyKeyword(cstr.Name)
-						}
+
+						cstr.Name = replaceIfNeeded(cstr.Name)
 
 						for _, p := range cstr.Parameters {
-							_, exists = keywords[p.Name]
-							if exists {
-								p.Name = modifyKeyword(p.Name)
-							}
+							p.Name = replaceIfNeeded(p.Name)
+                            p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 						}
 
 						for _, p := range cstr.ReturnValues {
-							_, exists = keywords[p.Name]
-							if exists {
-								p.Name = modifyKeyword(p.Name)
-							}
+							p.Name = replaceIfNeeded(p.Name)
+                            p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 						}
 					}
 				}
 
 				if c.Methods != nil {
 					for _, meth := range c.Methods {
-						_, exists := keywords[meth.Name]
-						if exists {
-							meth.Name = modifyKeyword(meth.Name)
-						}
+
+						meth.Name = replaceIfNeeded(meth.Name)
 
 						for _, p := range meth.Parameters {
-							_, exists = keywords[p.Name]
-							if exists {
-								p.Name = modifyKeyword(p.Name)
-							}
+							p.Name = replaceIfNeeded(p.Name)
+                            p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 						}
 
 						for _, p := range meth.ReturnValues {
-							_, exists = keywords[p.Name]
-							if exists {
-								p.Name = modifyKeyword(p.Name)
-							}
+							p.Name = replaceIfNeeded(p.Name)
+                            p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 						}
 					}
 				}
 
 				if c.Releaser != nil {
-					_, exists := keywords[c.Releaser.Name]
-					if exists {
-						c.Releaser.Name = modifyKeyword(c.Releaser.Name)
-					}
+
+					c.Releaser.Name = replaceIfNeeded(c.Releaser.Name)
 
 					for _, p := range c.Releaser.Parameters {
-						_, exists = keywords[p.Name]
-						if exists {
-							p.Name = modifyKeyword(p.Name)
-						}
+						p.Name = replaceIfNeeded(p.Name)
+                        p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 					}
 
 					for _, p := range c.Releaser.ReturnValues {
-						_, exists = keywords[p.Name]
-						if exists {
-							p.Name = modifyKeyword(p.Name)
-						}
+						p.Name = replaceIfNeeded(p.Name)
+                        p.TypeAlias = replaceIfNeeded(p.TypeAlias)
 					}
 				}
 			}
