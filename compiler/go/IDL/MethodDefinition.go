@@ -77,7 +77,7 @@ func (this *MethodDefinition) GetEntityIDName() string {
 		panic(fmt.Sprintf("parent class is not set for method %v", this.Name))
 	}
 	
-	return this.parent.Name + "_" + this.Name + "ID"
+	return this.parent.Name + "_" + this.GetNameWithOverloadIndex() + "ID"
 }
 
 //--------------------------------------------------------------------
