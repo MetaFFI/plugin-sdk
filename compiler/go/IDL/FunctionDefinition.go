@@ -3,6 +3,7 @@ package IDL
 import (
 	"fmt"
 	"sort"
+	"strconv"
 )
 
 type FunctionDefinition struct {
@@ -24,6 +25,15 @@ func NewFunctionDefinition(name string) *FunctionDefinition {
 		FunctionPath: make(map[string]string),
 		Parameters:   make([]*ArgDefinition, 0),
 		ReturnValues: make([]*ArgDefinition, 0),
+	}
+}
+
+// --------------------------------------------------------------------
+func (this *FunctionDefinition) GetOverloadIndexIfExists() string {
+	if this.OverloadIndex > 0 {
+		return strconv.Itoa(int(this.OverloadIndex))
+	} else {
+		return ""
 	}
 }
 
