@@ -29,6 +29,10 @@ func NewFunctionDefinition(name string) *FunctionDefinition {
 }
 
 // --------------------------------------------------------------------
+func (this *FunctionDefinition) GetNameWithOverloadIndex() string {
+	return this.Name + this.GetOverloadIndexIfExists()
+}
+// --------------------------------------------------------------------
 func (this *FunctionDefinition) GetOverloadIndexIfExists() string {
 	if this.OverloadIndex > 0 {
 		return strconv.Itoa(int(this.OverloadIndex))
