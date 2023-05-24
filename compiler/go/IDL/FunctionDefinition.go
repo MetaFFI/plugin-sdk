@@ -27,7 +27,35 @@ func NewFunctionDefinition(name string) *FunctionDefinition {
 		ReturnValues: make([]*ArgDefinition, 0),
 	}
 }
+//--------------------------------------------------------------------
+func DefaultParamComparer(left *ArgDefinition, right *ArgDefinition) bool{
+	return left.Type == right.Type && left.Dimensions == right.Dimensions
+}
+// --------------------------------------------------------------------
+func (this *FunctionDefinition) EqualsSignature(f *FunctionDefinition, paramComparer func(left *ArgDefinition, right *ArgDefinition) bool) bool{
 
+	if this.Name != f.Name{
+		return false
+	}
+
+	if len(this.Parameters) != len(f.Parameters) || len(this.ReturnValues) != len(f.ReturnValues){
+		return false
+	}
+
+	for i, p := range this.Parameters{
+		if !paramComparer(p, f.Parameters[i]){
+			return false
+		}
+	}
+
+	for i, p := range this.ReturnValues{
+		if paramComparer(p, f.ReturnValues[i]){
+			return false
+		}
+	}
+
+	return true
+}
 // --------------------------------------------------------------------
 func (this *FunctionDefinition) GetNameWithOverloadIndex() string {
 	return this.Name + this.GetOverloadIndexIfExists()
