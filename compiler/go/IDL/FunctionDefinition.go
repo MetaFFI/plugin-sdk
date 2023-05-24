@@ -133,7 +133,7 @@ func (this *FunctionDefinition) IsMethod() bool {
 
 // --------------------------------------------------------------------
 func (this *FunctionDefinition) GetEntityIDName() string {
-	return this.Name + "ID"
+	return this.GetNameWithOverloadIndex() + "ID"
 }
 
 //--------------------------------------------------------------------
