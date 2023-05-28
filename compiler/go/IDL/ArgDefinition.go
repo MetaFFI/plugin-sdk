@@ -11,6 +11,7 @@ type ArgDefinition struct{
 	Comment string `json:"comment"`
 	Tags map[string]string `json:"tags"`
 	Dimensions int `json:"dimensions"`
+	IsOptional bool `json:"is_optional"`
 }
 //--------------------------------------------------------------------
 func NewArgDefinition(name string, ffiType MetaFFIType) *ArgDefinition {
