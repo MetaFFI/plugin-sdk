@@ -9,7 +9,7 @@ import (
 type MethodDefinition struct {
 	FunctionDefinition
 	InstanceRequired bool `json:"instance_required"`
-	Parent           *ClassDefinition
+	parent           *ClassDefinition
 }
 
 //--------------------------------------------------------------------
@@ -22,7 +22,7 @@ func NewMethodDefinitionWithFunction(parent *ClassDefinition, function *Function
 	m := &MethodDefinition{
 		FunctionDefinition: *function,
 		InstanceRequired:   instanceRequired,
-		Parent:             parent,
+		parent:             parent,
 	}
 	
 	// set first parameter as class instance
@@ -42,7 +42,7 @@ func NewMethodDefinition(parent *ClassDefinition, name string, instanceRequired 
 	
 	m := &MethodDefinition{
 		FunctionDefinition: *NewFunctionDefinition(name),
-		Parent:             parent,
+		parent:             parent,
 		InstanceRequired:   instanceRequired,
 	}
 	
@@ -58,7 +58,7 @@ func (this *MethodDefinition) Duplicate() *MethodDefinition {
 	dupMethod := MethodDefinition{}
 	dupMethod.FunctionDefinition = *this.FunctionDefinition.Duplicate()
 	dupMethod.InstanceRequired = this.InstanceRequired
-	dupMethod.Parent = nil
+	dupMethod.parent = nil
 
 	return &dupMethod
 }
@@ -81,11 +81,11 @@ func (this *MethodDefinition) AddReturnValues(definition *ArgDefinition) *Method
 
 //--------------------------------------------------------------------
 func (this *MethodDefinition) GetEntityIDName() string {
-	if this.Parent == nil {
+	if this.parent == nil {
 		panic(fmt.Sprintf("parent class is not set for method %v", this.Name))
 	}
 	
-	return this.Parent.Name + "_" + this.GetNameWithOverloadIndex() + "ID"
+	return this.parent.Name + "_" + this.GetNameWithOverloadIndex() + "ID"
 }
 
 //--------------------------------------------------------------------
@@ -113,7 +113,7 @@ func (this *MethodDefinition) FunctionPathAsString(definition *IDLDefinition) st
 		v, found := this.FunctionPath[k]
 		
 		if !found { // if key not found, take from parent (notice, method has priority over parent)
-			v, found = this.Parent.FunctionPath[k]
+			v, found = this.parent.FunctionPath[k]
 			
 			if !found {
 				switch k {
@@ -137,7 +137,10 @@ func (this *MethodDefinition) FunctionPathAsString(definition *IDLDefinition) st
 
 //--------------------------------------------------------------------
 func (this *MethodDefinition) GetParent() *ClassDefinition {
-	return this.Parent
+	return this.parent
 }
-
+//--------------------------------------------------------------------
+func (this *MethodDefinition) SetParent(parent *ClassDefinition) {
+	this.parent = parent
+}
 //--------------------------------------------------------------------

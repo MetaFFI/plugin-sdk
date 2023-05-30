@@ -3,7 +3,7 @@ package IDL
 //--------------------------------------------------------------------
 type ConstructorDefinition struct {
 	FunctionDefinition
-	Parent *ClassDefinition
+	parent *ClassDefinition
 }
 
 //--------------------------------------------------------------------
@@ -35,5 +35,12 @@ func (this *ConstructorDefinition) Duplicate() *ConstructorDefinition{
 func (this *ConstructorDefinition) IsMethod() bool {
 	return false
 }
-
+//--------------------------------------------------------------------
+func (this *ConstructorDefinition) GetParent() *ClassDefinition {
+	return this.parent
+}
+//--------------------------------------------------------------------
+func (this *ConstructorDefinition) SetParent(parent *ClassDefinition) {
+	this.parent = parent
+}
 //--------------------------------------------------------------------

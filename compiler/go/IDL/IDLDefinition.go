@@ -169,20 +169,20 @@ func (this *IDLDefinition) FinalizeConstruction() {
 				f.Parent = c
 				
 				if f.Getter != nil {
-					f.Getter.Parent = c
+					f.Getter.parent = c
 				}
 				
 				if f.Setter != nil {
-					f.Setter.Parent = c
+					f.Setter.parent = c
 				}
 			}
 			
 			for _, method := range c.Methods {
-				method.Parent = c
+				method.parent = c
 			}
 			
 			if c.Releaser != nil {
-				c.Releaser.Parent = c
+				c.Releaser.parent = c
 			}
 		}
 	}
