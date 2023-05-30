@@ -31,6 +31,48 @@ func NewFunctionDefinition(name string) *FunctionDefinition {
 func DefaultParamComparer(left *ArgDefinition, right *ArgDefinition) bool{
 	return left.Type == right.Type && left.Dimensions == right.Dimensions
 }
+//--------------------------------------------------------------------
+func (this *FunctionDefinition) GetFirstIndexOfOptionalParameter() int{
+
+	for i, p := range this.Parameters{
+		if p.IsOptional{
+			return i
+		}
+	}
+	return -1
+}
+//--------------------------------------------------------------------
+func (this *FunctionDefinition) Duplicate() *FunctionDefinition{
+	dupFunc := FunctionDefinition{
+		Name: this.Name,
+		Comment: this.Comment,
+		OverloadIndex: this.OverloadIndex,
+		Tags: make(map[string]string),
+		FunctionPath: make(map[string]string),
+		Parameters: make([]*ArgDefinition, 0),
+		ReturnValues: make([]*ArgDefinition, 0),
+	}
+
+	for k, v := range this.Tags{
+		dupFunc.Tags[k] = v
+	}
+
+	for k, v := range this.FunctionPath{
+		dupFunc.FunctionPath[k] = v
+	}
+
+	for _, p := range this.Parameters{
+		dupArg := p.Duplicate()
+		dupFunc.Parameters = append(dupFunc.Parameters, dupArg)
+	}
+
+	for _, p := range this.ReturnValues{
+		dupArg := p.Duplicate()
+		dupFunc.ReturnValues = append(dupFunc.ReturnValues, dupArg)
+	}
+
+	return &dupFunc
+}
 // --------------------------------------------------------------------
 func (this *FunctionDefinition) EqualsSignature(f *FunctionDefinition, paramComparer func(left *ArgDefinition, right *ArgDefinition) bool) bool{
 

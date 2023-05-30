@@ -163,26 +163,26 @@ func (this *IDLDefinition) FinalizeConstruction() {
 		}
 		
 		for _, c := range m.Classes {
-			
+
 			for _, f := range c.Fields {
 				
-				f.parent = c
+				f.Parent = c
 				
 				if f.Getter != nil {
-					f.Getter.parent = c
+					f.Getter.Parent = c
 				}
 				
 				if f.Setter != nil {
-					f.Setter.parent = c
+					f.Setter.Parent = c
 				}
 			}
 			
 			for _, method := range c.Methods {
-				method.parent = c
+				method.Parent = c
 			}
 			
 			if c.Releaser != nil {
-				c.Releaser.parent = c
+				c.Releaser.Parent = c
 			}
 		}
 	}

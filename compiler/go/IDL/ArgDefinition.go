@@ -39,6 +39,24 @@ func NewArgArrayDefinitionWithAlias(name string, ffiType MetaFFIType, dimensions
 	return f
 }
 //--------------------------------------------------------------------
+func (this *ArgDefinition) Duplicate() *ArgDefinition{
+	dupArg := ArgDefinition{
+		Name: this.Name,
+		Type: this.Type,
+		TypeAlias: this.TypeAlias,
+		Comment: this.Comment,
+		Tags: make(map[string]string),
+		Dimensions: this.Dimensions,
+		IsOptional: this.IsOptional,
+	}
+
+	for k, v := range this.Tags{
+		dupArg.Tags[k] = v
+	}
+
+	return &dupArg
+}
+//--------------------------------------------------------------------
 func (this *ArgDefinition) SetAlias(alias string){
 	this.TypeAlias = alias
 }

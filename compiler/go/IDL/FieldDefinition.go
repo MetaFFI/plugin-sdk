@@ -7,7 +7,7 @@ type FieldDefinition struct {
 	ArgDefinition
 	Getter *MethodDefinition `json:"getter"`
 	Setter *MethodDefinition `json:"setter"`
-	parent *ClassDefinition
+	Parent *ClassDefinition
 }
 
 //--------------------------------------------------------------------
@@ -19,7 +19,7 @@ func NewFieldDefinition(cls *ClassDefinition, name string, ffiType MetaFFIType, 
 func NewFieldDefinitionWithAlias(cls *ClassDefinition, name string, ffiType MetaFFIType, alias string, getter string, setter string, instanceRequired bool) *FieldDefinition {
 	g := &FieldDefinition{
 		ArgDefinition: *NewArgDefinitionWithAlias(name, ffiType, alias),
-		parent:        cls,
+		Parent:        cls,
 	}
 	
 	if getter != "" {
@@ -37,7 +37,7 @@ func NewFieldDefinitionWithAlias(cls *ClassDefinition, name string, ffiType Meta
 func NewFieldArrayDefinitionWithAlias(cls *ClassDefinition, name string, ffiType MetaFFIType, dimensions int, alias string, getter string, setter string, instanceRequired bool) *FieldDefinition {
 	g := &FieldDefinition{
 		ArgDefinition: *NewArgArrayDefinitionWithAlias(name, ffiType, dimensions, alias),
-		parent:        cls,
+		Parent:        cls,
 	}
 	
 	if getter != "" {
@@ -53,9 +53,9 @@ func NewFieldArrayDefinitionWithAlias(cls *ClassDefinition, name string, ffiType
 
 //--------------------------------------------------------------------
 func (this *FieldDefinition) GetEntityIDName() string {
-	if this.parent == nil {
+	if this.Parent == nil {
 		panic(fmt.Sprintf("parent class is not set for field %v", this.Name))
 	}
 	
-	return this.parent.Name + "_" + this.Name + "ID"
+	return this.Parent.Name + "_" + this.Name + "ID"
 }

@@ -3,6 +3,7 @@ package IDL
 //--------------------------------------------------------------------
 type ConstructorDefinition struct {
 	FunctionDefinition
+	Parent *ClassDefinition
 }
 
 //--------------------------------------------------------------------
@@ -18,12 +19,18 @@ func NewConstructorDefinition(name string) *ConstructorDefinition {
 	
 	return cstr
 }
-
 //--------------------------------------------------------------------
 func NewConstructorDefinitionFromFunctionDefinition(f *FunctionDefinition) *ConstructorDefinition {
 	return &ConstructorDefinition{FunctionDefinition: *f}
 }
 
+//--------------------------------------------------------------------
+func (this *ConstructorDefinition) Duplicate() *ConstructorDefinition{
+	dup := ConstructorDefinition{}
+	dup.FunctionDefinition = *this.FunctionDefinition.Duplicate()
+
+	return &dup
+}
 //--------------------------------------------------------------------
 func (this *ConstructorDefinition) IsMethod() bool {
 	return false

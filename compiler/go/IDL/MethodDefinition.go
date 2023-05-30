@@ -9,7 +9,7 @@ import (
 type MethodDefinition struct {
 	FunctionDefinition
 	InstanceRequired bool `json:"instance_required"`
-	parent           *ClassDefinition
+	Parent           *ClassDefinition
 }
 
 //--------------------------------------------------------------------
@@ -22,7 +22,7 @@ func NewMethodDefinitionWithFunction(parent *ClassDefinition, function *Function
 	m := &MethodDefinition{
 		FunctionDefinition: *function,
 		InstanceRequired:   instanceRequired,
-		parent:             parent,
+		Parent:             parent,
 	}
 	
 	// set first parameter as class instance
@@ -42,7 +42,7 @@ func NewMethodDefinition(parent *ClassDefinition, name string, instanceRequired 
 	
 	m := &MethodDefinition{
 		FunctionDefinition: *NewFunctionDefinition(name),
-		parent:             parent,
+		Parent:             parent,
 		InstanceRequired:   instanceRequired,
 	}
 	
@@ -53,7 +53,15 @@ func NewMethodDefinition(parent *ClassDefinition, name string, instanceRequired 
 
 	return m
 }
+//--------------------------------------------------------------------
+func (this *MethodDefinition) Duplicate() *MethodDefinition {
+	dupMethod := MethodDefinition{}
+	dupMethod.FunctionDefinition = *this.FunctionDefinition.Duplicate()
+	dupMethod.InstanceRequired = this.InstanceRequired
+	dupMethod.Parent = nil
 
+	return &dupMethod
+}
 //--------------------------------------------------------------------
 func (this *MethodDefinition) IsMethod() bool {
 	return true
@@ -73,11 +81,11 @@ func (this *MethodDefinition) AddReturnValues(definition *ArgDefinition) *Method
 
 //--------------------------------------------------------------------
 func (this *MethodDefinition) GetEntityIDName() string {
-	if this.parent == nil {
+	if this.Parent == nil {
 		panic(fmt.Sprintf("parent class is not set for method %v", this.Name))
 	}
 	
-	return this.parent.Name + "_" + this.GetNameWithOverloadIndex() + "ID"
+	return this.Parent.Name + "_" + this.GetNameWithOverloadIndex() + "ID"
 }
 
 //--------------------------------------------------------------------
@@ -105,7 +113,7 @@ func (this *MethodDefinition) FunctionPathAsString(definition *IDLDefinition) st
 		v, found := this.FunctionPath[k]
 		
 		if !found { // if key not found, take from parent (notice, method has priority over parent)
-			v, found = this.parent.FunctionPath[k]
+			v, found = this.Parent.FunctionPath[k]
 			
 			if !found {
 				switch k {
@@ -129,7 +137,7 @@ func (this *MethodDefinition) FunctionPathAsString(definition *IDLDefinition) st
 
 //--------------------------------------------------------------------
 func (this *MethodDefinition) GetParent() *ClassDefinition {
-	return this.parent
+	return this.Parent
 }
 
 //--------------------------------------------------------------------

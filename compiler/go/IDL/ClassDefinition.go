@@ -50,11 +50,13 @@ func (this *ClassDefinition) AppendComment(comment string) {
 
 //--------------------------------------------------------------------
 func (this *ClassDefinition) AddConstructor(definition *ConstructorDefinition) {
+	definition.Parent = this
 	this.Constructors = append(this.Constructors, definition)
 }
 
 //--------------------------------------------------------------------
 func (this *ClassDefinition) AddMethod(def *MethodDefinition) {
+	def.Parent = this
 	this.Methods = append(this.Methods, def)
 }
 

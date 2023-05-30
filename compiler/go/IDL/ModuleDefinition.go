@@ -72,31 +72,85 @@ func (this *ModuleDefinition) GetCallablesByName(name string, searchFunctions bo
 	return
 }
 //--------------------------------------------------------------------
-func (this *ModuleDefinition) GetOverloadedCallables() (functions [][]*FunctionDefinition, methods [][]*MethodDefinition, constructors [][]*ConstructorDefinition){
+func (this *ModuleDefinition) GetCallablesWithOptionalParameters(searchFunctions bool, searchMethods bool, searchConstructors bool) (functions []*FunctionDefinition, methods []*MethodDefinition, constructors []*ConstructorDefinition){
+	functions = make([]*FunctionDefinition, 0)
+	methods = make([]*MethodDefinition, 0)
+	constructors = make([]*ConstructorDefinition, 0)
+
+	isContainOptionalParameters := func(f *FunctionDefinition) bool{
+		for _, p := range f.Parameters{
+			if p.IsOptional{
+				return true
+			}
+		}
+
+		return false
+	}
+
+	if searchFunctions{
+		for _, f := range this.Functions{
+			if isContainOptionalParameters(f){ // get overloaded only once. index 1 states it is overloaded, but ignores all other overloads
+				functions = append(functions, f)
+			}
+		}
+	}
+
+	if searchConstructors || searchMethods{
+		for _, c := range this.Classes{
+			if searchConstructors{
+				for _, cstr := range c.Constructors{
+					if isContainOptionalParameters(&cstr.FunctionDefinition){
+						constructors = append(constructors, cstr)
+					}
+				}
+			}
+
+			if searchMethods {
+				for _, m := range c.Methods {
+					if isContainOptionalParameters(&m.FunctionDefinition) {
+						methods = append(methods, m)
+					}
+				}
+			}
+		}
+	}
+
+	return
+}
+//--------------------------------------------------------------------
+func (this *ModuleDefinition) GetOverloadedCallables(searchFunctions bool, searchMethods bool, searchConstructors bool) (functions [][]*FunctionDefinition, methods [][]*MethodDefinition, constructors [][]*ConstructorDefinition){
 
 	functions = make([][]*FunctionDefinition, 0)
 	methods = make([][]*MethodDefinition, 0)
 	constructors = make([][]*ConstructorDefinition, 0)
 
-	for _, f := range this.Functions{
-		if f.OverloadIndex == 1{ // get overloaded only once. index 1 states it is overloaded, but ignores all other overloads
-			fs, _, _ := this.GetCallablesByName(f.Name, true, false, false)
-			functions = append(functions, fs)
+	if searchFunctions{
+		for _, f := range this.Functions{
+			if f.OverloadIndex == 1{ // get overloaded only once. index 1 states it is overloaded, but ignores all other overloads
+				fs, _, _ := this.GetCallablesByName(f.Name, true, false, false)
+				functions = append(functions, fs)
+			}
 		}
 	}
 
-	for _, c := range this.Classes{
-		for _, cstr := range c.Constructors{
-			if cstr.OverloadIndex == 1{
-				_, _, cstrs := this.GetCallablesByName(cstr.Name, false, false, true)
-				constructors = append(constructors, cstrs)
+	if searchConstructors || searchMethods{
+		for _, c := range this.Classes{
+			if searchConstructors{
+				for _, cstr := range c.Constructors{
+					if cstr.OverloadIndex == 1{
+						_, _, cstrs := this.GetCallablesByName(cstr.Name, false, false, true)
+						constructors = append(constructors, cstrs)
+					}
+				}
 			}
-		}
 
-		for _, m := range c.Methods{
-			if m.OverloadIndex == 1{
-				_, meths, _ := this.GetCallablesByName(m.Name, false, true, false)
-				methods = append(methods, meths)
+			if searchMethods{
+				for _, m := range c.Methods{
+					if m.OverloadIndex == 1{
+						_, meths, _ := this.GetCallablesByName(m.Name, false, true, false)
+						methods = append(methods, meths)
+					}
+				}
 			}
 		}
 	}
