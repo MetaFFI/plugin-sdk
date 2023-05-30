@@ -13,7 +13,7 @@ func TestIDL(t *testing.T) {
 	idl.AddModule(createModule())
 	
 	idl.FinalizeConstruction()
-	
+
 	res, err := idl.ToJSON()
 	if err != nil {
 		t.Fatal(err)

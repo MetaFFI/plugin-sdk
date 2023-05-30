@@ -166,7 +166,7 @@ func (this *IDLDefinition) FinalizeConstruction() {
 
 			for _, f := range c.Fields {
 				
-				f.Parent = c
+				f.SetParent(c)
 				
 				if f.Getter != nil {
 					f.Getter.parent = c
