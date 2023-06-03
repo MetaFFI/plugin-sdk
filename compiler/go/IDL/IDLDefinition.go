@@ -176,6 +176,10 @@ func (this *IDLDefinition) FinalizeConstruction() {
 					f.Setter.parent = c
 				}
 			}
+
+			for _, cstr := range c.Constructors {
+				cstr.parent = c
+			}
 			
 			for _, method := range c.Methods {
 				method.parent = c
