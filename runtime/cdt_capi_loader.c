@@ -215,6 +215,7 @@ void xllr_free_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
 void (*pxllr_load_runtime_plugin)(const char*, uint32_t, char**, uint32_t*);
 void xllr_load_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len)
 {
+    printf("+++++++++++ pxllr_load_runtime_plugin = %p\n", pxllr_load_runtime_plugin);
 	pxllr_load_runtime_plugin(runtime_plugin, runtime_plugin_len, err, err_len);
 }
 
@@ -516,17 +517,17 @@ const char* load_cdt_capi()
 		const char* err = load_xllr();
 		if(err)
 		{
-			printf("++++ Loading CDT API - cdt_helper_xllr_handle (%p) ERROR %s\r\n", cdt_helper_xllr_handle, err);
+			printf("Loading CDT API - cdt_helper_xllr_handle (%p) ERROR %s\r\n", cdt_helper_xllr_handle, err);
 			return err;
 		}
 	}
-	
+
 	char* err = NULL;
 	uint64_t out_err_len = 0;
 
 #define load_helper_function(name) \
 	p##name = (p##name##_t)load_symbol(cdt_helper_xllr_handle, #name, &err, &out_err_len); \
-	if(err){ printf("++++ Error loading %s. Error %s.", #name, err); return err; }
+	if(err){ printf("Error loading %s. Error %s.", #name, err); return err; }
 
 	load_helper_function(get_type);
 	load_helper_function(get_cdt);
