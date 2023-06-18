@@ -215,7 +215,6 @@ void xllr_free_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
 void (*pxllr_load_runtime_plugin)(const char*, uint32_t, char**, uint32_t*);
 void xllr_load_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len)
 {
-    printf("+++++++++++ pxllr_load_runtime_plugin = %p\n", pxllr_load_runtime_plugin);
 	pxllr_load_runtime_plugin(runtime_plugin, runtime_plugin_len, err, err_len);
 }
 
