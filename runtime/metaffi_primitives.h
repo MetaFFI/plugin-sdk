@@ -78,7 +78,7 @@ enum metaffi_types
 	metaffi_string16_array_type = metaffi_string16_type | metaffi_array_type,
 	metaffi_string32_array_type = metaffi_string32_type | metaffi_array_type,
 	
-	metaffi_any_array_type = metaffi_string32_type | metaffi_array_type,
+	metaffi_any_array_type = metaffi_any_type | metaffi_array_type,
 	
 	metaffi_handle_array_type = metaffi_handle_type | metaffi_array_type,
 	metaffi_size_array_type = metaffi_size_type | metaffi_array_type
