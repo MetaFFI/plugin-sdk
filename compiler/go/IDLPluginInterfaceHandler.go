@@ -28,15 +28,15 @@ func CreateIDLPluginInterfaceHandler(wrapped IDLPluginInterface) {
 }
 
 //--------------------------------------------------------------------
-func (this *IDLPluginInterfaceHandler) parse_idl(idl_file_path *C.char, idl_file_path_length C.uint,
-	idl *C.char, idl_length C.uint,
+func (this *IDLPluginInterfaceHandler) parse_idl(source_code *C.char, source_code_length C.uint,
+	file_path *C.char, file_path_length C.uint,
 	out_idl_def_json **C.char, out_idl_def_json_length *C.uint,
 	out_err **C.char, out_err_len *C.uint) {
 	
-	idlName := C.GoStringN(idl_file_path, C.int(idl_file_path_length))
-	idlStr := C.GoStringN(idl, C.int(idl_length))
+	sourceCode := C.GoStringN(source_code, C.int(source_code_length))
+	filePath := C.GoStringN(file_path, C.int(file_path_length))
 	
-	idlName, err := filepath.Abs(idlName)
+	sourceCode, err := filepath.Abs(sourceCode)
 	if err != nil {
 		*out_err = C.CString(err.Error())
 		*out_err_len = C.uint(len(err.Error()))
@@ -44,7 +44,7 @@ func (this *IDLPluginInterfaceHandler) parse_idl(idl_file_path *C.char, idl_file
 	}
 	
 	// if filePath is a code block, write the code to tmp
-	def, _, err := this.wrapped.ParseIDL(idlStr, idlName)
+	def, _, err := this.wrapped.ParseIDL(filePath, sourceCode)
 	
 	if err != nil {
 		*out_err = C.CString(err.Error())
@@ -65,8 +65,8 @@ func (this *IDLPluginInterfaceHandler) parse_idl(idl_file_path *C.char, idl_file
 
 //--------------------------------------------------------------------
 //export parse_idl
-func parse_idl(idl_file_path *C.char, idl_file_path_length C.uint,
-	idl *C.char, idl_length C.uint,
+func parse_idl(source_code *C.char, source_code_length C.uint,
+	file_path *C.char, file_path_length C.uint,
 	out_idl_def_json **C.char, out_idl_def_json_length *C.uint,
 	out_err **C.char, out_err_len *C.uint) {
 	
@@ -74,7 +74,7 @@ func parse_idl(idl_file_path *C.char, idl_file_path_length C.uint,
 		panic("idlPluginInterfaceHandler is null!")
 	}
 	
-	idlPluginInterfaceHandler.parse_idl(idl_file_path, idl_file_path_length, idl, idl_length, out_idl_def_json, out_idl_def_json_length, out_err, out_err_len)
+	idlPluginInterfaceHandler.parse_idl(source_code, source_code_length, file_path, file_path_length, out_idl_def_json, out_idl_def_json_length, out_err, out_err_len)
 }
 
 //--------------------------------------------------------------------
