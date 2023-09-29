@@ -216,7 +216,16 @@ func (this *ModuleDefinition) AddGlobal(g *GlobalDefinition) {
 func (this *ModuleDefinition) AddExternalResource(r string) {
 	this.ExternalResources = append(this.ExternalResources, r)
 }
+//--------------------------------------------------------------------
+func (this *ModuleDefinition) AddExternalResourceIfNotExist(r string) {
+	for _, ext := range this.ExternalResources{
+		if ext == r{
+			return
+		}
+	}
 
+	this.ExternalResources = append(this.ExternalResources, r)
+}
 //--------------------------------------------------------------------
 func (this *ModuleDefinition) SetFunctionPath(key string, val string) {
 	
