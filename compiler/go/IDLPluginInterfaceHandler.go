@@ -36,7 +36,7 @@ func (this *IDLPluginInterfaceHandler) parse_idl(source_code *C.char, source_cod
 	sourceCode := C.GoStringN(source_code, C.int(source_code_length))
 	filePath := C.GoStringN(file_path, C.int(file_path_length))
 	
-	sourceCode, err := filepath.Abs(sourceCode)
+	filePath, err := filepath.Abs(filePath)
 	if err != nil {
 		*out_err = C.CString(err.Error())
 		*out_err_len = C.uint(len(err.Error()))
@@ -44,7 +44,7 @@ func (this *IDLPluginInterfaceHandler) parse_idl(source_code *C.char, source_cod
 	}
 	
 	// if filePath is a code block, write the code to tmp
-	def, _, err := this.wrapped.ParseIDL(filePath, sourceCode)
+	def, _, err := this.wrapped.ParseIDL(sourceCode, filePath)
 	
 	if err != nil {
 		*out_err = C.CString(err.Error())
