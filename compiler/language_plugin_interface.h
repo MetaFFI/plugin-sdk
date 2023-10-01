@@ -14,8 +14,7 @@ struct language_plugin_interface
 	 */ 
 	virtual	void compile_to_guest(const char* idl_def_json, uint32_t idl_def_json_length,
 						   const char* output_path, uint32_t output_path_length,
-						   const char* block_name, uint32_t block_name_length,
-						   const char* block_code, uint32_t block_code_length,
+						   const char* guest_options, uint32_t guest_options_length,
 						   char** out_err, uint32_t* out_err_len) = 0;
 
 	/**

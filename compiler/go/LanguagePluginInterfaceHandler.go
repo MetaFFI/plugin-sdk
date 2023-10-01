@@ -16,7 +16,7 @@ import (
 var languagePluginInterfaceHandler *LanguagePluginInterfaceHandler
 
 type LanguagePluginInterface interface {
-	CompileToGuest(idlDefinition *IDLDefinition, outputPath string, outputFilename string, blockName string, blockCode string) error
+	CompileToGuest(idlDefinition *IDLDefinition, outputPath string, outputFilename string, guestOptions map[string]string) error
 	CompileFromHost(idlDefinition *IDLDefinition, outputPath string, outputFilename string, hostOptions map[string]string) error
 }
 
@@ -32,10 +32,9 @@ func CreateLanguagePluginInterfaceHandler(wrapped LanguagePluginInterface) {
 
 //--------------------------------------------------------------------
 func (this *LanguagePluginInterfaceHandler) compile_to_guest(idl_def_json *C.char, idl_def_json_length C.uint,
-	output_path *C.char, output_path_length C.uint,
-	block_name *C.char, block_name_length C.uint,
-	block_code *C.char, block_code_length C.uint,
-	out_err **C.char, out_err_len *C.uint) {
+                                                            output_path *C.char, output_path_length C.uint,
+                                                            guest_options *C.char, guest_options_length C.uint,
+                                                            out_err **C.char, out_err_len *C.uint) {
 	def, err := NewIDLDefinitionFromJSON(C.GoStringN(idl_def_json, C.int(idl_def_json_length)))
 	if err != nil {
 		*out_err = C.CString(err.Error())
@@ -61,19 +60,30 @@ func (this *LanguagePluginInterfaceHandler) compile_to_guest(idl_def_json *C.cha
 		outFilename = splitted[len(splitted)-1]
 	}
 	
-	blockName := C.GoStringN(block_name, C.int(block_name_length))
-	blockCode := C.GoStringN(block_code, C.int(block_code_length))
+	guestOptions := C.GoStringN(guest_options, C.int(guest_options_length))
+
+    // parse hostOptions
+    guestOptionsMap := make(map[string]string)
+    if strings.TrimSpace(guestOptions) != "" {
+        options := strings.Split(guestOptions, ",")
+        for _, option := range options {
+            keyval := strings.Split(option, "=")
+            if len(keyval) != 2 {
+                msg := "Host options are invalid"
+                *out_err = C.CString(msg)
+                *out_err_len = C.uint(len(msg))
+                return
+            }
+
+            guestOptionsMap[keyval[0]] = keyval[1]
+        }
+    }
 	
 	if outFilename == "" {
 		outFilename = def.IDLFilename
 	}
-	
-	if strings.Contains(outFilename, "#") {
-		toRemove := outFilename[strings.LastIndex(outFilename, string(os.PathSeparator))+1 : strings.Index(outFilename, "#")+1]
-		outFilename = strings.ReplaceAll(outFilename, toRemove, "")
-	}
-	
-	err = this.wrapped.CompileToGuest(def, outPath, outFilename, blockName, blockCode)
+
+	err = this.wrapped.CompileToGuest(def, outPath, outFilename, guestOptions)
 	
 	if err != nil {
 		*out_err = C.CString(err.Error())

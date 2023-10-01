@@ -8,7 +8,7 @@ import (
 var PluginMain *LanguagePluginMain
 
 type GuestCompiler interface {
-	Compile(definition *IDL.IDLDefinition, outputDir string, outputFilename string, blockName string, blockCode string) (err error)
+	Compile(definition *IDL.IDLDefinition, outputDir string, outputFilename string, guestOptions map[string]string) (err error)
 }
 
 type HostCompiler interface {
@@ -29,7 +29,7 @@ func NewLanguagePluginMain(hostCompiler HostCompiler, guestCompiler GuestCompile
 }
 
 //--------------------------------------------------------------------
-func (this *LanguagePluginMain) CompileToGuest(idlDefinition *IDL.IDLDefinition, outputPath string, outputFilename string, blockName string, blockCode string) error {
+func (this *LanguagePluginMain) CompileToGuest(idlDefinition *IDL.IDLDefinition, outputPath string, outputFilename string, guestOptions map[string]string) error {
 	
 	if this.guestCompiler == nil {
 		return errors.New("Guest is not supported by this plugin")
