@@ -83,7 +83,7 @@ func (this *LanguagePluginInterfaceHandler) compile_to_guest(idl_def_json *C.cha
 		outFilename = def.IDLFilename
 	}
 
-	err = this.wrapped.CompileToGuest(def, outPath, outFilename, guestOptions)
+	err = this.wrapped.CompileToGuest(def, outPath, outFilename, guestOptionsMap)
 	
 	if err != nil {
 		*out_err = C.CString(err.Error())
@@ -158,8 +158,7 @@ func (this *LanguagePluginInterfaceHandler) compile_from_host(idl_def_json *C.ch
 //export compile_to_guest
 func compile_to_guest(idl_def_json *C.char, idl_def_json_length C.uint,
 	output_path *C.char, output_path_length C.uint,
-	block_name *C.char, block_name_length C.uint,
-	block_code *C.char, block_code_length C.uint,
+	guest_options *C.char, guest_options_length C.uint,
 	out_err **C.char, out_err_len *C.uint) {
 	
 	if languagePluginInterfaceHandler == nil {
@@ -176,7 +175,7 @@ func compile_to_guest(idl_def_json *C.char, idl_def_json_length C.uint,
 		}
 	}()
 	
-	languagePluginInterfaceHandler.compile_to_guest(idl_def_json, idl_def_json_length, output_path, output_path_length, block_name, block_name_length, block_code, block_code_length, out_err, out_err_len)
+	languagePluginInterfaceHandler.compile_to_guest(idl_def_json, idl_def_json_length, output_path, output_path_length, guest_options, guest_options_length, out_err, out_err_len)
 }
 
 //--------------------------------------------------------------------

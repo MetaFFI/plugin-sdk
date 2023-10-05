@@ -35,7 +35,7 @@ func (this *LanguagePluginMain) CompileToGuest(idlDefinition *IDL.IDLDefinition,
 		return errors.New("Guest is not supported by this plugin")
 	}
 	
-	return this.guestCompiler.Compile(idlDefinition, outputPath, outputFilename, blockName, blockCode)
+	return this.guestCompiler.Compile(idlDefinition, outputPath, outputFilename, guestOptions)
 }
 
 //--------------------------------------------------------------------
