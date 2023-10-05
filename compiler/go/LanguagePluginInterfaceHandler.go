@@ -69,7 +69,7 @@ func (this *LanguagePluginInterfaceHandler) compile_to_guest(idl_def_json *C.cha
         for _, option := range options {
             keyval := strings.Split(option, "=")
             if len(keyval) != 2 {
-                msg := "Host options are invalid"
+                msg := "Guest options are invalid"
                 *out_err = C.CString(msg)
                 *out_err_len = C.uint(len(msg))
                 return
@@ -83,8 +83,8 @@ func (this *LanguagePluginInterfaceHandler) compile_to_guest(idl_def_json *C.cha
 		outFilename = def.IDLFilename
 	}
 
-	err = this.wrapped.CompileToGuest(def, outPath, outFilename, guestOptionsMap)
 	
+	err = this.wrapped.CompileToGuest(def, outPath, outFilename, guestOptionsMap)
 	if err != nil {
 		*out_err = C.CString(err.Error())
 		*out_err_len = C.uint(len(err.Error()))
