@@ -32,6 +32,40 @@ func ModifyKeywords(definition *IDL.IDLDefinition, keywords map[string]bool, mod
 	}
 
 	for _, m := range definition.Modules {
+
+	    // also globals
+	    for _, f := range m.Globals {
+
+	        f.Name = replaceIfNeeded(f.Name)
+
+            if f.Getter != nil {
+                f.Getter.Name = replaceIfNeeded(f.Getter.Name)
+
+                for _, p := range f.Getter.Parameters {
+                    p.Name = replaceIfNeeded(p.Name)
+                    p.TypeAlias = replaceIfNeeded(p.TypeAlias)
+                }
+
+                for _, p := range f.Getter.ReturnValues {
+                    p.Name = replaceIfNeeded(p.Name)
+                    p.TypeAlias = replaceIfNeeded(p.TypeAlias)
+                }
+            }
+            if f.Setter != nil {
+                f.Setter.Name = replaceIfNeeded(f.Setter.Name)
+
+                for _, p := range f.Setter.Parameters {
+                    p.Name = replaceIfNeeded(p.Name)
+                    p.TypeAlias = replaceIfNeeded(p.TypeAlias)
+                }
+
+                for _, p := range f.Setter.ReturnValues {
+                    p.Name = replaceIfNeeded(p.Name)
+                    p.TypeAlias = replaceIfNeeded(p.TypeAlias)
+                }
+            }
+        }
+
 		if m.Functions != nil {
 			for _, f := range m.Functions {
 				f.Name = replaceIfNeeded(f.Name)
