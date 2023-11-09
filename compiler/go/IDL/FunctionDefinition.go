@@ -100,7 +100,7 @@ func (this *FunctionDefinition) EqualsSignature(f *FunctionDefinition, paramComp
 }
 // --------------------------------------------------------------------
 func (this *FunctionDefinition) GetNameWithOverloadIndex() string {
-	return this.Name + this.GetOverloadIndexIfExists()
+	return this.Name + "_Overload" + this.GetOverloadIndexIfExists()
 }
 // --------------------------------------------------------------------
 func (this *FunctionDefinition) GetOverloadIndexIfExists() string {
