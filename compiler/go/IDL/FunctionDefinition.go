@@ -100,12 +100,12 @@ func (this *FunctionDefinition) EqualsSignature(f *FunctionDefinition, paramComp
 }
 // --------------------------------------------------------------------
 func (this *FunctionDefinition) GetNameWithOverloadIndex() string {
-	return this.Name + "_Overload" + this.GetOverloadIndexIfExists()
+	return this.Name + this.GetOverloadIndexIfExists()
 }
 // --------------------------------------------------------------------
 func (this *FunctionDefinition) GetOverloadIndexIfExists() string {
 	if this.OverloadIndex > 0 {
-		return strconv.Itoa(int(this.OverloadIndex))
+		return "_overload"+strconv.Itoa(int(this.OverloadIndex))
 	} else {
 		return ""
 	}
