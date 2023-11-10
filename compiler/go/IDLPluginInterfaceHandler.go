@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"github.com/MetaFFI/plugin-sdk/compiler/go/IDL"
 	"path/filepath"
+	"os"
 )
 
 var idlPluginInterfaceHandler *IDLPluginInterfaceHandler
@@ -35,12 +36,14 @@ func (this *IDLPluginInterfaceHandler) parse_idl(source_code *C.char, source_cod
 	
 	sourceCode := C.GoStringN(source_code, C.int(source_code_length))
 	filePath := C.GoStringN(file_path, C.int(file_path_length))
-	
-	filePath, err := filepath.Abs(filePath)
-	if err != nil {
-		*out_err = C.CString(err.Error())
-		*out_err_len = C.uint(len(err.Error()))
-		return
+
+	if _, err := os.Stat(filePath); err == nil{ // it is a directory or a file - pass as full absolute path
+		filePath, err = filepath.Abs(filePath)
+		if err != nil {
+            *out_err = C.CString(err.Error())
+            *out_err_len = C.uint(len(err.Error()))
+            return
+        }
 	}
 	
 	// if filePath is a code block, write the code to tmp
