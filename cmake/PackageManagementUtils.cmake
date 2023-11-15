@@ -1,3 +1,9 @@
+if(WIN32)
+	find_program(CMAKE_VS_MSBUILD_COMMAND msbuild)
+	if(NOT CMAKE_VS_MSBUILD_COMMAND)
+		message(FATAL_ERROR "msbuild.exe is not found")
+	endif()
+endif()
 
 macro(load_hunter_pm METAFFI_CMAKE_SCRIPTS_DIR)
 	# Hunter CMake package manager https://hunter.readthedocs.io/
