@@ -61,6 +61,8 @@ enum metaffi_types
 	metaffi_size_type = 262144ULL,
 	
 	metaffi_any_type = 4194304ULL,
+	
+	metaffi_null_type = 8388608ULL,
 
 	metaffi_float64_array_type = metaffi_float64_type | metaffi_array_type,
 	metaffi_float32_array_type = metaffi_float32_type | metaffi_array_type,

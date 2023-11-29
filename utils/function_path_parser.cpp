@@ -11,17 +11,26 @@ function_path_parser::function_path_parser(const std::string &function_path)
 	
 	for(const std::string& item : items)
 	{
+		if(item.empty()){ continue; }
+		
 		std::vector<std::string> keyval;
 		boost::split(keyval, item, boost::is_any_of("="));
 		
-		if(keyval.size() != 2)
+		if(keyval.size() > 2)
 		{
-			throw std::runtime_error("function path is invalid, cannot split by '=' to key and value");
+			throw std::runtime_error("function path is invalid, too many '='");
 		}
 		
-		// expand environment variable in keyval[1]
-		std::string exp = expand_env(keyval[1]);
-		function_path_items[keyval[0]] = exp;
+		if(keyval.size() == 1)
+		{
+			function_path_items[keyval[0]] = "";
+		}
+		else
+		{
+			// expand environment variable in keyval[1]
+			std::string exp = expand_env(keyval[1]);
+			function_path_items[keyval[0]] = exp;
+		}
 	}
 }
 //--------------------------------------------------------------------

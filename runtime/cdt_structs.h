@@ -6,7 +6,6 @@
 
 #define cdts_cache_size 50
 
-
 #define cdt_numeric(type) \
 struct cdt_##type\
 {\

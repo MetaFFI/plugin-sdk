@@ -322,7 +322,8 @@ struct cdts_build_callbacks
 		build_constructor_param(metaffi_handle),
 		build_constructor_param(metaffi_string8),
 		build_constructor_param(metaffi_string16),
-		build_constructor_param(metaffi_string32)
+		build_constructor_param(metaffi_string32),
+		std::function<metaffi_type(int,void*)> resolve_dynamic_type = _resolve_dynamic_type
 	): build_constructor_init_param(metaffi_float32),
 	   build_constructor_init_param(metaffi_float64),
 	   build_constructor_init_param(metaffi_int8),
@@ -337,10 +338,14 @@ struct cdts_build_callbacks
 	   build_constructor_init_param(metaffi_handle),
 	   build_constructor_init_param(metaffi_string8),
 	   build_constructor_init_param(metaffi_string16),
-	   build_constructor_init_param(metaffi_string32)
+	   build_constructor_init_param(metaffi_string32),
+	   resolve_dynamic_type(resolve_dynamic_type)
 	{}
 	
-	metaffi_type resolve_dynamic_type(int index, void* values_to_set){ return metaffi_any_type; }
+	std::function<metaffi_type(int,void*)> resolve_dynamic_type;
+	
+private:
+	static metaffi_type _resolve_dynamic_type(int index, void* values_to_set){ return metaffi_any_type; }
 };
 
 /************************************************
