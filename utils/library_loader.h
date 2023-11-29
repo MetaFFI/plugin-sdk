@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <boost/dll.hpp>
+#include <string>
 
 namespace metaffi { namespace utils
 {

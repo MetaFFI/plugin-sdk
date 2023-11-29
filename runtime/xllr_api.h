@@ -25,46 +25,46 @@ void free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len
 /**
  * Load module of foreign language
  */
-void* load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, void* pff, int8_t params_count, int8_t retval_count, char** err, uint32_t* err_len);
+void** load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, metaffi_types_ptr params_types, metaffi_types_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len);
 
 /**
  * Free module of foreign language
  */
-void free_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, void* pff, char** err, uint32_t* err_len);
+void free_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, void** pff, char** err, uint32_t* err_len);
 
 /***
  * Call foreign entity
  */
 void xcall_params_ret(
-	void* pff,                                                // [in] function id to call
-	cdts params_ret[2],                                                 // [in/out] parameters array
-	char** out_err, uint64_t* out_err_len                               // [out] error
+	void* pplugin_xcall_params_ret_and_context[2],            // [in] pointer to plugin's xcall_params_ret + context
+	cdts params_ret[2],                                       // [in/out] parameters array
+	char** out_err, uint64_t* out_err_len                     // [out] error
 );
 
 /***
  * Call foreign entity
  */
 void xcall_no_params_ret(
-		void* pff,                                                // [in] function id to call
-		cdts return_values[1],                                              // [in] return values array
-		char** out_err, uint64_t* out_err_len                               // [out] error
+		void* pplugin_xcall_no_params_ret_and_context[2],         // [in] pointer to plugin's xcall_no_params_ret + context
+		cdts return_values[1],                                    // [in] return values array
+		char** out_err, uint64_t* out_err_len                     // [out] error
 );
 
 /***
  * Call foreign entity
  */
 void xcall_params_no_ret(
-		void* pff,                                                // [in] function id to call
-		cdts parameters[1],                                                 // [in] parameters array
-		char** out_err, uint64_t* out_err_len                               // [out] error
+		void* pplugin_xcall_params_no_ret_and_context[2],         // [in] pointer to plugin's xcall_params_no_ret + context
+		cdts parameters[1],                                       // [in] parameters array
+		char** out_err, uint64_t* out_err_len                     // [out] error
 );
 
 /***
  * Call foreign entity
  */
 void xcall_no_params_no_ret(
-		void* pff,                                                // [in] function id to call
-		char** out_err, uint64_t* out_err_len                               // [out] error
+		void* pplugin_xcall_no_params_no_ret_and_context[2],      // [in] pointer to plugin's xcall_no_params_no_ret + context
+		char** out_err, uint64_t* out_err_len                     // [out] error
 );
 
 /**

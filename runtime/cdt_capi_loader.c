@@ -13,6 +13,8 @@ void* cdt_helper_xllr_handle = NULL;
 *   Allocations
 *************************************************/
 
+int64_t get_cache_size(){ return cdts_cache_size; }
+
 #define alloc_numeric_on_heap_impl_fptr(type) \
 typedef type* (*palloc_##type##_on_heap_t)(type val); \
 palloc_##type##_on_heap_t palloc_##type##_on_heap; \
@@ -186,19 +188,18 @@ void xllr_xcall_no_params_no_ret(void* pff,
 	pxllr_xcall_no_params_no_ret(pff, out_err, out_err_len);
 }
 
-void* (*pxllr_load_function)(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, void*, int8_t, int8_t, char**, uint32_t*);
-void* xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
+void** (*pxllr_load_function)(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, metaffi_types_ptr, metaffi_types_ptr, uint8_t, uint8_t, char**, uint32_t*);
+void** xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
                          const char* module_path, uint32_t module_path_len,
 							 const char* function_path, uint32_t function_path_len,
-							 void* pff,
-	                           int8_t params_count, int8_t retval_count,
+                            metaffi_types_ptr params_types, metaffi_types_ptr retval_types,
+	                           uint8_t params_count, uint8_t retval_count,
 	                           char** out_err, uint32_t* out_err_len)
 {
-	
 	return pxllr_load_function(runtime_plugin, runtime_plugin_len,
 	                            module_path, module_path_len,
 						        function_path, function_path_len,
-					            pff, params_count, retval_count,
+						       params_types, retval_types, params_count, retval_count,
 						        out_err, out_err_len);
 }
 
@@ -382,7 +383,7 @@ const char* load_xllr_api()
 		return out_err;
 	}
 	
-	pxllr_load_function = (void* (*)(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, void*, int8_t, int8_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "load_function", &out_err, &out_err_len);
+	pxllr_load_function = (void** (*)(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, metaffi_types_ptr, metaffi_types_ptr, uint8_t, uint8_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "load_function", &out_err, &out_err_len);
 	if(!pxllr_load_function)
 	{
 		printf("Failed to load load_function: %s\n", out_err);
@@ -526,7 +527,11 @@ const char* load_cdt_capi()
 
 #define load_helper_function(name) \
 	p##name = (p##name##_t)load_symbol(cdt_helper_xllr_handle, #name, &err, &out_err_len); \
-	if(err){ printf("Error loading %s. Error %s.", #name, err); return err; }
+	if(err)                           \
+	{                          \
+        char* buffer = malloc(2048*sizeof(char));  \
+		sprintf(buffer, "Error loading %s. Error %s.\n", #name, err);                         \
+		return buffer; }
 
 	load_helper_function(get_type);
 	load_helper_function(get_cdt);

@@ -110,6 +110,7 @@ set_string_element_decl_fptr(metaffi_string8);
 set_string_element_decl_fptr(metaffi_string16);
 set_string_element_decl_fptr(metaffi_string32);
 
+int64_t get_cache_size();
 
 /************************************************
 *   XLLR functions
@@ -134,11 +135,11 @@ void xllr_xcall_no_params_no_ret(void* pff,
                 char** out_err, uint64_t* out_err_len
 );
 
-void* xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
+void** xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
                          const char* module_path, uint32_t module_path_len,
 							 const char* function_path, uint32_t function_path_len,
-							 void* pff,
-                            int8_t params_count, int8_t retval_count,
+                            metaffi_types_ptr params_types, metaffi_types_ptr retvals_types,
+                            uint8_t params_count, uint8_t retval_count,
 							 char** out_err, uint32_t* out_err_len);
 
 void xllr_free_function(const char* runtime_plugin, uint32_t runtime_plugin_len,

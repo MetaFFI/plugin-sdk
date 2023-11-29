@@ -6,38 +6,30 @@
 
 #include "../runtime/cdt_structs.h"
 
-#define foreign_function_entrypoint_signature_no_params_no_ret void(char**, uint64_t*)
-#define foreign_function_entrypoint_signature_params_no_ret void(cdts[1], char**, uint64_t*)
-#define foreign_function_entrypoint_signature_no_params_ret void(cdts[1], char**, uint64_t*)
-#define foreign_function_entrypoint_signature_params_ret void(cdts[2], char**, uint64_t*)
+#define no_params_no_ret_types void*,char**,uint64_t*
+#define no_params_params_or_ret_types void*,cdts[1],char**,uint64_t*
+#define no_params_params_and_ret_types void*,cdts[2],char**,uint64_t*
 
-#define pforeign_function_entrypoint_signature_no_params_no_ret void(*)(char**, uint64_t*)
-#define pforeign_function_entrypoint_signature_params_no_ret void(*)(cdts[1], char**, uint64_t*)
-#define pforeign_function_entrypoint_signature_no_params_ret void(*)(cdts[1], char**, uint64_t*)
-#define pforeign_function_entrypoint_signature_params_ret void(*)(cdts[2], char**, uint64_t*)
+#define foreign_function_entrypoint_signature_no_params_no_ret void(no_params_no_ret_types)
+#define foreign_function_entrypoint_signature_params_no_ret void(no_params_params_or_ret_types)
+#define foreign_function_entrypoint_signature_no_params_ret void(no_params_params_or_ret_types)
+#define foreign_function_entrypoint_signature_params_ret void(no_params_params_and_ret_types)
 
-#define pforeign_function_entrypoint_signature_no_params_no_ret_cparam void(*)(void* params, char**, uint64_t*)
-#define pforeign_function_entrypoint_signature_params_no_ret_cparam void(*)(cdts[1], void* params, char**, uint64_t*)
-#define pforeign_function_entrypoint_signature_no_params_ret_cparam void(*)(cdts[1], void* params, char**, uint64_t*)
-#define pforeign_function_entrypoint_signature_params_ret_cparam void(*)(cdts[2], void* params, char**, uint64_t*)
+#define pforeign_function_entrypoint_signature_no_params_no_ret void(*)(no_params_no_ret_types)
+#define pforeign_function_entrypoint_signature_params_no_ret void(*)(no_params_params_or_ret_types)
+#define pforeign_function_entrypoint_signature_no_params_ret void(*)(no_params_params_or_ret_types)
+#define pforeign_function_entrypoint_signature_params_ret void(*)(no_params_params_and_ret_types)
 
-
-
-typedef void(*pforeign_function_entrypoint_signature_no_params_no_ret_t)(char**, uint64_t*);
-typedef void(*pforeign_function_entrypoint_signature_params_no_ret_t)(cdts[1], char**, uint64_t*);
-typedef void(*pforeign_function_entrypoint_signature_no_params_ret_t)(cdts[1], char**, uint64_t*);
-typedef void(*pforeign_function_entrypoint_signature_params_ret_t)(cdts[2], char**, uint64_t*);
-
-#define ppforeign_function_entrypoint_signature_no_params_no_ret void(**)(char**, uint64_t*)
-#define ppforeign_function_entrypoint_signature_params_no_ret void(**)(cdts[1], char**, uint64_t*)
-#define ppforeign_function_entrypoint_signature_no_params_ret void(**)(cdts[1], char**, uint64_t*)
-#define ppforeign_function_entrypoint_signature_params_ret void(**)(cdts[2], char**, uint64_t*)
+typedef void(*pforeign_function_entrypoint_signature_no_params_no_ret_t)(no_params_no_ret_types);
+typedef void(*pforeign_function_entrypoint_signature_params_no_ret_t)(no_params_params_or_ret_types);
+typedef void(*pforeign_function_entrypoint_signature_no_params_ret_t)(no_params_params_or_ret_types);
+typedef void(*pforeign_function_entrypoint_signature_params_ret_t)(no_params_params_and_ret_types);
 
 #ifdef __cplusplus
-typedef std::function<void(cdts[2], char**, uint64_t*)> foreign_function_entrypoint_signature_params_ret_t;
-typedef std::function<void(cdts[1], char**, uint64_t*)> foreign_function_entrypoint_signature_no_params_ret_t;
-typedef std::function<void(cdts[1], char**, uint64_t*)> foreign_function_entrypoint_signature_params_no_ret_t;
-typedef std::function<void(char**, uint64_t*)> foreign_function_entrypoint_signature_no_params_no_ret_t;
+typedef std::function<void(no_params_params_and_ret_types)> foreign_function_entrypoint_signature_params_ret_t;
+typedef std::function<void(no_params_params_or_ret_types)> foreign_function_entrypoint_signature_no_params_ret_t;
+typedef std::function<void(no_params_params_or_ret_types)> foreign_function_entrypoint_signature_params_no_ret_t;
+typedef std::function<void(no_params_no_ret_types)> foreign_function_entrypoint_signature_no_params_no_ret_t;
 
 typedef boost::dll::detail::library_function<foreign_function_entrypoint_signature_no_params_no_ret> foreign_function_no_params_no_ret_entrypoint;
 typedef boost::dll::detail::library_function<foreign_function_entrypoint_signature_params_no_ret> foreign_function_params_no_ret_entrypoint;
