@@ -491,7 +491,7 @@ case otype##_type | metaffi_array_type: \
     metaffi_bool free_required; \
     callbacks.set_##otype##_array(values_to_set, index, array, dimensions_lengths, dimensions, free_required, starting_index); \
 	this->cdts[index].type = otype##_array_type;\
-    this->cdts[index].free_required = free_required; \
+	this->cdts[index].free_required = free_required; \
 	this->cdts[index].cdt_val.otype##_array_val.vals = array;\
     this->cdts[index].cdt_val.otype##_array_val.dimensions_lengths = dimensions_lengths;\
     this->cdts[index].cdt_val.otype##_array_val.dimensions = dimensions;\

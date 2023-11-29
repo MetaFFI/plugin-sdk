@@ -6,6 +6,7 @@ package IDL
 */
 import "C"
 import "fmt"
+import "strings"
 
 type MethodType string
 type MetaFFIType string
@@ -134,13 +135,13 @@ func IsMetaFFIType(metaffiType string) bool {
 func ArgMetaFFIType(arg *ArgDefinition) uint64 {
 	
 	str := arg.Type
-	if arg.Dimensions > 0 {
+	if arg.Dimensions > 0 && !strings.HasSuffix(string(arg.Type), "_array") {
 		str += "_array"
 	}
 	
 	res, found := TypeStringToTypeEnum[MetaFFIType(str)]
 	if !found {
-		panic(fmt.Sprintf("%v is not a metaffi type", str))
+		panic(fmt.Sprintf("%v is not a metaffi type. Dimensions: %v", str, arg.Dimensions))
 	}
 	
 	return res
