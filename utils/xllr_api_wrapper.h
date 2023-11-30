@@ -1,5 +1,6 @@
 #pragma once
 #include <boost/dll.hpp>
+#include <runtime/metaffi_primitives.h>
 
 namespace metaffi{ namespace utils
 {
