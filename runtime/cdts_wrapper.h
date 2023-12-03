@@ -11,7 +11,7 @@ namespace metaffi::runtime
 metaffi_type_with_alias make_type_with_alias(metaffi_type type, const std::string& alias = "");
 	
 	
-	/************************************************
+/************************************************
 *   Wrapper for N-dimensions numeric array
 *************************************************/
 

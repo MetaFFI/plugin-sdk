@@ -202,18 +202,3 @@ TEST_CASE( "CDTS Wrapper", "[sdk]" )
 
 }
 //--------------------------------------------------------------------
-metaffi_type_with_alias make_type_with_alias(metaffi_type type, const std::string& alias = "")
-{
-	metaffi_type_with_alias inst = {0};
-	inst.type = type;
-	
-	if(!alias.empty())
-	{
-		inst.alias = (char*)malloc(alias.size());
-		std::copy(alias.begin(), alias.end(), inst.alias);
-		inst.alias_length = (int64_t)alias.length();
-	}
-	
-	return inst;
-}
-//--------------------------------------------------------------------
