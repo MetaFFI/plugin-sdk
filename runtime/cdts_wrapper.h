@@ -8,7 +8,10 @@
 namespace metaffi::runtime
 {
 
-/************************************************
+metaffi_type_with_alias make_type_with_alias(metaffi_type type, const std::string& alias = "");
+	
+	
+	/************************************************
 *   Wrapper for N-dimensions numeric array
 *************************************************/
 
@@ -535,7 +538,7 @@ case otype##_type | metaffi_array_type: \
 	
 	for(int index=0 ; index<types_length ; index++)
 	{
-		metaffi_type cur_type = types[index];
+		metaffi_type cur_type = types[index].type;
 		if(cur_type == metaffi_any_type)
 		{
 			cur_type = callbacks.resolve_dynamic_type(index, values_to_set);

@@ -91,7 +91,7 @@ struct metaffi_type_with_alias
 {
 	metaffi_type type;
 	char* alias;
-	int64_t alias_length;
+	uint64_t alias_length;
 };
 
-typedef metaffi_type_with_alias* metaffi_types_with_alias_ptr;
+typedef struct metaffi_type_with_alias* metaffi_types_with_alias_ptr;
