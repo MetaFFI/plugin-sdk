@@ -117,7 +117,7 @@ TEST_CASE( "CDTS Wrapper", "[sdk]" )
 		[&](void* values_to_set, int index, metaffi_string32*&, metaffi_size*&, metaffi_size*&, metaffi_size&, metaffi_bool&, int) {}
 	);
 	
-	cdts.build((metaffi_types_ptr)vec_types.data(), vec_types.size(), nullptr, 0, cbs);
+	cdts.build((metaffi_types_with_alias_ptr)vec_types.data(), vec_types.size(), nullptr, 0, cbs);
 	
 	
 	//--------------------------------------------------------------------

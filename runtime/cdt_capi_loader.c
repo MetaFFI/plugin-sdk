@@ -188,11 +188,11 @@ void xllr_xcall_no_params_no_ret(void* pff,
 	pxllr_xcall_no_params_no_ret(pff, out_err, out_err_len);
 }
 
-void** (*pxllr_load_function)(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, metaffi_types_ptr, metaffi_types_ptr, uint8_t, uint8_t, char**, uint32_t*);
+void** (*pxllr_load_function)(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, metaffi_types_with_alias_ptr, metaffi_types_with_alias_ptr, uint8_t, uint8_t, char**, uint32_t*);
 void** xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
                          const char* module_path, uint32_t module_path_len,
 							 const char* function_path, uint32_t function_path_len,
-                            metaffi_types_ptr params_types, metaffi_types_ptr retval_types,
+                            metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retval_types,
 	                           uint8_t params_count, uint8_t retval_count,
 	                           char** out_err, uint32_t* out_err_len)
 {
@@ -382,7 +382,7 @@ const char* load_xllr_api()
 		return out_err;
 	}
 	
-	pxllr_load_function = (void** (*)(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, metaffi_types_ptr, metaffi_types_ptr, uint8_t, uint8_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "load_function", &out_err, &out_err_len);
+	pxllr_load_function = (void** (*)(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, metaffi_types_with_alias_ptr, metaffi_types_with_alias_ptr, uint8_t, uint8_t, char**, uint32_t*))load_symbol(cdt_helper_xllr_handle, "load_function", &out_err, &out_err_len);
 	if(!pxllr_load_function)
 	{
 		printf("Failed to load load_function: %s\n", out_err);

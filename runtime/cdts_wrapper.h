@@ -389,7 +389,7 @@ public:
 	 * as either std::function or interface, without restricting one over the other
 	 */
 	template<typename callback_t = cdts_build_callbacks>
-	void build(metaffi_types_ptr types, metaffi_size types_length, void* values_to_set, int starting_index, callback_t& callbacks) const;
+	void build(metaffi_types_with_alias_ptr types, metaffi_size types_length, void* values_to_set, int starting_index, callback_t& callbacks) const;
 
 };
 	
@@ -467,7 +467,7 @@ case otype##_type | metaffi_array_type: \
 }
 //--------------------------------------------------------------------
 template<typename callback_t>
-void cdts_wrapper::build(metaffi_types_ptr types, metaffi_size types_length, void* values_to_set, int starting_index, callback_t& callbacks) const
+void cdts_wrapper::build(metaffi_types_with_alias_ptr types, metaffi_size types_length, void* values_to_set, int starting_index, callback_t& callbacks) const
 {
 #ifdef _DEBUG
 	if(types_length != this->cdts_length)

@@ -21,7 +21,7 @@ struct runtime_plugin_interface
 	/**
 	 * Load module of foreign language
 	 */ 
-	virtual void** load_function(const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, metaffi_types_ptr params_types, metaffi_types_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len) = 0;
+	virtual void** load_function(const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len) = 0;
 
 	/**
 	 * Free module of foreign language

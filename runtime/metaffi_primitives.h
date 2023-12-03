@@ -85,3 +85,13 @@ enum metaffi_types
 	metaffi_handle_array_type = metaffi_handle_type | metaffi_array_type,
 	metaffi_size_array_type = metaffi_size_type | metaffi_array_type
 };
+
+
+struct metaffi_type_with_alias
+{
+	metaffi_type type;
+	char* alias;
+	int64_t alias_length;
+};
+
+typedef metaffi_type_with_alias* metaffi_types_with_alias_ptr;
