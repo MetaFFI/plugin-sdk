@@ -86,6 +86,49 @@ enum metaffi_types
 	metaffi_size_array_type = metaffi_size_type | metaffi_array_type
 };
 
+#define metaffi_type_to_str(t, str) \
+    str = (t == metaffi_float64_type) ? "metaffi_float64" : \
+          (t == metaffi_float32_type) ? "metaffi_float32" : \
+          (t == metaffi_int8_type) ? "metaffi_int8" : \
+          (t == metaffi_int16_type) ? "metaffi_int16" : \
+          (t == metaffi_int32_type) ? "metaffi_int32" : \
+          (t == metaffi_int64_type) ? "metaffi_int64" : \
+          (t == metaffi_uint8_type) ? "metaffi_uint8" : \
+          (t == metaffi_uint16_type) ? "metaffi_uint16" : \
+          (t == metaffi_uint32_type) ? "metaffi_uint32" : \
+          (t == metaffi_uint64_type) ? "metaffi_uint64" : \
+          (t == metaffi_bool_type) ? "metaffi_bool" : \
+          (t == metaffi_char8_type) ? "metaffi_char8" : \
+          (t == metaffi_char16_type) ? "metaffi_char16" : \
+          (t == metaffi_char32_type) ? "metaffi_char32" : \
+          (t == metaffi_string8_type) ? "metaffi_string8" : \
+          (t == metaffi_string16_type) ? "metaffi_string16" : \
+          (t == metaffi_string32_type) ? "metaffi_string32" : \
+          (t == metaffi_handle_type) ? "metaffi_handle" : \
+          (t == metaffi_array_type) ? "metaffi_array" : \
+          (t == metaffi_size_type) ? "metaffi_size" : \
+          (t == metaffi_any_type) ? "metaffi_any" : \
+          (t == metaffi_null_type) ? "metaffi_null" : \
+          (t == metaffi_float64_array_type) ? "metaffi_float64_array" : \
+          (t == metaffi_float32_array_type) ? "metaffi_float32_array" : \
+          (t == metaffi_int8_array_type) ? "metaffi_int8_array" : \
+          (t == metaffi_int16_array_type) ? "metaffi_int16_array" : \
+          (t == metaffi_int32_array_type) ? "metaffi_int32_array" : \
+          (t == metaffi_int64_array_type) ? "metaffi_int64_array" : \
+          (t == metaffi_uint8_array_type) ? "metaffi_uint8_array" : \
+          (t == metaffi_uint16_array_type) ? "metaffi_uint16_array" : \
+          (t == metaffi_uint32_array_type) ? "metaffi_uint32_array" : \
+          (t == metaffi_uint64_array_type) ? "metaffi_uint64_array" : \
+          (t == metaffi_bool_array_type) ? "metaffi_bool_array" : \
+          (t == metaffi_char8_array_type) ? "metaffi_char8_array" : \
+          (t == metaffi_string8_array_type) ? "metaffi_string8_array" : \
+          (t == metaffi_string16_array_type) ? "metaffi_string16_array" : \
+          (t == metaffi_string32_array_type) ? "metaffi_string32_array" : \
+          (t == metaffi_any_array_type) ? "metaffi_any_array" : \
+          (t == metaffi_handle_array_type) ? "metaffi_handle_array" : \
+          (t == metaffi_size_array_type) ? "metaffi_size_array" : \
+          "Unknown type"
+
 
 struct metaffi_type_with_alias
 {
