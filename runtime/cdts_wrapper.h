@@ -364,7 +364,7 @@ private:
 	
 public:
 	explicit cdts_wrapper(cdt* cdts, metaffi_size cdts_length, bool is_free_cdts = false);
-	~cdts_wrapper();
+	virtual ~cdts_wrapper();
 	
 	[[nodiscard]] cdt* get_cdts() const;
 	[[nodiscard]] metaffi_size get_cdts_length() const;
@@ -394,6 +394,83 @@ public:
 	template<typename callback_t = cdts_build_callbacks>
 	void build(metaffi_types_with_alias_ptr types, metaffi_size types_length, void* values_to_set, int starting_index, callback_t& callbacks) const;
 
+	void set(int index, metaffi_float64 v) const;
+	void set(int index, metaffi_float32 v) const;
+	
+	void set(int index, metaffi_int8 v) const;
+	void set(int index, metaffi_int16 v) const;
+	void set(int index, metaffi_int32 v) const;
+	void set(int index, metaffi_int64 v) const;
+	
+	void set(int index, metaffi_uint8 v) const;
+	void set(int index, metaffi_uint16 v) const;
+	void set(int index, metaffi_uint32 v) const;
+	void set(int index, metaffi_uint64 v) const;
+	
+	void set(int index, bool v) const;
+	
+	void set(int index, const std::string& v) const; // string8
+	
+	void set(int index, metaffi_handle v) const;
+	
+	void set(int index, metaffi_float64* v, int length) const;
+	void set(int index, metaffi_float32* v, int length) const;
+	
+	void set(int index, metaffi_int8* v, int length) const;
+	void set(int index, metaffi_int16* v, int length) const;
+	void set(int index, metaffi_int32* v, int length) const;
+	void set(int index, metaffi_int64* v, int length) const;
+	
+	void set(int index, metaffi_uint8* v, int length) const;
+	void set(int index, metaffi_uint16* v, int length) const;
+	void set(int index, metaffi_uint32* v, int length) const;
+	void set(int index, metaffi_uint64* v, int length) const;
+	
+	void set(int index, bool* v, int length) const;
+	
+	void set(int index, const std::vector<std::string>& v) const; // string8
+	
+	void set(int index, metaffi_handle* v, int length) const;
+	
+	metaffi_float64 get_metaffi_float64(int index) const;
+	metaffi_float32 get_metaffi_float32(int index) const;
+	
+	metaffi_int8 get_metaffi_int8(int index) const;
+	metaffi_int16 get_metaffi_int16(int index) const;
+	metaffi_int32 get_metaffi_int32(int index) const;
+	metaffi_int64 get_metaffi_int64(int index) const;
+	
+	metaffi_uint8 get_metaffi_uint8(int index) const;
+	metaffi_uint16 get_metaffi_uint16(int index) const;
+	metaffi_uint32 get_metaffi_uint32(int index) const;
+	metaffi_uint64 get_metaffi_uint64(int index) const;
+	
+	bool get_bool(int index);
+	
+	std::string get_string(int index); // string8
+	
+	metaffi_handle get_metaffi_handle(int index);
+	
+	std::vector<metaffi_float64> get_metaffi_float64_array(int index);
+	std::vector<metaffi_float32> get_metaffi_float32_array(int index);
+	
+	std::vector<metaffi_int8> get_metaffi_int8_array(int index);
+	std::vector<metaffi_int16> get_metaffi_int16_array(int index);
+	std::vector<metaffi_int32> get_metaffi_int32_array(int index);
+	std::vector<metaffi_int64> get_metaffi_int64_array(int index);
+	
+	std::vector<metaffi_uint8> get_metaffi_uint8_array(int index);
+	std::vector<metaffi_uint16> get_metaffi_uint16_array(int index);
+	std::vector<metaffi_uint32> get_metaffi_uint32_array(int index);
+	std::vector<metaffi_uint64> get_metaffi_uint64_array(int index);
+	
+	std::vector<bool> get_bool_array(int index);
+	
+	std::vector<std::string> get_vector_string(int index); // string8
+	
+	std::vector<metaffi_handle> get_metaffi_handle_array(int index);
+	
+	
 };
 	
 template<typename callback_t>
@@ -570,7 +647,6 @@ case otype##_type | metaffi_array_type: \
 			}
 		}
 	}
-	
 }
 //--------------------------------------------------------------------
 
