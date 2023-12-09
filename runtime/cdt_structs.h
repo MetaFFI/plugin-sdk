@@ -46,7 +46,18 @@ cdt_numeric(metaffi_bool);
 cdt_numeric(metaffi_size);
 cdt_numeric(metaffi_type);
 
-cdt_numeric(metaffi_handle);
+struct cdt_metaffi_handle
+{
+	metaffi_handle val;
+	uint64_t runtime_id;
+};
+struct cdt_metaffi_handle_array
+{
+	metaffi_handle* vals;
+	uint64_t 		runtime_id;
+    metaffi_size*   dimensions_lengths;
+    metaffi_size    dimensions;
+};
 
 cdt_string(metaffi_string8);
 cdt_string(metaffi_string16);

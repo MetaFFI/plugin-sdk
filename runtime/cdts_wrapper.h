@@ -411,7 +411,7 @@ public:
 	
 	void set(int index, const std::string& v) const; // string8
 	
-	void set(int index, metaffi_handle v) const;
+	void set(int index, metaffi_handle v, uint64_t runtime_id) const;
 	
 	void set(int index, metaffi_float64* v, int length) const;
 	void set(int index, metaffi_float32* v, int length) const;

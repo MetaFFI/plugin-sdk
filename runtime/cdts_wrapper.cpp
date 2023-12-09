@@ -140,10 +140,11 @@ void cdts_wrapper::set(int index, const std::string& v) const
 	(*this)[index]->cdt_val.metaffi_string8_val.length = v.length();
 }
 
-void cdts_wrapper::set(int index, metaffi_handle v) const
+void cdts_wrapper::set(int index, metaffi_handle v, uint64_t runtime_id) const
 {
 	(*this)[index]->type = metaffi_handle_type;
 	(*this)[index]->cdt_val.metaffi_handle_val.val = v;
+	(*this)[index]->cdt_val.metaffi_handle_val.runtime_id = runtime_id;
 }
 
 void cdts_wrapper::set(int index, metaffi_float64* v, int length) const
