@@ -93,8 +93,8 @@ TEST_CASE( "CDTS Wrapper", "[sdk]" )
 		[&](void* values_to_set, int index, metaffi_bool& val, int starting_index) { val = p11; },
 		[&](void* values_to_set, int index, metaffi_bool*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 		
-		[&](void* values_to_set, int index, metaffi_handle& val, int starting_index) { val = (void*)0xABDEF; },
-		[&](void* values_to_set, int index, metaffi_handle*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
+		[&](void* values_to_set, int index, cdt_metaffi_handle& val, int starting_index) { val.val = (void*)0xABDEF; val.runtime_id = 0xFED;},
+		[&](void* values_to_set, int index, cdt_metaffi_handle* arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
 		
 		[&](void* values_to_set, int index, metaffi_string8& val, metaffi_size& s, int starting_index)
 		{
@@ -169,8 +169,8 @@ TEST_CASE( "CDTS Wrapper", "[sdk]" )
 		[&](void* values_to_set, int index, const metaffi_bool& val) { REQUIRE(val == p11); },
 		[&](void* values_to_set, int index, const metaffi_bool* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
 		
-		[&](void* values_to_set, int index, const metaffi_handle& val) { REQUIRE(val == p15); },
-		[&](void* values_to_set, int index, const metaffi_handle* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
+		[&](void* values_to_set, int index, const cdt_metaffi_handle& val) { REQUIRE(val.val == p15); },
+		[&](void* values_to_set, int index, const cdt_metaffi_handle* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
 		
 		[&](void* values_to_set, int index, const metaffi_string8& val, const metaffi_size& s)
 		{

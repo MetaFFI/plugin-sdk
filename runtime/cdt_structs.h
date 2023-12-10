@@ -53,8 +53,7 @@ struct cdt_metaffi_handle
 };
 struct cdt_metaffi_handle_array
 {
-	metaffi_handle* vals;
-	uint64_t 		runtime_id;
+	struct cdt_metaffi_handle* vals;
     metaffi_size*   dimensions_lengths;
     metaffi_size    dimensions;
 };
