@@ -32,11 +32,6 @@ namespace metaffi::runtime
 		}
 	}
 //--------------------------------------------------------------------
-	cdts_wrapper::~cdts_wrapper()
-	{
-		//if(is_free_cdts){ free(this->cdts); }
-	}
-//--------------------------------------------------------------------
 	cdt* cdts_wrapper::operator[](int index) const
 	{
 		if(index >= this->cdts_length)
@@ -147,7 +142,7 @@ namespace metaffi::runtime
 		(*this)[index]->cdt_val.metaffi_handle_val.runtime_id = runtime_id;
 	}
 	
-	void cdts_wrapper::set(int index, metaffi_float64* v, int length) const
+	void cdts_wrapper::set(int index, const metaffi_float64* v, int length) const
 	{
 		(*this)[index]->type = metaffi_float64_array_type;
 		(*this)[index]->cdt_val.metaffi_float64_array_val.dimensions = 1;
@@ -158,7 +153,7 @@ namespace metaffi::runtime
 			(*this)[index]->cdt_val.metaffi_float64_array_val.vals[i] = v[i];
 		}
 	}
-	void cdts_wrapper::set(int index, metaffi_float32* v, int length) const
+	void cdts_wrapper::set(int index, const metaffi_float32* v, int length) const
 	{
 		(*this)[index]->type = metaffi_float32_array_type;
 		(*this)[index]->cdt_val.metaffi_float32_array_val.dimensions = 1;
@@ -170,7 +165,7 @@ namespace metaffi::runtime
 		}
 	}
 	
-	void cdts_wrapper::set(int index, metaffi_int8* v, int length) const
+	void cdts_wrapper::set(int index, const metaffi_int8* v, int length) const
 	{
 		(*this)[index]->type = metaffi_int8_array_type;
 		(*this)[index]->cdt_val.metaffi_int8_array_val.dimensions = 1;
@@ -181,7 +176,7 @@ namespace metaffi::runtime
 			(*this)[index]->cdt_val.metaffi_int8_array_val.vals[i] = v[i];
 		}
 	}
-	void cdts_wrapper::set(int index, metaffi_int16* v, int length) const
+	void cdts_wrapper::set(int index, const metaffi_int16* v, int length) const
 	{
 		(*this)[index]->type = metaffi_int16_array_type;
 		(*this)[index]->cdt_val.metaffi_int16_array_val.dimensions = 1;
@@ -192,7 +187,7 @@ namespace metaffi::runtime
 			(*this)[index]->cdt_val.metaffi_int16_array_val.vals[i] = v[i];
 		}
 	}
-	void cdts_wrapper::set(int index, metaffi_int32* v, int length) const
+	void cdts_wrapper::set(int index, const metaffi_int32* v, int length) const
 	{
 		(*this)[index]->type = metaffi_int32_array_type;
 		(*this)[index]->cdt_val.metaffi_int32_array_val.dimensions = 1;
@@ -203,7 +198,7 @@ namespace metaffi::runtime
 			(*this)[index]->cdt_val.metaffi_int32_array_val.vals[i] = v[i];
 		}
 	}
-	void cdts_wrapper::set(int index, metaffi_int64* v, int length) const
+	void cdts_wrapper::set(int index, const metaffi_int64* v, int length) const
 	{
 		(*this)[index]->type = metaffi_int64_array_type;
 		(*this)[index]->cdt_val.metaffi_int64_array_val.dimensions = 1;
@@ -215,7 +210,7 @@ namespace metaffi::runtime
 		}
 	}
 	
-	void cdts_wrapper::set(int index, metaffi_uint8* v, int length) const
+	void cdts_wrapper::set(int index, const metaffi_uint8* v, int length) const
 	{
 		(*this)[index]->type = metaffi_uint8_array_type;
 		(*this)[index]->cdt_val.metaffi_uint8_array_val.dimensions = 1;
@@ -226,7 +221,7 @@ namespace metaffi::runtime
 			(*this)[index]->cdt_val.metaffi_uint8_array_val.vals[i] = v[i];
 		}
 	}
-	void cdts_wrapper::set(int index, metaffi_uint16* v, int length) const
+	void cdts_wrapper::set(int index, const metaffi_uint16* v, int length) const
 	{
 		(*this)[index]->type = metaffi_uint16_array_type;
 		(*this)[index]->cdt_val.metaffi_uint16_array_val.dimensions = 1;
@@ -237,7 +232,7 @@ namespace metaffi::runtime
 			(*this)[index]->cdt_val.metaffi_uint16_array_val.vals[i] = v[i];
 		}
 	}
-	void cdts_wrapper::set(int index, metaffi_uint32* v, int length) const
+	void cdts_wrapper::set(int index, const metaffi_uint32* v, int length) const
 	{
 		(*this)[index]->type = metaffi_uint32_array_type;
 		(*this)[index]->cdt_val.metaffi_uint32_array_val.dimensions = 1;
@@ -248,7 +243,7 @@ namespace metaffi::runtime
 			(*this)[index]->cdt_val.metaffi_uint32_array_val.vals[i] = v[i];
 		}
 	}
-	void cdts_wrapper::set(int index, metaffi_uint64* v, int length) const
+	void cdts_wrapper::set(int index, const metaffi_uint64* v, int length) const
 	{
 		(*this)[index]->type = metaffi_uint64_array_type;
 		(*this)[index]->cdt_val.metaffi_uint64_array_val.dimensions = 1;
@@ -260,7 +255,7 @@ namespace metaffi::runtime
 		}
 	}
 	
-	void cdts_wrapper::set(int index, bool* v, int length) const
+	void cdts_wrapper::set(int index, const bool* v, int length) const
 	{
 		(*this)[index]->type = metaffi_bool_array_type;
 		(*this)[index]->cdt_val.metaffi_bool_array_val.dimensions = 1;
@@ -410,7 +405,7 @@ namespace metaffi::runtime
 		return (*this)[index]->cdt_val.metaffi_uint64_val.val;
 	}
 	
-	bool cdts_wrapper::get_bool(int index)
+	bool cdts_wrapper::get_bool(int index) const
 	{
 		if((*this)[index]->type != metaffi_bool_type)
 		{
@@ -421,7 +416,7 @@ namespace metaffi::runtime
 		return (*this)[index]->cdt_val.metaffi_bool_val.val;
 	}
 	
-	std::string cdts_wrapper::get_string(int index)
+	std::string cdts_wrapper::get_string(int index) const
 	{
 		if((*this)[index]->type != metaffi_string8_type)
 		{
@@ -432,7 +427,7 @@ namespace metaffi::runtime
 		return (*this)[index]->cdt_val.metaffi_string8_val.val;
 	}
 	
-	metaffi_handle cdts_wrapper::get_metaffi_handle(int index)
+	metaffi_handle cdts_wrapper::get_metaffi_handle(int index) const
 	{
 		if((*this)[index]->type != metaffi_handle_type)
 		{
@@ -443,7 +438,7 @@ namespace metaffi::runtime
 		return (*this)[index]->cdt_val.metaffi_handle_val.val;
 	}
 	
-	std::vector<metaffi_float64> cdts_wrapper::get_metaffi_float64_array(int index)
+	std::vector<metaffi_float64> cdts_wrapper::get_metaffi_float64_array(int index) const
 	{
 		if((*this)[index]->type != metaffi_float64_array_type)
 		{
@@ -453,6 +448,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<metaffi_float64> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_float64_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_float64_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_float64_array_val.vals[i]);
@@ -461,7 +457,7 @@ namespace metaffi::runtime
 		return res;
 	}
 	
-	std::vector<metaffi_float32> cdts_wrapper::get_metaffi_float32_array(int index)
+	std::vector<metaffi_float32> cdts_wrapper::get_metaffi_float32_array(int index) const
 	{
 		if((*this)[index]->type != metaffi_float32_array_type)
 		{
@@ -471,6 +467,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<metaffi_float32> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_float32_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_float32_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_float32_array_val.vals[i]);
@@ -479,7 +476,7 @@ namespace metaffi::runtime
 		return res;
 	}
 	
-	std::vector<metaffi_int8> cdts_wrapper::get_metaffi_int8_array(int index)
+	std::vector<metaffi_int8> cdts_wrapper::get_metaffi_int8_array(int index) const
 	{
 		if((*this)[index]->type != metaffi_int8_array_type)
 		{
@@ -489,6 +486,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<metaffi_int8> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_int8_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_int8_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_int8_array_val.vals[i]);
@@ -497,7 +495,7 @@ namespace metaffi::runtime
 		return res;
 	}
 	
-	std::vector<metaffi_int16> cdts_wrapper::get_metaffi_int16_array(int index)
+	std::vector<metaffi_int16> cdts_wrapper::get_metaffi_int16_array(int index) const
 	{
 		if((*this)[index]->type != metaffi_int16_array_type)
 		{
@@ -507,6 +505,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<metaffi_int16> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_int16_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_int16_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_int16_array_val.vals[i]);
@@ -515,7 +514,7 @@ namespace metaffi::runtime
 		return res;
 	}
 	
-	std::vector<metaffi_int32> cdts_wrapper::get_metaffi_int32_array(int index)
+	std::vector<metaffi_int32> cdts_wrapper::get_metaffi_int32_array(int index) const
 	{
 		if((*this)[index]->type != metaffi_int32_array_type)
 		{
@@ -525,6 +524,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<metaffi_int32> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_int32_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_int32_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_int32_array_val.vals[i]);
@@ -533,7 +533,7 @@ namespace metaffi::runtime
 		return res;
 	}
 	
-	std::vector<metaffi_int64> cdts_wrapper::get_metaffi_int64_array(int index)
+	std::vector<metaffi_int64> cdts_wrapper::get_metaffi_int64_array(int index) const
 	{
 		if((*this)[index]->type != metaffi_int64_array_type)
 		{
@@ -543,6 +543,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<metaffi_int64> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_int64_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_int64_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_int64_array_val.vals[i]);
@@ -551,7 +552,7 @@ namespace metaffi::runtime
 		return res;
 	}
 	
-	std::vector<metaffi_uint8> cdts_wrapper::get_metaffi_uint8_array(int index)
+	std::vector<metaffi_uint8> cdts_wrapper::get_metaffi_uint8_array(int index) const
 	{
 		if((*this)[index]->type != metaffi_uint8_array_type)
 		{
@@ -561,6 +562,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<metaffi_uint8> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_uint8_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_uint8_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_uint8_array_val.vals[i]);
@@ -569,7 +571,7 @@ namespace metaffi::runtime
 		return res;
 	}
 	
-	std::vector<metaffi_uint16> cdts_wrapper::get_metaffi_uint16_array(int index)
+	std::vector<metaffi_uint16> cdts_wrapper::get_metaffi_uint16_array(int index) const
 	{
 		if((*this)[index]->type != metaffi_uint16_array_type)
 		{
@@ -579,6 +581,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<metaffi_uint16> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_uint16_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_uint16_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_uint16_array_val.vals[i]);
@@ -587,7 +590,7 @@ namespace metaffi::runtime
 		return res;
 	}
 	
-	std::vector<metaffi_uint32> cdts_wrapper::get_metaffi_uint32_array(int index)
+	std::vector<metaffi_uint32> cdts_wrapper::get_metaffi_uint32_array(int index) const
 	{
 		if((*this)[index]->type != metaffi_uint32_array_type)
 		{
@@ -597,6 +600,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<metaffi_uint32> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_uint32_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_uint32_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_uint32_array_val.vals[i]);
@@ -615,6 +619,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<metaffi_uint64> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_uint64_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_uint64_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_uint64_array_val.vals[i]);
@@ -633,6 +638,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<bool> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_bool_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_bool_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_bool_array_val.vals[i] != 0);
@@ -641,7 +647,7 @@ namespace metaffi::runtime
 		return res;
 	}
 	
-	std::vector<std::string> cdts_wrapper::get_vector_string(int index)
+	std::vector<std::string> cdts_wrapper::get_vector_string(int index) const
 	{
 		if((*this)[index]->type != metaffi_string8_type)
 		{
@@ -651,9 +657,10 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<std::string> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_string8_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_string8_array_val.dimensions_lengths[0] ; i++)
 		{
-			res.push_back(std::string((*this)[index]->cdt_val.metaffi_string8_array_val.vals[i], (*this)[index]->cdt_val.metaffi_string8_array_val.vals_sizes[i]));
+			res.emplace_back((*this)[index]->cdt_val.metaffi_string8_array_val.vals[i], (*this)[index]->cdt_val.metaffi_string8_array_val.vals_sizes[i]);
 		}
 		
 		return res;
@@ -669,6 +676,7 @@ namespace metaffi::runtime
 		}
 		
 		std::vector<cdt_metaffi_handle> res;
+		res.reserve((*this)[index]->cdt_val.metaffi_handle_array_val.dimensions_lengths[0]);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_handle_array_val.dimensions_lengths[0] ; i++)
 		{
 			res.push_back((*this)[index]->cdt_val.metaffi_handle_array_val.vals[i]);
