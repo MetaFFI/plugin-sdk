@@ -104,7 +104,10 @@ get_numeric_element_impl_fptr(metaffi_uint32);
 get_numeric_element_impl_fptr(metaffi_uint16);
 get_numeric_element_impl_fptr(metaffi_uint8);
 get_numeric_element_impl_fptr(metaffi_size);
-get_numeric_element_impl_fptr(metaffi_handle);
+typedef struct cdt_metaffi_handle(*pget_metaffi_handle_element_t)(struct cdt_metaffi_handle *, int);
+pget_metaffi_handle_element_t pget_metaffi_handle_element;
+struct cdt_metaffi_handle get_metaffi_handle_element(struct cdt_metaffi_handle *arr, int index)
+{ return pget_metaffi_handle_element(arr, index); }
 get_numeric_element_impl_fptr(metaffi_bool);
 get_string_element_impl_fptr(metaffi_string8);
 get_string_element_impl_fptr(metaffi_string16);
@@ -136,7 +139,10 @@ set_numeric_element_impl_fptr(metaffi_uint32);
 set_numeric_element_impl_fptr(metaffi_uint16);
 set_numeric_element_impl_fptr(metaffi_uint8);
 set_numeric_element_impl_fptr(metaffi_size);
-set_numeric_element_impl_fptr(metaffi_handle);
+typedef void(*pset_metaffi_handle_element_t)(struct cdt_metaffi_handle *, int, metaffi_handle, uint64_t);
+pset_metaffi_handle_element_t pset_metaffi_handle_element;
+void set_metaffi_handle_element(struct cdt_metaffi_handle *arr, int index, metaffi_handle val, uint64_t runtime_id)
+{ pset_metaffi_handle_element(arr, index, val, runtime_id); }
 set_numeric_element_impl_fptr(metaffi_bool);
 set_string_element_impl_fptr(metaffi_string8);
 set_string_element_impl_fptr(metaffi_string16);

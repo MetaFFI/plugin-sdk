@@ -676,7 +676,7 @@ case otype##_type | metaffi_array_type: \
 					break;
 				case metaffi_handle_type | metaffi_array_type:
 				{
-					cdt_metaffi_handle *array;
+					cdt_metaffi_handle *array = nullptr;
 					metaffi_size dimensions;
 					metaffi_size *dimensions_lengths;
 					metaffi_bool free_required;
