@@ -62,7 +62,10 @@ cdt_string(metaffi_string8);
 cdt_string(metaffi_string16);
 cdt_string(metaffi_string32);
 
-
+struct cdt_metaffi_callable
+{
+	metaffi_callable val;
+};
 
 union cdt_types
 {
@@ -113,6 +116,8 @@ union cdt_types
 	
 	struct cdt_metaffi_handle metaffi_handle_val;
 	struct cdt_metaffi_handle_array metaffi_handle_array_val;
+
+	struct cdt_metaffi_callable metaffi_callable_val;
 };
 
 typedef struct cdt

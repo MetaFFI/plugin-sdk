@@ -114,7 +114,8 @@ TEST_CASE( "CDTS Wrapper", "[sdk]" )
 		[&](void* values_to_set, int index, metaffi_string16*&, metaffi_size*&, metaffi_size*&, metaffi_size&, metaffi_bool&, int) {},
 		
 		[&](void* values_to_set, int index, metaffi_string32& val, metaffi_size& s, int starting_index) {},
-		[&](void* values_to_set, int index, metaffi_string32*&, metaffi_size*&, metaffi_size*&, metaffi_size&, metaffi_bool&, int) {}
+		[&](void* values_to_set, int index, metaffi_string32*&, metaffi_size*&, metaffi_size*&, metaffi_size&, metaffi_bool&, int) {},
+		[&](void* values_to_set, int index, cdt_metaffi_callable& val, int starting_index) {}
 	);
 	
 	cdts.build((metaffi_types_with_alias_ptr)vec_types.data(), vec_types.size(), nullptr, 0, cbs);
@@ -195,7 +196,8 @@ TEST_CASE( "CDTS Wrapper", "[sdk]" )
 		[&](void* values_to_set, int index, const metaffi_string16*, const metaffi_size*, const metaffi_size*, const metaffi_size&) {},
 		
 		[&](void* values_to_set, int index, const metaffi_string32& val, const metaffi_size& s) {},
-		[&](void* values_to_set, int index, const metaffi_string32*, const metaffi_size*, const metaffi_size*, const metaffi_size&) {}
+		[&](void* values_to_set, int index, const metaffi_string32*, const metaffi_size*, const metaffi_size*, const metaffi_size&) {},
+		[&](void* values_to_set, int index, const cdt_metaffi_callable& val) {}
 	);
 	
 	cdts.parse(nullptr, cps);

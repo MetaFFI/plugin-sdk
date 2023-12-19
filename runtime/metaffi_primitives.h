@@ -29,6 +29,8 @@ typedef uint64_t metaffi_size; // sizes of array and/or strings passed by this t
 typedef void* metaffi_handle;
 typedef metaffi_size metaffi_type;
 
+typedef void* metaffi_callable;
+
 typedef uint64_t* metaffi_types_ptr;
 typedef uint64_t metaffi_type_t;
 
@@ -63,6 +65,8 @@ enum metaffi_types
 	metaffi_any_type = 4194304ULL,
 	
 	metaffi_null_type = 8388608ULL,
+
+	metaffi_callable_type = 16777216ULL,
 
 	metaffi_float64_array_type = metaffi_float64_type | metaffi_array_type,
 	metaffi_float32_array_type = metaffi_float32_type | metaffi_array_type,
@@ -127,7 +131,8 @@ enum metaffi_types
           (t == metaffi_any_array_type) ? "metaffi_any_array" : \
           (t == metaffi_handle_array_type) ? "metaffi_handle_array" : \
           (t == metaffi_size_array_type) ? "metaffi_size_array" : \
-          "Unknown type"
+		  (t == metaffi_callable_type) ? "metaffi_callable_type" : \
+		  "Unknown type"
 
 
 struct metaffi_type_with_alias

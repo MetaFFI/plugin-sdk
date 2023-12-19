@@ -164,13 +164,14 @@ namespace metaffi::runtime
 		on_parse_numeric_interface(metaffi_uint32);
 		on_parse_numeric_interface(metaffi_uint64);
 		on_parse_numeric_interface(metaffi_bool);
-		virtual void on_metaffi_handle(void *values_to_set, int index, const cdt_metaffi_handle &val_to_set) = 0;
+		virtual void on_metaffi_handle(void* values_to_set, int index, const cdt_metaffi_handle& val_to_set) = 0;
 		virtual void on_metaffi_handle_array(void *values_to_set, int index, const cdt_metaffi_handle *parray_to_set,
 		                                     const metaffi_size *parray_dimensions_lengths,
 		                                     const metaffi_size &array_dimensions) = 0;
 		on_parse_string_interface(metaffi_string8);
 		on_parse_string_interface(metaffi_string16);
 		on_parse_string_interface(metaffi_string32);
+		virtual void on_metaffi_callback(void* values_to_set, int index, const cdt_metaffi_callable& val_to_set) = 0;
 	};
 	
 	
@@ -202,6 +203,8 @@ namespace metaffi::runtime
 		on_parse_string(metaffi_string8);
 		on_parse_string(metaffi_string16);
 		on_parse_string(metaffi_string32);
+		std::function<void(void* values_to_set, int index, const cdt_metaffi_callable& val_to_set)> on_metaffi_callable;
+
 
 #define prase_constructor_param(type) \
     decltype(on_##type) on_##type,         \
@@ -228,7 +231,8 @@ namespace metaffi::runtime
 						decltype(on_metaffi_handle_array) on_metaffi_handle_array,
 						prase_constructor_param(metaffi_string8),
 						prase_constructor_param(metaffi_string16),
-						prase_constructor_param(metaffi_string32)
+						prase_constructor_param(metaffi_string32),
+						decltype(on_metaffi_callable) on_metaffi_callable
 				): parse_constructor_init_param(metaffi_float32),
 				   parse_constructor_init_param(metaffi_float64),
 				   parse_constructor_init_param(metaffi_int8),
@@ -244,7 +248,8 @@ namespace metaffi::runtime
 				   on_metaffi_handle_array(std::move(on_metaffi_handle_array)),
 				   parse_constructor_init_param(metaffi_string8),
 				   parse_constructor_init_param(metaffi_string16),
-				   parse_constructor_init_param(metaffi_string32)
+				   parse_constructor_init_param(metaffi_string32),
+				   on_metaffi_callable(std::move(on_metaffi_callable))
 		{}
 	};
 
@@ -280,6 +285,7 @@ namespace metaffi::runtime
 		on_build_string_interface(metaffi_string8);
 		on_build_string_interface(metaffi_string16);
 		on_build_string_interface(metaffi_string32);
+		virtual void set_metaffi_callable(void* values_to_set, int index, cdt_metaffi_callable& val_to_set, int starting_index) = 0;
 		
 		virtual metaffi_type resolve_dynamic_type(int index, void* values_to_set) = 0;
 	};
@@ -312,6 +318,7 @@ namespace metaffi::runtime
 		set_build_string(metaffi_string8);
 		set_build_string(metaffi_string16);
 		set_build_string(metaffi_string32);
+		std::function<void(void* values_to_set, int index, cdt_metaffi_callable& val_to_set, int starting_index)> set_metaffi_callable;
 		std::function<void(void* values_to_set, int index, cdt* cdt_elem_to_set, int starting_index)> set_any;
 
 
@@ -336,11 +343,12 @@ namespace metaffi::runtime
 						build_constructor_param(metaffi_uint32),
 						build_constructor_param(metaffi_uint64),
 						build_constructor_param(metaffi_bool),
-						const decltype(set_metaffi_handle) &set_metaffi_handle,
-						const decltype(set_metaffi_handle_array) &set_metaffi_handle_array,
+						const decltype(set_metaffi_handle)& set_metaffi_handle,
+						const decltype(set_metaffi_handle_array)& set_metaffi_handle_array,
 						build_constructor_param(metaffi_string8),
 						build_constructor_param(metaffi_string16),
 						build_constructor_param(metaffi_string32),
+						const decltype(set_metaffi_callable)& set_metaffi_callable,
 						std::function<metaffi_type(int,void*)> resolve_dynamic_type = _resolve_dynamic_type
 				): build_constructor_init_param(metaffi_float32),
 				   build_constructor_init_param(metaffi_float64),
@@ -358,6 +366,7 @@ namespace metaffi::runtime
 				   build_constructor_init_param(metaffi_string8),
 				   build_constructor_init_param(metaffi_string16),
 				   build_constructor_init_param(metaffi_string32),
+				   set_metaffi_callable(std::move(set_metaffi_callable)),
 				   resolve_dynamic_type(std::move(resolve_dynamic_type))
 		{}
 		
@@ -551,7 +560,7 @@ case otype##_type | metaffi_array_type: \
 					callbacks.on_metaffi_handle(values_to_set, index, this->cdts[index].cdt_val.metaffi_handle_val);
 					continue;
 				}
-					break;
+				break;
 				case metaffi_handle_type | metaffi_array_type:
 				{
 					callbacks.on_metaffi_handle_array(values_to_set, index,
@@ -560,7 +569,13 @@ case otype##_type | metaffi_array_type: \
 					                                      this->cdts[index].cdt_val.metaffi_handle_array_val.dimensions);
 					continue;
 				}
-					break;
+				break;
+				case metaffi_callable_type:
+				{
+					callbacks.on_metaffi_callable(values_to_set, index, this->cdts[index].cdt_val.metaffi_callable_val);
+					continue;
+				}
+				break;
 				if_parse_string_type(metaffi_string8);
 				if_parse_string_type(metaffi_string16);
 				if_parse_string_type(metaffi_string32);
