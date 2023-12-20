@@ -665,6 +665,10 @@ case otype##_type | metaffi_array_type: \
 			if(cur_type == metaffi_any_type)
 			{
 				cur_type = callbacks.resolve_dynamic_type(index, values_to_set);
+				if(cur_type == metaffi_any_type)
+				{
+					throw std::runtime_error("resolved_dynamic_type is not overriden");
+				}
 			}
 			
 			switch(cur_type)
