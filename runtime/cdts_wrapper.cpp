@@ -283,15 +283,35 @@ namespace metaffi::runtime
 		}
 	}
 	
-	void cdts_wrapper::set(int index, metaffi_handle* v, int length) const
+	void cdts_wrapper::set(int index, cdt_metaffi_handle* v, int length) const
 	{
-		(*this)[index]->type = metaffi_uint64_array_type;
-		(*this)[index]->cdt_val.metaffi_uint64_array_val.dimensions = 1;
-		(*this)[index]->cdt_val.metaffi_uint64_array_val.dimensions_lengths = (metaffi_size*)malloc(sizeof(metaffi_size));
-		(*this)[index]->cdt_val.metaffi_uint64_array_val.dimensions_lengths[0] = length;
-		(*this)[index]->cdt_val.metaffi_uint64_array_val.vals = (metaffi_uint64*)malloc(sizeof(metaffi_uint64)*length);
+		(*this)[index]->type = metaffi_handle_array_type;
+		(*this)[index]->cdt_val.metaffi_handle_array_val.dimensions = 1;
+		(*this)[index]->cdt_val.metaffi_handle_array_val.dimensions_lengths = (metaffi_size*)malloc(sizeof(metaffi_size));
+		(*this)[index]->cdt_val.metaffi_handle_array_val.dimensions_lengths[0] = length;
+		(*this)[index]->cdt_val.metaffi_handle_array_val.vals = (struct cdt_metaffi_handle*)malloc(sizeof(struct cdt_metaffi_handle)*length);
 		for(int i=0 ; i<length ; i++){
-			((void**)((*this)[index]->cdt_val.metaffi_uint64_array_val.vals))[i] = v[i];
+			((*this)[index]->cdt_val.metaffi_handle_array_val.vals)[i] = v[i];
+		}
+	}
+
+	void cdts_wrapper::set(int index, metaffi_callable v, const std::vector<metaffi_type>& parameters_types, const std::vector<metaffi_type>& retvals_types) const
+	{
+		cdt* c = (*this)[index];
+
+		c->type = metaffi_callable_type;
+		c->cdt_val.metaffi_callable_val.val = v;
+		c->cdt_val.metaffi_callable_val.params_types_length = parameters_types.size();
+		c->cdt_val.metaffi_callable_val.retval_types_length = retvals_types.size();
+		c->cdt_val.metaffi_callable_val.parameters_types = (metaffi_type*)malloc(sizeof(metaffi_type)*parameters_types.size());
+		c->cdt_val.metaffi_callable_val.retval_types = (metaffi_type*)malloc(sizeof(metaffi_type)*retvals_types.size());;
+
+		for(int i=0 ; i<c->cdt_val.metaffi_callable_val.params_types_length ; i++){
+			c->cdt_val.metaffi_callable_val.parameters_types[i] = parameters_types[i];
+		}
+
+		for(int i=0 ; i<c->cdt_val.metaffi_callable_val.retval_types_length ; i++){
+			c->cdt_val.metaffi_callable_val.retval_types[i] = retvals_types[i];
 		}
 	}
 	

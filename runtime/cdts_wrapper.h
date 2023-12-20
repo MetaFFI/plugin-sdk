@@ -454,7 +454,9 @@ namespace metaffi::runtime
 		
 		void set(int index, const std::vector<std::string>& v) const; // string8
 		
-		void set(int index, metaffi_handle* v, int length) const;
+		void set(int index, cdt_metaffi_handle* v, int length) const;
+
+		void set(int index, metaffi_callable v, const std::vector<metaffi_type>& parameters_types, const std::vector<metaffi_type>& retvals_types) const;
 		
 		metaffi_float64 get_metaffi_float64(int index) const;
 		metaffi_float32 get_metaffi_float32(int index) const;

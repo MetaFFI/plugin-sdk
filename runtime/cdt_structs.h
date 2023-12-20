@@ -65,6 +65,10 @@ cdt_string(metaffi_string32);
 struct cdt_metaffi_callable
 {
 	metaffi_callable val;
+	metaffi_type* parameters_types;
+	metaffi_int8 params_types_length;
+	metaffi_type* retval_types;
+	metaffi_int8 retval_types_length;
 };
 
 union cdt_types
