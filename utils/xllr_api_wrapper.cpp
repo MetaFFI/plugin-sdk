@@ -27,7 +27,7 @@ xllr_api_wrapper::xllr_api_wrapper()
 		
 		this->pload_function = load_func<void**(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, metaffi_types_with_alias_ptr, metaffi_types_with_alias_ptr, int8_t, int8_t, char**, uint32_t*)>(*this->xllr_mod, "load_function");
 		this->pfree_function = load_func<void(const char*, uint32_t, void*, char**, uint32_t*)>(*this->xllr_mod, "free_function");
-		this->pload_callable = load_func<void**(const char*, uint32_t, void*, metaffi_types_with_alias_ptr, metaffi_types_with_alias_ptr, int8_t, int8_t, char**, uint32_t*)>(*this->xllr_mod, "load_callable");
+		this->pmake_callable = load_func<void**(const char*, uint32_t, void*, metaffi_types_with_alias_ptr, metaffi_types_with_alias_ptr, int8_t, int8_t, char**, uint32_t*)>(*this->xllr_mod, "make_callable");
 		
 		this->pset_runtime_flag = load_func<void(const char*, uint64_t)>(*this->xllr_mod, "set_runtime_flag");
 		this->pis_runtime_flag_set = load_func<int(const char*, uint64_t)>(*this->xllr_mod, "is_runtime_flag_set");
@@ -64,12 +64,12 @@ void** xllr_api_wrapper::load_function(const char* runtime_plugin, uint32_t runt
 			                        err, err_len);
 }
 //--------------------------------------------------------------------
-void** xllr_api_wrapper::load_callable(const char* runtime_plugin, uint32_t runtime_plugin_len, void* load_callable_context, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len)
+void** xllr_api_wrapper::make_callable(const char* runtime_plugin, uint32_t runtime_plugin_len, void* make_callable_context, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len)
 {
 	*err = nullptr;
 	*err_len = 0;
-	return (*this->pload_callable)(runtime_plugin, runtime_plugin_len,
-									load_callable_context,
+	return (*this->pmake_callable)(runtime_plugin, runtime_plugin_len,
+									make_callable_context,
 									params_types, retvals_types, params_count, retval_count,
 									err, err_len);
 }

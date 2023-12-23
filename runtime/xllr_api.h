@@ -30,14 +30,7 @@ void** load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_na
  /**
   * Load module of foreign language
   */
- void** load_callable(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, void* load_callable_context, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len);
-
-
-/**
- * Load callables of a foreign language
- */
-void** load_callable(const char* runtime_plugin, uint32_t runtime_plugin_len, void* load_callable_context, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len);
-
+void** make_callable(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, void* make_callable_context, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len);
 
 /**
  * Free module of foreign language

@@ -28,7 +28,7 @@ struct runtime_plugin_interface
 	/**
 	 * Load callable of foreign language
 	 */
-	virtual void** load_callable(void* load_callable_context, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len) = 0;
+	virtual void** make_callable(void* make_callable_context, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len) = 0;
 
 	/**
 	 * Free module of foreign language
