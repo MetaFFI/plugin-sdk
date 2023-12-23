@@ -693,8 +693,7 @@ case otype##_type | metaffi_array_type: \
 					this->cdts[index].cdt_val.metaffi_handle_val.runtime_id = val.runtime_id;
 					this->cdts[index].free_required = 0;
 					continue;
-				}
-					break;
+				}break;
 				case metaffi_handle_type | metaffi_array_type:
 				{
 					cdt_metaffi_handle *array = nullptr;
@@ -708,8 +707,15 @@ case otype##_type | metaffi_array_type: \
 					this->cdts[index].cdt_val.metaffi_handle_array_val.dimensions_lengths = dimensions_lengths;
 					this->cdts[index].cdt_val.metaffi_handle_array_val.dimensions = dimensions;
 					continue;
-				}
-					break;
+				}break;
+				case metaffi_callable_type:
+				{
+					cdt_metaffi_callable val{};
+					callbacks.set_metaffi_callable(values_to_set, index, val, starting_index);
+					this->cdts[index].type = metaffi_callable_type;
+					this->cdts[index].free_required = false;
+					this->cdts[index].cdt_val.metaffi_callable_val = val;
+				}break;
 				if_build_string_type(metaffi_string8);
 				if_build_string_type(metaffi_string16);
 				if_build_string_type(metaffi_string32);
