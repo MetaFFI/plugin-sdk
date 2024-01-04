@@ -11,23 +11,23 @@ TEST_CASE( "CDTS Wrapper", "[sdk]" )
 	cdt* pcdts = (cdt*)calloc(sizeof(cdt), 15);
 	cdts_wrapper cdts(pcdts, 15);
 	
-	std::vector<metaffi_type_t> vec_types =
+	std::vector<metaffi_type_with_alias> vec_types =
 	{
-		metaffi_float64_type,
-		metaffi_float32_type,
-		metaffi_int8_type,
-		metaffi_int16_type,
-		metaffi_int32_type,
-		metaffi_int64_type,
-		metaffi_uint8_type,
-		metaffi_uint16_type,
-		metaffi_uint32_type,
-		metaffi_uint64_type,
-		metaffi_bool_type,
-		metaffi_handle_type,
-		metaffi_string8_type,
-		metaffi_string8_array_type,
-		metaffi_uint8_array_type
+		{metaffi_float64_type, nullptr, 0},
+		{metaffi_float32_type, nullptr, 0},
+		{metaffi_int8_type, nullptr, 0},
+		{metaffi_int16_type, nullptr, 0},
+		{metaffi_int32_type, nullptr, 0},
+		{metaffi_int64_type, nullptr, 0},
+		{metaffi_uint8_type, nullptr, 0},
+		{metaffi_uint16_type, nullptr, 0},
+		{metaffi_uint32_type, nullptr, 0},
+		{metaffi_uint64_type, nullptr, 0},
+		{metaffi_bool_type, nullptr, 0},
+		{metaffi_handle_type, nullptr, 0},
+		{metaffi_string8_type, nullptr, 0},
+		{metaffi_string8_array_type, nullptr, 0},
+		{metaffi_uint8_array_type, nullptr, 0}
 	};
 	
 	metaffi_float32 p1 = 2.71f;
