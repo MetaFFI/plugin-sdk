@@ -12,8 +12,9 @@ type MethodType string
 type MetaFFIType string
 
 type MetaFFITypeWithAlias struct {
-	Type  IDL.MetaFFIType
+	StringType  MetaFFIType
 	Alias string
+	Type uint64
 }
 
 const (
@@ -130,6 +131,10 @@ var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 	
 	HANDLE_ARRAY: uint64(C.metaffi_handle_array_type),
 	SIZE_ARRAY:   uint64(C.metaffi_size_array_type),
+}
+
+func (this *MetaFFITypeWithAlias) FillMetaFFITypeFromStringMetaFFIType(){
+	this.Type = TypeStringToTypeEnum[this.StringType]
 }
 
 func IsMetaFFIType(metaffiType string) bool {
