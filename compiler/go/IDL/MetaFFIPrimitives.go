@@ -11,6 +11,11 @@ import "strings"
 type MethodType string
 type MetaFFIType string
 
+type MetaFFITypeWithAlias struct {
+	Type  IDL.MetaFFIType
+	Alias string
+}
+
 const (
 	FUNCTION    MethodType = "function"
 	METHOD      MethodType = "method"
