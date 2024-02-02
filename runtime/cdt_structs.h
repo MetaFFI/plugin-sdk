@@ -50,6 +50,7 @@ struct cdt_metaffi_handle
 {
 	metaffi_handle val;
 	uint64_t runtime_id;
+	void* release;
 };
 struct cdt_metaffi_handle_array
 {
