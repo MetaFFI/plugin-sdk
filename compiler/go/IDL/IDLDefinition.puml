@@ -1,0 +1,97 @@
+@startuml
+skinparam linetype ortho
+namespace IDL {
+    class ArgDefinition << (S,Aquamarine) >> {
+        + Name string
+        + Type MetaFFITypeWithAlias
+        + Comment string
+        + Tags <font color=blue>map</font><string,string>
+        + Dimensions int
+        + IsOptional bool
+    }
+    class ClassDefinition << (S,Aquamarine) >> {
+        + Name string
+        + Comment string
+        + Tags <font color=blue>map</font><string,string>
+        + FunctionPath <font color=blue>map</font><string,string>
+        + Constructors []ConstructorDefinition
+        + Methods []MethodDefinition
+        + Fields []FieldDefinition
+    }
+    class ConstructorDefinition << (S,Aquamarine) >> {
+        - parent ClassDefinition
+
+    }
+    class FieldDefinition << (S,Aquamarine) >> {
+        - parent ClassDefinition
+
+        + Getter MethodDefinition
+        + Setter MethodDefinition
+    }
+    class FunctionDefinition << (S,Aquamarine) >> {
+        + Name string
+        + Comment string
+        + Tags <font color=blue>map</font><string,string>
+        + FunctionPath <font color=blue>map</font><string,string>
+        + Parameters []ArgDefinition
+        + ReturnValues []ArgDefinition
+        + OverloadIndex int32
+    }
+    class GlobalDefinition << (S,Aquamarine) >> {
+        + Getter FunctionDefinition
+        + Setter FunctionDefinition
+    }
+    class IDLDefinition << (S,Aquamarine) >> {
+        + IDLSource string
+        + IDLExtension string
+        + IDLFilenameWithExtension string
+        + IDLFullPath string
+        + MetaFFIGuestLib string
+        + TargetLanguage string
+        + Modules []ModuleDefinition
+    }
+    class MetaFFITypeWithAlias << (S,Aquamarine) >> {
+    	+ StringType
+    	+ Alias string
+    	+ Type uint64
+    }
+    class MethodDefinition << (S,Aquamarine) >> {
+        - parent ClassDefinition
+
+        + InstanceRequired bool
+    }
+    class ModuleDefinition << (S,Aquamarine) >> {
+        + Name string
+        + Comment string
+        + Tags <font color=blue>map</font><string,string>
+        + Functions []FunctionDefinition
+        + Classes []ClassDefinition
+        + Globals []GlobalDefinition
+        + ExternalResources []string
+    }
+
+    "IDL.IDLDefinition" *-- "Modules" "IDL.ModuleDefinition"
+
+    "IDL.ModuleDefinition" *-- "Functions" "IDL.FunctionDefinition"
+    "IDL.ModuleDefinition" *-- "Classes" "IDL.ClassDefinition"
+    "IDL.ModuleDefinition" *-- "Globals" "IDL.GlobalDefinition"
+
+    "IDL.ClassDefinition" *--o "Constructors" "IDL.ConstructorDefinition"
+    "IDL.ClassDefinition" *--o "Methods" "IDL.MethodDefinition"
+    "IDL.ClassDefinition" *--o "Fields" "IDL.FieldDefinition"
+
+    "IDL.FunctionDefinition" <|-- "IDL.ConstructorDefinition"
+    "IDL.FunctionDefinition" <|-- "IDL.MethodDefinition"
+    "IDL.FunctionDefinition" *-- "Parameters" "IDL.ArgDefinition"
+    "IDL.FunctionDefinition" *-- "Return Values" "IDL.ArgDefinition"
+
+    "IDL.GlobalDefinition" *-- "IDL.FunctionDefinition"
+    "IDL.FieldDefinition" *-- "IDL.FunctionDefinition"
+
+    "IDL.ArgDefinition" <|-- "IDL.FieldDefinition"
+    "IDL.ArgDefinition" <|-- "IDL.GlobalDefinition"
+}
+
+
+
+@enduml

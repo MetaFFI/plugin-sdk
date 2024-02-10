@@ -90,7 +90,7 @@ type FunctionPather interface {
 
 //--------------------------------------------------------------------
 type IDLDefinition struct {
-	IDLFilename              string              `json:"idl_filename"`
+	IDLSource                string              `json:"idl_source"`
 	IDLExtension             string              `json:"idl_extension"`
 	IDLFilenameWithExtension string              `json:"idl_filename_with_extension"`
 	IDLFullPath              string              `json:"idl_full_path"`

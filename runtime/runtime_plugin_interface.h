@@ -11,27 +11,27 @@ struct runtime_plugin_interface
 	virtual ~runtime_plugin_interface()= default;
 
 	/**
-	 * Load runtime runtime of foreign runtime
+	 * Load runtime
 	 */ 
 	virtual void load_runtime(char** err, uint32_t* err_len) = 0;
 
 	/**
-	 * Free runtime runtime of foreign runtime
+	 * Free runtime
 	 */ 
 	virtual void free_runtime(char** err, uint32_t* err_len) = 0;
 
 	/**
-	 * Load module of foreign language
+	 * Load entity
 	 */ 
 	virtual void** load_function(const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len) = 0;
 
 	/**
-	 * Load callable of foreign language
+	 * Wrap callable with XCall
 	 */
 	virtual void** make_callable(void* make_callable_context, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len) = 0;
 
 	/**
-	 * Free module of foreign language
+	 * Free loaded entity
 	 */ 
 	virtual void free_function(void* pff, char** err, uint32_t* err_len) = 0;
 
