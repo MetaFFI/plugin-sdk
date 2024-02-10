@@ -12,9 +12,9 @@ type MethodType string
 type MetaFFIType string
 
 type MetaFFITypeWithAlias struct {
-	StringType  MetaFFIType
-	Alias string
-	Type uint64
+	StringType MetaFFIType
+	Alias      string
+	Type       uint64
 }
 
 const (
@@ -27,64 +27,111 @@ const (
 const (
 	FLOAT64 MetaFFIType = "float64"
 	FLOAT32 MetaFFIType = "float32"
-	
+
 	INT8  MetaFFIType = "int8"
 	INT16 MetaFFIType = "int16"
 	INT32 MetaFFIType = "int32"
 	INT64 MetaFFIType = "int64"
-	
+
 	UINT8  MetaFFIType = "uint8"
 	UINT16 MetaFFIType = "uint16"
 	UINT32 MetaFFIType = "uint32"
 	UINT64 MetaFFIType = "uint64"
-	
+
 	BOOL MetaFFIType = "bool"
-	
+
 	CHAR8  MetaFFIType = "char8"
 	CHAR16 MetaFFIType = "char16"
 	CHAR32 MetaFFIType = "char32"
-	
+
 	STRING8  MetaFFIType = "string8"
 	STRING16 MetaFFIType = "string16"
 	STRING32 MetaFFIType = "string32"
-	
+
 	HANDLE MetaFFIType = "handle"
 	ARRAY  MetaFFIType = "array"
-	
+
 	ANY MetaFFIType = "any" // Parameter can receive any MetaFFI type
-	
+
 	SIZE MetaFFIType = "size"
-	
+
 	//--------------------------------------------------------------------
-	
+
 	FLOAT64_ARRAY MetaFFIType = "float64_array"
 	FLOAT32_ARRAY MetaFFIType = "float32_array"
-	
+
 	INT8_ARRAY  MetaFFIType = "int8_array"
 	INT16_ARRAY MetaFFIType = "int16_array"
 	INT32_ARRAY MetaFFIType = "int32_array"
 	INT64_ARRAY MetaFFIType = "int64_array"
-	
+
 	UINT8_ARRAY  MetaFFIType = "uint8_array"
 	UINT16_ARRAY MetaFFIType = "uint16_array"
 	UINT32_ARRAY MetaFFIType = "uint32_array"
 	UINT64_ARRAY MetaFFIType = "uint64_array"
-	
+
 	BOOL_ARRAY MetaFFIType = "bool_array"
-	
+
 	CHAR8_ARRAY  MetaFFIType = "char8_array"
 	CHAR16_ARRAY MetaFFIType = "char16_array"
 	CHAR32_ARRAY MetaFFIType = "char32_array"
-	
+
 	STRING8_ARRAY  MetaFFIType = "string8_array"
 	STRING16_ARRAY MetaFFIType = "string16_array"
 	STRING32_ARRAY MetaFFIType = "string32_array"
-	
+
 	HANDLE_ARRAY MetaFFIType = "handle_array"
-	ANY_ARRAY MetaFFIType = "any_array"
-	
+	ANY_ARRAY    MetaFFIType = "any_array"
+
 	SIZE_ARRAY MetaFFIType = "size_array"
 )
+
+var TypeStringToEnumName = map[MetaFFIType]string{
+	FLOAT64:  "FLOAT64",
+	FLOAT32:  "FLOAT32",
+	INT8:     "INT8",
+	INT16:    "INT16",
+	INT32:    "INT32",
+	INT64:    "INT64",
+	UINT8:    "UINT8",
+	UINT16:   "UINT16",
+	UINT32:   "UINT32",
+	UINT64:   "UINT64",
+	BOOL:     "BOOL",
+	STRING8:  "STRING8",
+	STRING16: "STRING16",
+	STRING32: "STRING32",
+	CHAR8:    "CHAR8",
+	CHAR16:   "CHAR16",
+	CHAR32:   "CHAR32",
+	HANDLE:   "HANDLE",
+
+	ARRAY: "ARRAY",
+
+	SIZE: "SIZE",
+
+	ANY: "ANY",
+
+	FLOAT64_ARRAY:  "FLOAT64_ARRAY",
+	FLOAT32_ARRAY:  "FLOAT32_ARRAY",
+	INT8_ARRAY:     "INT8_ARRAY",
+	INT16_ARRAY:    "INT16_ARRAY",
+	INT32_ARRAY:    "INT32_ARRAY",
+	INT64_ARRAY:    "INT64_ARRAY",
+	UINT8_ARRAY:    "UINT8_ARRAY",
+	UINT16_ARRAY:   "UINT16_ARRAY",
+	UINT32_ARRAY:   "UINT32_ARRAY",
+	UINT64_ARRAY:   "UINT64_ARRAY",
+	BOOL_ARRAY:     "BOOL_ARRAY",
+	STRING8_ARRAY:  "STRING8_ARRAY",
+	STRING16_ARRAY: "STRING16_ARRAY",
+	STRING32_ARRAY: "STRING32_ARRAY",
+
+	ANY_ARRAY: "ANY_ARRAY",
+
+	HANDLE_ARRAY: "HANDLE_ARRAY",
+	SIZE_ARRAY:   "SIZE_ARRAY",
+}
 
 var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 	FLOAT64:  uint64(C.metaffi_float64_type),
@@ -105,13 +152,13 @@ var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 	CHAR16:   uint64(C.metaffi_char16_type),
 	CHAR32:   uint64(C.metaffi_char32_type),
 	HANDLE:   uint64(C.metaffi_handle_type),
-	
+
 	ARRAY: uint64(C.metaffi_array_type),
-	
+
 	SIZE: uint64(C.metaffi_size_type),
-	
+
 	ANY: uint64(C.metaffi_any_type),
-	
+
 	FLOAT64_ARRAY:  uint64(C.metaffi_float64_array_type),
 	FLOAT32_ARRAY:  uint64(C.metaffi_float32_array_type),
 	INT8_ARRAY:     uint64(C.metaffi_int8_array_type),
@@ -128,12 +175,12 @@ var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 	STRING32_ARRAY: uint64(C.metaffi_string32_array_type),
 
 	ANY_ARRAY: uint64(C.metaffi_any_array_type),
-	
+
 	HANDLE_ARRAY: uint64(C.metaffi_handle_array_type),
 	SIZE_ARRAY:   uint64(C.metaffi_size_array_type),
 }
 
-func (this *MetaFFITypeWithAlias) FillMetaFFITypeFromStringMetaFFIType(){
+func (this *MetaFFITypeWithAlias) FillMetaFFITypeFromStringMetaFFIType() {
 	this.Type = TypeStringToTypeEnum[this.StringType]
 }
 
@@ -143,16 +190,16 @@ func IsMetaFFIType(metaffiType string) bool {
 }
 
 func ArgMetaFFIType(arg *ArgDefinition) uint64 {
-	
+
 	str := arg.Type
 	if arg.Dimensions > 0 && !strings.HasSuffix(string(arg.Type), "_array") {
 		str += "_array"
 	}
-	
+
 	res, found := TypeStringToTypeEnum[MetaFFIType(str)]
 	if !found {
 		panic(fmt.Sprintf("%v is not a metaffi type. Dimensions: %v", str, arg.Dimensions))
 	}
-	
+
 	return res
 }
