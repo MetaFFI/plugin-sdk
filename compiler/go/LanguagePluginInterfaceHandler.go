@@ -80,7 +80,7 @@ func (this *LanguagePluginInterfaceHandler) compile_to_guest(idl_def_json *C.cha
     }
 	
 	if outFilename == "" {
-		outFilename = def.IDLFilename
+		outFilename = def.IDLSource
 	}
 
 	
@@ -142,7 +142,7 @@ func (this *LanguagePluginInterfaceHandler) compile_from_host(idl_def_json *C.ch
 	}
 	
 	if outFilename == "" {
-		outFilename = def.IDLFilename
+		outFilename = def.IDLSource
 	}
 	
 	err = this.wrapped.CompileFromHost(def, outPath, outFilename, hostOptionsMap)

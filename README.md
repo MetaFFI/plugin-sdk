@@ -47,7 +47,7 @@ type HostCompiler interface {
 Let's examine `GuestCompiler.Compile`:
 * `definition` - MetaFFI definition of the foreign entities
 * `outputDir` - Directory to write compiler output
-* `outputFilename` - Filename to write output. If empty, uses `definition.IDLFilename`. If contains a coed block (using # delimiter), contains the code block name
+* `outputFilename` - Filename to write output. If empty, uses `definition.IDLSource`. If contains a coed block (using # delimiter), contains the code block name
 * `hostOptions` - Plugin specific options passed from MetaFFI CLI to the plugin
 
 The function `NewGuestCompiler()` returns an instance of the object implementing the interface.
@@ -56,7 +56,7 @@ The function `NewGuestCompiler()` returns an instance of the object implementing
 Let's examine `HostCompiler.Compile`:
 * `definition` - MetaFFI definition of the foreign entities
 * `outputDir` - Directory to write compiler output
-* `outputFilename` - Filename to write output. If empty, uses `definition.IDLFilename`. If contains a coed block (using # delimiter), contains the code block name 
+* `outputFilename` - Filename to write output. If empty, uses `definition.IDLSource`. If contains a coed block (using # delimiter), contains the code block name 
 * `blockName` - If IDL generated from source code within an embedded code block, this is the name of the block
 * `blockCode` - If IDL generated from source code within an embedded code block, this is the code of the block
 

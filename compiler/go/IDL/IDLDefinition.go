@@ -102,7 +102,7 @@ type IDLDefinition struct {
 //--------------------------------------------------------------------
 func NewIDLDefinition(idlFullPath string, targetLanguage string) *IDLDefinition {
 	idl := &IDLDefinition{
-		IDLFilename:              strings.ReplaceAll(filepath.Base(idlFullPath), filepath.Ext(idlFullPath), ""),
+		IDLSource:              strings.ReplaceAll(filepath.Base(idlFullPath), filepath.Ext(idlFullPath), ""),
 		IDLExtension:             filepath.Ext(idlFullPath),
 		IDLFilenameWithExtension: filepath.Base(idlFullPath),
 		IDLFullPath:              idlFullPath,
@@ -110,7 +110,7 @@ func NewIDLDefinition(idlFullPath string, targetLanguage string) *IDLDefinition 
 		Modules:                  nil,
 	}
 	
-	idl.MetaFFIGuestLib = idl.IDLFilename + "_MetaFFIGuest"
+	idl.MetaFFIGuestLib = idl.IDLSource + "_MetaFFIGuest"
 	if strings.Contains(idl.MetaFFIGuestLib, "#") {
 		idl.MetaFFIGuestLib = idl.MetaFFIGuestLib[strings.Index(idl.MetaFFIGuestLib, "#")+1:]
 	}
