@@ -139,7 +139,7 @@ void xllr_xcall_no_params_no_ret(void* pff,
 void** xllr_load_function(const char* runtime_plugin, uint32_t runtime_plugin_len,
                           const char* module_path, uint32_t module_path_len,
                           const char* function_path, uint32_t function_path_len,
-                          metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types,
+                          metaffi_type_infos_ptr params_types, metaffi_type_infos_ptr retvals_types,
                           uint8_t params_count, uint8_t retval_count,
                           char** out_err, uint32_t* out_err_len);
 

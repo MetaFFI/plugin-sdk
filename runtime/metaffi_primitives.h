@@ -135,11 +135,12 @@ enum metaffi_types
 		  "Unknown type"
 
 
-struct metaffi_type_with_alias
+struct metaffi_type_info
 {
 	metaffi_type type;
 	char* alias;
 	uint64_t alias_length;
+	int32_t dimensions;
 };
 
-typedef struct metaffi_type_with_alias* metaffi_types_with_alias_ptr;
+typedef struct metaffi_type_info* metaffi_type_infos_ptr;

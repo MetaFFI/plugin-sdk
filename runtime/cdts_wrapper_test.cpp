@@ -11,7 +11,7 @@ TEST_CASE( "CDTS Wrapper", "[sdk]" )
 	cdt* pcdts = (cdt*)calloc(sizeof(cdt), 15);
 	cdts_wrapper cdts(pcdts, 15);
 	
-	std::vector<metaffi_type_with_alias> vec_types =
+	std::vector<metaffi_type_info> vec_types =
 	{
 		{metaffi_float64_type, nullptr, 0},
 		{metaffi_float32_type, nullptr, 0},
@@ -118,7 +118,7 @@ TEST_CASE( "CDTS Wrapper", "[sdk]" )
 		[&](void* values_to_set, int index, cdt_metaffi_callable& val, int starting_index) {}
 	);
 	
-	cdts.build((metaffi_types_with_alias_ptr)vec_types.data(), vec_types.size(), nullptr, 0, cbs);
+	cdts.build((metaffi_type_infos_ptr)vec_types.data(), vec_types.size(), nullptr, 0, cbs);
 	
 	
 	//--------------------------------------------------------------------

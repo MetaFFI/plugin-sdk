@@ -55,9 +55,9 @@ namespace metaffi::runtime
 	
 	
 	
-	metaffi_type_with_alias make_type_with_alias(metaffi_type type, const std::string& alias)
+	metaffi_type_info make_type_with_alias(metaffi_type type, const std::string& alias)
 	{
-		metaffi_type_with_alias inst = {0};
+		metaffi_type_info inst = {0};
 		inst.type = type;
 		
 		if(!alias.empty())

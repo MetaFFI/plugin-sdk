@@ -8,7 +8,7 @@
 namespace metaffi::runtime
 {
 	
-	metaffi_type_with_alias make_type_with_alias(metaffi_type type, const std::string& alias = "");
+	metaffi_type_info make_type_with_alias(metaffi_type type, const std::string& alias = "");
 
 
 /************************************************
@@ -416,7 +416,7 @@ namespace metaffi::runtime
 		 * as either std::function or interface, without restricting one over the other
 		 */
 		template<typename callback_t = cdts_build_callbacks>
-		void build(metaffi_types_with_alias_ptr types, metaffi_size types_length, void* values_to_set, int starting_index, callback_t& callbacks) const;
+		void build(metaffi_type_infos_ptr types, metaffi_size types_length, void* values_to_set, int starting_index, callback_t& callbacks) const;
 		
 		void set(int index, metaffi_float64 v) const;
 		void set(int index, metaffi_float32 v) const;
@@ -593,7 +593,7 @@ case otype##_type | metaffi_array_type: \
 	}
 //--------------------------------------------------------------------
 	template<typename callback_t>
-	void cdts_wrapper::build(metaffi_types_with_alias_ptr types, metaffi_size types_length, void* values_to_set, int starting_index, callback_t& callbacks) const
+	void cdts_wrapper::build(metaffi_type_infos_ptr types, metaffi_size types_length, void* values_to_set, int starting_index, callback_t& callbacks) const
 	{
 #ifdef _DEBUG
 		if(types_length != this->cdts_length)
