@@ -213,12 +213,12 @@ func (this *FunctionDefinition) GetEntityIDName() string {
 }
 
 // --------------------------------------------------------------------
-func (this *FunctionDefinition) GetParametersMetaFFITypeWithAlias() []MetaFFITypeWithAlias {
+func (this *FunctionDefinition) GetParametersMetaFFITypeInfo() []MetaFFITypeInfo {
 	if this.Parameters == nil {
 		return nil
 	}
 
-	res := make([]MetaFFITypeWithAlias, 0, len(this.Parameters))
+	res := make([]MetaFFITypeInfo, 0, len(this.Parameters))
 	for _, a := range this.Parameters {
 		res = append(res, a.GetMetaFFITypeAlias())
 	}
@@ -226,12 +226,12 @@ func (this *FunctionDefinition) GetParametersMetaFFITypeWithAlias() []MetaFFITyp
 }
 
 // --------------------------------------------------------------------
-func (this *FunctionDefinition) GetReturnValuesMetaFFITypeWithAlias() []MetaFFITypeWithAlias {
+func (this *FunctionDefinition) GetReturnValuesMetaFFITypeInfo() []MetaFFITypeInfo {
 	if this.ReturnValues == nil {
 		return nil
 	}
 
-	res := make([]MetaFFITypeWithAlias, 0, len(this.ReturnValues))
+	res := make([]MetaFFITypeInfo, 0, len(this.ReturnValues))
 	for _, a := range this.ReturnValues {
 		res = append(res, a.GetMetaFFITypeAlias())
 	}

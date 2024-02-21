@@ -3,7 +3,7 @@ skinparam linetype ortho
 namespace IDL {
     class ArgDefinition << (S,Aquamarine) >> {
         + Name string
-        + Type MetaFFITypeWithAlias
+        + Type MetaFFITypeInfo
         + Comment string
         + Tags <font color=blue>map</font><string,string>
         + Dimensions int
@@ -50,7 +50,7 @@ namespace IDL {
         + TargetLanguage string
         + Modules []ModuleDefinition
     }
-    class MetaFFITypeWithAlias << (S,Aquamarine) >> {
+    class MetaFFITypeInfo << (S,Aquamarine) >> {
     	+ StringType
     	+ Alias string
     	+ Type uint64

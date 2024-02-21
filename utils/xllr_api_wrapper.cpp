@@ -25,9 +25,9 @@ xllr_api_wrapper::xllr_api_wrapper()
 		
 		this->pfree_runtime_plugin = load_func<void(const char*, uint32_t, char**, uint32_t*)>(*this->xllr_mod, "free_runtime_plugin");
 		
-		this->pload_function = load_func<void**(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, metaffi_types_with_alias_ptr, metaffi_types_with_alias_ptr, int8_t, int8_t, char**, uint32_t*)>(*this->xllr_mod, "load_function");
+		this->pload_function = load_func<void**(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, metaffi_type_infos_ptr, metaffi_type_infos_ptr, int8_t, int8_t, char**, uint32_t*)>(*this->xllr_mod, "load_function");
 		this->pfree_function = load_func<void(const char*, uint32_t, void*, char**, uint32_t*)>(*this->xllr_mod, "free_function");
-		this->pmake_callable = load_func<void**(const char*, uint32_t, void*, metaffi_types_with_alias_ptr, metaffi_types_with_alias_ptr, int8_t, int8_t, char**, uint32_t*)>(*this->xllr_mod, "make_callable");
+		this->pmake_callable = load_func<void**(const char*, uint32_t, void*, metaffi_type_infos_ptr, metaffi_type_infos_ptr, int8_t, int8_t, char**, uint32_t*)>(*this->xllr_mod, "make_callable");
 		
 		this->pset_runtime_flag = load_func<void(const char*, uint64_t)>(*this->xllr_mod, "set_runtime_flag");
 		this->pis_runtime_flag_set = load_func<int(const char*, uint64_t)>(*this->xllr_mod, "is_runtime_flag_set");
@@ -53,7 +53,7 @@ void xllr_api_wrapper::free_runtime_plugin(const char* runtime_plugin, uint32_t 
 	(*this->pfree_runtime_plugin)(runtime_plugin, runtime_plugin_len, err, err_len);
 }
 //--------------------------------------------------------------------
-void** xllr_api_wrapper::load_function(const char* runtime_plugin, uint32_t runtime_plugin_len, const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len)
+void** xllr_api_wrapper::load_function(const char* runtime_plugin, uint32_t runtime_plugin_len, const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, metaffi_type_infos_ptr params_types, metaffi_type_infos_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len)
 {
 	*err = nullptr;
 	*err_len = 0;
@@ -64,7 +64,7 @@ void** xllr_api_wrapper::load_function(const char* runtime_plugin, uint32_t runt
 			                        err, err_len);
 }
 //--------------------------------------------------------------------
-void** xllr_api_wrapper::make_callable(const char* runtime_plugin, uint32_t runtime_plugin_len, void* make_callable_context, metaffi_types_with_alias_ptr params_types, metaffi_types_with_alias_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len)
+void** xllr_api_wrapper::make_callable(const char* runtime_plugin, uint32_t runtime_plugin_len, void* make_callable_context, metaffi_type_infos_ptr params_types, metaffi_type_infos_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len)
 {
 	*err = nullptr;
 	*err_len = 0;

@@ -136,8 +136,8 @@ func (this *ArgDefinition) IsInteger() bool {
 }
 
 // --------------------------------------------------------------------
-func (this *ArgDefinition) GetMetaFFITypeAlias() MetaFFITypeWithAlias {
-	res := MetaFFITypeWithAlias{
+func (this *ArgDefinition) GetMetaFFITypeAlias() MetaFFITypeInfo {
+	res := MetaFFITypeInfo{
 		StringType: this.Type,
 		Alias:      this.TypeAlias,
 		Type:       TypeStringToTypeEnum[this.Type],

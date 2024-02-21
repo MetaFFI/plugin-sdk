@@ -11,7 +11,7 @@ import "strings"
 type MethodType string
 type MetaFFIType string
 
-type MetaFFITypeWithAlias struct {
+type MetaFFITypeInfo struct {
 	StringType MetaFFIType
 	Alias      string
 	Type       uint64
@@ -180,7 +180,7 @@ var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 	SIZE_ARRAY:   uint64(C.metaffi_size_array_type),
 }
 
-func (this *MetaFFITypeWithAlias) FillMetaFFITypeFromStringMetaFFIType() {
+func (this *MetaFFITypeInfo) FillMetaFFITypeFromStringMetaFFIType() {
 	this.Type = TypeStringToTypeEnum[this.StringType]
 }
 
