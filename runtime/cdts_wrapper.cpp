@@ -55,20 +55,21 @@ namespace metaffi::runtime
 	
 	
 	
-	metaffi_type_info make_type_with_alias(metaffi_type type, const std::string& alias)
+metaffi_type_info make_type_with_options(metaffi_type type, const std::string& alias /*= ""*/, int dimensions /*= 0*/)
+{
+	metaffi_type_info inst = {0};
+	inst.type = type;
+	
+	if(!alias.empty())
 	{
-		metaffi_type_info inst = {0};
-		inst.type = type;
-		
-		if(!alias.empty())
-		{
-			inst.alias = (char*)malloc(alias.size());
-			std::copy(alias.begin(), alias.end(), inst.alias);
-			inst.alias_length = (int64_t)alias.length();
-		}
-		
-		return inst;
+		inst.alias = (char*)malloc(alias.size());
+		std::copy(alias.begin(), alias.end(), inst.alias);
+		inst.alias_length = (int64_t)alias.length();
+		inst.dimensions = dimensions;
 	}
+	
+	return inst;
+}
 //--------------------------------------------------------------------
 	void cdts_wrapper::set(int index, metaffi_float64 v) const
 	{

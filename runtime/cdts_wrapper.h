@@ -8,7 +8,7 @@
 namespace metaffi::runtime
 {
 	
-	metaffi_type_info make_type_with_alias(metaffi_type type, const std::string& alias = "");
+	metaffi_type_info make_type_with_options(metaffi_type type, const std::string& alias = "", int dimensions = 0);
 
 
 /************************************************
