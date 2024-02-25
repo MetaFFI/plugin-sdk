@@ -137,10 +137,17 @@ enum metaffi_types
 
 struct metaffi_type_info
 {
+#ifdef __cplusplus
+	metaffi_type type = metaffi_null_type;
+	char* alias = nullptr;
+	uint64_t alias_length = 0;
+	int32_t dimensions = 0;
+#else
 	metaffi_type type;
 	char* alias;
 	uint64_t alias_length;
 	int32_t dimensions;
+#endif
 };
 
 typedef struct metaffi_type_info* metaffi_type_infos_ptr;
