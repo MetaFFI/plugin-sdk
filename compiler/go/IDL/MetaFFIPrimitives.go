@@ -15,6 +15,7 @@ type MetaFFITypeInfo struct {
 	StringType MetaFFIType
 	Alias      string
 	Type       uint64
+	Dimensions int
 }
 
 const (
