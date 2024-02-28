@@ -56,6 +56,8 @@ const (
 
 	SIZE MetaFFIType = "size"
 
+	NULL MetaFFIType = "null"
+
 	//--------------------------------------------------------------------
 
 	FLOAT64_ARRAY MetaFFIType = "float64_array"
@@ -124,6 +126,7 @@ const (
 	METAFFI_TYPE_ANY_ARRAY      = uint64(C.metaffi_any_array_type)
 	METAFFI_TYPE_HANDLE_ARRAY   = uint64(C.metaffi_handle_array_type)
 	METAFFI_TYPE_SIZE_ARRAY     = uint64(C.metaffi_size_array_type)
+	METAFFI_TYPE_NULL           = uint64(C.metaffi_null_type)
 )
 
 var TypeStringToEnumName = map[MetaFFIType]string{
