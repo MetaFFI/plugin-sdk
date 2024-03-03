@@ -224,11 +224,11 @@ var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 }
 
 func (this *MetaFFITypeInfo) FillMetaFFITypeFromStringMetaFFIType() {
-	this.Type = TypeStringToTypeEnum[this.StringType]
+	this.Type = TypeStringToTypeEnum[MetaFFIType(strings.ToUpper(string(this.StringType)))]
 }
 
 func IsMetaFFIType(metaffiType string) bool {
-	_, found := TypeStringToTypeEnum[MetaFFIType(metaffiType)]
+	_, found := TypeStringToTypeEnum[MetaFFIType(strings.ToUpper(metaffiType))]
 	return found
 }
 

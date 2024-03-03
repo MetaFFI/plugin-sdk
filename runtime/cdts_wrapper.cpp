@@ -65,8 +65,8 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 		inst.alias = (char*)malloc(alias.size());
 		std::copy(alias.begin(), alias.end(), inst.alias);
 		inst.alias_length = (int64_t)alias.length();
-		inst.dimensions = dimensions;
 	}
+	inst.dimensions = dimensions;
 	
 	return inst;
 }
