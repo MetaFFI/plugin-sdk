@@ -17,7 +17,7 @@ function(go_get TARGET)
 	endif()
 	add_custom_command(TARGET ${TARGET}
 			WORKING_DIRECTORY ${add_go_WORKING_DIRECTORY}
-			COMMAND ${GOEXEC} get -v -u
+			COMMAND ${GOEXEC} get -v -u -t
 			COMMENT "Running \"go get\" for target ${target_name}"
 			USES_TERMINAL )
 endfunction()
