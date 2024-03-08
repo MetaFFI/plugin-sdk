@@ -136,13 +136,6 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 		(*this)[index]->cdt_val.metaffi_string8_val.length = v.length();
 	}
 	
-	void cdts_wrapper::set(int index, metaffi_handle v, uint64_t runtime_id) const
-	{
-		(*this)[index]->type = metaffi_handle_type;
-		(*this)[index]->cdt_val.metaffi_handle_val.val = v;
-		(*this)[index]->cdt_val.metaffi_handle_val.runtime_id = runtime_id;
-	}
-	
 	void cdts_wrapper::set(int index, const metaffi_float64* v, int length) const
 	{
 		(*this)[index]->type = metaffi_float64_array_type;
@@ -282,6 +275,18 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 			std::copy(v[i].begin(), v[i].end(), ((char**)(*this)[index]->cdt_val.metaffi_string8_array_val.vals)[i]);
 			((metaffi_size*)(*this)[index]->cdt_val.metaffi_string8_array_val.vals_sizes)[i] = v[i].length();
 		}
+	}
+	
+	void cdts_wrapper::set(int index, const cdt_metaffi_handle& v) const
+	{
+		(*this)[index]->type = metaffi_handle_type;
+		(*this)[index]->cdt_val.metaffi_handle_val = v;
+	}
+	
+	void cdts_wrapper::set_null_handle(int index) const
+	{
+		(*this)[index]->type = metaffi_handle_type;
+		(*this)[index]->cdt_val.metaffi_handle_val = {nullptr, 0, nullptr};
 	}
 	
 	void cdts_wrapper::set(int index, cdt_metaffi_handle* v, int length) const
@@ -705,8 +710,5 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 		
 		return res;
 	}
-	
-	
-	
 	
 }

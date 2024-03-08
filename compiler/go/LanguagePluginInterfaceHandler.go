@@ -124,7 +124,7 @@ func (this *LanguagePluginInterfaceHandler) compile_from_host(idl_def_json *C.ch
 	
 	hostOptions := C.GoStringN(host_options, C.int(host_options_length))
 	
-	// parse hostOptions
+	// to_py_tuple hostOptions
 	hostOptionsMap := make(map[string]string)
 	if strings.TrimSpace(hostOptions) != "" {
 		options := strings.Split(hostOptions, ",")

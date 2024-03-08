@@ -5,8 +5,8 @@
 .idea
 
 # ------------- CMake -------------
-build/
-cmake-build*
+to_cdts/
+cmake-to_cdts*
 output*
 
 # ------------ Python -------------
