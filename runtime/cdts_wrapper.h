@@ -37,7 +37,7 @@ void traverse_multidim_array(const cdt_metaffi_array_t& arr, void* other_array,
 		}
 		else
 		{
-			on_array(currentIndex, current_arr.dimension - 1, current_arr.length, other_array);
+			on_array(currentIndex, arr.dimension - current_arr.dimension, current_arr.length, other_array);
 			for (metaffi_size i = 0; i < current_arr.length; ++i)
 			{
 				metaffi_size* newIndex = new metaffi_size[arr.dimension]{};

@@ -98,7 +98,7 @@ TEST_CASE( "ragged array", "[sdk]" )
 		 
 		 // the index_length is the length of the array at the given index
 		 // (for array returned by init_4d_ragged_c_array)
-		 return index_length;
+		 return index_length+1;
 	 },
 	 [](metaffi_size* index, metaffi_size index_length, metaffi_size& out_1d_array_length, void*& other_array)->metaffi_int32*
      {
@@ -132,7 +132,34 @@ TEST_CASE( "ragged array", "[sdk]" )
 		 
 		 // Compare the length of the array at the given index with array_length
 		 // Since we know that each dimension of the array has a size of 2, we expect array_length to be 2
-		 REQUIRE(array_length == 4-index_size-1);
+		 switch(index_size)
+		 {
+			 case 0:
+			 {
+				 REQUIRE(array_length == 1);
+				 break;
+			 }
+			 case 1:
+			 {
+				 REQUIRE(array_length == 2);
+				 break;
+			 }
+			 case 2:
+			 {
+				 REQUIRE(array_length == 3);
+				 break;
+			 }
+			 case 3:
+			 {
+				 REQUIRE(array_length == 4);
+				 break;
+			 }
+			 default:
+			 {
+				 FAIL("Shouldn't reach here");
+			 }
+		 }
+		 
 	 },
 	 [](metaffi_size* index, metaffi_size index_size, metaffi_int32* arr, metaffi_size length, void* other_array)
 	 {
