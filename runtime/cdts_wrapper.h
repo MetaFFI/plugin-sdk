@@ -89,68 +89,6 @@ void construct_multidim_array(cdt_metaffi_type_t& arr, metaffi_size dimensions, 
 	}
 }
 
-
-
-
-/************************************************
-*   Wrapper for N-dimensions string array
-*************************************************/
-	
-template<typename T>
-class string_n_array_wrapper
-{
-private:
-	T* array = nullptr;
-
-public:
-	metaffi_size* string_lengths = nullptr;
-	metaffi_size* dimensions_lengths = nullptr;
-	metaffi_size dimensions = 0;
-
-public:
-	string_n_array_wrapper() = default;
-	string_n_array_wrapper(const string_n_array_wrapper& other) = default;
-	string_n_array_wrapper(T* array, metaffi_size* string_lengths, metaffi_size* dimensions_lengths, metaffi_size dimensions):
-			array(array), string_lengths(string_lengths), dimensions_lengths(dimensions_lengths), dimensions(dimensions){}
-	
-	string_n_array_wrapper& operator = (const string_n_array_wrapper& other) = default;
-	//--------------------------------------------------------------------
-	metaffi_size get_dimensions_count(){ return this->dimensions; }
-	//--------------------------------------------------------------------
-	metaffi_size get_dimension_length(int dimindex)
-	{
-		if(dimindex >= dimensions){
-			std::stringstream ss;
-			ss << "requested dimension length of dimension " << dimindex << " while highest dimension is " << dimensions - 1;
-			throw std::runtime_error(ss.str());
-		}
-		return dimensions_lengths[dimindex];
-	}
-	//--------------------------------------------------------------------
-	void get_elem_at(metaffi_size index[], metaffi_size index_length, T* out_res, metaffi_size* out_length) const
-	{
-		T** itemptr = (T**)array;
-		metaffi_size** sizeptr = (metaffi_size**)string_lengths;
-		for(int i=0 ; i<index_length ; i++)
-		{
-			if(index[i] >= dimensions_lengths[i]){
-				std::stringstream ss;
-				ss << "Array out of bounds. Requested index: " << index[i] << ". Array size: " << dimensions_lengths[i];
-				throw std::runtime_error(ss.str());
-			}
-			
-			if(i + 1 == index_length){ // if last item - get string
-				*out_res = ((T*)itemptr)[index[i]];
-				*out_length = ((metaffi_size*)sizeptr)[index[i]];
-			}
-			else{ // else, get next pointer
-				itemptr = (T**)itemptr[index[i]];
-				sizeptr = (metaffi_size**)sizeptr[index[i]];
-			}
-		}
-	}
-};
-
 /************************************************
 *   CDTS wrapper class
 *************************************************/
