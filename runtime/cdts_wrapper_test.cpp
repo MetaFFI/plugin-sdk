@@ -6,201 +6,151 @@
 
 using namespace metaffi::runtime;
 
-TEST_CASE( "CDTS Wrapper", "[sdk]" )
+
+metaffi_int32**** init_4d_ragged_c_array()
 {
-	cdt* pcdts = (cdt*)calloc(sizeof(cdt), 15);
-	cdts_wrapper cdts(pcdts, 15);
-	
-	std::vector<metaffi_type_info> vec_types =
+	int elem = 1;
+	// Initialize a 4D ragged array with size 2 for each dimension
+	metaffi_int32**** arr = new metaffi_int32***[1];
+	for (int i = 0; i < 1; ++i)
 	{
-		{metaffi_float64_type, nullptr, 0},
-		{metaffi_float32_type, nullptr, 0},
-		{metaffi_int8_type, nullptr, 0},
-		{metaffi_int16_type, nullptr, 0},
-		{metaffi_int32_type, nullptr, 0},
-		{metaffi_int64_type, nullptr, 0},
-		{metaffi_uint8_type, nullptr, 0},
-		{metaffi_uint16_type, nullptr, 0},
-		{metaffi_uint32_type, nullptr, 0},
-		{metaffi_uint64_type, nullptr, 0},
-		{metaffi_bool_type, nullptr, 0},
-		{metaffi_handle_type, nullptr, 0},
-		{metaffi_string8_type, nullptr, 0},
-		{metaffi_string8_array_type, nullptr, 0},
-		{metaffi_uint8_array_type, nullptr, 0}
-	};
-	
-	metaffi_float32 p1 = 2.71f;
-	metaffi_float64 p2 = 3.141592;
-	metaffi_int8 p3 = -10;
-	metaffi_int16 p4 = -20;
-	metaffi_int32 p5 = -30;
-	metaffi_int64 p6 = -40;
-	metaffi_uint8 p7 = 50;
-	metaffi_uint16 p8 = 60;
-	metaffi_uint32 p9 = 70;
-	metaffi_uint64 p10 = 80;
-	metaffi_bool p11 = 1;
-	std::string p12("This is an input");
-	size_t p12_len = p12.size();
-	std::vector<metaffi_string8> p13 = {(char*) "element one", (char*) "element two"};
-	std::vector<metaffi_size> p13_sizes = {strlen("element one"), strlen("element two")};
-	std::vector<metaffi_size> p13_dimensions_lengths = {p13.size()};
-	
-	std::vector<metaffi_uint8> p14 = {2, 4, 6, 8, 10};
-	std::vector<metaffi_size> p14_dimensions_lengths = {p14.size()};
-	
-	metaffi_handle p15 = (void*)0xABDEF;
-	
-	cdts_build_callbacks cbs
-	(
-		[&](void* values_to_set, int index, metaffi_float32& val, int starting_index) { val = p1; },
-		[&](void* values_to_set, int index, metaffi_float32*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
-		
-		[&](void* values_to_set, int index, metaffi_float64& val, int starting_index) { val = p2; },
-		[&](void* values_to_set, int index, metaffi_float64*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
-		
-		[&](void* values_to_set, int index, metaffi_int8& val, int starting_index) { val = p3; },
-		[&](void* values_to_set, int index, metaffi_int8*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
-		
-		[&](void* values_to_set, int index, metaffi_int16& val, int starting_index) { val = p4; },
-		[&](void* values_to_set, int index, metaffi_int16*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
-		
-		[&](void* values_to_set, int index, metaffi_int32& val, int starting_index) { val = p5; },
-		[&](void* values_to_set, int index, metaffi_int32*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
-		
-		[&](void* values_to_set, int index, metaffi_int64& val, int starting_index) { val = p6; },
-		[&](void* values_to_set, int index, metaffi_int64*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
-		
-		[&](void* values_to_set, int index, metaffi_uint8& val, int starting_index) { val = p7; },
-		[&](void* values_to_set, int index, metaffi_uint8*& array, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index)
+		arr[i] = new metaffi_int32**[2];
+		for (int j = 0; j < 2; ++j)
 		{
-			array = &p14[0];
-			dimensions_lengths = &p14_dimensions_lengths[0];
-			dimensions = 1;
-			free_required = false;
-		},
-		
-		[&](void* values_to_set, int index, metaffi_uint16& val, int starting_index) { val = p8; },
-		[&](void* values_to_set, int index, metaffi_uint16*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
-		
-		[&](void* values_to_set, int index, metaffi_uint32& val, int starting_index) { val = p9; },
-		[&](void* values_to_set, int index, metaffi_uint32*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
-		
-		[&](void* values_to_set, int index, metaffi_uint64& val, int starting_index) { val = p10; },
-		[&](void* values_to_set, int index, metaffi_uint64*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
-		
-		[&](void* values_to_set, int index, metaffi_bool& val, int starting_index) { val = p11; },
-		[&](void* values_to_set, int index, metaffi_bool*& arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
-		
-		[&](void* values_to_set, int index, cdt_metaffi_handle& val, int starting_index) { val.val = (void*)0xABDEF; val.runtime_id = 0xFED;},
-		[&](void* values_to_set, int index, cdt_metaffi_handle* arr, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index) {},
-		
-		[&](void* values_to_set, int index, metaffi_string8& val, metaffi_size& s, int starting_index)
-		{
-			val = (char*) p12.c_str();
-			s = p12_len;
-		},
-		[&](void* values_to_set, int index, metaffi_string8*& array, metaffi_size*& strings_lengths, metaffi_size*& dimensions_lengths, metaffi_size& dimensions, metaffi_bool& free_required, int starting_index)
-		{
-			array = &p13[0];
-			strings_lengths = &p13_sizes[0];
-			dimensions_lengths = &p13_dimensions_lengths[0];
-			dimensions = 1;
-			free_required = false;
-		},
-		
-		[&](void* values_to_set, int index, metaffi_string16& val, metaffi_size& s, int starting_index) {},
-		[&](void* values_to_set, int index, metaffi_string16*&, metaffi_size*&, metaffi_size*&, metaffi_size&, metaffi_bool&, int) {},
-		
-		[&](void* values_to_set, int index, metaffi_string32& val, metaffi_size& s, int starting_index) {},
-		[&](void* values_to_set, int index, metaffi_string32*&, metaffi_size*&, metaffi_size*&, metaffi_size&, metaffi_bool&, int) {},
-		[&](void* values_to_set, int index, cdt_metaffi_callable& val, int starting_index) {}
-	);
-	
-	cdts.build((metaffi_type_infos_ptr)vec_types.data(), vec_types.size(), nullptr, 0, cbs);
-	
-	
-	//--------------------------------------------------------------------
+			arr[i][j] = new metaffi_int32*[3];
+			for (int k = 0; k < 3; ++k)
+			{
+				arr[i][j][k] = new metaffi_int32[4];
+				for (int l = 0; l < 4; ++l)
+				{
+					// Assign some values to the 1D arrays
+					arr[i][j][k][l] = elem;
+					elem++;
+				}
+			}
+		}
+	}
+	return arr;
+}
 
 
-	cdts_parse_callbacks cps
-	(
-		[&](void* values_to_set, int index, const metaffi_float32& val) { REQUIRE(val == p1); },
-		[&](void* values_to_set, int index, const metaffi_float32* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
-		
-		[&](void* values_to_set, int index, const metaffi_float64& val) { REQUIRE(val == p2); },
-		[&](void* values_to_set, int index, const metaffi_float64* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
-		
-		[&](void* values_to_set, int index, const metaffi_int8& val) { REQUIRE(val == p3); },
-		[&](void* values_to_set, int index, const metaffi_int8* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
-		
-		[&](void* values_to_set, int index, const metaffi_int16& val) { REQUIRE(val == p4); },
-		[&](void* values_to_set, int index, const metaffi_int16* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
-		
-		[&](void* values_to_set, int index, const metaffi_int32& val) { REQUIRE(val == p5); },
-		[&](void* values_to_set, int index, const metaffi_int32* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
-		
-		[&](void* values_to_set, int index, const metaffi_int64& val) { REQUIRE(val == p6); },
-		[&](void* values_to_set, int index, const metaffi_int64* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
-		
-		[&](void* values_to_set, int index, const metaffi_uint8& val) { REQUIRE(val == p7); },
-		[&](void* values_to_set, int index, const metaffi_uint8* array, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions)
-		{
-			REQUIRE(array[0] == p14[0]);
-			REQUIRE(array[1] == p14[1]);
-			REQUIRE(array[2] == p14[2]);
-			REQUIRE(array[3] == p14[3]);
-			REQUIRE(array[4] == p14[4]);
-			
-			REQUIRE(dimensions_lengths[0] == p14_dimensions_lengths[0]);
-			
-			REQUIRE(dimensions == 1);
-		},
-		
-		[&](void* values_to_set, int index, const metaffi_uint16& val) { REQUIRE(val == p8); },
-		[&](void* values_to_set, int index, const metaffi_uint16* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
-		
-		[&](void* values_to_set, int index, const metaffi_uint32& val) { REQUIRE(val == p9); },
-		[&](void* values_to_set, int index, const metaffi_uint32* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
-		
-		[&](void* values_to_set, int index, const metaffi_uint64& val) { REQUIRE(val == p10); },
-		[&](void* values_to_set, int index, const metaffi_uint64* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
-		
-		[&](void* values_to_set, int index, const metaffi_bool& val) { REQUIRE(val == p11); },
-		[&](void* values_to_set, int index, const metaffi_bool* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
-		
-		[&](void* values_to_set, int index, const cdt_metaffi_handle& val) { REQUIRE(val.val == p15); },
-		[&](void* values_to_set, int index, const cdt_metaffi_handle* arr, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions) {},
-		
-		[&](void* values_to_set, int index, const metaffi_string8& val, const metaffi_size& s)
-		{
-			REQUIRE(p12 == val);
-			REQUIRE(s == p12.length());
-		},
-		[&](void* values_to_set, int index, const metaffi_string8* array, const metaffi_size* strings_lengths, const metaffi_size* dimensions_lengths, const metaffi_size& dimensions)
-		{
-			REQUIRE(strcmp(p13[0], array[0]) == 0);
-			REQUIRE(strcmp(p13[1], array[1]) == 0);
-			
-			REQUIRE(p13_sizes[0] == strings_lengths[0]);
-			REQUIRE(p13_sizes[1] == strings_lengths[1]);
-			
-			REQUIRE(p13_dimensions_lengths[0] == dimensions_lengths[0]);
-			
-			REQUIRE(dimensions == 1);
-			
-		},
-
-		[&](void* values_to_set, int index, const metaffi_string16& val, const metaffi_size& s) {},
-		[&](void* values_to_set, int index, const metaffi_string16*, const metaffi_size*, const metaffi_size*, const metaffi_size&) {},
-		
-		[&](void* values_to_set, int index, const metaffi_string32& val, const metaffi_size& s) {},
-		[&](void* values_to_set, int index, const metaffi_string32*, const metaffi_size*, const metaffi_size*, const metaffi_size&) {},
-		[&](void* values_to_set, int index, const cdt_metaffi_callable& val) {}
-	);
+TEST_CASE( "1D array", "[sdk]" )
+{
+	// Initialize a 4D ragged C-array
+	metaffi_uint8 c_array[] = {1, 2, 3, 4, 5, 6, 7, 8};
 	
-	cdts.parse(nullptr, cps);
+	// Construct cdt_metaffi_int32_array using construct_multidim_array_bfs
+	cdt_metaffi_uint8_array arr = {nullptr};
+	construct_multidim_array<cdt_metaffi_uint8_array, metaffi_uint8>(arr, 1, c_array,
+	 [](metaffi_size* index, metaffi_size index_length, void*& other_array)->metaffi_size
+	 {
+		 FAIL("Shouldn't reach here");
+		 return 0;
+	 },
+	 [](metaffi_size* index, metaffi_size index_length, metaffi_size& out_1d_array_length, void*& other_array)->metaffi_uint8*
+	 {
+	     // Cast other_array to the correct type
+		 
+	     // Return the 1D array at the given index and its length
+	     // Since we know that each dimension of the array has a size of 2, we return 2 as the length
+	     out_1d_array_length = 8;
+	     return static_cast<metaffi_uint8*>(other_array);
+	 });
+	
+	
+	traverse_multidim_array<cdt_metaffi_uint8_array, metaffi_uint8>(arr, (void*)c_array,
+	[](metaffi_size* index, metaffi_size index_size, metaffi_size array_length, void* other_array)
+	{
+	    FAIL("Shouldn't reach here");
+	},
+	[](metaffi_size* index, metaffi_size index_size, metaffi_uint8* arr, metaffi_size length, void* other_array)
+	{
+	    // Compare the values of the 1D array at the given index with arr
+	    for (metaffi_size i = 0; i < length; ++i)
+	    {
+	        REQUIRE(arr[i] == ((metaffi_uint8*)other_array)[i]);
+	    }
+	});
+	
+}
+//--------------------------------------------------------------------
 
+
+
+TEST_CASE( "ragged array", "[sdk]" )
+{
+	// Initialize a 4D ragged C-array
+	metaffi_int32**** c_array = init_4d_ragged_c_array();
+	
+	// Construct cdt_metaffi_int32_array using construct_multidim_array_bfs
+	cdt_metaffi_int32_array arr = {nullptr};
+	construct_multidim_array<cdt_metaffi_int32_array, metaffi_int32>(arr, 4, c_array,
+	 [](metaffi_size* index, metaffi_size index_length, void*& other_array)->metaffi_size
+	 {
+		 // Cast other_array to the correct type
+		 metaffi_int32**** cur = static_cast<metaffi_int32****>(other_array);
+		 
+		 // Traverse the C-array according to the index
+		 for (metaffi_size i = 0; i < index_length; i++)
+		 {
+			 cur = reinterpret_cast<metaffi_int32****>(cur[index[i]]);
+		 }
+		 
+		 // the index_length is the length of the array at the given index
+		 // (for array returned by init_4d_ragged_c_array)
+		 return index_length;
+	 },
+	 [](metaffi_size* index, metaffi_size index_length, metaffi_size& out_1d_array_length, void*& other_array)->metaffi_int32*
+     {
+	     // Cast other_array to the correct type
+	     metaffi_int32**** cur = static_cast<metaffi_int32****>(other_array);
+	     
+	     // Traverse the C-array according to the index
+		 for (metaffi_size i = 0; i < index_length; ++i)
+	     {
+			 cur = reinterpret_cast<metaffi_int32****>(cur[index[i]]);
+	     }
+		 
+	     // Return the 1D array at the given index and its length
+	     // Since we know that each dimension of the array has a size of 2, we return 2 as the length
+	     out_1d_array_length = 4;
+	     return reinterpret_cast<metaffi_int32*>(cur);
+	 });
+	
+	
+	 traverse_multidim_array<cdt_metaffi_int32_array, metaffi_int32>(arr, (void*)c_array,
+	 [](metaffi_size* index, metaffi_size index_size, metaffi_size array_length, void* other_array)
+	 {
+		 // Cast other_array to the correct type
+		 metaffi_int32**** cur = static_cast<metaffi_int32****>(other_array);
+		 
+		 // Traverse the C-array according to the index
+		 for (metaffi_size i = 0; i < index_size; ++i)
+		 {
+			 cur = reinterpret_cast<metaffi_int32****>(cur[index[i]]);
+		 }
+		 
+		 // Compare the length of the array at the given index with array_length
+		 // Since we know that each dimension of the array has a size of 2, we expect array_length to be 2
+		 REQUIRE(array_length == 4-index_size-1);
+	 },
+	 [](metaffi_size* index, metaffi_size index_size, metaffi_int32* arr, metaffi_size length, void* other_array)
+	 {
+		 // Cast other_array to the correct type
+		 metaffi_int32**** cur = static_cast<metaffi_int32****>(other_array);
+		 
+		 // Traverse the C-array according to the index
+		 for (metaffi_size i = 0; i < index_size; ++i)
+		 {
+			 cur = reinterpret_cast<metaffi_int32****>(cur[index[i]]);
+		 }
+		 
+		 // Compare the values of the 1D array at the given index with arr
+		 for (metaffi_size i = 0; i < length; ++i)
+		 {
+			 REQUIRE(arr[i] == ((metaffi_int32*)cur)[i]);
+		 }
+	 });
+	
 }
 //--------------------------------------------------------------------
