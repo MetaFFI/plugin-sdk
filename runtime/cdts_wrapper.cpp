@@ -1,5 +1,6 @@
 #include "cdts_wrapper.h"
 #include <mutex>
+#include <cstring>
 
 
 // NOLINT(bugprone-macro-parentheses)
@@ -131,7 +132,7 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 	void cdts_wrapper::set(int index, const std::string& v) const
 	{
 		(*this)[index]->type = metaffi_string8_type;
-		(*this)[index]->cdt_val.metaffi_string8_val = (char*)malloc(v.size()+1);
+		(*this)[index]->cdt_val.metaffi_string8_val = new char[v.size()+1];
 		std::copy(v.begin(), v.end(), (*this)[index]->cdt_val.metaffi_string8_val);
 		(*this)[index]->cdt_val.metaffi_string8_val[v.size()] = 0;
 	}

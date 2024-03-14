@@ -55,8 +55,8 @@ void traverse_multidim_array(const cdt_metaffi_array_t& arr, void* other_array,
 	
 template<typename cdt_metaffi_type_t, typename metaffi_type_t>
 void construct_multidim_array(cdt_metaffi_type_t& arr, metaffi_size dimensions, void* other_array,
-                                  metaffi_size (*get_array)(metaffi_size* index, metaffi_size index_length, void*& other_array),
-                                  metaffi_type_t* (*get_1d_array)(metaffi_size* index, metaffi_size index_length, metaffi_size& out_1d_array_length, void*& other_array))
+                                  metaffi_size (*get_array)(metaffi_size* index, metaffi_size index_length, void* other_array),
+                                  metaffi_type_t* (*get_1d_array)(metaffi_size* index, metaffi_size index_length, metaffi_size& out_1d_array_length, void* other_array))
 {
 	std::queue<std::tuple<metaffi_size*, cdt_metaffi_type_t*, metaffi_size>> queue;
 	metaffi_size* index = new metaffi_size[dimensions]{};
