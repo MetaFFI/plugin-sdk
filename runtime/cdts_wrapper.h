@@ -15,7 +15,7 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 	
 template<typename cdt_metaffi_array_t, typename metaffi_type_t>
 void traverse_multidim_array(const cdt_metaffi_array_t& arr, void* other_array,
-                             void(*on_array)(metaffi_size* index, metaffi_size index_size, metaffi_size array_length, void* other_array),
+                             void(*on_array)(metaffi_size* index, metaffi_size index_size, metaffi_size current_dimensions, metaffi_size array_length, void* other_array),
                              void (*on_1d_array)(metaffi_size* index, metaffi_size index_size, metaffi_type_t* arr, metaffi_size length, void* other_array))
 {
 	std::queue<std::pair<metaffi_size*, cdt_metaffi_array_t>> queue;
@@ -37,7 +37,7 @@ void traverse_multidim_array(const cdt_metaffi_array_t& arr, void* other_array,
 		}
 		else
 		{
-			on_array(currentIndex, arr.dimension - current_arr.dimension, current_arr.length, other_array);
+			on_array(currentIndex, arr.dimension - current_arr.dimension, current_arr.dimension, current_arr.length, other_array);
 			for (metaffi_size i = 0; i < current_arr.length; ++i)
 			{
 				metaffi_size* newIndex = new metaffi_size[arr.dimension]{};
