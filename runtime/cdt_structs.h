@@ -105,6 +105,10 @@ union cdt_types
 	
 	struct cdt_metaffi_handle metaffi_handle_val;
 	struct cdt_metaffi_handle_array metaffi_handle_array_val;
+	
+	metaffi_char8 metaffi_char8_val;
+	metaffi_char16 metaffi_char16_val;
+	metaffi_char32 metaffi_char32_val;
 
 	struct cdt_metaffi_callable metaffi_callable_val;
 };
