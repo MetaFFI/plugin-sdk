@@ -24,12 +24,14 @@ macro(add_Threads_package)
 endmacro()
 
 # add Catch2 & CTest packages
-macro(add_ctest_and_catch2_packages)
+macro(add_ctest_and_unitest_libs)
 	find_package(Catch2 CONFIG REQUIRED)
+	find_package(doctest CONFIG REQUIRED)
 	include(CTest)
 	enable_testing()
 	include(Catch)
 	get_target_property(catch2_SOURCE_DIR Catch2::Catch2 INTERFACE_INCLUDE_DIRECTORIES)
+	get_target_property(doctest_SOURCE_DIR doctest::doctest INTERFACE_INCLUDE_DIRECTORIES)
 endmacro()
 
 macro(add_boost libraries)
@@ -64,3 +66,4 @@ macro(add_java)
 	find_package(Java 11 REQUIRED COMPONENTS Development)
 	include(UseJava)
 endmacro()
+
