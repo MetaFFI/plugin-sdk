@@ -2,6 +2,10 @@
 #include <stdint.h>
 #include <uchar.h>
 
+#if __STDC_VERSION__ < 202302L && !__cplusplus
+	typedef uint8_t char8_t;
+#endif
+
 typedef double metaffi_float64;
 typedef float metaffi_float32;
 
@@ -17,7 +21,7 @@ typedef uint64_t metaffi_uint64;
 
 typedef uint8_t metaffi_bool;
 
-typedef char metaffi_char8;
+typedef char8_t metaffi_char8;
 typedef char16_t metaffi_char16;
 typedef char32_t metaffi_char32;
 
@@ -81,7 +85,9 @@ enum metaffi_types
 	metaffi_bool_array_type = metaffi_bool_type | metaffi_array_type,
 	metaffi_char8_array_type = metaffi_char8_type | metaffi_array_type,
 	metaffi_string8_array_type = metaffi_string8_type | metaffi_array_type,
+	metaffi_char16_array_type = metaffi_char16_type | metaffi_array_type,
 	metaffi_string16_array_type = metaffi_string16_type | metaffi_array_type,
+	metaffi_char32_array_type = metaffi_char32_type | metaffi_array_type,
 	metaffi_string32_array_type = metaffi_string32_type | metaffi_array_type,
 	
 	metaffi_any_array_type = metaffi_any_type | metaffi_array_type,
