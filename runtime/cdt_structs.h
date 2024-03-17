@@ -31,6 +31,9 @@ cdt_struct(metaffi_bool);
 cdt_struct(metaffi_string8);
 cdt_struct(metaffi_string16);
 cdt_struct(metaffi_string32);
+cdt_struct(metaffi_char8);
+cdt_struct(metaffi_char16);
+cdt_struct(metaffi_char32);
 
 struct cdt_metaffi_handle
 {
@@ -107,8 +110,13 @@ union cdt_types
 	struct cdt_metaffi_handle_array metaffi_handle_array_val;
 	
 	metaffi_char8 metaffi_char8_val;
+	struct cdt_metaffi_char8_array metaffi_char8_array_val;
+	
 	metaffi_char16 metaffi_char16_val;
+	struct cdt_metaffi_char16_array metaffi_char16_array_val;
+	
 	metaffi_char32 metaffi_char32_val;
+	struct cdt_metaffi_char32_array metaffi_char32_array_val;
 
 	struct cdt_metaffi_callable metaffi_callable_val;
 };

@@ -129,12 +129,43 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 		(*this)[index]->cdt_val.metaffi_bool_val = v ? 1 : 0;
 	}
 	
-	void cdts_wrapper::set(int index, const std::string& v) const
+	void cdts_wrapper::set(int index, const std::u8string& v) const
 	{
 		(*this)[index]->type = metaffi_string8_type;
-		(*this)[index]->cdt_val.metaffi_string8_val = new char[v.size()+1];
+		(*this)[index]->cdt_val.metaffi_string8_val = new char8_t[v.size()+1]{};
 		std::copy(v.begin(), v.end(), (*this)[index]->cdt_val.metaffi_string8_val);
-		(*this)[index]->cdt_val.metaffi_string8_val[v.size()] = 0;
+	}
+	
+	void cdts_wrapper::set(int index, const char8_t* v) const
+	{
+		(*this)[index]->type = metaffi_string8_type;
+		(*this)[index]->cdt_val.metaffi_string8_val = (char8_t*)v;
+	}
+	
+	void cdts_wrapper::set(int index, const std::u16string& v) const
+	{
+		(*this)[index]->type = metaffi_string16_type;
+		(*this)[index]->cdt_val.metaffi_string16_val = new char16_t[v.size()+1]{};
+		std::copy(v.begin(), v.end(), (*this)[index]->cdt_val.metaffi_string16_val);
+	}
+	
+	void cdts_wrapper::set(int index, const char16_t* v) const
+	{
+		(*this)[index]->type = metaffi_string16_type;
+		(*this)[index]->cdt_val.metaffi_string16_val = (char16_t*)v;
+	}
+	
+	void cdts_wrapper::set(int index, const std::u32string& v) const
+	{
+		(*this)[index]->type = metaffi_string32_type;
+		(*this)[index]->cdt_val.metaffi_string32_val = new char32_t[v.size()+1]{};
+		std::copy(v.begin(), v.end(), (*this)[index]->cdt_val.metaffi_string32_val);
+	}
+	
+	void cdts_wrapper::set(int index, const char32_t* v) const
+	{
+		(*this)[index]->type = metaffi_string32_type;
+		(*this)[index]->cdt_val.metaffi_string32_val = (char32_t*)v;
 	}
 	
 	void cdts_wrapper::set(int index, const metaffi_float64* v, int length) const
@@ -230,7 +261,7 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 		memcpy((*this)[index]->cdt_val.metaffi_bool_array_val.vals, v, length);
 	}
 	
-	void cdts_wrapper::set(int index, const std::vector<std::string>& v) const // string8[]
+	void cdts_wrapper::set(int index, const std::vector<std::u8string>& v) const // string8[]
 	{
 		(*this)[index]->type = metaffi_string8_array_type;
 		(*this)[index]->cdt_val.metaffi_string8_array_val.dimension = 1;
@@ -406,7 +437,7 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 		return (*this)[index]->cdt_val.metaffi_bool_val;
 	}
 	
-	std::string cdts_wrapper::get_string(int index) const
+	std::u8string cdts_wrapper::get_string(int index) const
 	{
 		if((*this)[index]->type != metaffi_string8_type)
 		{
@@ -637,7 +668,7 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 		return res;
 	}
 	
-	std::vector<std::string> cdts_wrapper::get_vector_string(int index) const
+	std::vector<std::u8string> cdts_wrapper::get_vector_string(int index) const
 	{
 		if((*this)[index]->type != metaffi_string8_type)
 		{
@@ -646,7 +677,7 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 			throw std::runtime_error(ss.str());
 		}
 		
-		std::vector<std::string> res;
+		std::vector<std::u8string> res;
 		res.reserve((*this)[index]->cdt_val.metaffi_string8_array_val.length);
 		for(int i=0 ; i<(*this)[index]->cdt_val.metaffi_string8_array_val.length ; i++)
 		{

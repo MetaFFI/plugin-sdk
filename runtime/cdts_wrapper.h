@@ -124,7 +124,12 @@ public:
 	
 	void set(int index, bool v) const;
 	
-	void set(int index, const std::string& v) const; // string8
+	void set(int index, const char8_t* v) const; // string8
+	void set(int index, const std::u8string& v) const; // string8
+	void set(int index, const char16_t* v) const; // string16
+	void set(int index, const std::u16string& v) const; // string16
+	void set(int index, const char32_t* v) const; // string32
+	void set(int index, const std::u32string& v) const; // string32
 	
 	void set(int index, const metaffi_float64* v, int length) const;
 	void set(int index, const metaffi_float32* v, int length) const;
@@ -141,7 +146,7 @@ public:
 	
 	void set(int index, const bool* v, int length) const;
 	
-	void set(int index, const std::vector<std::string>& v) const; // string8
+	void set(int index, const std::vector<std::u8string>& v) const; // string8
 	
 	void set(int index, const cdt_metaffi_handle& v) const;
 	void set_null_handle(int index) const;
@@ -164,7 +169,7 @@ public:
 	
 	[[nodiscard]] bool get_bool(int index) const;
 	
-	[[nodiscard]] std::string get_string(int index) const; // string8
+	[[nodiscard]] std::u8string get_string(int index) const; // string8
 	
 	[[nodiscard]] cdt_metaffi_handle get_metaffi_handle(int index) const;
 	
@@ -183,7 +188,7 @@ public:
 	
 	[[nodiscard]] std::vector<bool> get_bool_array(int index) const;
 	
-	[[nodiscard]] std::vector<std::string> get_vector_string(int index) const; // string8
+	[[nodiscard]] std::vector<std::u8string> get_vector_string(int index) const; // string8
 	
 	[[nodiscard]] std::vector<cdt_metaffi_handle> get_metaffi_handle_array(int index) const;
 	
