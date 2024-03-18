@@ -48,7 +48,7 @@ struct cdt_metaffi_handle_array
 		struct cdt_metaffi_handle_array* arr;
 	};
 	
-	metaffi_size   length;
+	metaffi_size    length;
 	metaffi_size    dimension;
 };
 

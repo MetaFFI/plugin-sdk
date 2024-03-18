@@ -130,6 +130,7 @@ const (
 	METAFFI_TYPE_HANDLE_ARRAY   = uint64(C.metaffi_handle_array_type)
 	METAFFI_TYPE_SIZE_ARRAY     = uint64(C.metaffi_size_array_type)
 	METAFFI_TYPE_NULL           = uint64(C.metaffi_null_type)
+	METAFFI_TYPE_CALLABLE       = uint64(C.metaffi_callable_type)
 )
 
 var TypeStringToEnumName = map[MetaFFIType]string{
