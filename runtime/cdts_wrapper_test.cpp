@@ -42,12 +42,12 @@ TEST_CASE( "1D array", "[sdk]" )
 	// Construct cdt_metaffi_int32_array using construct_multidim_array_bfs
 	cdt_metaffi_uint8_array arr = {nullptr};
 	construct_multidim_array<cdt_metaffi_uint8_array, metaffi_uint8>(arr, 1, c_array,
-	 [](metaffi_size* index, metaffi_size index_length, void*& other_array)->metaffi_size
+	 [](metaffi_size* index, metaffi_size index_length, void* other_array)->metaffi_size
 	 {
 		 FAIL("Shouldn't reach here");
 		 return 0;
 	 },
-	 [](metaffi_size* index, metaffi_size index_length, metaffi_size& out_1d_array_length, void*& other_array)->metaffi_uint8*
+	 [](metaffi_size* index, metaffi_size index_length, metaffi_size& out_1d_array_length, void* other_array)->metaffi_uint8*
 	 {
 	     // Cast other_array to the correct type
 		 
@@ -59,7 +59,7 @@ TEST_CASE( "1D array", "[sdk]" )
 	
 	
 	traverse_multidim_array<cdt_metaffi_uint8_array, metaffi_uint8>(arr, (void*)c_array,
-	[](metaffi_size* index, metaffi_size index_size, metaffi_size array_length, void* other_array)
+	[](metaffi_size* index, metaffi_size index_size, metaffi_size current_dimension, metaffi_size array_length, void* other_array)
 	{
 	    FAIL("Shouldn't reach here");
 	},
@@ -85,7 +85,7 @@ TEST_CASE( "ragged array", "[sdk]" )
 	// Construct cdt_metaffi_int32_array using construct_multidim_array_bfs
 	cdt_metaffi_int32_array arr = {nullptr};
 	construct_multidim_array<cdt_metaffi_int32_array, metaffi_int32>(arr, 4, c_array,
-	 [](metaffi_size* index, metaffi_size index_length, void*& other_array)->metaffi_size
+	 [](metaffi_size* index, metaffi_size index_length, void* other_array)->metaffi_size
 	 {
 		 // Cast other_array to the correct type
 		 metaffi_int32**** cur = static_cast<metaffi_int32****>(other_array);
@@ -100,7 +100,7 @@ TEST_CASE( "ragged array", "[sdk]" )
 		 // (for array returned by init_4d_ragged_c_array)
 		 return index_length+1;
 	 },
-	 [](metaffi_size* index, metaffi_size index_length, metaffi_size& out_1d_array_length, void*& other_array)->metaffi_int32*
+	 [](metaffi_size* index, metaffi_size index_length, metaffi_size& out_1d_array_length, void* other_array)->metaffi_int32*
      {
 	     // Cast other_array to the correct type
 	     metaffi_int32**** cur = static_cast<metaffi_int32****>(other_array);
@@ -119,7 +119,7 @@ TEST_CASE( "ragged array", "[sdk]" )
 	
 	
 	 traverse_multidim_array<cdt_metaffi_int32_array, metaffi_int32>(arr, (void*)c_array,
-	 [](metaffi_size* index, metaffi_size index_size, metaffi_size array_length, void* other_array)
+	 [](metaffi_size* index, metaffi_size index_size, metaffi_size current_dimension, metaffi_size array_length, void* other_array)
 	 {
 		 // Cast other_array to the correct type
 		 metaffi_int32**** cur = static_cast<metaffi_int32****>(other_array);
