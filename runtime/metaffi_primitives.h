@@ -255,17 +255,24 @@ struct metaffi_type_info
 	}
 	
 	metaffi_type_info(metaffi_type_info&& other) noexcept{ *this = std::move(other); }
-	metaffi_type_info(const metaffi_type_info& other)
+	metaffi_type_info(const metaffi_type_info& other){ *this = other; }
+	
+	metaffi_type_info& operator=(const metaffi_type_info& other)
 	{
-		type = other.type;
-		if(other.alias)
+		if(this != &other)
 		{
-			alias = new char[std::strlen(other.alias)+1];
-			std::string_view(other.alias).copy(alias, std::strlen(other.alias));
-			is_free_alias = true;
+			type = other.type;
+			if(other.alias)
+			{
+				alias = new char[std::strlen(other.alias)+1];
+				std::string_view(other.alias).copy(alias, std::strlen(other.alias));
+				is_free_alias = true;
+			}
+			
+			fixed_dimensions = other.fixed_dimensions;
 		}
 		
-		fixed_dimensions = other.fixed_dimensions;
+		return *this;
 	}
 	
 	metaffi_type_info& operator=(metaffi_type_info&& other) noexcept
