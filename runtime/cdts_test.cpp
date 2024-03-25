@@ -590,7 +590,7 @@ TEST_SUITE("CDTS Tests")
 			{
 				cur = reinterpret_cast<metaffi_int32****>(cur[index[i]]);
 			}
-			return ((metaffi_int32) cur);
+			return ((metaffi_int32)cur);
 		};
 		
 		cdts arr;
@@ -656,5 +656,160 @@ TEST_SUITE("CDTS Tests")
 		};
 		
 		traverse_cdts(arr, tcb);
+	}
+	
+	TEST_CASE("mixed dimensions")
+	{
+		// create an array that looks like this: [1, [2,3]]
+		
+		using MixedArray = std::variant<metaffi_int32, std::vector<metaffi_int32>>;
+		std::vector<MixedArray> arr;
+		
+		arr.emplace_back(1);
+		arr.emplace_back(std::vector<metaffi_int32>{2, 3});
+		
+		construct_cdts_callbacks ccb = {};
+		ccb.context = (void*)&arr;
+		
+		ccb.get_root_elements_count = [](void* context) -> metaffi_size
+		{
+			return 1;
+		};
+		
+		ccb.get_type_info = [](metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_type_info
+		{
+			if(index_length == 1)
+			{
+				REQUIRE(index[0] == 0);
+				return { metaffi_int32_type | metaffi_array_type };
+			}
+			else if(index_length == 2)
+			{
+				if(index[1] == 0)
+				{
+					return {metaffi_int32_type};
+				}
+				else if(index[1] == 1)
+				{
+					return { metaffi_int32_type | metaffi_array_type, nullptr, false, 1 };
+				}
+				else
+				{
+					FAIL("Shouldn't reach here");
+				}
+			}
+			else if(index_length == 3)
+			{
+				REQUIRE(index[0] == 0);
+				REQUIRE(index[1] == 1);
+				return { metaffi_int32_type };
+			}
+			else
+			{
+				FAIL("Shouldn't reach here");
+			}
+		};
+		
+		ccb.get_array = [](metaffi_size* index, metaffi_size index_length, metaffi_int64* out_fixed_dimensions,
+		                   metaffi_type* out_common_type, void* context) -> metaffi_size
+		{
+			REQUIRE(index[0] == 0);
+			if(index_length == 1)
+			{
+				*out_fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS;
+				*out_common_type = metaffi_int32_type;
+				return 2;
+			}
+			else if(index_length == 2)
+			{
+				*out_fixed_dimensions = 1;
+				*out_common_type = metaffi_int32_type;
+				return 2;
+			}
+			else
+			{
+				FAIL("Shouldn't reach here");
+				return 0;
+			}
+		};
+		
+		ccb.get_int32 = [](metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_int32
+		{
+			if(index_length == 2)
+			{
+				REQUIRE(index[0] == 0);
+				REQUIRE(index[1] == 0);
+				return std::get<metaffi_int32>(((std::vector<MixedArray>*) context)->at(0));
+			}
+			else if(index_length == 3)
+			{
+				REQUIRE(index[0] == 0);
+				REQUIRE(index[1] == 1);
+				return std::get<std::vector<metaffi_int32>>(((std::vector<MixedArray>*) context)->at(index[1])).at(index[2]);
+			}
+			else
+			{
+				FAIL("Shouldn't reach here");
+			}
+		};
+		
+		cdts pcdts;
+		construct_cdts(pcdts, ccb);
+		
+		traverse_cdts_callbacks tcb;
+		
+		tcb.context = (void*)&arr;
+		tcb.on_array = [](metaffi_size* index, metaffi_size index_size, const cdts& val, metaffi_int64 fixed_dimensions,
+		                  metaffi_type common_type, void* context)
+		{
+			if(index_size == 1)
+			{
+				REQUIRE(index[0] == 0);
+			}
+			else if(index_size == 2)
+			{
+				REQUIRE(index[0] == 0);
+				REQUIRE(index[1] == 1);
+				REQUIRE(common_type == metaffi_int32_type);
+			}
+			else
+			{
+				FAIL("Shouldn't reach here");
+			}
+		};
+		
+		tcb.on_int32 = [](metaffi_size* index, metaffi_size index_size, metaffi_int32 val, void* context)
+		{
+			if(index_size == 2)
+			{
+				REQUIRE(index[0] == 0);
+				REQUIRE(index[1] == 0);
+				REQUIRE(val == 1);
+			}
+			else if(index_size == 3)
+			{
+				REQUIRE(index[0] == 0);
+				REQUIRE(index[1] == 1);
+				if(index[2] == 0)
+				{
+					REQUIRE(val == 2);
+				}
+				else if(index[2] == 1)
+				{
+					REQUIRE(val == 3);
+				}
+				else
+				{
+					FAIL("Shouldn't reach here");
+				}
+			}
+			else
+			{
+				FAIL("Shouldn't reach here");
+			}
+		};
+		
+		traverse_cdts(pcdts, tcb);
+		
 	}
 }

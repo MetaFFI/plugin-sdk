@@ -233,12 +233,16 @@ struct metaffi_type_info
 	metaffi_bool is_free_alias;
 	metaffi_int64 fixed_dimensions;
 
+#define MIXED_OR_UNKNOWN_DIMENSIONS -1
+
 #ifdef __cplusplus
 	metaffi_type_info() : type(metaffi_null_type), alias(nullptr), is_free_alias(false) {}
-	metaffi_type_info(metaffi_type type, const char* alias, uint64_t alias_length, bool is_copy_alias = false, int64_t fixed_dimensions = 0) : type(type), fixed_dimensions(fixed_dimensions), is_free_alias(false)
+	metaffi_type_info(metaffi_type type) : type(type), alias(nullptr), is_free_alias(false), fixed_dimensions(MIXED_OR_UNKNOWN_DIMENSIONS) {}
+	metaffi_type_info(metaffi_type type, const char* alias, bool is_copy_alias = false, int64_t fixed_dimensions = 0) : type(type), fixed_dimensions(fixed_dimensions), is_free_alias(false)
 	{
 		if(is_copy_alias)
 		{
+			size_t alias_length = std::strlen(alias);
 			this->alias = new char[alias_length+1];
 			std::memcpy(this->alias, alias, alias_length);
 			this->alias[alias_length] = '\0';
