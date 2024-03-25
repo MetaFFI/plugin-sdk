@@ -2,6 +2,13 @@
 #include <stdint.h>
 #include <uchar.h>
 
+#ifdef __cplusplus
+#include <variant>
+#include <vector>
+#include <stdexcept>
+#endif
+
+
 #if __STDC_VERSION__ < 202302L && !__cplusplus
 	typedef uint8_t char8_t;
 #endif
@@ -21,13 +28,88 @@ typedef uint64_t metaffi_uint64;
 
 typedef uint8_t metaffi_bool;
 
-typedef char8_t metaffi_char8;
-typedef char16_t metaffi_char16;
+struct metaffi_char8
+{
+	char8_t c[4];
+
+#ifdef __cplusplus
+	static int8_t num_of_bytes(const char8_t* c)
+	{
+		auto firstByte = static_cast<uint8_t>(c[0]);
+		
+		return (firstByte & 0x80) == 0 ? 1:
+			   (firstByte & 0xE0) == 0xC0 ? 2:
+			   (firstByte & 0xF0) == 0xE0 ? 3:
+			   (firstByte & 0xF8) == 0xF0 ? 4:
+			   -1; // invalid UTF-8 character
+	}
+	
+	metaffi_char8()=default;
+	metaffi_char8(const char8_t* utf8c)
+	{
+		*this = utf8c;
+	}
+	
+	metaffi_char8& operator=(const char8_t* utf8c)
+	{
+		int8_t required_bytes = num_of_bytes(utf8c);
+		if(required_bytes == -1)
+		{
+			throw std::invalid_argument("Invalid UTF-8 character");
+		}
+		
+		std::memcpy(this->c, utf8c, required_bytes);
+		for(int8_t i=required_bytes ; i<4; i++)
+		{
+			this->c[i] = u8'\0';
+		}
+		
+		return *this;
+	
+	}
+#endif // __cplusplus
+};
+
+struct metaffi_char16
+{
+	char16_t c[2];
+
+#ifdef __cplusplus
+	static int8_t num_of_bytes(const char16_t* c)
+	{
+		auto firstShort = static_cast<uint16_t>(c[0]);
+		return (firstShort >= 0xD800 && firstShort <= 0xDBFF) ? 4 : 2;
+	}
+	
+	metaffi_char16()=default;
+	metaffi_char16(const char16_t* utf16c)
+	{
+		*this = utf16c;
+	}
+	
+	metaffi_char16& operator=(const char16_t* utf16c)
+	{
+		int8_t required_bytes = num_of_bytes(utf16c);
+		if(required_bytes == -1)
+		{
+			throw std::invalid_argument("Invalid UTF-16 character");
+		}
+		
+		std::memcpy(this->c, utf16c, required_bytes);
+		if(required_bytes == 2){
+			this->c[1] = u'\0';
+		}
+		
+		return *this;
+	}
+#endif // __cplusplus
+};
+
 typedef char32_t metaffi_char32;
 
-typedef metaffi_char8* metaffi_string8;
-typedef metaffi_char16* metaffi_string16;
-typedef metaffi_char32* metaffi_string32;
+typedef char8_t* metaffi_string8;
+typedef char16_t* metaffi_string16;
+typedef char32_t* metaffi_string32;
 
 typedef uint64_t metaffi_size; // sizes of array and/or strings passed by this type
 typedef void* metaffi_handle;
@@ -141,19 +223,212 @@ enum metaffi_types
 		  "Unknown type"
 
 
+/**
+ * @brief A MetaFFI type information
+ */
 struct metaffi_type_info
 {
-#ifdef __cplusplus
-	metaffi_type type = metaffi_null_type;
-	char* alias = nullptr;
-	uint64_t alias_length = 0;
-	int32_t dimensions = 0;
-#else
 	metaffi_type type;
 	char* alias;
-	uint64_t alias_length;
-	int32_t dimensions;
-#endif
+	metaffi_bool is_free_alias;
+	metaffi_int64 fixed_dimensions;
+
+#ifdef __cplusplus
+	metaffi_type_info() : type(metaffi_null_type), alias(nullptr), is_free_alias(false) {}
+	metaffi_type_info(metaffi_type type, const char* alias, uint64_t alias_length, bool is_copy_alias = false, int64_t fixed_dimensions = 0) : type(type), fixed_dimensions(fixed_dimensions), is_free_alias(false)
+	{
+		if(is_copy_alias)
+		{
+			this->alias = new char[alias_length+1];
+			std::memcpy(this->alias, alias, alias_length);
+			this->alias[alias_length] = '\0';
+			is_free_alias = true;
+		}
+		else
+		{
+			this->alias = const_cast<char*>(alias);
+		}
+	}
+	
+	metaffi_type_info(metaffi_type_info&& other) noexcept{ *this = std::move(other); }
+	metaffi_type_info(const metaffi_type_info& other)
+	{
+		type = other.type;
+		if(other.alias)
+		{
+			alias = new char[std::strlen(other.alias)+1];
+			std::string_view(other.alias).copy(alias, std::strlen(other.alias));
+			is_free_alias = true;
+		}
+		
+		fixed_dimensions = other.fixed_dimensions;
+	}
+	
+	metaffi_type_info& operator=(metaffi_type_info&& other) noexcept
+	{
+		if(this != &other)
+		{
+			type = other.type;
+			alias = other.alias;
+			is_free_alias = other.is_free_alias;
+			fixed_dimensions = other.fixed_dimensions;
+			other.alias = nullptr;
+			other.is_free_alias = false;
+		}
+		
+		return *this;
+	}
+	
+	~metaffi_type_info()
+	{
+		if(is_free_alias)
+		{
+			delete[] alias;
+		}
+	}
+#endif // __cplusplus
 };
 
-typedef struct metaffi_type_info* metaffi_type_infos_ptr;
+
+/**
+ * @brief A handle to a foreign object. Allows passing objects between different runtimes
+ * */
+struct cdt_metaffi_handle
+{
+	metaffi_handle val;
+	uint64_t runtime_id;
+	void* release;
+
+#ifdef __cplusplus
+	typedef void(*release_fptr)(cdt_metaffi_handle*);
+	cdt_metaffi_handle() : val(nullptr), runtime_id(0), release(nullptr) {}
+	cdt_metaffi_handle(metaffi_handle val, uint64_t runtime_id, void* release) : val(val), runtime_id(runtime_id), release(release) {}
+	bool operator==(const cdt_metaffi_handle& other) const { return val == other.val && runtime_id == other.runtime_id; }
+#endif
+};
+#ifndef __cplusplus
+typedef void(*release_fptr)(struct cdt_metaffi_handle*);
+#endif
+
+/**
+ * @brief A MetaFFI callable object. Allows passing callable objects between different runtimes
+ * */
+struct cdt_metaffi_callable
+{
+	metaffi_callable val;
+	metaffi_type* parameters_types;
+	metaffi_int8 params_types_length;
+	metaffi_type* retval_types;
+	metaffi_int8 retval_types_length;
+
+#ifdef __cplusplus
+	cdt_metaffi_callable() : val(nullptr), parameters_types(nullptr), params_types_length(0), retval_types(nullptr), retval_types_length(0) {}
+	cdt_metaffi_callable(metaffi_callable val, metaffi_type* parameters_types, metaffi_int8 params_types_length, metaffi_type* retval_types, metaffi_int8 retval_types_length) : val(val), parameters_types(parameters_types), params_types_length(params_types_length), retval_types(retval_types), retval_types_length(retval_types_length) {}
+	cdt_metaffi_callable(const cdt_metaffi_callable& other) : val(other.val), params_types_length(other.params_types_length), retval_types_length(other.retval_types_length)
+	{
+		parameters_types = new metaffi_type[params_types_length];
+		retval_types = new metaffi_type[retval_types_length];
+		std::memcpy(parameters_types, other.parameters_types, sizeof(metaffi_type) * params_types_length);
+		std::memcpy(retval_types, other.retval_types, sizeof(metaffi_type) * retval_types_length);
+	}
+	cdt_metaffi_callable(cdt_metaffi_callable&& other) noexcept { *this = std::move(other); }
+	cdt_metaffi_callable(metaffi_callable val, const std::vector<metaffi_type>& parameters_types, const std::vector<metaffi_type>& retval_types) : val(val)
+	{
+		params_types_length = static_cast<metaffi_int8>(parameters_types.size());
+		retval_types_length = static_cast<metaffi_int8>(retval_types.size());
+		this->parameters_types = new metaffi_type[params_types_length];
+		this->retval_types = new metaffi_type[retval_types_length];
+		std::memcpy(this->parameters_types, parameters_types.data(), sizeof(metaffi_type) * params_types_length);
+		std::memcpy(this->retval_types, retval_types.data(), sizeof(metaffi_type) * retval_types_length);
+	}
+	
+	cdt_metaffi_callable& operator=(const cdt_metaffi_callable& other) noexcept
+	{
+		// copy other to this
+		if(this != &other)
+		{
+			val = other.val;
+			params_types_length = other.params_types_length;
+			retval_types_length = other.retval_types_length;
+			parameters_types = new metaffi_type[params_types_length];
+			retval_types = new metaffi_type[retval_types_length];
+			std::memcpy(parameters_types, other.parameters_types, sizeof(metaffi_type) * params_types_length);
+			std::memcpy(retval_types, other.retval_types, sizeof(metaffi_type) * retval_types_length);
+		}
+	}
+	
+	cdt_metaffi_callable& operator=(cdt_metaffi_callable&& other) noexcept
+	{
+		if(this != &other)
+		{
+			val = other.val;
+			parameters_types = other.parameters_types;
+			params_types_length = other.params_types_length;
+			retval_types = other.retval_types;
+			retval_types_length = other.retval_types_length;
+			other.parameters_types = nullptr;
+			other.retval_types = nullptr;
+			other.params_types_length = 0;
+			other.retval_types_length = 0;
+			other.val = nullptr;
+		}
+		
+		return *this;
+	}
+	
+	bool operator==(const cdt_metaffi_callable& other) const
+	{
+		if(val != other.val || params_types_length != other.params_types_length || retval_types_length != other.retval_types_length)
+		{
+			return false;
+		}
+		
+		for(int i = 0; i < params_types_length; i++)
+		{
+			if(parameters_types[i] != other.parameters_types[i])
+			{
+				return false;
+			}
+		}
+		
+		for(int i = 0; i < retval_types_length; i++)
+		{
+			if(retval_types[i] != other.retval_types[i])
+			{
+				return false;
+			}
+		}
+		
+		return true;
+	}
+	
+	void free() const
+	{
+		delete[] parameters_types;
+		delete[] retval_types;
+	}
+#endif // __cplusplus
+};
+
+#ifdef __cplusplus
+using metaffi_variant = std::variant<
+		metaffi_float32,
+		metaffi_float64,
+		metaffi_int8,
+		metaffi_uint8,
+		metaffi_int16,
+		metaffi_uint16,
+		metaffi_int32,
+		metaffi_uint32,
+		metaffi_int64,
+		metaffi_uint64,
+		metaffi_char8,
+		metaffi_char16,
+		metaffi_char32,
+		metaffi_string8,
+		metaffi_string16,
+		metaffi_string32,
+		cdt_metaffi_handle,
+		cdt_metaffi_callable
+>;
+#endif // __cplusplus

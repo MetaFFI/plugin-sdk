@@ -5,7 +5,7 @@
 
 #include <stdint.h>
 #include <stdarg.h>
-#include <runtime/cdt_structs.h>
+#include <runtime/cdt.h>
 
 
 #ifndef SKIP_XLLR_API_EXTERN
@@ -25,12 +25,12 @@ void free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len
 /**
  * Load module of foreign language
  */
-void** load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, metaffi_type_infos_ptr params_types, metaffi_type_infos_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len);
+void** load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, metaffi_type_info* params_types, metaffi_type_info* retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len);
 
  /**
   * Load module of foreign language
   */
-void** make_callable(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, void* make_callable_context, metaffi_type_infos_ptr params_types, metaffi_type_infos_ptr retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len);
+void** make_callable(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, void* make_callable_context, metaffi_type_info* params_types, metaffi_type_info* retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len);
 
 /**
  * Free module of foreign language

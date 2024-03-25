@@ -4,7 +4,7 @@
 #include <boost/dll.hpp>
 #endif
 
-#include "../runtime/cdt_structs.h"
+#include "../runtime/cdt.h"
 
 #define no_params_no_ret_types void*,char**,uint64_t*
 #define no_params_params_or_ret_types void*,cdts[1],char**,uint64_t*
