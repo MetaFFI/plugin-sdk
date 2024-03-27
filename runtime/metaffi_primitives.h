@@ -240,7 +240,7 @@ struct metaffi_type_info
 	metaffi_type_info(metaffi_type type) : type(type), alias(nullptr), is_free_alias(false), fixed_dimensions(MIXED_OR_UNKNOWN_DIMENSIONS) {}
 	metaffi_type_info(metaffi_type type, const char* alias, bool is_copy_alias = false, int64_t fixed_dimensions = 0) : type(type), fixed_dimensions(fixed_dimensions), is_free_alias(false)
 	{
-		if(is_copy_alias)
+		if(is_copy_alias && alias)
 		{
 			size_t alias_length = std::strlen(alias);
 			this->alias = new char[alias_length+1];
