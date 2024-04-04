@@ -199,8 +199,6 @@ enum metaffi_types
 	metaffi_char32_array_type = metaffi_char32_type | metaffi_array_type,
 	metaffi_string32_array_type = metaffi_string32_type | metaffi_array_type,
 	
-	metaffi_any_array_type = metaffi_any_type | metaffi_array_type,
-	
 	metaffi_handle_array_type = metaffi_handle_type | metaffi_array_type,
 	metaffi_size_array_type = metaffi_size_type | metaffi_array_type
 };
