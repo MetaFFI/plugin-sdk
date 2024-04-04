@@ -28,6 +28,10 @@ typedef uint64_t metaffi_uint64;
 
 typedef uint8_t metaffi_bool;
 
+struct metaffi_char16;
+struct metaffi_char32;
+
+
 struct metaffi_char8
 {
 	char8_t c[4];
@@ -65,8 +69,10 @@ struct metaffi_char8
 		}
 		
 		return *this;
-	
 	}
+	
+	explicit operator metaffi_char16() const;
+	explicit operator metaffi_char32() const;
 #endif // __cplusplus
 };
 
@@ -82,7 +88,7 @@ struct metaffi_char16
 	}
 	
 	metaffi_char16()=default;
-	metaffi_char16(const char16_t* utf16c)
+	explicit metaffi_char16(const char16_t* utf16c)
 	{
 		*this = utf16c;
 	}
@@ -102,10 +108,31 @@ struct metaffi_char16
 		
 		return *this;
 	}
+	
+	[[nodiscard]] bool is_surrogate() const
+	{
+		return (this->c[0] >= 0xD800 && this->c[0] <= 0xDFFF);
+	}
+	
+	explicit operator metaffi_char8() const;
+	explicit operator metaffi_char32() const;
+	
 #endif // __cplusplus
 };
 
-typedef char32_t metaffi_char32;
+struct metaffi_char32
+{
+	char32_t c;
+	
+#ifdef __cplusplus
+	
+	metaffi_char32():c(0){}
+	explicit metaffi_char32(char32_t c) : c(c) {}
+	
+	explicit operator metaffi_char8() const;
+	explicit operator metaffi_char16() const;
+#endif // __cplusplus
+};
 
 typedef char8_t* metaffi_string8;
 typedef char16_t* metaffi_string16;
@@ -236,9 +263,9 @@ struct metaffi_type_info
 #define MIXED_OR_UNKNOWN_DIMENSIONS -1
 
 #ifdef __cplusplus
-	metaffi_type_info() : type(metaffi_null_type), alias(nullptr), is_free_alias(false) {}
-	metaffi_type_info(metaffi_type type) : type(type), alias(nullptr), is_free_alias(false), fixed_dimensions(MIXED_OR_UNKNOWN_DIMENSIONS) {}
-	metaffi_type_info(metaffi_type type, const char* alias, bool is_copy_alias = false, int64_t fixed_dimensions = 0) : type(type), fixed_dimensions(fixed_dimensions), is_free_alias(false)
+	metaffi_type_info() : type(metaffi_null_type), alias(nullptr), is_free_alias(false), fixed_dimensions(MIXED_OR_UNKNOWN_DIMENSIONS) {}
+	explicit metaffi_type_info(metaffi_type type) : type(type), alias(nullptr), is_free_alias(false), fixed_dimensions(MIXED_OR_UNKNOWN_DIMENSIONS) {}
+	metaffi_type_info(metaffi_type type, const char* alias, bool is_copy_alias = false, int64_t fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS) : type(type), fixed_dimensions(fixed_dimensions), is_free_alias(false)
 	{
 		if(is_copy_alias && alias)
 		{
@@ -250,12 +277,22 @@ struct metaffi_type_info
 		}
 		else
 		{
+			is_free_alias = false;
 			this->alias = const_cast<char*>(alias);
 		}
 	}
 	
-	metaffi_type_info(metaffi_type_info&& other) noexcept{ *this = std::move(other); }
-	metaffi_type_info(const metaffi_type_info& other){ *this = other; }
+	metaffi_type_info(metaffi_type_info&& other) noexcept: alias(nullptr), is_free_alias(false), fixed_dimensions(MIXED_OR_UNKNOWN_DIMENSIONS), type(metaffi_null_type){ *this = std::move(other); }
+	metaffi_type_info(const metaffi_type_info& other):alias(nullptr), is_free_alias(false), fixed_dimensions(0), type(metaffi_null_type){ *this = other; }
+	
+	void set_copy_alias(const char* palias, int len = -1)
+	{
+		size_t alias_length = len > -1 ? len : std::strlen(palias);
+		this->alias = new char[alias_length+1];
+		std::memcpy(this->alias, palias, alias_length);
+		this->alias[alias_length] = '\0';
+		is_free_alias = true;
+	}
 	
 	metaffi_type_info& operator=(const metaffi_type_info& other)
 	{
@@ -264,8 +301,10 @@ struct metaffi_type_info
 			type = other.type;
 			if(other.alias)
 			{
-				alias = new char[std::strlen(other.alias)+1];
-				std::string_view(other.alias).copy(alias, std::strlen(other.alias));
+				size_t alias_length = std::strlen(other.alias);
+				alias = new char[alias_length+1];
+				std::string_view(other.alias).copy(alias, alias_length);
+				alias[alias_length] = '\0';
 				is_free_alias = true;
 			}
 			
@@ -342,7 +381,8 @@ struct cdt_metaffi_callable
 		std::memcpy(parameters_types, other.parameters_types, sizeof(metaffi_type) * params_types_length);
 		std::memcpy(retval_types, other.retval_types, sizeof(metaffi_type) * retval_types_length);
 	}
-	cdt_metaffi_callable(cdt_metaffi_callable&& other) noexcept { *this = std::move(other); }
+	cdt_metaffi_callable(cdt_metaffi_callable&& other) noexcept : val(nullptr), parameters_types(nullptr), params_types_length(0),
+																	retval_types(nullptr), retval_types_length(0) { *this = std::move(other); }
 	cdt_metaffi_callable(metaffi_callable val, const std::vector<metaffi_type>& parameters_types, const std::vector<metaffi_type>& retval_types) : val(val)
 	{
 		params_types_length = static_cast<metaffi_int8>(parameters_types.size());

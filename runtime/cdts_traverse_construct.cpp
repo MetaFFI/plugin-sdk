@@ -2,14 +2,17 @@
 #include <queue>
 #include <sstream>
 
+namespace metaffi::runtime
+{
+
 //--------------------------------------------------------------------
 
-void traverse_cdt(const cdt& item, const traverse_cdts_callbacks& callbacks)
+void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbacks& callbacks)
 {
 	traverse_cdt(item, callbacks, {});
 }
 
-void traverse_cdt(const cdt& item, const traverse_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index)
+void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index)
 {
 	if(item.type == metaffi_any_type)
 	{
@@ -139,7 +142,7 @@ void traverse_cdt(const cdt& item, const traverse_cdts_callbacks& callbacks, con
 //				index.emplace_back(i);
 //				queue.emplace(index, &(item.cdt_val.array_val.arr[i]));
 //			}
-			
+		
 		}break;
 		
 		default:
@@ -151,18 +154,18 @@ void traverse_cdt(const cdt& item, const traverse_cdts_callbacks& callbacks, con
 	}
 }
 
-void traverse_cdts(const cdts& arr, const traverse_cdts_callbacks& callbacks)
+void traverse_cdts(const cdts& arr, const metaffi::runtime::traverse_cdts_callbacks& callbacks)
 {
 	traverse_cdts(arr, callbacks, {});
 }
 
-void traverse_cdts(const cdts& arr, const traverse_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index)
+void traverse_cdts(const cdts& arr, const metaffi::runtime::traverse_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index)
 {
 	if(arr.length == 0){ // empty CDTS
 		return;
 	}
 	
-	std::queue<std::pair<std::vector<metaffi_size>, cdt*>> queue;
+	std::queue<std::pair<std::vector<metaffi_size>, cdt&>> queue;
 	for(metaffi_size i=0 ; i<arr.length ; i++)
 	{
 		std::vector<metaffi_size> index = starting_index;
@@ -175,16 +178,16 @@ void traverse_cdts(const cdts& arr, const traverse_cdts_callbacks& callbacks, co
 		auto [currentIndex, pcdt] = queue.front();
 		queue.pop();
 		
-		traverse_cdt(*pcdt, callbacks, currentIndex);
+		metaffi::runtime::traverse_cdt(pcdt, callbacks, currentIndex);
 	}
 }
 //--------------------------------------------------------------------
-void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks)
+void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& callbacks)
 {
 	construct_cdt(item, callbacks, {});
 }
 
-void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index)
+void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index)
 {
 	metaffi_type_info ti = callbacks.get_type_info(current_index.data(), current_index.size(), callbacks.context);
 	if(ti.type == metaffi_any_type)
@@ -319,18 +322,19 @@ void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks, const s
 		
 		case metaffi_array_type:
 		{
-			item.cdt_val.array_val.fixed_dimensions = -1;
+			item.cdt_val.array_val.fixed_dimensions = ti.fixed_dimensions;
 			item.cdt_val.array_val.length = callbacks.get_array(current_index.data(), current_index.size(), &(item.cdt_val.array_val.fixed_dimensions), &common_type, callbacks.context);
 			item.type = common_type | metaffi_array_type;
 			item.cdt_val.array_val.arr = new cdt[item.cdt_val.array_val.length]{};
 			for(int i=0 ; i<item.cdt_val.array_val.length ; i++)
 			{
-				item.cdt_val.array_val.arr[i].type = common_type;
+				std::vector<metaffi_size> new_index = current_index;
+				new_index.emplace_back(i);
+				construct_cdt(item.cdt_val.array_val.arr[i], callbacks, new_index);
 			}
 			
 			item.free_required = true;
 			
-			construct_cdts(item.cdt_val.array_val, callbacks, current_index);
 			
 			// append to the queue the current array and its indices
 //			for(int i=0 ; i<item.cdt_val.array_val.length ; i++)
@@ -356,16 +360,16 @@ void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks, const s
 	}
 }
 //--------------------------------------------------------------------
-void construct_cdts(cdts& arr, const construct_cdts_callbacks& callbacks)
+void construct_cdts(cdts& arr, const metaffi::runtime::construct_cdts_callbacks& callbacks)
 {
 	construct_cdts(arr, callbacks, {});
 }
 //--------------------------------------------------------------------
-void construct_cdts(cdts& arr, const construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index)
+void construct_cdts(cdts& arr, const metaffi::runtime::construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index)
 {
-	std::queue<std::pair<std::vector<metaffi_size>, cdt*>> queue;
+	std::queue<std::pair<std::vector<metaffi_size>, cdt&>> queue;
 
-	if(starting_index.empty())
+	if(arr.length == 0)
 	{
 		arr.length = callbacks.get_root_elements_count(callbacks.context);
 		arr.arr = new cdt[arr.length]{};
@@ -383,7 +387,9 @@ void construct_cdts(cdts& arr, const construct_cdts_callbacks& callbacks, const 
 		auto [currentIndex, pcdt] = queue.front();
 		queue.pop();
 		
-		construct_cdt(*pcdt, callbacks, currentIndex);
+		metaffi::runtime::construct_cdt(pcdt, callbacks, currentIndex);
 	}
 }
 //--------------------------------------------------------------------
+
+}

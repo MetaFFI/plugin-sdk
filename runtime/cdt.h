@@ -3,6 +3,7 @@
 #ifdef __cplusplus
 #include <vector>
 #include <string_view>
+#include <sstream>
 
 #endif
 
@@ -36,10 +37,12 @@ struct cdts
 
 #ifdef __cplusplus
 	cdts() : arr(nullptr), length(0), free_required(true), fixed_dimensions(1) {}
-	cdts(metaffi_size length, metaffi_int64 fixed_dimensions);
-	cdts(cdts&& other) noexcept
+	cdts(cdt* pre_allocated_cdts, metaffi_size length, metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS) : arr(pre_allocated_cdts), length(length), free_required(false), fixed_dimensions(fixed_dimensions) {}
+	explicit cdts(metaffi_size length, metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS);
+	cdts(cdts&& other) noexcept : arr(other.arr), length(other.length), free_required(other.free_required), fixed_dimensions(other.fixed_dimensions)
 	{
-		*this = std::move(other);
+		other.arr = nullptr;
+		other.free_required = 0;
 	}
 	
 	cdts& operator=(cdts&& other) noexcept
@@ -55,7 +58,9 @@ struct cdts
 		return *this;
 	}
 	
-	cdt* operator[](metaffi_size index) const;
+	cdt& operator[](metaffi_size index) const;
+	[[nodiscard]] cdt& at(metaffi_size index) const;
+	void set(metaffi_size index, cdt&& val);
 	void free() const;
 #endif
 };
@@ -77,7 +82,7 @@ union cdt_types
 	metaffi_string8 string8_val;
 	struct metaffi_char16 char16_val;
 	metaffi_string16 string16_val;
-	metaffi_char32 char32_val;
+	struct metaffi_char32 char32_val;
 	metaffi_string32 string32_val;
 	struct cdt_metaffi_handle handle_val;
 	struct cdt_metaffi_callable callable_val;
@@ -169,11 +174,140 @@ struct cdt
 	explicit cdt(cdt_metaffi_callable&& val): type(metaffi_callable_type), free_required(true) { cdt_val.callable_val = std::move(val); }
 	
 	explicit cdt(cdts&& val): type(metaffi_array_type), free_required(true) { cdt_val.array_val = std::move(val); }
-	cdt(metaffi_size length, metaffi_int64 fixed_dimensions): type(metaffi_array_type), free_required(true)
+	cdt(metaffi_size length, metaffi_int64 fixed_dimensions, metaffi_type common_type = metaffi_any_type): type(metaffi_array_type | common_type), free_required(true)
 	{
 		cdt_val.array_val.length = length;
 		cdt_val.array_val.fixed_dimensions = fixed_dimensions;
 		cdt_val.array_val.arr = new cdt[length]{};
+	}
+	
+	cdt& operator=(cdt&& other)
+	{
+		if(this != &other)
+		{
+			type = other.type;
+			free_required = other.free_required;
+			
+			// based on the type, move the cdt_val to this
+			metaffi_type type_to_check = type & metaffi_array_type ? metaffi_array_type : type;
+			
+			switch(type_to_check)
+			{
+				case metaffi_float32_type:
+				{
+					cdt_val.float32_val = other.cdt_val.float32_val;
+				}break;
+				
+				case metaffi_float64_type:
+				{
+					cdt_val.float64_val = other.cdt_val.float64_val;
+				}break;
+				
+				case metaffi_int8_type:
+				{
+					cdt_val.int8_val = other.cdt_val.int8_val;
+				}break;
+				
+				case metaffi_uint8_type:
+				{
+					cdt_val.uint8_val = other.cdt_val.uint8_val;
+				}break;
+				
+				case metaffi_int16_type:
+				{
+					cdt_val.int16_val = other.cdt_val.int16_val;
+				}break;
+				
+				case metaffi_uint16_type:
+				{
+					cdt_val.uint16_val = other.cdt_val.uint16_val;
+				}break;
+				
+				case metaffi_int32_type:
+				{
+					cdt_val.int32_val = other.cdt_val.int32_val;
+				}break;
+				
+				case metaffi_uint32_type:
+				{
+					cdt_val.uint32_val = other.cdt_val.uint32_val;
+				}break;
+				
+				case metaffi_int64_type:
+				{
+					cdt_val.int64_val = other.cdt_val.int64_val;
+				}break;
+				
+				case metaffi_uint64_type:
+				{
+					cdt_val.uint64_val = other.cdt_val.uint64_val;
+				}break;
+				
+				case metaffi_bool_type:
+				{
+					cdt_val.bool_val = other.cdt_val.bool_val;
+				}break;
+				
+				case metaffi_char8_type:
+				{
+					cdt_val.char8_val = other.cdt_val.char8_val;
+				}break;
+				
+				case metaffi_string8_type:
+				{
+					cdt_val.string8_val = other.cdt_val.string8_val;
+					other.cdt_val.string8_val = nullptr;
+				}break;
+				
+				case metaffi_char16_type:
+				{
+					cdt_val.char16_val = other.cdt_val.char16_val;
+				}break;
+				
+				case metaffi_string16_type:
+				{
+					cdt_val.string16_val = other.cdt_val.string16_val;
+					other.cdt_val.string16_val = nullptr;
+				}break;
+				
+				case metaffi_char32_type:
+				{
+					cdt_val.char32_val = other.cdt_val.char32_val;
+				}break;
+				
+				case metaffi_string32_type:
+				{
+					cdt_val.string32_val = other.cdt_val.string32_val;
+					other.cdt_val.string32_val = nullptr;
+				}break;
+				
+				case metaffi_handle_type:
+				{
+					cdt_val.handle_val = other.cdt_val.handle_val;
+				}break;
+				
+				case metaffi_callable_type:
+				{
+					cdt_val.callable_val = std::move(other.cdt_val.callable_val);
+				}break;
+				
+				case metaffi_array_type:
+				{
+					cdt_val.array_val = std::move(other.cdt_val.array_val);
+				}break;
+				
+				default:
+				{
+					std::stringstream ss;
+					ss << "Invalid type: " << type;
+					throw std::runtime_error(ss.str());
+				}
+			}
+			
+			other.type = metaffi_null_type;
+			other.free_required = false;
+		}
+		return *this;
 	}
 	
 	explicit operator metaffi_float32() const { return cdt_val.float32_val; }

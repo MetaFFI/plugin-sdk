@@ -1,6 +1,10 @@
 #pragma once
 #include "cdt.h"
 
+#ifdef __cplusplus
+namespace metaffi::runtime
+{
+#endif
 
 //--------------------------------------------------------------------
 #ifdef __cplusplus
@@ -251,3 +255,7 @@ void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks);
 void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index);
 #endif // __cplusplus
 //--------------------------------------------------------------------
+
+#ifdef __cplusplus
+} // namespace metaffi::runtime
+#endif

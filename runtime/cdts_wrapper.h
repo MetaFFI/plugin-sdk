@@ -19,10 +19,12 @@ metaffi_type_info make_type_with_options(metaffi_type type, const std::string& a
 class cdts_wrapper
 {
 private:
-	cdts* pcdts;
+	cdts* pcdts = nullptr;
 
 public:
 	explicit cdts_wrapper(cdts* pcdts): pcdts(pcdts) {}
+	cdt* operator [](int index) const;
+	[[nodiscard]] metaffi_size elements_count() const;
 };
 	
 //--------------------------------------------------------------------
