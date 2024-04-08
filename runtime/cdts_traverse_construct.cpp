@@ -131,18 +131,11 @@ void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbac
 		
 		case metaffi_array_type:
 		{
-			callbacks.on_array(current_index.data(), current_index.size(), item.cdt_val.array_val, item.cdt_val.array_val.fixed_dimensions, common_type, callbacks.context);
+			metaffi_bool continue_traverse = callbacks.on_array(current_index.data(), current_index.size(), item.cdt_val.array_val, item.cdt_val.array_val.fixed_dimensions, common_type, callbacks.context);
 			
-			traverse_cdts(item.cdt_val.array_val, callbacks, current_index);
-			
-			// append to the queue the current array and its indices
-//			for(int i = 0; i < item.cdt_val.array_val.length; i++)
-//			{
-//				std::vector<metaffi_size> index = current_index;
-//				index.emplace_back(i);
-//				queue.emplace(index, &(item.cdt_val.array_val.arr[i]));
-//			}
-		
+			if(continue_traverse){
+				traverse_cdts(item.cdt_val.array_val, callbacks, current_index);
+			}
 		}break;
 		
 		default:
@@ -187,12 +180,19 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 	construct_cdt(item, callbacks, {});
 }
 
-void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index)
+void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index, const metaffi_type_info& known_type /*=metaffi_any_type*/)
 {
-	metaffi_type_info ti = callbacks.get_type_info(current_index.data(), current_index.size(), callbacks.context);
+	metaffi_type_info ti = known_type.type == metaffi_any_type ?
+                                    callbacks.get_type_info(current_index.data(), current_index.size(), callbacks.context) :
+                                    known_type;
+	
 	if(ti.type == metaffi_any_type)
 	{
 		throw std::runtime_error("get_type_info must return a concrete type, not dynamic type like metaffi_any_type");
+	}
+	
+	if(ti.type != metaffi_any_type && ti.fixed_dimensions > 0){
+		ti.type |= metaffi_array_type;
 	}
 	
 	item.type = ti.type;
@@ -322,27 +322,88 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 		
 		case metaffi_array_type:
 		{
-			item.cdt_val.array_val.fixed_dimensions = ti.fixed_dimensions;
-			item.cdt_val.array_val.length = callbacks.get_array(current_index.data(), current_index.size(), &(item.cdt_val.array_val.fixed_dimensions), &common_type, callbacks.context);
-			item.type = common_type | metaffi_array_type;
-			item.cdt_val.array_val.arr = new cdt[item.cdt_val.array_val.length]{};
-			for(int i=0 ; i<item.cdt_val.array_val.length ; i++)
+			item.cdt_val.array_val.fixed_dimensions = INT_MIN;
+			metaffi_bool is_manually_construct_array = 0;
+			metaffi_bool is_fixed_dimension = 0;
+			metaffi_bool is_1d_array = 0;
+			metaffi_size array_length = callbacks.get_array_metadata(current_index.data(),
+			                                                current_index.size(),
+			                                                &is_fixed_dimension,
+				                                            &is_1d_array,
+			                                                &common_type,
+			                                                &is_manually_construct_array,
+			                                                callbacks.context);
+			
+			item.type = common_type == metaffi_any_type ? metaffi_array_type : (common_type | metaffi_array_type);
+			item.free_required = true;
+			item.cdt_val.array_val.arr = new cdt[array_length]{};
+			item.cdt_val.array_val.length = array_length;
+			
+			if(is_manually_construct_array)
 			{
-				std::vector<metaffi_size> new_index = current_index;
-				new_index.emplace_back(i);
-				construct_cdt(item.cdt_val.array_val.arr[i], callbacks, new_index);
+				// let callback construct the array
+				callbacks.construct_cdt_array(current_index.data(), current_index.size(), &item.cdt_val.array_val, callbacks.context);
+			}
+			else // iterate into array
+			{
+				item.cdt_val.array_val.length = array_length;
+				
+				// initialize found_dims - if already detected mixed dimensions - skip the dimensions calculation
+				// else, set to INT_MIN to perform the calculation
+				metaffi_int64 found_dims = is_fixed_dimension ? INT_MIN : MIXED_OR_UNKNOWN_DIMENSIONS;
+				for(int i=0 ; i<item.cdt_val.array_val.length ; i++)
+				{
+					std::vector<metaffi_size> new_index = current_index;
+					new_index.emplace_back(i);
+					cdt& new_item = item.cdt_val.array_val.arr[i];
+					construct_cdt(new_item, callbacks, new_index);
+					
+					if(is_1d_array && (new_item.type & metaffi_array_type))
+					{
+						throw std::runtime_error("Something is wrong - 1D array cannot contain another array");
+					}
+					else if(!is_1d_array) // not 1D array - for fixed_dimensions, all elements have the same dimension
+					{
+						// if already detected mixed dimensions - skip the dimensions calculation
+						if(found_dims == MIXED_OR_UNKNOWN_DIMENSIONS)
+						{
+							continue;
+						}
+						
+						if((new_item.type & metaffi_array_type) == 0) // found non-array type
+						{
+							// mixed dimensions!
+							found_dims = MIXED_OR_UNKNOWN_DIMENSIONS;
+						}
+						
+						if(found_dims == INT_MIN) // set first dimension found
+						{
+							found_dims = new_item.cdt_val.array_val.fixed_dimensions;
+						}
+						else if(found_dims != new_item.cdt_val.array_val.fixed_dimensions) // compare the dimensions, to make sure it is not mixed!
+						{
+							found_dims = MIXED_OR_UNKNOWN_DIMENSIONS; // mixed dimensions
+						}
+					}
+				}
+				
+				// if 1d array, set fixed_dimensions to 1
+				// if found dims is a positive integer - set fixed_dimensions to found_dims+1
+				// if mixed dimensions - set fixed_dimensions to MIXED_OR_UNKNOWN_DIMENSIONS
+				if(is_1d_array)
+				{
+					item.cdt_val.array_val.fixed_dimensions = 1;
+				}
+				else if(found_dims != MIXED_OR_UNKNOWN_DIMENSIONS)
+				{
+					item.cdt_val.array_val.fixed_dimensions = found_dims+1;
+				}
+				else
+				{
+					item.cdt_val.array_val.fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS;
+				}
 			}
 			
-			item.free_required = true;
-			
-			
-			// append to the queue the current array and its indices
-//			for(int i=0 ; i<item.cdt_val.array_val.length ; i++)
-//			{
-//				std::vector<metaffi_size> index = currentIndex;
-//				index.emplace_back(i);
-//				queue.emplace(index, &(item.cdt_val.array_val.arr[i]));
-//			}
 		}break;
 		
 		case metaffi_callable_type:
@@ -365,7 +426,7 @@ void construct_cdts(cdts& arr, const metaffi::runtime::construct_cdts_callbacks&
 	construct_cdts(arr, callbacks, {});
 }
 //--------------------------------------------------------------------
-void construct_cdts(cdts& arr, const metaffi::runtime::construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index)
+void construct_cdts(cdts& arr, const metaffi::runtime::construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index, const metaffi_type_info& known_type /*=metaffi_any_type*/)
 {
 	std::queue<std::pair<std::vector<metaffi_size>, cdt&>> queue;
 

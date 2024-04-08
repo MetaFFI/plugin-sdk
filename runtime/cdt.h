@@ -114,7 +114,7 @@ struct cdt
 	explicit cdt(bool val): type(metaffi_bool_type), free_required(false) { cdt_val.bool_val = val ? 1 : 0; }
 	explicit cdt(metaffi_char8 val): type(metaffi_char8_type), free_required(false) { cdt_val.char8_val = val; }
 	
-	cdt(metaffi_string8 val, bool is_copy): type(metaffi_string8_type), free_required(true)
+	cdt(const char8_t* val, bool is_copy): type(metaffi_string8_type), free_required(true)
 	{
 		if(is_copy)
 		{
@@ -128,12 +128,22 @@ struct cdt
 		}
 		else
 		{
-			cdt_val.string8_val = val;
+			cdt_val.string8_val = (metaffi_string8)val;
 		}
 	}
 	
+	explicit cdt(const std::u8string_view& val): type(metaffi_string8_type), free_required(true)
+	{
+		// calculate the length of val - a char8_t*
+		cdt_val.string8_val = new char8_t[val.size() + 1];
+		
+		// copy val, using val_view to cdt_val.string8_val
+		std::memcpy(cdt_val.string8_val, val.data(), val.size());
+		cdt_val.string8_val[val.size()] = 0;
+	}
+	
 	explicit cdt(metaffi_char16 val): type(metaffi_char16_type), free_required(false) { cdt_val.char16_val = val; }
-	cdt(metaffi_string16 val, bool is_copy): type(metaffi_string16_type), free_required(true)
+	cdt(const char16_t* val, bool is_copy): type(metaffi_string16_type), free_required(true)
 	{
 		if(is_copy)
 		{
@@ -147,12 +157,22 @@ struct cdt
 		}
 		else
 		{
-			cdt_val.string16_val = val;
+			cdt_val.string16_val = (metaffi_string16)val;
 		}
 	}
 	
+	explicit cdt(const std::u16string_view val): type(metaffi_string16_type), free_required(true)
+	{
+		// calculate the length of val - a char16_t*
+		cdt_val.string16_val = new char16_t[val.size() + 1];
+		
+		// copy val, using val_view to cdt_val.string16_val
+		std::memcpy(cdt_val.string16_val, val.data(), val.size());
+		cdt_val.string16_val[val.size()] = 0;
+	}
+	
 	explicit cdt(metaffi_char32 val): type(metaffi_char32_type), free_required(false) { cdt_val.char32_val = val; }
-	cdt(metaffi_string32 val, bool is_copy): type(metaffi_string32_type), free_required(true)
+	cdt(const char32_t* val, bool is_copy): type(metaffi_string32_type), free_required(true)
 	{
 		if(is_copy)
 		{
@@ -166,8 +186,18 @@ struct cdt
 		}
 		else
 		{
-			cdt_val.string32_val = val;
+			cdt_val.string32_val = (metaffi_string32)val;
 		}
+	}
+	
+	explicit cdt(const std::u32string_view val): type(metaffi_string32_type), free_required(true)
+	{
+		// calculate the length of val - a char32_t*
+		cdt_val.string32_val = new char32_t[val.size() + 1];
+		
+		// copy val, using val_view to cdt_val.string32_val
+		std::memcpy(cdt_val.string32_val, val.data(), val.size());
+		cdt_val.string32_val[val.size()] = 0;
 	}
 	
 	explicit cdt(const cdt_metaffi_handle& val): type(metaffi_handle_type), free_required(true) { cdt_val.handle_val = val; }

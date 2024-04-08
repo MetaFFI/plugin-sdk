@@ -37,7 +37,7 @@ struct traverse_cdts_callbacks
 	
 	// if array dimensions are fixed, fixed_dimensions is the dimensions count of the array
 	// if array has a common type to all of its elements, common_type is the type of the elements. Otherwise, 0.
-	void (*on_array)(const metaffi_size* index, metaffi_size index_size, const cdts& val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context);
+	metaffi_bool (*on_array)(const metaffi_size* index, metaffi_size index_size, const cdts& val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context);
 
 #ifdef __cplusplus
 	
@@ -90,7 +90,7 @@ struct traverse_cdts_callbacks
 			void (*on_handle)(const metaffi_size* index, metaffi_size index_size, const cdt_metaffi_handle& val, void* context),
 			void (*on_callable)(const metaffi_size* index, metaffi_size index_size, const cdt_metaffi_callable& val, void* context),
 			void (*on_null)(const metaffi_size* index, metaffi_size index_size, void* context),
-			void (*on_array)(const metaffi_size* index, metaffi_size index_size, const cdts& val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context)
+			metaffi_bool (*on_array)(const metaffi_size* index, metaffi_size index_size, const cdts& val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context)
 	) : context(context),
 	    on_float64(on_float64),
 	    on_float32(on_float32),
@@ -135,11 +135,13 @@ struct construct_cdts_callbacks
 {
 	void* context;
 	
-	// if array dimensions is fixed, fill dimensions and return the size of the array
-	// in_out_common_type is the type of the elements if all of them have the same type. Otherwise, 0.
-	// in_out_common_type "in" value is extracted from metaffi_type_info. if it doesn't contain a type, it is 0.
-	// in_out_common_type "out" value is the common type of the elements if they have the same type. Otherwise, 0.
-	metaffi_size(*get_array)(const metaffi_size* index, metaffi_size index_length, metaffi_int64* out_fixed_dimensions, metaffi_type* in_out_common_type, void* context);
+	// returns the size of the array at index.
+	// if the array has fixed dimensions, set is_fixed_dimension to true.
+	// if the array is 1D, set is_1d_array to true.
+	// if the array has a common type to all of its elements, set common_type to the type of the elements.
+	// if the array is manually constructed, set is_manually_construct_array to true. It will call construct_cdt_array to fill the array. Otherwise, the function iterates into every element and calls the appropriate callback.
+	metaffi_size(*get_array_metadata)(const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_fixed_dimension, metaffi_bool* is_1d_array, metaffi_type* common_type, metaffi_bool* is_manually_construct_array, void* context);
+	void(*construct_cdt_array)(const metaffi_size* index, metaffi_size index_length, cdts* manually_fill_array, void* context);
 	
 	metaffi_size (*get_root_elements_count)(void* context);
 	metaffi_type_info (*get_type_info)(const metaffi_size* index, metaffi_size index_size, void* context);
@@ -169,7 +171,8 @@ struct construct_cdts_callbacks
 	
 	explicit construct_cdts_callbacks(void* context):context(context)
 	{
-		get_array = nullptr;
+		get_array_metadata = nullptr;
+		construct_cdt_array = nullptr;
 		get_root_elements_count = nullptr;
 		get_type_info = nullptr;
 		get_float64 = nullptr;
@@ -195,7 +198,8 @@ struct construct_cdts_callbacks
 	
 	construct_cdts_callbacks(
 			void* context,
-			metaffi_size(*get_array)(const metaffi_size* index, metaffi_size index_length, metaffi_int64* fixed_dimensions, metaffi_type* out_common_type, void* context),
+		    metaffi_size(*get_array_metadata)(const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_fixed_dimension, metaffi_bool* is_1d_array, metaffi_type* common_type, metaffi_bool* is_manually_construct_array, void* context),
+		    void(*construct_cdt_array)(const metaffi_size* index, metaffi_size index_length, cdts* manually_fill_array, void* context),
 			metaffi_size (*get_length)(void* context),
 			metaffi_type_info (*get_type_info)(const metaffi_size* index, metaffi_size index_size, void* context),
 			metaffi_float64 (*get_float64)(const metaffi_size* index, metaffi_size index_size, void* context),
@@ -218,7 +222,8 @@ struct construct_cdts_callbacks
 			cdt_metaffi_handle (*get_handle)(const metaffi_size* index, metaffi_size index_size, void* context),
 			cdt_metaffi_callable (*get_callable)(const metaffi_size* index, metaffi_size index_size, void* context)
 	) : context(context),
-	    get_array(get_array),
+	    get_array_metadata(get_array_metadata),
+        construct_cdt_array(construct_cdt_array),
 	    get_root_elements_count(get_length),
 	    get_type_info(get_type_info),
 	    get_float64(get_float64),
@@ -250,9 +255,9 @@ struct construct_cdts_callbacks
 
 #ifdef __cplusplus
 void construct_cdts(cdts& arr, const construct_cdts_callbacks& callbacks);
-void construct_cdts(cdts& arr, const construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index);
+void construct_cdts(cdts& arr, const construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index, const metaffi_type_info& known_type = metaffi_type_info{metaffi_any_type});
 void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks);
-void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index);
+void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index, const metaffi_type_info& known_type = metaffi_type_info{metaffi_any_type});
 #endif // __cplusplus
 //--------------------------------------------------------------------
 
