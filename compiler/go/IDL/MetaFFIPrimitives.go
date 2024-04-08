@@ -126,7 +126,6 @@ const (
 	METAFFI_TYPE_STRING8_ARRAY  = uint64(C.metaffi_string8_array_type)
 	METAFFI_TYPE_STRING16_ARRAY = uint64(C.metaffi_string16_array_type)
 	METAFFI_TYPE_STRING32_ARRAY = uint64(C.metaffi_string32_array_type)
-	METAFFI_TYPE_ANY_ARRAY      = uint64(C.metaffi_any_array_type)
 	METAFFI_TYPE_HANDLE_ARRAY   = uint64(C.metaffi_handle_array_type)
 	METAFFI_TYPE_SIZE_ARRAY     = uint64(C.metaffi_size_array_type)
 	METAFFI_TYPE_NULL           = uint64(C.metaffi_null_type)
@@ -220,8 +219,6 @@ var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 	STRING8_ARRAY:  uint64(C.metaffi_string8_array_type),
 	STRING16_ARRAY: uint64(C.metaffi_string16_array_type),
 	STRING32_ARRAY: uint64(C.metaffi_string32_array_type),
-
-	ANY_ARRAY: uint64(C.metaffi_any_array_type),
 
 	HANDLE_ARRAY: uint64(C.metaffi_handle_array_type),
 	SIZE_ARRAY:   uint64(C.metaffi_size_array_type),
