@@ -3,6 +3,10 @@ package IDL
 /*
 #cgo !windows LDFLAGS: -L. -ldl
 #include <../../../runtime/metaffi_primitives.h>
+
+void set_metaffi_type_info_type(struct metaffi_type_info* info, uint64_t type) {
+    info->type = type;
+}
 */
 import "C"
 import (
@@ -233,10 +237,12 @@ func (this *MetaFFITypeInfo) FillMetaFFITypeFromStringMetaFFIType() {
 func (m *MetaFFITypeInfo) AsCMetaFFITypeInfo() C.struct_metaffi_type_info {
 	var cMetaFFIType C.struct_metaffi_type_info
 
-	cMetaFFIType.alias = C.CString(m.Alias)
+	if m.Alias != "" {
+		cMetaFFIType.alias = C.CString(m.Alias)
+		cMetaFFIType.is_free_alias = C.metaffi_bool(1)
+	}
 
-	cMetaFFIType.type_ = C.uint64_t(m.Type)
-	cMetaFFIType.dimensions = C.int(m.Dimensions)
+	C.set_metaffi_type_info_type(&cMetaFFIType, C.uint64_t(m.Type))
 
 	return cMetaFFIType
 }
