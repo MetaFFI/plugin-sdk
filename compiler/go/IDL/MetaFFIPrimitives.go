@@ -7,7 +7,6 @@ package IDL
 import "C"
 import (
 	"fmt"
-	"unsafe"
 )
 import "strings"
 
@@ -235,7 +234,6 @@ func (m *MetaFFITypeInfo) AsCMetaFFITypeInfo() C.struct_metaffi_type_info {
 	var cMetaFFIType C.struct_metaffi_type_info
 
 	cMetaFFIType.alias = C.CString(m.Alias)
-	defer C.free(unsafe.Pointer(cMetaFFIType.alias))
 
 	cMetaFFIType.type_ = C.uint64_t(m.Type)
 	cMetaFFIType.dimensions = C.int(m.Dimensions)
