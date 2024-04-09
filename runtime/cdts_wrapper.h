@@ -9,8 +9,6 @@
 
 namespace metaffi::runtime
 {
-	
-metaffi_type_info make_type_with_options(metaffi_type type, const std::string& alias = "", int dimensions = 0);
 
 /************************************************
 *   CDTS wrapper class

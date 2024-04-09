@@ -5,7 +5,10 @@ package IDL
 #include <../../../runtime/metaffi_primitives.h>
 */
 import "C"
-import "fmt"
+import (
+	"fmt"
+	"unsafe"
+)
 import "strings"
 
 type MethodType string
@@ -226,6 +229,18 @@ var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 
 func (this *MetaFFITypeInfo) FillMetaFFITypeFromStringMetaFFIType() {
 	this.Type = TypeStringToTypeEnum[MetaFFIType(strings.ToLower(string(this.StringType)))]
+}
+
+func (m *MetaFFITypeInfo) AsCMetaFFITypeInfo() C.struct_metaffi_type_info {
+	var cMetaFFIType C.struct_metaffi_type_info
+
+	cMetaFFIType.alias = C.CString(m.Alias)
+	defer C.free(unsafe.Pointer(cMetaFFIType.alias))
+
+	cMetaFFIType.type_ = C.uint64_t(m.Type)
+	cMetaFFIType.dimensions = C.int(m.Dimensions)
+
+	return cMetaFFIType
 }
 
 func IsMetaFFIType(metaffiType string) bool {

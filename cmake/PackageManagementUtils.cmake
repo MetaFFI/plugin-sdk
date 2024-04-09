@@ -23,7 +23,7 @@ macro(add_Threads_package)
 	find_package(Threads REQUIRED)
 endmacro()
 
-# add Catch2 & CTest packages
+# add doctest & CTest packages
 macro(add_ctest_and_unitest_libs)
 	find_package(doctest CONFIG REQUIRED)
 	include(CTest)
