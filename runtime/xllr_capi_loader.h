@@ -58,6 +58,14 @@ int xllr_is_runtime_flag_set(const char* flag_name, uint64_t flag_name_len);
 
 struct cdts* xllr_alloc_cdts_buffer(metaffi_size params, metaffi_size rets);
 
+struct construct_cdts_callbacks;
+struct traverse_cdts_callbacks;
+
+void xllr_construct_cdts(struct cdts* pcdts, struct construct_cdts_callbacks* callbacks);
+void xllr_construct_cdt(struct cdt* pcdts, struct construct_cdts_callbacks* callbacks);
+void xllr_traverse_cdts(struct cdts* pcdts, struct traverse_cdts_callbacks* callbacks);
+void xllr_traverse_cdt(struct cdt* pcdts, struct traverse_cdts_callbacks* callbacks);
+
 /************************************************
 *   Misc
 *************************************************/

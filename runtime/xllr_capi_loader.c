@@ -114,6 +114,29 @@ struct cdts* xllr_alloc_cdts_buffer(metaffi_size params, metaffi_size rets)
 	return palloc_cdts_buffer(params, rets);
 }
 
+void (*pxllr_construct_cdts)(struct cdts*, struct construct_cdts_callbacks*);
+void xllr_construct_cdts(struct cdts* pcdts, struct construct_cdts_callbacks* callbacks)
+{
+	pxllr_construct_cdts(pcdts, callbacks);
+}
+
+void (*pxllr_construct_cdt)(struct cdt*, struct construct_cdts_callbacks*);
+void xllr_construct_cdt(struct cdt* pcdts, struct construct_cdts_callbacks* callbacks)
+{
+	pxllr_construct_cdt(pcdts, callbacks);
+}
+
+void (*pxllr_traverse_cdts)(struct cdts*, struct traverse_cdts_callbacks*);
+void xllr_traverse_cdts(struct cdts* pcdts, struct traverse_cdts_callbacks* callbacks)
+{
+	pxllr_traverse_cdts(pcdts, callbacks);
+}
+
+void (*pxllr_traverse_cdt)(struct cdt*, struct traverse_cdts_callbacks*);
+void xllr_traverse_cdt(struct cdt* pcdts, struct traverse_cdts_callbacks* callbacks)
+{
+	pxllr_traverse_cdt(pcdts, callbacks);
+}
 
 /************************************************
 *   Misc
@@ -300,6 +323,27 @@ const char* load_xllr_capi()
 	if(!palloc_cdts_buffer)
 	{
 		printf("Failed to load alloc_cdts_buffer: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_construct_cdts = (void (*)(struct cdts*, struct construct_cdts_callbacks*))load_symbol(cdt_helper_xllr_handle, "construct_cdts", &out_err, &out_err_len);
+	if(!pxllr_construct_cdts)
+	{
+		printf("Failed to load construct_cdts: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_construct_cdt = (void (*)(struct cdt*, struct construct_cdts_callbacks*))load_symbol(cdt_helper_xllr_handle, "construct_cdt", &out_err, &out_err_len);
+	if(!pxllr_construct_cdt)
+	{
+		printf("Failed to load construct_cdt: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_traverse_cdts = (void (*)(struct cdts*, struct traverse_cdts_callbacks*))load_symbol(cdt_helper_xllr_handle, "traverse_cdts", &out_err, &out_err_len);
+	if(!pxllr_traverse_cdts)
+	{
+		printf("Failed to load traverse_cdts: %s\n", out_err);
 		return out_err;
 	}
 
