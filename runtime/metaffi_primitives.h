@@ -265,7 +265,7 @@ struct metaffi_type_info
 
 #ifdef __cplusplus
 	metaffi_type_info() : type(metaffi_null_type), alias(nullptr), is_free_alias(false), fixed_dimensions(MIXED_OR_UNKNOWN_DIMENSIONS) {}
-	explicit metaffi_type_info(metaffi_type type) : type(type), alias(nullptr), is_free_alias(false), fixed_dimensions(MIXED_OR_UNKNOWN_DIMENSIONS) {}
+	metaffi_type_info(metaffi_type type) : type(type), alias(nullptr), is_free_alias(false), fixed_dimensions(MIXED_OR_UNKNOWN_DIMENSIONS) {}
 	metaffi_type_info(metaffi_type type, const char* alias, bool is_copy_alias = false, int64_t fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS) : type(type), fixed_dimensions(fixed_dimensions), is_free_alias(false)
 	{
 		if(is_copy_alias && alias)
