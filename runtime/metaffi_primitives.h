@@ -1,4 +1,7 @@
+#ifndef METAFFI_PRIMITIVES_H
+#define METAFFI_PRIMITIVES_H
 #pragma once
+
 #include <stdint.h>
 #include <uchar.h>
 
@@ -481,3 +484,5 @@ using metaffi_variant = std::variant<
 		cdt_metaffi_callable
 >;
 #endif // __cplusplus
+
+#endif // METAFFI_PRIMITIVES_H

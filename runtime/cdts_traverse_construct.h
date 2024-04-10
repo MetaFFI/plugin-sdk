@@ -12,7 +12,7 @@ extern "C" {
 #endif
 struct traverse_cdts_callbacks
 {
-	void* context = nullptr;
+	void* context;
 	
 	void (*on_float64)(const metaffi_size* index, metaffi_size index_size, metaffi_float64 val, void* context);
 	void (*on_float32)(const metaffi_size* index, metaffi_size index_size, metaffi_float32 val, void* context);
@@ -25,19 +25,28 @@ struct traverse_cdts_callbacks
 	void (*on_int64)(const metaffi_size* index, metaffi_size index_size, metaffi_int64 val, void* context);
 	void (*on_uint64)(const metaffi_size* index, metaffi_size index_size, metaffi_uint64 val, void* context);
 	void (*on_bool)(const metaffi_size* index, metaffi_size index_size, metaffi_bool val, void* context);
-	void (*on_char8)(const metaffi_size* index, metaffi_size index_size, metaffi_char8 val, void* context);
+	void (*on_char8)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char8 val, void* context);
 	void (*on_string8)(const metaffi_size* index, metaffi_size index_size, metaffi_string8 val, void* context);
-	void (*on_char16)(const metaffi_size* index, metaffi_size index_size, metaffi_char16 val, void* context);
+	void (*on_char16)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char16 val, void* context);
 	void (*on_string16)(const metaffi_size* index, metaffi_size index_size, metaffi_string16 val, void* context);
-	void (*on_char32)(const metaffi_size* index, metaffi_size index_size, metaffi_char32 val, void* context);
+	void (*on_char32)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char32 val, void* context);
 	void (*on_string32)(const metaffi_size* index, metaffi_size index_size, metaffi_string32 val, void* context);
-	void (*on_handle)(const metaffi_size* index, metaffi_size index_size, const cdt_metaffi_handle& val, void* context);
-	void (*on_callable)(const metaffi_size* index, metaffi_size index_size, const cdt_metaffi_callable& val, void* context);
+	#ifdef __cplusplus
+	void (*on_handle)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_handle& val, void* context);
+	void (*on_callable)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_callable& val, void* context);
+	#else
+	void (*on_handle)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_handle* val, void* context);
+	void (*on_callable)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_callable* val, void* context);
+	#endif
 	void (*on_null)(const metaffi_size* index, metaffi_size index_size, void* context);
 	
 	// if array dimensions are fixed, fixed_dimensions is the dimensions count of the array
 	// if array has a common type to all of its elements, common_type is the type of the elements. Otherwise, 0.
+	#ifdef __cplusplus
 	metaffi_bool (*on_array)(const metaffi_size* index, metaffi_size index_size, const cdts& val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context);
+	#else
+	metaffi_bool (*on_array)(const metaffi_size* index, metaffi_size index_size, const struct cdts* val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context);
+	#endif
 
 #ifdef __cplusplus
 	
@@ -81,14 +90,14 @@ struct traverse_cdts_callbacks
 			void (*on_int64)(const metaffi_size* index, metaffi_size index_size, metaffi_int64 val, void* context),
 			void (*on_uint64)(const metaffi_size* index, metaffi_size index_size, metaffi_uint64 val, void* context),
 			void (*on_bool)(const metaffi_size* index, metaffi_size index_size, metaffi_bool val, void* context),
-			void (*on_char8)(const metaffi_size* index, metaffi_size index_size, metaffi_char8 val, void* context),
+			void (*on_char8)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char8 val, void* context),
 			void (*on_string8)(const metaffi_size* index, metaffi_size index_size, metaffi_string8 val, void* context),
-			void (*on_char16)(const metaffi_size* index, metaffi_size index_size, metaffi_char16 val, void* context),
+			void (*on_char16)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char16 val, void* context),
 			void (*on_string16)(const metaffi_size* index, metaffi_size index_size, metaffi_string16 val, void* context),
-			void (*on_char32)(const metaffi_size* index, metaffi_size index_size, metaffi_char32 val, void* context),
+			void (*on_char32)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char32 val, void* context),
 			void (*on_string32)(const metaffi_size* index, metaffi_size index_size, metaffi_string32 val, void* context),
-			void (*on_handle)(const metaffi_size* index, metaffi_size index_size, const cdt_metaffi_handle& val, void* context),
-			void (*on_callable)(const metaffi_size* index, metaffi_size index_size, const cdt_metaffi_callable& val, void* context),
+			void (*on_handle)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_handle& val, void* context),
+			void (*on_callable)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_callable& val, void* context),
 			void (*on_null)(const metaffi_size* index, metaffi_size index_size, void* context),
 			metaffi_bool (*on_array)(const metaffi_size* index, metaffi_size index_size, const cdts& val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context)
 	) : context(context),
@@ -125,6 +134,9 @@ void traverse_cdts(const cdts& arr, const traverse_cdts_callbacks& callbacks);
 void traverse_cdts(const cdts& arr, const traverse_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index);
 void traverse_cdt(const cdt& item, const traverse_cdts_callbacks& callbacks);
 void traverse_cdt(const cdt& item, const traverse_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index);
+#else
+void traverse_cdts(const struct cdts* arr, const struct traverse_cdts_callbacks* callbacks);
+void traverse_cdt(const struct cdt* item, const struct traverse_cdts_callbacks* callbacks);
 #endif // __cplusplus
 //--------------------------------------------------------------------
 
@@ -141,10 +153,10 @@ struct construct_cdts_callbacks
 	// if the array has a common type to all of its elements, set common_type to the type of the elements.
 	// if the array is manually constructed, set is_manually_construct_array to true. It will call construct_cdt_array to fill the array. Otherwise, the function iterates into every element and calls the appropriate callback.
 	metaffi_size(*get_array_metadata)(const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_fixed_dimension, metaffi_bool* is_1d_array, metaffi_type* common_type, metaffi_bool* is_manually_construct_array, void* context);
-	void(*construct_cdt_array)(const metaffi_size* index, metaffi_size index_length, cdts* manually_fill_array, void* context);
+	void(*construct_cdt_array)(const metaffi_size* index, metaffi_size index_length, struct cdts* manually_fill_array, void* context);
 	
 	metaffi_size (*get_root_elements_count)(void* context);
-	metaffi_type_info (*get_type_info)(const metaffi_size* index, metaffi_size index_size, void* context);
+	struct metaffi_type_info (*get_type_info)(const metaffi_size* index, metaffi_size index_size, void* context);
 	metaffi_float64 (*get_float64)(const metaffi_size* index, metaffi_size index_size, void* context);
 	metaffi_float32 (*get_float32)(const metaffi_size* index, metaffi_size index_size, void* context);
 	metaffi_int8 (*get_int8)(const metaffi_size* index, metaffi_size index_size, void* context);
@@ -156,14 +168,14 @@ struct construct_cdts_callbacks
 	metaffi_int64 (*get_int64)(const metaffi_size* index, metaffi_size index_size, void* context);
 	metaffi_uint64 (*get_uint64)(const metaffi_size* index, metaffi_size index_size, void* context);
 	metaffi_bool (*get_bool)(const metaffi_size* index, metaffi_size index_size, void* context);
-	metaffi_char8 (*get_char8)(const metaffi_size* index, metaffi_size index_size, void* context);
+	struct metaffi_char8 (*get_char8)(const metaffi_size* index, metaffi_size index_size, void* context);
 	metaffi_string8 (*get_string8)(const metaffi_size* index, metaffi_size index_size, void* context);
-	metaffi_char16 (*get_char16)(const metaffi_size* index, metaffi_size index_size, void* context);
+	struct metaffi_char16 (*get_char16)(const metaffi_size* index, metaffi_size index_size, void* context);
 	metaffi_string16 (*get_string16)(const metaffi_size* index, metaffi_size index_size, void* context);
-	metaffi_char32 (*get_char32)(const metaffi_size* index, metaffi_size index_size, void* context);
+	struct metaffi_char32 (*get_char32)(const metaffi_size* index, metaffi_size index_size, void* context);
 	metaffi_string32 (*get_string32)(const metaffi_size* index, metaffi_size index_size, void* context);
-	cdt_metaffi_handle (*get_handle)(const metaffi_size* index, metaffi_size index_size, void* context);
-	cdt_metaffi_callable (*get_callable)(const metaffi_size* index, metaffi_size index_size, void* context);
+	struct cdt_metaffi_handle (*get_handle)(const metaffi_size* index, metaffi_size index_size, void* context);
+	struct cdt_metaffi_callable (*get_callable)(const metaffi_size* index, metaffi_size index_size, void* context);
 
 #ifdef __cplusplus
 	
@@ -213,14 +225,14 @@ struct construct_cdts_callbacks
 			metaffi_int64 (*get_int64)(const metaffi_size* index, metaffi_size index_size, void* context),
 			metaffi_uint64 (*get_uint64)(const metaffi_size* index, metaffi_size index_size, void* context),
 			metaffi_bool (*get_bool)(const metaffi_size* index, metaffi_size index_size, void* context),
-			metaffi_char8 (*get_char8)(const metaffi_size* index, metaffi_size index_size, void* context),
+			struct metaffi_char8 (*get_char8)(const metaffi_size* index, metaffi_size index_size, void* context),
 			metaffi_string8 (*get_string8)(const metaffi_size* index, metaffi_size index_size, void* context),
-			metaffi_char16 (*get_char16)(const metaffi_size* index, metaffi_size index_size, void* context),
+			struct metaffi_char16 (*get_char16)(const metaffi_size* index, metaffi_size index_size, void* context),
 			metaffi_string16 (*get_string16)(const metaffi_size* index, metaffi_size index_size, void* context),
-			metaffi_char32 (*get_char32)(const metaffi_size* index, metaffi_size index_size, void* context),
+			struct metaffi_char32 (*get_char32)(const metaffi_size* index, metaffi_size index_size, void* context),
 			metaffi_string32 (*get_string32)(const metaffi_size* index, metaffi_size index_size, void* context),
-			cdt_metaffi_handle (*get_handle)(const metaffi_size* index, metaffi_size index_size, void* context),
-			cdt_metaffi_callable (*get_callable)(const metaffi_size* index, metaffi_size index_size, void* context)
+			struct cdt_metaffi_handle (*get_handle)(const metaffi_size* index, metaffi_size index_size, void* context),
+			struct cdt_metaffi_callable (*get_callable)(const metaffi_size* index, metaffi_size index_size, void* context)
 	) : context(context),
 	    get_array_metadata(get_array_metadata),
         construct_cdt_array(construct_cdt_array),
@@ -258,6 +270,9 @@ void construct_cdts(cdts& arr, const construct_cdts_callbacks& callbacks);
 void construct_cdts(cdts& arr, const construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index, const metaffi_type_info& known_type = metaffi_type_info{metaffi_any_type});
 void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks);
 void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index, const metaffi_type_info& known_type = metaffi_type_info{metaffi_any_type});
+#else
+void construct_cdts(struct cdts* arr, const struct construct_cdts_callbacks* callbacks);
+void construct_cdt(struct cdt* item, const struct construct_cdts_callbacks* callbacks);
 #endif // __cplusplus
 //--------------------------------------------------------------------
 

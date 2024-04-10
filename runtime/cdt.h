@@ -1,3 +1,7 @@
+#ifndef CDT_H
+#define CDT_H
+
+
 #pragma once
 #include "metaffi_primitives.h"
 #ifdef __cplusplus
@@ -406,3 +410,4 @@ struct cdt
 #endif // __cplusplus
 };
 
+#endif // CDT_H
