@@ -1,4 +1,5 @@
 #include "cdts_traverse_construct.h"
+#include <iostream>
 #include <queue>
 #include <sstream>
 
@@ -10,6 +11,21 @@ namespace metaffi::runtime
 void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbacks& callbacks)
 {
 	traverse_cdt(item, callbacks, {});
+}
+
+void traverse_cdt(const cdt* item, const traverse_cdts_callbacks* callbacks, char** out_nul_term_err) noexcept
+{
+	try
+	{
+		traverse_cdt(*item, *callbacks);
+	}
+	catch(const std::exception& e)
+	{
+		std::string err = e.what();
+		*out_nul_term_err = new char[err.size()+1];
+		std::copy(err.begin(), err.end(), *out_nul_term_err);
+		(*out_nul_term_err)[err.size()] = '\0';
+	}
 }
 
 void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index)
@@ -152,6 +168,21 @@ void traverse_cdts(const cdts& arr, const metaffi::runtime::traverse_cdts_callba
 	traverse_cdts(arr, callbacks, {});
 }
 
+void traverse_cdts(const cdts* arr, const traverse_cdts_callbacks* callbacks, char** out_nul_term_err) noexcept
+{
+	try
+	{
+		traverse_cdts(*arr, *callbacks);
+	}
+	catch(const std::exception& e)
+	{
+		std::string err = e.what();
+		*out_nul_term_err = new char[err.size()+1];
+		std::copy(err.begin(), err.end(), *out_nul_term_err);
+		(*out_nul_term_err)[err.size()] = '\0';
+	}
+}
+
 void traverse_cdts(const cdts& arr, const metaffi::runtime::traverse_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index)
 {
 	if(arr.length == 0){ // empty CDTS
@@ -180,6 +211,21 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 	construct_cdt(item, callbacks, {});
 }
 
+void construct_cdt(cdt* item, const construct_cdts_callbacks* callbacks, char** out_nul_term_err) noexcept
+{
+	try
+	{
+		construct_cdt(*item, *callbacks);
+	}
+	catch(const std::exception& e)
+	{
+		std::string err = e.what();
+		*out_nul_term_err = (char*)malloc( (err.size()+1) * sizeof(char) );
+		std::copy(err.begin(), err.end(), *out_nul_term_err);
+		(*out_nul_term_err)[err.size()] = '\0';
+	}
+}
+//--------------------------------------------------------------------
 void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index, const metaffi_type_info& known_type /*=metaffi_any_type*/)
 {
 	metaffi_type_info ti = known_type.type == metaffi_any_type ?
@@ -424,6 +470,21 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 void construct_cdts(cdts& arr, const metaffi::runtime::construct_cdts_callbacks& callbacks)
 {
 	construct_cdts(arr, callbacks, {});
+}
+
+void construct_cdts(cdts* arr, const construct_cdts_callbacks* callbacks, char** out_nul_term_err) noexcept
+{
+	try
+	{
+		construct_cdts(*arr, *callbacks);
+	}
+	catch(const std::exception& e)
+	{
+		std::string err = e.what();
+		*out_nul_term_err = new char[err.size()+1];
+		std::copy(err.begin(), err.end(), *out_nul_term_err);
+		(*out_nul_term_err)[err.size()] = '\0';
+	}
 }
 //--------------------------------------------------------------------
 void construct_cdts(cdts& arr, const metaffi::runtime::construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index, const metaffi_type_info& known_type /*=metaffi_any_type*/)

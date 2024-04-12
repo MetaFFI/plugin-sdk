@@ -130,13 +130,15 @@ struct traverse_cdts_callbacks
 #endif
 
 #ifdef __cplusplus
-extern "C" void traverse_cdts(const cdts& arr, const traverse_cdts_callbacks& callbacks);
+void traverse_cdts(const cdts& arr, const traverse_cdts_callbacks& callbacks);
+extern "C" void traverse_cdts(const cdts* arr, const traverse_cdts_callbacks* callbacks, char** out_nul_term_err) noexcept;
 void traverse_cdts(const cdts& arr, const traverse_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index);
-extern "C" void traverse_cdt(const cdt& item, const traverse_cdts_callbacks& callbacks);
+void traverse_cdt(const cdt& item, const traverse_cdts_callbacks& callbacks);
+extern "C" void traverse_cdt(const cdt* item, const traverse_cdts_callbacks* callbacks, char** out_nul_term_err) noexcept;
 void traverse_cdt(const cdt& item, const traverse_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index);
 #else
-void traverse_cdts(const struct cdts* arr, const struct traverse_cdts_callbacks* callbacks);
-void traverse_cdt(const struct cdt* item, const struct traverse_cdts_callbacks* callbacks);
+void traverse_cdts(const struct cdts* arr, const struct traverse_cdts_callbacks* callbacks, char** out_nul_term_err);
+void traverse_cdt(const struct cdt* item, const struct traverse_cdts_callbacks* callbacks, char** out_nul_term_err);
 #endif // __cplusplus
 //--------------------------------------------------------------------
 
@@ -266,13 +268,15 @@ struct construct_cdts_callbacks
 #endif
 
 #ifdef __cplusplus
-extern "C" void construct_cdts(cdts& arr, const construct_cdts_callbacks& callbacks);
+void construct_cdts(cdts& arr, const construct_cdts_callbacks& callbacks);
+extern "C" void construct_cdts(cdts* arr, const construct_cdts_callbacks* callbacks, char** out_nul_term_err) noexcept;
 void construct_cdts(cdts& arr, const construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& starting_index, const metaffi_type_info& known_type = metaffi_type_info{metaffi_any_type});
-extern "C" void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks);
+void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks);
+extern "C" void construct_cdt(cdt* item, const construct_cdts_callbacks* callbacks, char** out_nul_term_err) noexcept;
 void construct_cdt(cdt& item, const construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index, const metaffi_type_info& known_type = metaffi_type_info{metaffi_any_type});
 #else
-void construct_cdts(struct cdts* arr, const struct construct_cdts_callbacks* callbacks);
-void construct_cdt(struct cdt* item, const struct construct_cdts_callbacks* callbacks);
+void construct_cdts(struct cdts* arr, const struct construct_cdts_callbacks* callbacks, char** out_nul_term_err);
+void construct_cdt(struct cdt* item, const struct construct_cdts_callbacks* callbacks, char** out_nul_term_err);
 #endif // __cplusplus
 //--------------------------------------------------------------------
 

@@ -114,28 +114,28 @@ struct cdts* xllr_alloc_cdts_buffer(metaffi_size params, metaffi_size rets)
 	return palloc_cdts_buffer(params, rets);
 }
 
-void (*pxllr_construct_cdts)(struct cdts*, struct construct_cdts_callbacks*);
-void xllr_construct_cdts(struct cdts* pcdts, struct construct_cdts_callbacks* callbacks)
+void (*pxllr_construct_cdts)(struct cdts*, struct construct_cdts_callbacks*, char** out_nul_term_err);
+void xllr_construct_cdts(struct cdts* pcdts, struct construct_cdts_callbacks* callbacks, char** out_nul_term_err)
 {
-	pxllr_construct_cdts(pcdts, callbacks);
+	pxllr_construct_cdts(pcdts, callbacks, out_nul_term_err);
 }
 
-void (*pxllr_construct_cdt)(struct cdt*, struct construct_cdts_callbacks*);
-void xllr_construct_cdt(struct cdt* pcdts, struct construct_cdts_callbacks* callbacks)
+void (*pxllr_construct_cdt)(struct cdt*, struct construct_cdts_callbacks*, char** out_nul_term_err);
+void xllr_construct_cdt(struct cdt* pcdts, struct construct_cdts_callbacks* callbacks, char** out_nul_term_err)
 {
-	pxllr_construct_cdt(pcdts, callbacks);
+	pxllr_construct_cdt(pcdts, callbacks, out_nul_term_err);
 }
 
-void (*pxllr_traverse_cdts)(struct cdts*, struct traverse_cdts_callbacks*);
-void xllr_traverse_cdts(struct cdts* pcdts, struct traverse_cdts_callbacks* callbacks)
+void (*pxllr_traverse_cdts)(struct cdts*, struct traverse_cdts_callbacks*, char** out_nul_term_err);
+void xllr_traverse_cdts(struct cdts* pcdts, struct traverse_cdts_callbacks* callbacks, char** out_nul_term_err)
 {
-	pxllr_traverse_cdts(pcdts, callbacks);
+	pxllr_traverse_cdts(pcdts, callbacks, out_nul_term_err);
 }
 
-void (*pxllr_traverse_cdt)(struct cdt*, struct traverse_cdts_callbacks*);
-void xllr_traverse_cdt(struct cdt* pcdts, struct traverse_cdts_callbacks* callbacks)
+void (*pxllr_traverse_cdt)(struct cdt*, struct traverse_cdts_callbacks*, char** out_nul_term_err);
+void xllr_traverse_cdt(struct cdt* pcdts, struct traverse_cdts_callbacks* callbacks, char** out_nul_term_err)
 {
-	pxllr_traverse_cdt(pcdts, callbacks);
+	pxllr_traverse_cdt(pcdts, callbacks, out_nul_term_err);
 }
 
 /************************************************
@@ -195,7 +195,16 @@ void* load_symbol(void* handle, const char* name, char** out_err, uint64_t* out_
 	void* res = GetProcAddress(handle, name);
 	if(!res)
 	{
-		get_last_error_string(GetLastError(), out_err, out_err_len);
+		char* win_out_err = NULL;
+		uint64_t win_out_err_len = 0;
+		get_last_error_string(GetLastError(), &win_out_err, &win_out_err_len);
+		
+		// write to out_err "Failed to load symbol %s. win error: %s"
+		*out_err_len = snprintf(NULL, 0, "Failed to load symbol %s. win error: %s", name, win_out_err);
+		*out_err = calloc(1, *out_err_len+1);
+		sprintf(*out_err, "Failed to load symbol %s. win error: %s", name, win_out_err);
+		*out_err_len = strlen(*out_err);
+		
 		return NULL;
 	}
 
@@ -326,24 +335,31 @@ const char* load_xllr_capi()
 		return out_err;
 	}
 	
-	pxllr_construct_cdts = (void (*)(struct cdts*, struct construct_cdts_callbacks*))load_symbol(cdt_helper_xllr_handle, "construct_cdts", &out_err, &out_err_len);
+	pxllr_construct_cdts = (void (*)(struct cdts*, struct construct_cdts_callbacks*, char** out_nul_term_err))load_symbol(cdt_helper_xllr_handle, "construct_cdts", &out_err, &out_err_len);
 	if(!pxllr_construct_cdts)
 	{
 		printf("Failed to load construct_cdts: %s\n", out_err);
 		return out_err;
 	}
 	
-	pxllr_construct_cdt = (void (*)(struct cdt*, struct construct_cdts_callbacks*))load_symbol(cdt_helper_xllr_handle, "construct_cdt", &out_err, &out_err_len);
+	pxllr_construct_cdt = (void (*)(struct cdt*, struct construct_cdts_callbacks*, char** out_nul_term_err))load_symbol(cdt_helper_xllr_handle, "construct_cdt", &out_err, &out_err_len);
 	if(!pxllr_construct_cdt)
 	{
 		printf("Failed to load construct_cdt: %s\n", out_err);
 		return out_err;
 	}
 	
-	pxllr_traverse_cdts = (void (*)(struct cdts*, struct traverse_cdts_callbacks*))load_symbol(cdt_helper_xllr_handle, "traverse_cdts", &out_err, &out_err_len);
+	pxllr_traverse_cdts = (void (*)(struct cdts*, struct traverse_cdts_callbacks*, char** out_nul_term_err))load_symbol(cdt_helper_xllr_handle, "traverse_cdts", &out_err, &out_err_len);
 	if(!pxllr_traverse_cdts)
 	{
 		printf("Failed to load traverse_cdts: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_traverse_cdt = (void (*)(struct cdt*, struct traverse_cdts_callbacks*, char** out_nul_term_err))load_symbol(cdt_helper_xllr_handle, "traverse_cdt", &out_err, &out_err_len);
+	if(!pxllr_traverse_cdt)
+	{
+		printf("Failed to load traverse_cdt: %s\n", out_err);
 		return out_err;
 	}
 
