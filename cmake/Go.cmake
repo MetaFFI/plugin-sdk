@@ -59,7 +59,7 @@ macro(add_go_test NAME)
 	endif()
 
 	add_test(NAME "(go test) ${NAME}"
-			COMMAND ${GOEXEC} test
+			COMMAND ${GOEXEC} test -v
 			WORKING_DIRECTORY ${add_go_test_WORKING_DIRECTORY})
 endmacro()
 
