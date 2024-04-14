@@ -228,9 +228,13 @@ void construct_cdt(cdt* item, const construct_cdts_callbacks* callbacks, char** 
 //--------------------------------------------------------------------
 void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& callbacks, const std::vector<metaffi_size>& current_index, const metaffi_type_info& known_type /*=metaffi_any_type*/)
 {
-	metaffi_type_info ti = known_type.type == metaffi_any_type ?
-                                    callbacks.get_type_info(current_index.data(), current_index.size(), callbacks.context) :
-                                    known_type;
+	
+	metaffi_type_info ti;
+	if(known_type.type == metaffi_any_type){
+		ti = callbacks.get_type_info(current_index.data(), current_index.size(), callbacks.context);
+	} else {
+		ti = known_type;
+	}
 	
 	if(ti.type == metaffi_any_type)
 	{

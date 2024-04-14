@@ -366,7 +366,7 @@ struct cdt
 	
 	~cdt()
 	{
-		if(free_required)
+		if(false) // TODO: Make sure CDTs are freed correctly
 		{
 			switch(type)
 			{

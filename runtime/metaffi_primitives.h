@@ -65,7 +65,7 @@ struct metaffi_char8
 			throw std::invalid_argument("Invalid UTF-8 character");
 		}
 		
-		std::memcpy(this->c, utf8c, required_bytes);
+		memcpy(this->c, utf8c, required_bytes);
 		for(int8_t i=required_bytes ; i<4; i++)
 		{
 			this->c[i] = u8'\0';
@@ -104,7 +104,7 @@ struct metaffi_char16
 			throw std::invalid_argument("Invalid UTF-16 character");
 		}
 		
-		std::memcpy(this->c, utf16c, required_bytes);
+		memcpy(this->c, utf16c, required_bytes);
 		if(required_bytes == 2){
 			this->c[1] = u'\0';
 		}
@@ -272,7 +272,7 @@ struct metaffi_type_info
 		{
 			size_t alias_length = std::strlen(alias);
 			this->alias = new char[alias_length+1];
-			std::memcpy(this->alias, alias, alias_length);
+			memcpy(this->alias, alias, alias_length);
 			this->alias[alias_length] = '\0';
 			is_free_alias = true;
 		}
@@ -290,7 +290,7 @@ struct metaffi_type_info
 	{
 		size_t alias_length = len > -1 ? len : std::strlen(palias);
 		this->alias = new char[alias_length+1];
-		std::memcpy(this->alias, palias, alias_length);
+		memcpy(this->alias, palias, alias_length);
 		this->alias[alias_length] = '\0';
 		is_free_alias = true;
 	}
@@ -379,8 +379,8 @@ struct cdt_metaffi_callable
 	{
 		parameters_types = new metaffi_type[params_types_length];
 		retval_types = new metaffi_type[retval_types_length];
-		std::memcpy(parameters_types, other.parameters_types, sizeof(metaffi_type) * params_types_length);
-		std::memcpy(retval_types, other.retval_types, sizeof(metaffi_type) * retval_types_length);
+		memcpy(parameters_types, other.parameters_types, sizeof(metaffi_type) * params_types_length);
+		memcpy(retval_types, other.retval_types, sizeof(metaffi_type) * retval_types_length);
 	}
 	cdt_metaffi_callable(cdt_metaffi_callable&& other) noexcept : val(nullptr), parameters_types(nullptr), params_types_length(0),
 																	retval_types(nullptr), retval_types_length(0) { *this = std::move(other); }
@@ -390,8 +390,8 @@ struct cdt_metaffi_callable
 		retval_types_length = static_cast<metaffi_int8>(retval_types.size());
 		this->parameters_types = new metaffi_type[params_types_length];
 		this->retval_types = new metaffi_type[retval_types_length];
-		std::memcpy(this->parameters_types, parameters_types.data(), sizeof(metaffi_type) * params_types_length);
-		std::memcpy(this->retval_types, retval_types.data(), sizeof(metaffi_type) * retval_types_length);
+		memcpy(this->parameters_types, parameters_types.data(), sizeof(metaffi_type) * params_types_length);
+		memcpy(this->retval_types, retval_types.data(), sizeof(metaffi_type) * retval_types_length);
 	}
 	
 	cdt_metaffi_callable& operator=(const cdt_metaffi_callable& other) noexcept
@@ -404,8 +404,8 @@ struct cdt_metaffi_callable
 			retval_types_length = other.retval_types_length;
 			parameters_types = new metaffi_type[params_types_length];
 			retval_types = new metaffi_type[retval_types_length];
-			std::memcpy(parameters_types, other.parameters_types, sizeof(metaffi_type) * params_types_length);
-			std::memcpy(retval_types, other.retval_types, sizeof(metaffi_type) * retval_types_length);
+			memcpy(parameters_types, other.parameters_types, sizeof(metaffi_type) * params_types_length);
+			memcpy(retval_types, other.retval_types, sizeof(metaffi_type) * retval_types_length);
 		}
 	}
 	

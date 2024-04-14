@@ -20,5 +20,6 @@ install(FILES   ${CMAKE_CURRENT_LIST_DIR}/runtime/metaffi_primitives.h
 		${CMAKE_CURRENT_LIST_DIR}/runtime/cdt.h
 		${CMAKE_CURRENT_LIST_DIR}/runtime/xllr_capi_loader.h
 		${CMAKE_CURRENT_LIST_DIR}/runtime/xllr_capi_loader.c
+		${CMAKE_CURRENT_LIST_DIR}/runtime/cdts_traverse_construct.h
 		DESTINATION "include")
 
