@@ -9,6 +9,7 @@
 #include <variant>
 #include <vector>
 #include <stdexcept>
+#include <cstring>
 #endif
 
 

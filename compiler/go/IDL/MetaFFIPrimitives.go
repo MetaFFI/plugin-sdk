@@ -238,8 +238,12 @@ func (m *MetaFFITypeInfo) AsCMetaFFITypeInfo() C.struct_metaffi_type_info {
 	var cMetaFFIType C.struct_metaffi_type_info
 
 	if m.Alias != "" {
-		cMetaFFIType.alias = C.CString(m.Alias)
-		cMetaFFIType.is_free_alias = C.metaffi_bool(1)
+		cMetaFFIType.alias = nil
+		cMetaFFIType.is_free_alias = C.metaffi_bool(0) // TODO: change to TRUE
+		//		cMetaFFIType.is_free_alias = C.metaffi_bool(1)
+	} else {
+		cMetaFFIType.alias = nil
+		cMetaFFIType.is_free_alias = C.metaffi_bool(0)
 	}
 
 	C.set_metaffi_type_info_type(&cMetaFFIType, C.uint64_t(m.Type))
