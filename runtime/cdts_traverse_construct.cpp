@@ -241,7 +241,7 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 		throw std::runtime_error("get_type_info must return a concrete type, not dynamic type like metaffi_any_type");
 	}
 	
-	if(ti.type != metaffi_any_type && ti.fixed_dimensions > 0){
+	if((ti.type != metaffi_any_type) && ti.fixed_dimensions > 0){
 		ti.type |= metaffi_array_type;
 	}
 	
