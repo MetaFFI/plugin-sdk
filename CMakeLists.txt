@@ -6,6 +6,7 @@ project(metaffi-plugin-sdk VERSION 0.0.1)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/PackageManagementUtils.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/Utils.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/Go.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/Python3.cmake)
 
 add_Threads_package()
 
