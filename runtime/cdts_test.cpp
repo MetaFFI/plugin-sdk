@@ -4,6 +4,14 @@
 #include <doctest/doctest.h>
 #include <vector>
 
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE !FALSE
+#endif
+
 using namespace metaffi::runtime;
 
 TEST_SUITE("CDTS Tests")
@@ -543,7 +551,7 @@ TEST_SUITE("CDTS Tests")
 			
 #pragma warning(push)
 #pragma warning(disable: 4311)
-			return ((metaffi_int32) cur);
+			return static_cast<metaffi_int32>(reinterpret_cast<intptr_t>(cur));
 #pragma warning(pop)
 		};
 
@@ -594,8 +602,8 @@ TEST_SUITE("CDTS Tests")
 		};
 
 		tcb.on_int32 = [](const metaffi_size* index, metaffi_size index_size, metaffi_int32 val, void* context) {
-			REQUIRE(index_size >= 1);
-			REQUIRE(index_size <= 4);
+			REQUIRE((index_size >= 1));
+			REQUIRE((index_size <= 4));
 			metaffi_int32**** cur = static_cast<metaffi_int32****>(context);
 			for(metaffi_size i = 0; i < index_size; ++i)
 			{
@@ -603,7 +611,8 @@ TEST_SUITE("CDTS Tests")
 			}
 #pragma warning(push)
 #pragma warning(disable: 4311)
-			REQUIRE(val == (metaffi_int32) cur);
+			auto expected = static_cast<metaffi_int32>(reinterpret_cast<intptr_t>(cur));
+			REQUIRE((val == expected));
 #pragma warning(pop)
 		};
 

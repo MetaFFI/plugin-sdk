@@ -2,6 +2,7 @@
 #include <iostream>
 #include <queue>
 #include <sstream>
+#include <limits.h>
 
 namespace metaffi::runtime
 {
