@@ -37,12 +37,16 @@ struct cdts
 	// [int, [], int] -> fixed_dimensions = -1
 	// [ [], [][] , [] ] -> fixed_dimensions = -1
 	metaffi_int64   fixed_dimensions;
+	
+	// if the array is allocated on the cache, this flag is set to true.
+	// It means the cleanup must not delete the array itself, but only the elements.
+	metaffi_bool allocated_on_cache;
 
 #ifdef __cplusplus
-	cdts() : arr(nullptr), length(0), fixed_dimensions(1) {}
-	cdts(cdt* pre_allocated_cdts, metaffi_size length, metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS) : arr(pre_allocated_cdts), length(length), fixed_dimensions(fixed_dimensions) {}
+	cdts() : arr(nullptr), length(0), allocated_on_cache(0), fixed_dimensions(1) {}
+	cdts(cdt* pre_allocated_cdts, metaffi_size length, metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS, metaffi_bool allocated_on_cache = 0) : arr(pre_allocated_cdts), length(length), fixed_dimensions(fixed_dimensions), allocated_on_cache(0) {}
 	explicit cdts(metaffi_size length, metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS);
-	cdts(cdts&& other) noexcept : arr(other.arr), length(other.length), fixed_dimensions(other.fixed_dimensions)
+	cdts(cdts&& other) noexcept : arr(other.arr), length(other.length), fixed_dimensions(other.fixed_dimensions), allocated_on_cache(other.allocated_on_cache)
 	{
 		other.arr = nullptr;
 	}
@@ -56,7 +60,12 @@ struct cdts
 			arr = other.arr;
 			length = other.length;
 			fixed_dimensions = other.fixed_dimensions;
+			allocated_on_cache = other.allocated_on_cache;
+			
 			other.arr = nullptr;
+			other.length = 0;
+			other.fixed_dimensions = 0;
+			other.allocated_on_cache = 0;
 		}
 		return *this;
 	}

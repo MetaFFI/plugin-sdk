@@ -26,7 +26,18 @@ void cdts::set(metaffi_size index, cdt&& val) const
 
 void cdts::free()
 {
-	delete[] arr;
+	// if NOT allocated on cache (i.e. array)
+	if(!this->allocated_on_cache){
+		delete[] arr; // delete[] calls elements destructors
+	}
+	else // arr must not be freed - just free the elements.
+	{
+		for(metaffi_size i = 0; i < length; i++)
+		{
+			arr[i].~cdt(); // call destructor of each element
+		}
+	}
+	
 	arr = nullptr;
 }
 
