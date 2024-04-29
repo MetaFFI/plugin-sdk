@@ -1,7 +1,7 @@
 #include "cdt.h"
 
 #ifdef __cplusplus
-cdts::cdts(metaffi_size length, metaffi_int64 fixed_dimensions) : arr(nullptr), length(length), free_required(true), fixed_dimensions(fixed_dimensions)
+cdts::cdts(metaffi_size length, metaffi_int64 fixed_dimensions) : arr(nullptr), length(length), fixed_dimensions(fixed_dimensions)
 {
 	if(length > 0)
 	{
@@ -19,16 +19,20 @@ cdt& cdts::at(metaffi_size index) const
 	return arr[index];
 }
 
-void cdts::set(metaffi_size index, cdt&& val)
+void cdts::set(metaffi_size index, cdt&& val) const
 {
 	arr[index] = std::move(val);
 }
 
-void cdts::free() const
+void cdts::free()
 {
-	if(free_required)
-	{
-		delete[] arr;
-	}
+	delete[] arr;
+	arr = nullptr;
 }
+
+cdts::~cdts()
+{
+	free();
+}
+
 #endif

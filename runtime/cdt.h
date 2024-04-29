@@ -23,7 +23,6 @@ struct cdts
 {
 	struct cdt*     arr;
 	metaffi_size    length;
-	metaffi_bool    free_required;
 	
 	// if the dimensions are fixed, the fixed_dimensions holds the count of dimensions.
 	// NOTICE, fixed_dimensions is NOT regarding the *length of the arrays*, but the count of the dimensions!
@@ -40,14 +39,15 @@ struct cdts
 	metaffi_int64   fixed_dimensions;
 
 #ifdef __cplusplus
-	cdts() : arr(nullptr), length(0), free_required(true), fixed_dimensions(1) {}
-	cdts(cdt* pre_allocated_cdts, metaffi_size length, metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS) : arr(pre_allocated_cdts), length(length), free_required(false), fixed_dimensions(fixed_dimensions) {}
+	cdts() : arr(nullptr), length(0), fixed_dimensions(1) {}
+	cdts(cdt* pre_allocated_cdts, metaffi_size length, metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS) : arr(pre_allocated_cdts), length(length), fixed_dimensions(fixed_dimensions) {}
 	explicit cdts(metaffi_size length, metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS);
-	cdts(cdts&& other) noexcept : arr(other.arr), length(other.length), free_required(other.free_required), fixed_dimensions(other.fixed_dimensions)
+	cdts(cdts&& other) noexcept : arr(other.arr), length(other.length), fixed_dimensions(other.fixed_dimensions)
 	{
 		other.arr = nullptr;
-		other.free_required = 0;
 	}
+	
+	~cdts();
 	
 	cdts& operator=(cdts&& other) noexcept
 	{
@@ -55,17 +55,16 @@ struct cdts
 		{
 			arr = other.arr;
 			length = other.length;
-			free_required = other.free_required;
 			fixed_dimensions = other.fixed_dimensions;
 			other.arr = nullptr;
 		}
 		return *this;
 	}
 	
-	cdt& operator[](metaffi_size index) const;
+	[[nodiscard]] cdt& operator[](metaffi_size index) const;
 	[[nodiscard]] cdt& at(metaffi_size index) const;
-	void set(metaffi_size index, cdt&& val);
-	void free() const;
+	void set(metaffi_size index, cdt&& val) const;
+	void free();
 #endif
 };
 
@@ -89,8 +88,8 @@ union cdt_types
 	struct metaffi_char32 char32_val;
 	metaffi_string32 string32_val;
 	struct cdt_metaffi_handle handle_val;
-	struct cdt_metaffi_callable callable_val;
-	struct cdts array_val;
+	struct cdt_metaffi_callable* callable_val;
+	struct cdts* array_val;
 
 #ifdef __cplusplus
 	cdt_types() : int64_val(0) {}
@@ -104,7 +103,7 @@ struct cdt
 	metaffi_bool free_required;
 	
 #ifdef __cplusplus
-	cdt() : type(metaffi_null_type), free_required(false) {}
+	cdt() : type(metaffi_null_type), free_required(false), cdt_val(){}
 	explicit cdt(metaffi_float32 val): type(metaffi_float32_type), free_required(false) { cdt_val.float32_val = val; }
 	explicit cdt(metaffi_float64 val): type(metaffi_float64_type), free_required(false) { cdt_val.float64_val = val; }
 	explicit cdt(metaffi_int8 val): type(metaffi_int8_type), free_required(false) { cdt_val.int8_val = val; }
@@ -205,14 +204,14 @@ struct cdt
 	}
 	
 	explicit cdt(const cdt_metaffi_handle& val): type(metaffi_handle_type), free_required(true) { cdt_val.handle_val = val; }
-	explicit cdt(cdt_metaffi_callable&& val): type(metaffi_callable_type), free_required(true) { cdt_val.callable_val = std::move(val); }
+	explicit cdt(cdt_metaffi_callable&& val): type(metaffi_callable_type), free_required(true) { cdt_val.callable_val = &val; }
 	
-	explicit cdt(cdts&& val): type(metaffi_array_type), free_required(true) { cdt_val.array_val = std::move(val); }
+	explicit cdt(cdts&& val): type(metaffi_array_type), free_required(true) { cdt_val.array_val = &val; }
 	cdt(metaffi_size length, metaffi_int64 fixed_dimensions, metaffi_type common_type = metaffi_any_type): type(metaffi_array_type | common_type), free_required(true)
 	{
-		cdt_val.array_val.length = length;
-		cdt_val.array_val.fixed_dimensions = fixed_dimensions;
-		cdt_val.array_val.arr = new cdt[length]{};
+		cdt_val.array_val->length = length;
+		cdt_val.array_val->fixed_dimensions = fixed_dimensions;
+		cdt_val.array_val->arr = new cdt[length]{};
 	}
 	
 	cdt& operator=(cdt&& other)
@@ -362,48 +361,69 @@ struct cdt
 	explicit operator const metaffi_char32&() const { return cdt_val.char32_val; }
 	explicit operator metaffi_string32() const { return cdt_val.string32_val; }
 	explicit operator const cdt_metaffi_handle&() const { return cdt_val.handle_val; }
-	explicit operator const cdt_metaffi_callable&() const { return cdt_val.callable_val; }
+	
+	explicit operator const cdts&() const
+	{
+		if(cdt_val.array_val == nullptr)
+		{
+			throw std::runtime_error("Array is null");
+		}
+		
+		return *cdt_val.array_val;
+	}
+	
+	explicit operator const cdt_metaffi_callable&() const
+	{
+		if(cdt_val.array_val == nullptr)
+		{
+			throw std::runtime_error("Callable is null");
+		}
+		
+		return *cdt_val.callable_val;
+	}
 	
 	~cdt()
 	{
-		if(false) // TODO: Make sure CDTs are freed correctly
+		if(free_required)
 		{
-			switch(type)
+			if(type & metaffi_array_type)
 			{
-				case metaffi_string8_type:
-				{
-					delete[] cdt_val.string8_val;
-				}break;
-				
-				case metaffi_string16_type:
-				{
-					delete[] cdt_val.string16_val;
-				}break;
-				
-				case metaffi_string32_type:
-				{
-					delete[] cdt_val.string32_val;
-				}break;
-				
-				case metaffi_handle_type:
-				{
-					if(cdt_val.handle_val.release)
-					{
-						reinterpret_cast<cdt_metaffi_handle::release_fptr>(cdt_val.handle_val.release)(&cdt_val.handle_val);
-					}
-				}break;
-				
-				case metaffi_callable_type:
-				{
-					cdt_val.callable_val.free();
-				}break;
-				
-				case metaffi_array_type:
-				{
-					cdt_val.array_val.free();
-				}break;
+				delete cdt_val.array_val;
 			}
-			
+			else
+			{
+				switch(type)
+				{
+					case metaffi_string8_type:
+					{
+						delete[] cdt_val.string8_val;
+					}break;
+				
+					case metaffi_string16_type:
+					{
+						delete[] cdt_val.string16_val;
+					}break;
+				
+					case metaffi_string32_type:
+					{
+						delete[] cdt_val.string32_val;
+					}break;
+				
+					case metaffi_handle_type:
+					{
+						if(cdt_val.handle_val.release)
+						{
+							reinterpret_cast<cdt_metaffi_handle::release_fptr>(cdt_val.handle_val.release)(&cdt_val.handle_val);
+						}
+					}break;
+				
+					case metaffi_callable_type:
+					{
+						delete cdt_val.callable_val;
+					}break;
+				
+				}
+			}
 		}
 	}
 	

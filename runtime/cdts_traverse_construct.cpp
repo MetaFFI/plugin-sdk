@@ -138,7 +138,11 @@ void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbac
 		
 		case metaffi_callable_type:
 		{
-			callbacks.on_callable(current_index.data(), current_index.size(), item.cdt_val.callable_val, callbacks.context);
+			if(!item.cdt_val.callable_val){
+				throw std::runtime_error("Callable value is null");
+			}
+			
+			callbacks.on_callable(current_index.data(), current_index.size(), *item.cdt_val.callable_val, callbacks.context);
 		}break;
 		
 		case metaffi_null_type:
@@ -148,10 +152,14 @@ void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbac
 		
 		case metaffi_array_type:
 		{
-			metaffi_bool continue_traverse = callbacks.on_array(current_index.data(), current_index.size(), item.cdt_val.array_val, item.cdt_val.array_val.fixed_dimensions, common_type, callbacks.context);
+			if(!item.cdt_val.array_val){
+				throw std::runtime_error("Array value is null");
+			}
+			
+			metaffi_bool continue_traverse = callbacks.on_array(current_index.data(), current_index.size(), *item.cdt_val.array_val, item.cdt_val.array_val->fixed_dimensions, common_type, callbacks.context);
 			
 			if(continue_traverse){
-				traverse_cdts(item.cdt_val.array_val, callbacks, current_index);
+				traverse_cdts(*item.cdt_val.array_val, callbacks, current_index);
 			}
 		}break;
 		
@@ -332,8 +340,7 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 		
 		case metaffi_string8_type:
 		{
-			item.cdt_val.string8_val = callbacks.get_string8(current_index.data(), current_index.size(), callbacks.context);
-			item.free_required = true;
+			item.cdt_val.string8_val = callbacks.get_string8(current_index.data(), current_index.size(), &item.free_required, callbacks.context);
 		}break;
 		
 		case metaffi_char16_type:
@@ -344,8 +351,7 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 		
 		case metaffi_string16_type:
 		{
-			item.cdt_val.string16_val = callbacks.get_string16(current_index.data(), current_index.size(), callbacks.context);
-			item.free_required = true;
+			item.cdt_val.string16_val = callbacks.get_string16(current_index.data(), current_index.size(), &item.free_required, callbacks.context);
 		}break;
 		
 		case metaffi_char32_type:
@@ -356,14 +362,12 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 		
 		case metaffi_string32_type:
 		{
-			item.cdt_val.string32_val = callbacks.get_string32(current_index.data(), current_index.size(), callbacks.context);
-			item.free_required = true;
+			item.cdt_val.string32_val = callbacks.get_string32(current_index.data(), current_index.size(), &item.free_required, callbacks.context);
 		}break;
 		
 		case metaffi_handle_type:
 		{
-			item.cdt_val.handle_val = callbacks.get_handle(current_index.data(), current_index.size(), callbacks.context);
-			item.free_required = true;
+			item.cdt_val.handle_val = callbacks.get_handle(current_index.data(), current_index.size(), &item.free_required, callbacks.context);
 		}break;
 		
 		case metaffi_null_type:
@@ -373,7 +377,11 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 		
 		case metaffi_array_type:
 		{
-			item.cdt_val.array_val.fixed_dimensions = INT_MIN;
+			if(!item.cdt_val.array_val){
+				item.cdt_val.array_val = new cdts{};
+			}
+			
+			item.cdt_val.array_val->fixed_dimensions = INT_MIN;
 			metaffi_bool is_manually_construct_array = 0;
 			metaffi_bool is_fixed_dimension = 0;
 			metaffi_bool is_1d_array = 0;
@@ -387,26 +395,26 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 			
 			item.type = common_type == metaffi_any_type ? metaffi_array_type : (common_type | metaffi_array_type);
 			item.free_required = true;
-			item.cdt_val.array_val.arr = new cdt[array_length]{};
-			item.cdt_val.array_val.length = array_length;
+			item.cdt_val.array_val->arr = new cdt[array_length]{};
+			item.cdt_val.array_val->length = array_length;
 			
 			if(is_manually_construct_array)
 			{
 				// let callback construct the array
-				callbacks.construct_cdt_array(current_index.data(), current_index.size(), &item.cdt_val.array_val, callbacks.context);
+				callbacks.construct_cdt_array(current_index.data(), current_index.size(), item.cdt_val.array_val, callbacks.context);
 			}
 			else // iterate into array
 			{
-				item.cdt_val.array_val.length = array_length;
+				item.cdt_val.array_val->length = array_length;
 				
 				// initialize found_dims - if already detected mixed dimensions - skip the dimensions calculation
 				// else, set to INT_MIN to perform the calculation
 				metaffi_int64 found_dims = is_fixed_dimension ? INT_MIN : MIXED_OR_UNKNOWN_DIMENSIONS;
-				for(int i=0 ; i<item.cdt_val.array_val.length ; i++)
+				for(int i=0 ; i<item.cdt_val.array_val->length ; i++)
 				{
 					std::vector<metaffi_size> new_index = current_index;
 					new_index.emplace_back(i);
-					cdt& new_item = item.cdt_val.array_val.arr[i];
+					cdt& new_item = item.cdt_val.array_val->arr[i];
 					construct_cdt(new_item, callbacks, new_index);
 					
 					if(is_1d_array && (new_item.type & metaffi_array_type))
@@ -429,9 +437,9 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 						
 						if(found_dims == INT_MIN) // set first dimension found
 						{
-							found_dims = new_item.cdt_val.array_val.fixed_dimensions;
+							found_dims = new_item.cdt_val.array_val->fixed_dimensions;
 						}
-						else if(found_dims != new_item.cdt_val.array_val.fixed_dimensions) // compare the dimensions, to make sure it is not mixed!
+						else if(found_dims != new_item.cdt_val.array_val->fixed_dimensions) // compare the dimensions, to make sure it is not mixed!
 						{
 							found_dims = MIXED_OR_UNKNOWN_DIMENSIONS; // mixed dimensions
 						}
@@ -443,15 +451,15 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 				// if mixed dimensions - set fixed_dimensions to MIXED_OR_UNKNOWN_DIMENSIONS
 				if(is_1d_array)
 				{
-					item.cdt_val.array_val.fixed_dimensions = 1;
+					item.cdt_val.array_val->fixed_dimensions = 1;
 				}
 				else if(found_dims != MIXED_OR_UNKNOWN_DIMENSIONS)
 				{
-					item.cdt_val.array_val.fixed_dimensions = found_dims+1;
+					item.cdt_val.array_val->fixed_dimensions = found_dims+1;
 				}
 				else
 				{
-					item.cdt_val.array_val.fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS;
+					item.cdt_val.array_val->fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS;
 				}
 			}
 			
@@ -459,8 +467,13 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 		
 		case metaffi_callable_type:
 		{
-			item.cdt_val.callable_val = callbacks.get_callable(current_index.data(), current_index.size() , callbacks.context);
-			item.free_required = true;
+			if(!item.cdt_val.callable_val)
+			{
+				item.cdt_val.callable_val = new cdt_metaffi_callable{};
+			}
+			
+			item.free_required = true; // default is true
+			*item.cdt_val.callable_val = callbacks.get_callable(current_index.data(), current_index.size(), &item.free_required, callbacks.context);
 		}break;
 		
 		default:

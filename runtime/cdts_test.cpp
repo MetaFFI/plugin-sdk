@@ -1,7 +1,9 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 
+#include "../utils/scope_guard.hpp"
 #include "cdts_traverse_construct.h"
 #include <doctest/doctest.h>
+#include <utility>
 #include <vector>
 
 #ifndef FALSE
@@ -42,7 +44,7 @@ TEST_SUITE("CDTS Tests")
 
 		std::vector<metaffi_variant> data = {f32, f64, i8, ui8, i16, ui16, i32, ui32, i64, ui64, b, c8, s8, c16, s16,
 		                                     c32, s32, h, callable};
-
+		
 		cdts arr;
 
 		construct_cdts_callbacks ccb{};
@@ -100,35 +102,35 @@ TEST_SUITE("CDTS Tests")
 		};
 
 		ccb.get_float32 = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_float32 {
-			REQUIRE(index_length == 1);
-			REQUIRE(index[0] == 0);
-			REQUIRE(std::get<metaffi_float32>(((std::vector<metaffi_variant>*) context)->at(index[0])) == 3.14f);
+			REQUIRE((index_length == 1));
+			REQUIRE((index[0] == 0));
+			REQUIRE((std::get<metaffi_float32>(((std::vector<metaffi_variant>*) context)->at(index[0])) == 3.14f));
 			return std::get<metaffi_float32>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
 		ccb.get_float64 = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_float64 {
-			REQUIRE(index_length == 1);
-			REQUIRE(index[0] == 1);
-			REQUIRE(std::get<metaffi_float64>(((std::vector<metaffi_variant>*) context)->at(index[0])) == 2.71828);
+			REQUIRE((index_length == 1));
+			REQUIRE((index[0] == 1));
+			REQUIRE((std::get<metaffi_float64>(((std::vector<metaffi_variant>*) context)->at(index[0])) == 2.71828));
 			return std::get<metaffi_float64>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
 		ccb.get_int8 = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_int8 {
-			REQUIRE(index_length == 1);
-			REQUIRE(index[0] == 2);
-			REQUIRE(std::get<metaffi_int8>(((std::vector<metaffi_variant>*) context)->at(index[0])) == 1);
+			REQUIRE((index_length == 1));
+			REQUIRE((index[0] == 2));
+			REQUIRE((std::get<metaffi_int8>(((std::vector<metaffi_variant>*) context)->at(index[0])) == 1));
 			return std::get<metaffi_int8>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
 		ccb.get_uint8 = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_uint8 {
-			REQUIRE(index_length == 1);
-			REQUIRE(index[0] == 3);
-			REQUIRE(std::get<metaffi_uint8>(((std::vector<metaffi_variant>*) context)->at(index[0])) == 2);
+			REQUIRE((index_length == 1));
+			REQUIRE((index[0] == 3));
+			REQUIRE((std::get<metaffi_uint8>(((std::vector<metaffi_variant>*) context)->at(index[0])) == 2));
 			return std::get<metaffi_uint8>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
 		ccb.get_int16 = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_int16 {
-			REQUIRE(index_length == 1);
+			REQUIRE((index_length == 1));
 			REQUIRE(index[0] == 4);
 			REQUIRE(std::get<metaffi_int16>(((std::vector<metaffi_variant>*) context)->at(index[0])) == 3);
 			return std::get<metaffi_int16>(((std::vector<metaffi_variant>*) context)->at(index[0]));
@@ -186,32 +188,34 @@ TEST_SUITE("CDTS Tests")
 			return std::get<metaffi_char8>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
-		ccb.get_string8 = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_string8 {
-			REQUIRE(index_length == 1);
-			REQUIRE(index[0] == 12);
+		ccb.get_string8 = [](const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_free_required, void* context) -> metaffi_string8 {
+			REQUIRE((index_length == 1));
+			REQUIRE((index[0] == 12));
 			metaffi_string8 retstr = std::get<metaffi_string8>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 			std::u8string mffi_u8str(reinterpret_cast<const char8_t*>(retstr));
+			*is_free_required = FALSE;
 
-			REQUIRE(mffi_u8str == u8"Hello UTF-8");
+			REQUIRE((mffi_u8str == u8"Hello UTF-8"));
 			return std::get<metaffi_string8>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
 		ccb.get_char16 = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_char16 {
-			REQUIRE(index_length == 1);
-			REQUIRE(index[0] == 13);
+			REQUIRE((index_length == 1));
+			REQUIRE((index[0] == 13));
 
 			//maybe add == operator for metaffi_char16
 			return std::get<metaffi_char16>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
-		ccb.get_string16 = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_string16 {
-			REQUIRE(index_length == 1);
-			REQUIRE(index[0] == 14);
+		ccb.get_string16 = [](const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_free_required, void* context) -> metaffi_string16 {
+			REQUIRE((index_length == 1));
+			REQUIRE((index[0] == 14));
 			metaffi_string16 retstr = std::get<metaffi_string16>(
 			        ((std::vector<metaffi_variant>*) context)->at(index[0]));
 			std::u16string mffi_u16str(reinterpret_cast<const char16_t*>(retstr));
+			*is_free_required = FALSE;
 
-			REQUIRE(mffi_u16str == u"Hello UTF-16");
+			REQUIRE((mffi_u16str == u"Hello UTF-16"));
 			return std::get<metaffi_string16>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
@@ -222,30 +226,35 @@ TEST_SUITE("CDTS Tests")
 			return std::get<metaffi_char32>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
-		ccb.get_string32 = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_string32 {
+		ccb.get_string32 = [](const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_free_required, void* context) -> metaffi_string32 {
 			REQUIRE(index_length == 1);
 			REQUIRE(index[0] == 16);
 			metaffi_string32 retstr = std::get<metaffi_string32>(
 			        ((std::vector<metaffi_variant>*) context)->at(index[0]));
 			std::u32string mffi_u32str(reinterpret_cast<const char32_t*>(retstr));
-
+			*is_free_required = FALSE;
+			
 			REQUIRE(mffi_u32str == U"Hello UTF-32");
 			return std::get<metaffi_string32>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
-		ccb.get_handle = [](const metaffi_size* index, metaffi_size index_length, void* context) -> cdt_metaffi_handle {
-			REQUIRE(index_length == 1);
-			REQUIRE(index[0] == 17);
-			REQUIRE(std::get<cdt_metaffi_handle>(((std::vector<metaffi_variant>*) context)->at(index[0])) ==
-			        cdt_metaffi_handle((void*) 1, 101, nullptr));
+		ccb.get_handle = [](const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_free_required, void* context) -> cdt_metaffi_handle {
+			REQUIRE((index_length == 1));
+			REQUIRE((index[0] == 17));
+			REQUIRE((std::get<cdt_metaffi_handle>(((std::vector<metaffi_variant>*) context)->at(index[0])) ==
+			        cdt_metaffi_handle((void*) 1, 101, nullptr)));
+			*is_free_required = FALSE;
 			return std::get<cdt_metaffi_handle>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
-		ccb.get_callable = [](const metaffi_size* index, metaffi_size index_length, void* context) -> cdt_metaffi_callable {
-			REQUIRE(index_length == 1);
-			REQUIRE(index[0] == 18);
-			REQUIRE(std::get<cdt_metaffi_callable>(((std::vector<metaffi_variant>*) context)->at(index[0])) ==
-			        cdt_metaffi_callable((void*) 2, {metaffi_int8_type, metaffi_int16_type}, {metaffi_float32_type}));
+		ccb.get_callable = [](const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_free_required, void* context) -> cdt_metaffi_callable {
+			REQUIRE((index_length == 1));
+			REQUIRE((index[0] == 18));
+			cdt_metaffi_callable mcallable((void*) 2, {metaffi_int8_type, metaffi_int16_type}, {metaffi_float32_type});
+			REQUIRE((std::get<cdt_metaffi_callable>(((std::vector<metaffi_variant>*) context)->at(index[0])) == mcallable));
+			mcallable.free();
+			*is_free_required = TRUE;
+			
 			return std::get<cdt_metaffi_callable>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
@@ -256,39 +265,39 @@ TEST_SUITE("CDTS Tests")
 		traverse_cdts_callbacks tcb;
 		tcb.context = (void*) &data;
 		tcb.on_float32 = [](const metaffi_size* index, metaffi_size index_size, metaffi_float32 val, void* context) {
-			REQUIRE(index_size == 1);
-			REQUIRE(index[0] == 0);
-			REQUIRE(val == 3.14f);
+			REQUIRE((index_size == 1));
+			REQUIRE((index[0] == 0));
+			REQUIRE((val == 3.14f));
 		};
 
 		tcb.on_float64 = [](const metaffi_size* index, metaffi_size index_size, metaffi_float64 val, void* context) {
-			REQUIRE(index_size == 1);
-			REQUIRE(index[0] == 1);
-			REQUIRE(val == 2.71828);
+			REQUIRE((index_size == 1));
+			REQUIRE((index[0] == 1));
+			REQUIRE((val == 2.71828));
 		};
 
 		tcb.on_int8 = [](const metaffi_size* index, metaffi_size index_size, metaffi_int8 val, void* context) {
-			REQUIRE(index_size == 1);
-			REQUIRE(index[0] == 2);
-			REQUIRE(val == 1);
+			REQUIRE((index_size == 1));
+			REQUIRE((index[0] == 2));
+			REQUIRE((val == 1));
 		};
 
 		tcb.on_uint8 = [](const metaffi_size* index, metaffi_size index_size, metaffi_uint8 val, void* context) {
-			REQUIRE(index_size == 1);
-			REQUIRE(index[0] == 3);
-			REQUIRE(val == 2);
+			REQUIRE((index_size == 1));
+			REQUIRE((index[0] == 3));
+			REQUIRE((val == 2));
 		};
 
 		tcb.on_int16 = [](const metaffi_size* index, metaffi_size index_size, metaffi_int16 val, void* context) {
-			REQUIRE(index_size == 1);
-			REQUIRE(index[0] == 4);
-			REQUIRE(val == 3);
+			REQUIRE((index_size == 1));
+			REQUIRE((index[0] == 4));
+			REQUIRE((val == 3));
 		};
 
 		tcb.on_uint16 = [](const metaffi_size* index, metaffi_size index_size, metaffi_uint16 val, void* context) {
-			REQUIRE(index_size == 1);
-			REQUIRE(index[0] == 5);
-			REQUIRE(val == 4);
+			REQUIRE((index_size == 1));
+			REQUIRE((index[0] == 5));
+			REQUIRE((val == 4));
 		};
 
 		tcb.on_int32 = [](const metaffi_size* index, metaffi_size index_size, metaffi_int32 val, void* context) {
@@ -371,21 +380,21 @@ TEST_SUITE("CDTS Tests")
 			        ((std::vector<metaffi_variant>*) context)->at(index[0]));
 			std::u32string mffi_u32str(reinterpret_cast<const char32_t*>(retstr));
 
-			REQUIRE(mffi_u32str == U"Hello UTF-32");
+			REQUIRE((mffi_u32str == U"Hello UTF-32"));
 		};
 
 		tcb.on_handle = [](const metaffi_size* index, metaffi_size index_size, const cdt_metaffi_handle& val, void* context) {
-			REQUIRE(index_size == 1);
-			REQUIRE(index[0] == 17);
-			REQUIRE(val == cdt_metaffi_handle((void*) 1, 101, nullptr));
+			REQUIRE((index_size == 1));
+			REQUIRE((index[0] == 17));
+			REQUIRE((val == cdt_metaffi_handle((void*) 1, 101, nullptr)));
 		};
 
 		tcb.on_callable = [](const metaffi_size* index, metaffi_size index_size, const cdt_metaffi_callable& val,
 		                     void* context) {
-			REQUIRE(index_size == 1);
-			REQUIRE(index[0] == 18);
-			REQUIRE(val ==
-			        cdt_metaffi_callable((void*) 2, {metaffi_int8_type, metaffi_int16_type}, {metaffi_float32_type}));
+			REQUIRE((index_size == 1));
+			REQUIRE((index[0] == 18));
+			cdt_metaffi_callable mcall((void*) 2, {metaffi_int8_type, metaffi_int16_type}, {metaffi_float32_type});
+			REQUIRE((val.val == mcall.val));
 		};
 
 		traverse_cdts(arr, tcb);
@@ -398,6 +407,7 @@ TEST_SUITE("CDTS Tests")
 
 		// Construct cdt_metaffi_int32_array using construct_multidim_array_bfs
 		cdts arr;
+		
 		construct_cdts_callbacks ccb = {};
 		ccb.context = (void*) c_array;
 		ccb.get_root_elements_count = [](void* context) -> metaffi_size {
@@ -406,9 +416,9 @@ TEST_SUITE("CDTS Tests")
 
 		ccb.get_array_metadata = [](const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_fixed_dimension,
 		                            metaffi_bool* is_1d_array, metaffi_type* common_type, metaffi_bool* is_manually_construct_array, void* context) -> metaffi_size {
-			REQUIRE(index_length == 1);
-			REQUIRE(index[0] == 0);
-			REQUIRE(*common_type == metaffi_uint8_type);
+			REQUIRE((index_length == 1));
+			REQUIRE((index[0] == 0));
+			REQUIRE((*common_type == metaffi_uint8_type));
 			*common_type = metaffi_uint8_type;
 			*is_fixed_dimension = 1;
 			*is_1d_array = 1;
@@ -416,15 +426,15 @@ TEST_SUITE("CDTS Tests")
 		};
 
 		ccb.get_uint8 = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_uint8 {
-			REQUIRE(index_length == 2);
-			REQUIRE(index[1] < 8);
+			REQUIRE((index_length == 2));
+			REQUIRE((index[1] < 8));
 			return ((metaffi_uint8*) context)[index[1]];
 		};
 
 		ccb.get_type_info = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_type_info {
-			REQUIRE(index_length >= 1);
-			REQUIRE(index_length <= 2);
-			REQUIRE(index[0] == 0);
+			REQUIRE((index_length >= 1));
+			REQUIRE((index_length <= 2));
+			REQUIRE((index[0] == 0));
 			if(index_length == 1)
 			{
 				return {metaffi_uint8_type | metaffi_array_type, nullptr};
@@ -487,6 +497,21 @@ TEST_SUITE("CDTS Tests")
 
 		// Initialize a 4D ragged C-array
 		metaffi_int32**** c_array = init_4d_ragged_c_array();
+		metaffi::utils::scope_guard sg([&c_array]() {
+			for(int i = 0; i < 1; ++i)
+			{
+				for(int j = 0; j < 2; ++j)
+				{
+					for(int k = 0; k < 3; ++k)
+					{
+						delete[] c_array[i][j][k];
+					}
+					delete[] c_array[i][j];
+				}
+				delete[] c_array[i];
+			}
+			delete[] c_array;
+		});
 
 		// Construct cdt_metaffi_int32_array using construct_multidim_array_bfs
 		construct_cdts_callbacks ccb = {};
@@ -497,9 +522,9 @@ TEST_SUITE("CDTS Tests")
 		};
 
 		ccb.get_type_info = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_type_info {
-			REQUIRE(index_length >= 1);
-			REQUIRE(index_length <= 4);
-			REQUIRE(index[0] == 0);
+			REQUIRE((index_length >= 1));
+			REQUIRE((index_length <= 4));
+			REQUIRE((index[0] == 0));
 			if(index_length > 0 && index_length < 4)
 			{
 				return {metaffi_int32_type | metaffi_array_type, nullptr};
@@ -541,8 +566,8 @@ TEST_SUITE("CDTS Tests")
 		};
 
 		ccb.get_int32 = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_int32 {
-			REQUIRE(index_length >= 1);
-			REQUIRE(index_length <= 4);
+			REQUIRE((index_length >= 1));
+			REQUIRE((index_length <= 4));
 			metaffi_int32**** cur = static_cast<metaffi_int32****>(context);
 			for(metaffi_size i = 0; i < index_length; ++i)
 			{
@@ -559,7 +584,7 @@ TEST_SUITE("CDTS Tests")
 		construct_cdts(arr, ccb);
 
 		// Traverse the CDTS and check it is correct
-		traverse_cdts_callbacks tcb;
+		traverse_cdts_callbacks tcb{};
 		tcb.context = (void*) c_array;
 
 		tcb.on_array = [](const metaffi_size* index, metaffi_size index_size, const cdts& val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context) -> metaffi_bool
@@ -617,6 +642,7 @@ TEST_SUITE("CDTS Tests")
 		};
 
 		traverse_cdts(arr, tcb);
+		
 	}
 
 	TEST_CASE("mixed dimensions")

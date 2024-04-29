@@ -262,7 +262,7 @@ struct metaffi_type_info
 	metaffi_bool is_free_alias;
 	metaffi_int64 fixed_dimensions;
 
-#define MIXED_OR_UNKNOWN_DIMENSIONS -1
+#define MIXED_OR_UNKNOWN_DIMENSIONS (-1)
 
 #ifdef __cplusplus
 	metaffi_type_info() : type(metaffi_null_type), alias(nullptr), is_free_alias(false), fixed_dimensions(MIXED_OR_UNKNOWN_DIMENSIONS) {}
@@ -376,13 +376,7 @@ struct cdt_metaffi_callable
 #ifdef __cplusplus
 	cdt_metaffi_callable() : val(nullptr), parameters_types(nullptr), params_types_length(0), retval_types(nullptr), retval_types_length(0) {}
 	cdt_metaffi_callable(metaffi_callable val, metaffi_type* parameters_types, metaffi_int8 params_types_length, metaffi_type* retval_types, metaffi_int8 retval_types_length) : val(val), parameters_types(parameters_types), params_types_length(params_types_length), retval_types(retval_types), retval_types_length(retval_types_length) {}
-	cdt_metaffi_callable(const cdt_metaffi_callable& other) : val(other.val), params_types_length(other.params_types_length), retval_types_length(other.retval_types_length)
-	{
-		parameters_types = new metaffi_type[params_types_length];
-		retval_types = new metaffi_type[retval_types_length];
-		memcpy(parameters_types, other.parameters_types, sizeof(metaffi_type) * params_types_length);
-		memcpy(retval_types, other.retval_types, sizeof(metaffi_type) * retval_types_length);
-	}
+	cdt_metaffi_callable(const cdt_metaffi_callable& other) : cdt_metaffi_callable(){ *this = other; }
 	cdt_metaffi_callable(cdt_metaffi_callable&& other) noexcept : val(nullptr), parameters_types(nullptr), params_types_length(0),
 																	retval_types(nullptr), retval_types_length(0) { *this = std::move(other); }
 	cdt_metaffi_callable(metaffi_callable val, const std::vector<metaffi_type>& parameters_types, const std::vector<metaffi_type>& retval_types) : val(val)
@@ -395,25 +389,39 @@ struct cdt_metaffi_callable
 		memcpy(this->retval_types, retval_types.data(), sizeof(metaffi_type) * retval_types_length);
 	}
 	
+	~cdt_metaffi_callable()
+	{
+		free();
+	}
+	
 	cdt_metaffi_callable& operator=(const cdt_metaffi_callable& other) noexcept
 	{
 		// copy other to this
 		if(this != &other)
 		{
 			val = other.val;
-			params_types_length = other.params_types_length;
+			
+			delete[] parameters_types;
+			delete[] retval_types;
+			
 			retval_types_length = other.retval_types_length;
+			params_types_length = other.params_types_length;
 			parameters_types = new metaffi_type[params_types_length];
 			retval_types = new metaffi_type[retval_types_length];
 			memcpy(parameters_types, other.parameters_types, sizeof(metaffi_type) * params_types_length);
 			memcpy(retval_types, other.retval_types, sizeof(metaffi_type) * retval_types_length);
 		}
+		
+		return *this;
 	}
 	
 	cdt_metaffi_callable& operator=(cdt_metaffi_callable&& other) noexcept
 	{
 		if(this != &other)
 		{
+			delete[] parameters_types;
+			delete[] retval_types;
+			
 			val = other.val;
 			parameters_types = other.parameters_types;
 			params_types_length = other.params_types_length;
@@ -455,10 +463,13 @@ struct cdt_metaffi_callable
 		return true;
 	}
 	
-	void free() const
+	void free()
 	{
 		delete[] parameters_types;
 		delete[] retval_types;
+		
+		parameters_types = nullptr;
+		retval_types = nullptr;
 	}
 #endif // __cplusplus
 };
