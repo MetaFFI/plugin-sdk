@@ -12,7 +12,10 @@ TEST_SUITE("XLLR CAPI Loader")
 		REQUIRE((buf[0].length == 1));
 		REQUIRE((buf[1].length == 1));
 
-		REQUIRE(buf[0].arr != nullptr);
-		REQUIRE(buf[1].arr != nullptr);
+		REQUIRE((buf[0].arr != nullptr));
+		REQUIRE((buf[1].arr != nullptr));
+		
+		xllr_free_cdts_buffer(buf);
+		buf = nullptr;
 	}
 }

@@ -2,85 +2,88 @@
 /***
  * MetaFFI XLLR API 
  */
-
-#include <stdint.h>
+#ifdef __cplusplus
+#include <cstdarg>
+#include <cstdint>
+#else
 #include <stdarg.h>
+#include <stdint.h>
+#endif
 #include <runtime/cdt.h>
-
+#include <runtime/xcall.h>
 
 #ifndef SKIP_XLLR_API_EXTERN
-extern "C"
-{
+extern "C" {
 #endif
 /**
  * Load language runtime of foreign language
  */
-void load_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len);
+void load_runtime_plugin(const char* runtime_plugin, char** err);
 
 /**
  * Free language runtime of foreign language
  */
-void free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len);
+void free_runtime_plugin(const char* runtime_plugin, char** err);
 
 /**
  * Load module of foreign language
  */
-void** load_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, metaffi_type_info* params_types, metaffi_type_info* retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len);
+struct xcall* load_entity(const char* runtime_plugin_name, const char* module_path, const char* function_path, metaffi_type_info* params_types, uint8_t params_count, metaffi_type_info* retvals_types, uint8_t retval_count, char** err);
 
- /**
+/**
   * Load module of foreign language
   */
-void** make_callable(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, void* make_callable_context, metaffi_type_info* params_types, metaffi_type_info* retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len);
+struct xcall* make_callable(const char* runtime_plugin_name, void* make_callable_context, metaffi_type_info* params_types, uint8_t params_count, metaffi_type_info* retvals_types, uint8_t retval_count, char** err);
 
 /**
  * Free module of foreign language
  */
-void free_function(const char* runtime_plugin_name, uint32_t runtime_plugin_name_len, void** pff, char** err, uint32_t* err_len);
+void free_xcall(const char* runtime_plugin_name, struct xcall* pxcall, char** err);
 
 /***
  * Call foreign entity
  */
 void xcall_params_ret(
-	void* pplugin_xcall_params_ret_and_context[2],            // [in] pointer to plugin's xcall_params_ret + context
-	cdts params_ret[2],                                       // [in/out] parameters array
-	char** out_err, uint64_t* out_err_len                     // [out] error
+        struct xcall* pplugin_xcall_params_ret_and_context,// [in] pointer to plugin's xcall_params_ret + context
+        cdts params_ret[2],                                // [in/out] parameters array
+        char** out_err                                     // [out] error
 );
 
 /***
  * Call foreign entity
  */
 void xcall_no_params_ret(
-		void* pplugin_xcall_no_params_ret_and_context[2],         // [in] pointer to plugin's xcall_no_params_ret + context
-		cdts return_values[1],                                    // [in] return values array
-		char** out_err, uint64_t* out_err_len                     // [out] error
+        struct xcall* pplugin_xcall_no_params_ret_and_context,// [in] pointer to plugin's xcall_no_params_ret + context
+        cdts return_values[1],                                // [in] return values array
+        char** out_err                                        // [out] error
 );
 
 /***
  * Call foreign entity
  */
 void xcall_params_no_ret(
-		void* pplugin_xcall_params_no_ret_and_context[2],         // [in] pointer to plugin's xcall_params_no_ret + context
-		cdts parameters[1],                                       // [in] parameters array
-		char** out_err, uint64_t* out_err_len                     // [out] error
+        struct xcall* pplugin_xcall_params_no_ret_and_context,// [in] pointer to plugin's xcall_params_no_ret + context
+        cdts parameters[1],                                   // [in] parameters array
+        char** out_err                                        // [out] error
 );
 
 /***
  * Call foreign entity
  */
 void xcall_no_params_no_ret(
-		void* pplugin_xcall_no_params_no_ret_and_context[2],      // [in] pointer to plugin's xcall_no_params_no_ret + context
-		char** out_err, uint64_t* out_err_len                     // [out] error
+        struct xcall* pplugin_xcall_no_params_no_ret_and_context,// [in] pointer to plugin's xcall_no_params_no_ret + context
+        char** out_err                                           // [out] error
 );
 
 /**
  * @brief Sets a flag in XLLR
  */
-void set_runtime_flag(const char* flag_name, uint64_t flag_name_length);
+void set_runtime_flag(const char* flag_name);
 
 /**
  * @brief Test a flag in XLLR
  */
-int is_runtime_flag_set(const char* flag_name, uint64_t flag_name_length);
+int is_runtime_flag_set(const char* flag_name);
 
 #ifndef SKIP_XLLR_API_EXTERN
 }

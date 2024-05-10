@@ -14,8 +14,8 @@
 // It is important that the structs will hold a pointer to the primitives and NOT the primitives themselves.
 // this is to avoid needless copy and the ability to pass by reference.
 
+#define cdt_cache_size 100
 #define cdts_cache_size 50
-
 
 struct cdt;
 
