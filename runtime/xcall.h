@@ -24,8 +24,8 @@ struct xcall
 	
 	explicit xcall(void* pxcall_and_context[2])
 	{
-		pxcall_and_context[0] = pxcall_and_context[0];
-		pxcall_and_context[1] = pxcall_and_context[1];
+		this->pxcall_and_context[0] = pxcall_and_context[0];
+		this->pxcall_and_context[1] = pxcall_and_context[1];
 	}
 	
 	explicit xcall(void* pxcall, void* context = nullptr)

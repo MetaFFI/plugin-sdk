@@ -377,11 +377,6 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 		
 		case metaffi_array_type:
 		{
-			if(!item.cdt_val.array_val){
-				item.cdt_val.array_val = new cdts{};
-			}
-			
-			item.cdt_val.array_val->fixed_dimensions = INT_MIN;
 			metaffi_bool is_manually_construct_array = 0;
 			metaffi_bool is_fixed_dimension = 0;
 			metaffi_bool is_1d_array = 0;
@@ -395,8 +390,7 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 			
 			item.type = common_type == metaffi_any_type ? metaffi_array_type : (common_type | metaffi_array_type);
 			item.free_required = true;
-			item.cdt_val.array_val->arr = new cdt[array_length]{};
-			item.cdt_val.array_val->length = array_length;
+			item.cdt_val.array_val = new cdts{array_length, (metaffi_int64)INT_MIN};
 			
 			if(is_manually_construct_array)
 			{
@@ -512,6 +506,8 @@ void construct_cdts(cdts& arr, const metaffi::runtime::construct_cdts_callbacks&
 	if(arr.length == 0)
 	{
 		arr.length = callbacks.get_root_elements_count(callbacks.context);
+		delete[] arr.arr;
+		
 		arr.arr = new cdt[arr.length]{};
 	}
 	

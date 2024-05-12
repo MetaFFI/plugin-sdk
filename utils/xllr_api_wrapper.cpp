@@ -21,16 +21,16 @@ xllr_api_wrapper::xllr_api_wrapper()
 		
 		this->xllr_mod->load( xllr_fullname );
 		
-		this->pload_runtime_plugin = load_func<void(const char*, uint32_t, char**, uint32_t*)>(*this->xllr_mod, "load_runtime_plugin");
+		this->pload_runtime_plugin = load_func<void(const char*, char**)>(*this->xllr_mod, "load_runtime_plugin");
 		
-		this->pfree_runtime_plugin = load_func<void(const char*, uint32_t, char**, uint32_t*)>(*this->xllr_mod, "free_runtime_plugin");
+		this->pfree_runtime_plugin = load_func<void(const char*, char**)>(*this->xllr_mod, "free_runtime_plugin");
 		
-		this->pload_function = load_func<void**(const char*, uint32_t, const char*, uint32_t, const char*, uint32_t, metaffi_type_info*, metaffi_type_info*, int8_t, int8_t, char**, uint32_t*)>(*this->xllr_mod, "load_function");
-		this->pfree_function = load_func<void(const char*, uint32_t, void*, char**, uint32_t*)>(*this->xllr_mod, "free_function");
-		this->pmake_callable = load_func<void**(const char*, uint32_t, void*, metaffi_type_info*, metaffi_type_info*, int8_t, int8_t, char**, uint32_t*)>(*this->xllr_mod, "make_callable");
+		this->pload_entity = load_func<xcall*(const char*, const char*, const char*, metaffi_type_info*, int8_t, metaffi_type_info*, int8_t, char**)>(*this->xllr_mod, "load_entity");
+		this->pfree_xcall = load_func<void(const char*, xcall*, char**)>(*this->xllr_mod, "free_xcall");
+		this->pmake_callable = load_func<xcall*(const char*, void*, metaffi_type_info*, int8_t, metaffi_type_info*, int8_t, char**)>(*this->xllr_mod, "make_callable");
 		
-		this->pset_runtime_flag = load_func<void(const char*, uint64_t)>(*this->xllr_mod, "set_runtime_flag");
-		this->pis_runtime_flag_set = load_func<int(const char*, uint64_t)>(*this->xllr_mod, "is_runtime_flag_set");
+		this->pset_runtime_flag = load_func<void(const char*)>(*this->xllr_mod, "set_runtime_flag");
+		this->pis_runtime_flag_set = load_func<int(const char*)>(*this->xllr_mod, "is_runtime_flag_set");
 	}
 	catch(std::exception& e)
 	{
@@ -39,58 +39,51 @@ xllr_api_wrapper::xllr_api_wrapper()
 	}
 }
 //--------------------------------------------------------------------
-void xllr_api_wrapper::load_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len)
+void xllr_api_wrapper::load_runtime_plugin(const char* runtime_plugin, char** err)
 {
 	*err = nullptr;
-	*err_len = 0;
-	(*this->pload_runtime_plugin)(runtime_plugin, runtime_plugin_len, err, err_len);
+	(*this->pload_runtime_plugin)(runtime_plugin, err);
 }
 //--------------------------------------------------------------------
-void xllr_api_wrapper::free_runtime_plugin(const char* runtime_plugin, uint32_t runtime_plugin_len, char** err, uint32_t* err_len)
+void xllr_api_wrapper::free_runtime_plugin(const char* runtime_plugin, char** err)
 {
 	*err = nullptr;
-	*err_len = 0;
-	(*this->pfree_runtime_plugin)(runtime_plugin, runtime_plugin_len, err, err_len);
+	(*this->pfree_runtime_plugin)(runtime_plugin, err);
 }
 //--------------------------------------------------------------------
-void** xllr_api_wrapper::load_function(const char* runtime_plugin, uint32_t runtime_plugin_len, const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, metaffi_type_info* params_types, metaffi_type_info* retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len)
+xcall* xllr_api_wrapper::load_entity(const char* runtime_plugin, const char* module_path, const char* function_path, metaffi_type_info* params_types, int8_t params_count, metaffi_type_info* retvals_types, int8_t retval_count, char** err)
 {
 	*err = nullptr;
-	*err_len = 0;
-	return (*this->pload_function)(runtime_plugin, runtime_plugin_len,
-	                                module_path, module_path_len,
-	                                function_path, function_path_len,
-	                                params_types, retvals_types, params_count, retval_count,
-			                        err, err_len);
+	return (*this->pload_entity)(runtime_plugin,
+	                                module_path,
+	                                function_path,
+	                                params_types, retval_count, retvals_types, params_count,
+			                        err);
 }
 //--------------------------------------------------------------------
-void** xllr_api_wrapper::make_callable(const char* runtime_plugin, uint32_t runtime_plugin_len, void* make_callable_context, metaffi_type_info* params_types, metaffi_type_info* retvals_types, uint8_t params_count, uint8_t retval_count, char** err, uint32_t* err_len)
+xcall* xllr_api_wrapper::make_callable(const char* runtime_plugin, void* make_callable_context, metaffi_type_info* params_types, int8_t params_count, metaffi_type_info* retvals_types, int8_t retval_count, char** err)
 {
 	*err = nullptr;
-	*err_len = 0;
-	return (*this->pmake_callable)(runtime_plugin, runtime_plugin_len,
+	return (*this->pmake_callable)(runtime_plugin,
 									make_callable_context,
-									params_types, retvals_types, params_count, retval_count,
-									err, err_len);
+									params_types, params_count, retvals_types, retval_count,
+									err);
 }
 //--------------------------------------------------------------------
-void xllr_api_wrapper::free_function(const char* runtime_plugin, uint32_t runtime_plugin_len, void* pff, char** err, uint32_t* err_len)
+void xllr_api_wrapper::free_xcall(const char* runtime_plugin, xcall* pxcall, char** err)
 {
 	*err = nullptr;
-	*err_len = 0;
-	(*this->pfree_function)(runtime_plugin, runtime_plugin_len,
-	                      pff,
-	                      err, err_len);
+	(*this->pfree_xcall)(runtime_plugin, pxcall, err);
 }
 //--------------------------------------------------------------------
-void xllr_api_wrapper::set_runtime_flag(const char* flag, uint64_t flag_len)
+void xllr_api_wrapper::set_runtime_flag(const char* flag)
 {
-	(*this->pset_runtime_flag)(flag, flag_len);
+	(*this->pset_runtime_flag)(flag);
 }
 //--------------------------------------------------------------------
-bool xllr_api_wrapper::is_runtime_flag_set(const char* flag, uint64_t flag_len)
+bool xllr_api_wrapper::is_runtime_flag_set(const char* flag)
 {
-	return (*this->pis_runtime_flag_set)(flag, flag_len) != 0;
+	return (*this->pis_runtime_flag_set)(flag) != 0;
 }
 //--------------------------------------------------------------------
 

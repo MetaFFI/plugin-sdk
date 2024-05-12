@@ -1,7 +1,7 @@
 #include "cdt.h"
 
 #ifdef __cplusplus
-cdts::cdts(metaffi_size length, metaffi_int64 fixed_dimensions) : arr(nullptr), length(length), fixed_dimensions(fixed_dimensions)
+cdts::cdts(metaffi_size length, metaffi_int64 fixed_dimensions) : arr(nullptr), length(length), fixed_dimensions(fixed_dimensions), allocated_on_cache(0)
 {
 	if(length > 0)
 	{

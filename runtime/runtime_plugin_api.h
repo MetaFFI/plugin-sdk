@@ -1,6 +1,11 @@
 #pragma once
+#ifndef __cplusplus
 #include <stdarg.h>
 #include <stdint.h>
+#else
+#include <cstdarg>
+#include <cstdint>
+#endif
 #include "cdt.h"
 #include "xcall.h"
 
@@ -20,18 +25,18 @@ void free_runtime(char** err);
 /**
  * Load module of foreign language
  */
-struct xcall* load_entity(const char* module_path, uint32_t module_path_len, const char* function_path, uint32_t function_path_len, metaffi_type_info* params_types, uint8_t params_count, metaffi_type_info* retvals_types, uint8_t retval_count, char** err);
+struct xcall* load_entity(const char* module_path, const char* function_path, metaffi_type_info* params_types, int8_t params_count, metaffi_type_info* retvals_types, int8_t retval_count, char** err);
 
  /**
   * Load callable of foreign language
   */
-struct xcall* make_callable(void* make_callable_context, metaffi_type_info* params_types, uint8_t params_count, metaffi_type_info* retvals_types, uint8_t retval_count, char** err);
+struct xcall* make_callable(void* make_callable_context, metaffi_type_info* params_types, int8_t params_count, metaffi_type_info* retvals_types, int8_t retval_count, char** err);
 
 
 /**
  * Free module of foreign language
  */
-void free_function(void* pff, char** err);
+void free_xcall(xcall* pff, char** err);
 
 void xcall_params_ret(void* context, cdts params_ret[2], char** out_err);
 void xcall_params_no_ret(void* context, cdts parameters[1], char** out_err);

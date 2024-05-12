@@ -218,9 +218,7 @@ struct cdt
 	explicit cdt(cdts&& val): type(metaffi_array_type), free_required(true) { cdt_val.array_val = &val; }
 	cdt(metaffi_size length, metaffi_int64 fixed_dimensions, metaffi_type common_type = metaffi_any_type): type(metaffi_array_type | common_type), free_required(true)
 	{
-		cdt_val.array_val->length = length;
-		cdt_val.array_val->fixed_dimensions = fixed_dimensions;
-		cdt_val.array_val->arr = new cdt[length]{};
+		cdt_val.array_val = new cdts(length, fixed_dimensions);
 	}
 	
 	cdt& operator=(cdt&& other)
@@ -398,6 +396,7 @@ struct cdt
 			if(type & metaffi_array_type)
 			{
 				delete cdt_val.array_val;
+				cdt_val.array_val = nullptr;
 			}
 			else
 			{
@@ -406,16 +405,19 @@ struct cdt
 					case metaffi_string8_type:
 					{
 						delete[] cdt_val.string8_val;
+						cdt_val.string8_val = nullptr;
 					}break;
 				
 					case metaffi_string16_type:
 					{
 						delete[] cdt_val.string16_val;
+						cdt_val.string16_val = nullptr;
 					}break;
 				
 					case metaffi_string32_type:
 					{
 						delete[] cdt_val.string32_val;
+						cdt_val.string32_val = nullptr;
 					}break;
 				
 					case metaffi_handle_type:
@@ -423,12 +425,14 @@ struct cdt
 						if(cdt_val.handle_val.release)
 						{
 							reinterpret_cast<cdt_metaffi_handle::release_fptr>(cdt_val.handle_val.release)(&cdt_val.handle_val);
+							cdt_val.handle_val.release = nullptr;
 						}
 					}break;
 				
 					case metaffi_callable_type:
 					{
 						delete cdt_val.callable_val;
+						cdt_val.callable_val = nullptr;
 					}break;
 				
 				}
