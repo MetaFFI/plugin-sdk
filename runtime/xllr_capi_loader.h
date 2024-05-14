@@ -95,5 +95,18 @@ const char* load_xllr_capi();
 
 
 #ifdef __cplusplus
+// make sure you include utils/scope_guard.hpp
+#define cdts_scope_guard(name) \
+	metaffi::utils::scope_guard sg_##name([&name]() \
+	{ \
+		if(name) \
+		{ \
+			xllr_free_cdts_buffer(name); \
+			name = nullptr; \
+		} \
+	});
+#endif
+
+#ifdef __cplusplus
 }
 #endif

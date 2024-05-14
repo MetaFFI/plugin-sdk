@@ -126,7 +126,7 @@ struct cdt
 	explicit cdt(bool val): type(metaffi_bool_type), free_required(false) { cdt_val.bool_val = val ? 1 : 0; }
 	explicit cdt(metaffi_char8 val): type(metaffi_char8_type), free_required(false) { cdt_val.char8_val = val; }
 	
-	cdt(const char8_t* val, bool is_copy): type(metaffi_string8_type), free_required(true)
+	cdt(const char8_t* val, bool is_copy): type(metaffi_string8_type), free_required(is_copy)
 	{
 		if(is_copy)
 		{

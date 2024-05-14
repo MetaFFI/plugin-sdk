@@ -12,6 +12,25 @@ struct xcall
 	void* pxcall_and_context[2];
 };
 #else
+
+// make sure you include utils/scope_guard.hpp
+// if_fail_code need to assume "char* err" is defined
+#define xcall_scope_guard(name, if_fail_code) \
+	metaffi::utils::scope_guard sg_##name([&name]() \
+	{ \
+		if(name && name->is_valid()) \
+		{ \
+            char* err = nullptr;         \
+			free_xcall(name, nullptr);   \
+            if(err)                           \
+            {                          \
+                if_fail_code;  \
+			}                                  \
+                                              \
+            name = nullptr;     \
+		} \
+	});
+
 struct xcall
 {
 	void* pxcall_and_context[2];
