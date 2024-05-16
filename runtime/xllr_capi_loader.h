@@ -43,18 +43,21 @@ void xllr_xcall_no_params_no_ret(struct xcall* pxcall,
 struct xcall* xllr_load_entity(const char* runtime_plugin,
                           const char* module_path,
                           const char* function_path,
-                          struct metaffi_type_info* params_types, uint8_t params_count,
-                          struct metaffi_type_info* retvals_types, uint8_t retval_count,
+                          struct metaffi_type_info* params_types, int8_t params_count,
+                          struct metaffi_type_info* retvals_types, int8_t retval_count,
                           char** out_err);
 
 struct xcall* xllr_load_callable(void* make_callable_context,
-                                struct metaffi_type_info* params_types, uint8_t params_count,
-                                struct metaffi_type_info* retvals_types, uint8_t retval_count,
+                                struct metaffi_type_info* params_types, int8_t params_count,
+                                struct metaffi_type_info* retvals_types, int8_t retval_count,
                                 char** out_err);
 
 void xllr_free_xcall(const char* runtime_plugin,
                            struct xcall* pxcall,
                            char** out_err);
+
+void xllr_free_error_message(char* err_to_free);
+char* set_error_message(const char* err_message, uint64_t length);
 
 void xllr_load_runtime_plugin(const char* runtime_plugin, char** err);
 void xllr_free_runtime_plugin(const char* runtime_plugin, char** err);

@@ -61,12 +61,12 @@ void xllr_xcall_no_params_no_ret(struct xcall* pxcall,
 	pxllr_xcall_no_params_no_ret(pxcall, out_err);
 }
 
-struct xcall* (*pxllr_load_entity)(const char*, const char*, const char*, struct metaffi_type_info*, uint8_t, struct metaffi_type_info*, uint8_t, char**);
+struct xcall* (*pxllr_load_entity)(const char*, const char*, const char*, struct metaffi_type_info*, int8_t, struct metaffi_type_info*, int8_t, char**);
 struct xcall* xllr_load_entity(const char* runtime_plugin,
                           const char* module_path,
                           const char* function_path,
-                          struct metaffi_type_info* params_types, uint8_t params_count,
-                          struct metaffi_type_info* retval_types, uint8_t retval_count,
+                          struct metaffi_type_info* params_types, int8_t params_count,
+                          struct metaffi_type_info* retval_types, int8_t retval_count,
                           char** out_err)
 {
 	return pxllr_load_entity(runtime_plugin,
@@ -84,6 +84,18 @@ void xllr_free_xcall(const char* runtime_plugin,
 	pxllr_free_xcall(runtime_plugin,
 	                    pxcall,
 	                    out_err);
+}
+
+void (*pxllr_free_error_message)(char*);
+void xllr_free_error_message(char* err_to_free)
+{
+	pxllr_free_error_message(err_to_free);
+}
+
+char* (*pset_error_message)(const char*, uint64_t);
+char* xllr_set_error_message(const char* err_message, uint64_t length)
+{
+	return pset_error_message(err_message, length);
 }
 
 void (*pxllr_load_runtime_plugin)(const char*, char**);
@@ -286,7 +298,7 @@ const char* load_xllr_capi()
 		return out_err;
 	}
 	
-	pxllr_load_entity = (struct xcall* (*)(const char*, const char*, const char*, struct metaffi_type_info*, uint8_t, struct metaffi_type_info*, uint8_t, char**))load_symbol(cdt_helper_xllr_handle, "load_entity", &out_err);
+	pxllr_load_entity = (struct xcall* (*)(const char*, const char*, const char*, struct metaffi_type_info*, int8_t, struct metaffi_type_info*, int8_t, char**))load_symbol(cdt_helper_xllr_handle, "load_entity", &out_err);
 	if(!pxllr_load_entity)
 	{
 		printf("Failed to load load_function: %s\n", out_err);
@@ -297,6 +309,20 @@ const char* load_xllr_capi()
 	if(!pxllr_free_xcall)
 	{
 		printf("Failed to load free_and_remove_xcall: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_free_error_message = (void (*)(char*))load_symbol(cdt_helper_xllr_handle, "free_error_message", &out_err);
+	if(!pxllr_free_error_message)
+	{
+		printf("Failed to load free_error_message: %s\n", out_err);
+		return out_err;
+	}
+	
+	pset_error_message = (char* (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "set_error_message", &out_err);
+	if(!pset_error_message)
+	{
+		printf("Failed to load set_error_message: %s\n", out_err);
 		return out_err;
 	}
 
@@ -380,11 +406,11 @@ const char* load_xllr()
 	}
 
 	
-#ifdef _WIN32
-	char metaffi_home[MAX_PATH] = {0};
+#if defined(_WIN32) && defined(__STDC_LIB_EXT1__)
 	size_t requiredSize;
-	
+	char metaffi_home[MAX_PATH] = {0};
 	getenv_s(&requiredSize, NULL, 0, "METAFFI_HOME");
+	
 	if (requiredSize == 0)
 	{
 	    return "Failed getting METAFFI_HOME. Is it set?";
@@ -398,12 +424,17 @@ const char* load_xllr()
 		getenv_s(&requiredSize, metaffi_home, requiredSize, "METAFFI_HOME");
 	}
 #else
-	char metaffi_home[PATH_MAX] = {0};
+	#ifndef _WIN32
+	#define MAX_PATH PATH_MAX
+	#endif
+	
+	char metaffi_home[MAX_PATH+1] = {0};
+	
 	const char* metaffi_home_tmp = NULL;
 	metaffi_home_tmp = getenv("METAFFI_HOME");
 	if(metaffi_home_tmp)
 	{
-	    strncpy(metaffi_home, metaffi_home_tmp, PATH_MAX);
+	    strncpy(metaffi_home, metaffi_home_tmp, MAX_PATH);
 	}
 	else
 	{

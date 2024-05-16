@@ -35,4 +35,5 @@ struct runtime_plugin_interface
 	 * Free loaded entity
 	 */ 
 	virtual void free_xcall(xcall* pff, char** err) = 0;
+	
 };
