@@ -15,13 +15,13 @@ struct xcall
 
 // make sure you include utils/scope_guard.hpp
 // if_fail_code need to assume "char* err" is defined
-#define xcall_scope_guard(name, if_fail_code) \
+#define xcall_scope_guard(plugin, name, if_fail_code) \
 	metaffi::utils::scope_guard sg_##name([&name]() \
 	{ \
 		if(name && name->is_valid()) \
 		{ \
             char* err = nullptr;         \
-			free_xcall(name, nullptr);   \
+			xllr_free_xcall(plugin, name, &err);   \
             if(err)                           \
             {                          \
                 if_fail_code;  \
