@@ -86,16 +86,34 @@ void xllr_free_xcall(const char* runtime_plugin,
 	                    out_err);
 }
 
-void (*pxllr_metaffi_free_string)(char*);
-void xllr_metaffi_free_string(char* err_to_free)
+void (*pxllr_free_string)(char*);
+void xllr_free_string(char* err_to_free)
 {
-	pxllr_metaffi_free_string(err_to_free);
+	pxllr_free_string(err_to_free);
 }
 
-char* (*pmetaffi_alloc_string)(const char*, uint64_t);
-char* xllr_metaffi_alloc_string(const char* err_message, uint64_t length)
+char* (*palloc_string)(const char*, uint64_t);
+char* xllr_alloc_string(const char* err_message, uint64_t length)
 {
-	return pmetaffi_alloc_string(err_message, length);
+	return palloc_string(err_message, length);
+}
+
+char8_t* (*pxllr_alloc_string8)(const char8_t*, uint64_t);
+char8_t* xllr_alloc_string8(const char8_t* err_message, uint64_t length)
+{
+	return pxllr_alloc_string8(err_message, length);
+}
+
+char16_t* (*pxllr_alloc_string16)(const char16_t*, uint64_t);
+char16_t* xllr_alloc_string16(const char16_t* err_message, uint64_t length)
+{
+	return pxllr_alloc_string16(err_message, length);
+}
+
+char32_t* (*pxllr_alloc_string32)(const char32_t*, uint64_t);
+char32_t* xllr_alloc_string32(const char32_t* err_message, uint64_t length)
+{
+	return pxllr_alloc_string32(err_message, length);
 }
 
 void (*pxllr_metaffi_free)(void*);
@@ -324,17 +342,38 @@ const char* load_xllr_capi()
 		return out_err;
 	}
 	
-	pxllr_metaffi_free_string = (void (*)(char*))load_symbol(cdt_helper_xllr_handle, "metaffi_free_string", &out_err);
-	if(!pxllr_metaffi_free_string)
+	pxllr_free_string = (void (*)(char*))load_symbol(cdt_helper_xllr_handle, "free_string", &out_err);
+	if(!pxllr_free_string)
 	{
-		printf("Failed to load metaffi_free_string: %s\n", out_err);
+		printf("Failed to load free_string: %s\n", out_err);
 		return out_err;
 	}
 	
-	pmetaffi_alloc_string = (char* (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "metaffi_alloc_string", &out_err);
-	if(!pmetaffi_alloc_string)
+	palloc_string = (char* (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_string", &out_err);
+	if(!palloc_string)
 	{
-		printf("Failed to load metaffi_alloc_string: %s\n", out_err);
+		printf("Failed to load alloc_string: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_alloc_string8 = (char8_t* (*)(const char8_t*, uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_string8", &out_err);
+	if(!pxllr_alloc_string8)
+	{
+		printf("Failed to load alloc_string8: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_alloc_string16 = (char16_t* (*)(const char16_t*, uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_string16", &out_err);
+	if(!pxllr_alloc_string16)
+	{
+		printf("Failed to load alloc_string16: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_alloc_string32 = (char32_t* (*)(const char32_t*, uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_string32", &out_err);
+	if(!pxllr_alloc_string32)
+	{
+		printf("Failed to load alloc_string32: %s\n", out_err);
 		return out_err;
 	}
 	

@@ -40,8 +40,13 @@ struct xcall* make_callable(const char* runtime_plugin_name, void* make_callable
  */
 void free_xcall(const char* runtime_plugin_name, struct xcall* pxcall, char** err);
 
-char* metaffi_alloc_string(const char* err, uint64_t length);
-void metaffi_free_string(const char* err_to_free);
+char* alloc_string(const char* err, uint64_t length);
+char8_t* alloc_string8(const char8_t* err, uint64_t length);
+char16_t* alloc_string16(const char16_t* err, uint64_t length);
+char32_t* alloc_string32(const char32_t* err, uint64_t length);
+void free_string(const char* err_to_free);
+
+
 void* metaffi_alloc(uint64_t size);
 void metaffi_free(void* ptr);
 
