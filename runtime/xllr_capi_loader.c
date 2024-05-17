@@ -86,16 +86,28 @@ void xllr_free_xcall(const char* runtime_plugin,
 	                    out_err);
 }
 
-void (*pxllr_free_error_message)(char*);
-void xllr_free_error_message(char* err_to_free)
+void (*pxllr_metaffi_free_string)(char*);
+void xllr_metaffi_free_string(char* err_to_free)
 {
-	pxllr_free_error_message(err_to_free);
+	pxllr_metaffi_free_string(err_to_free);
 }
 
-char* (*pset_error_message)(const char*, uint64_t);
-char* xllr_set_error_message(const char* err_message, uint64_t length)
+char* (*pmetaffi_alloc_string)(const char*, uint64_t);
+char* xllr_metaffi_alloc_string(const char* err_message, uint64_t length)
 {
-	return pset_error_message(err_message, length);
+	return pmetaffi_alloc_string(err_message, length);
+}
+
+void (*pxllr_metaffi_free)(void*);
+void xllr_metaffi_free(void* ptr)
+{
+	pxllr_metaffi_free(ptr);
+}
+
+void* (*pxllr_metaffi_alloc)(uint64_t);
+void* xllr_metaffi_alloc(uint64_t size)
+{
+	return pxllr_metaffi_alloc(size);
 }
 
 void (*pxllr_load_runtime_plugin)(const char*, char**);
@@ -312,17 +324,31 @@ const char* load_xllr_capi()
 		return out_err;
 	}
 	
-	pxllr_free_error_message = (void (*)(char*))load_symbol(cdt_helper_xllr_handle, "free_error_message", &out_err);
-	if(!pxllr_free_error_message)
+	pxllr_metaffi_free_string = (void (*)(char*))load_symbol(cdt_helper_xllr_handle, "metaffi_free_string", &out_err);
+	if(!pxllr_metaffi_free_string)
 	{
-		printf("Failed to load free_error_message: %s\n", out_err);
+		printf("Failed to load metaffi_free_string: %s\n", out_err);
 		return out_err;
 	}
 	
-	pset_error_message = (char* (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "set_error_message", &out_err);
-	if(!pset_error_message)
+	pmetaffi_alloc_string = (char* (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "metaffi_alloc_string", &out_err);
+	if(!pmetaffi_alloc_string)
 	{
-		printf("Failed to load set_error_message: %s\n", out_err);
+		printf("Failed to load metaffi_alloc_string: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_metaffi_free = (void (*)(void*))load_symbol(cdt_helper_xllr_handle, "metaffi_free", &out_err);
+	if(!pxllr_metaffi_free)
+	{
+		printf("Failed to load metaffi_free: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_metaffi_alloc = (void* (*)(uint64_t))load_symbol(cdt_helper_xllr_handle, "metaffi_alloc", &out_err);
+	if(!pxllr_metaffi_alloc)
+	{
+		printf("Failed to load metaffi_alloc: %s\n", out_err);
 		return out_err;
 	}
 

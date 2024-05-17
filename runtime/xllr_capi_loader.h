@@ -56,8 +56,11 @@ void xllr_free_xcall(const char* runtime_plugin,
                            struct xcall* pxcall,
                            char** out_err);
 
-void xllr_free_error_message(char* err_to_free);
-char* set_error_message(const char* err_message, uint64_t length);
+void xllr_metaffi_free_string(char* err_to_free);
+char* xllr_metaffi_alloc_string(const char* err_message, uint64_t length);
+
+void xllr_metaffi_free(void* ptr);
+void* xllr_metaffi_alloc(uint64_t size);
 
 void xllr_load_runtime_plugin(const char* runtime_plugin, char** err);
 void xllr_free_runtime_plugin(const char* runtime_plugin, char** err);

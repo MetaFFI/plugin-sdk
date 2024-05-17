@@ -40,8 +40,10 @@ struct xcall* make_callable(const char* runtime_plugin_name, void* make_callable
  */
 void free_xcall(const char* runtime_plugin_name, struct xcall* pxcall, char** err);
 
-char* set_error_message(const char* err, uint64_t length);
-void free_error_message(const char* err_to_free);
+char* metaffi_alloc_string(const char* err, uint64_t length);
+void metaffi_free_string(const char* err_to_free);
+void* metaffi_alloc(uint64_t size);
+void metaffi_free(void* ptr);
 
 /***
  * Call foreign entity
