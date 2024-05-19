@@ -28,12 +28,12 @@ void free_runtime_plugin(const char* runtime_plugin, char** err);
 /**
  * Load module of foreign language
  */
-struct xcall* load_entity(const char* runtime_plugin_name, const char* module_path, const char* function_path, metaffi_type_info* params_types, uint8_t params_count, metaffi_type_info* retvals_types, uint8_t retval_count, char** err);
+struct xcall* load_entity(const char* runtime_plugin_name, const char* module_path, const char* function_path, metaffi_type_info* params_types, int8_t params_count, metaffi_type_info* retvals_types, int8_t retval_count, char** err);
 
 /**
   * Load module of foreign language
   */
-struct xcall* make_callable(const char* runtime_plugin_name, void* make_callable_context, metaffi_type_info* params_types, uint8_t params_count, metaffi_type_info* retvals_types, uint8_t retval_count, char** err);
+struct xcall* make_callable(const char* runtime_plugin_name, void* make_callable_context, metaffi_type_info* params_types, int8_t params_count, metaffi_type_info* retvals_types, int8_t retval_count, char** err);
 
 /**
  * Free module of foreign language

@@ -47,7 +47,7 @@ struct xcall
 		this->pxcall_and_context[1] = pxcall_and_context[1];
 	}
 	
-	explicit xcall(void* pxcall, void* context = nullptr)
+	explicit xcall(void* pxcall, void* context)
 	{
 		if(!pxcall)
 		{
