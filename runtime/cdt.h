@@ -96,7 +96,7 @@ union cdt_types
 	metaffi_string16 string16_val;
 	struct metaffi_char32 char32_val;
 	metaffi_string32 string32_val;
-	struct cdt_metaffi_handle handle_val;
+	struct cdt_metaffi_handle* handle_val;
 	struct cdt_metaffi_callable* callable_val;
 	struct cdts* array_val;
 
@@ -212,8 +212,8 @@ struct cdt
 		cdt_val.string32_val[val.size()] = 0;
 	}
 	
-	explicit cdt(const cdt_metaffi_handle& val): type(metaffi_handle_type), free_required(true) { cdt_val.handle_val = val; }
-	explicit cdt(cdt_metaffi_callable&& val): type(metaffi_callable_type), free_required(true) { cdt_val.callable_val = &val; }
+	explicit cdt(cdt_metaffi_handle* val): type(metaffi_handle_type), free_required(true) { cdt_val.handle_val = val; }
+	explicit cdt(cdt_metaffi_callable* val): type(metaffi_callable_type), free_required(true) { cdt_val.callable_val = val; }
 	
 	explicit cdt(cdts&& val): type(metaffi_array_type), free_required(true) { cdt_val.array_val = &val; }
 	cdt(metaffi_size length, metaffi_int64 fixed_dimensions, metaffi_type common_type = metaffi_any_type): type(metaffi_array_type | common_type), free_required(true)
@@ -367,9 +367,8 @@ struct cdt
 	explicit operator metaffi_string16() const { return cdt_val.string16_val; }
 	explicit operator const metaffi_char32&() const { return cdt_val.char32_val; }
 	explicit operator metaffi_string32() const { return cdt_val.string32_val; }
-	explicit operator const cdt_metaffi_handle&() const { return cdt_val.handle_val; }
 	
-	explicit operator const cdts&() const
+	explicit operator cdts&() const
 	{
 		if(cdt_val.array_val == nullptr)
 		{
@@ -379,7 +378,17 @@ struct cdt
 		return *cdt_val.array_val;
 	}
 	
-	explicit operator const cdt_metaffi_callable&() const
+	explicit operator cdt_metaffi_handle&() const
+	{
+		if(cdt_val.array_val == nullptr)
+		{
+			throw std::runtime_error("Handle is null");
+		}
+		
+		return *cdt_val.handle_val;
+	}
+	
+	explicit operator cdt_metaffi_callable&() const
 	{
 		if(cdt_val.array_val == nullptr)
 		{
@@ -422,10 +431,13 @@ struct cdt
 				
 					case metaffi_handle_type:
 					{
-						if(cdt_val.handle_val.release)
+						// if there's a releaser - call it.
+						if(cdt_val.handle_val && cdt_val.handle_val->release)
 						{
-							reinterpret_cast<cdt_metaffi_handle::release_fptr>(cdt_val.handle_val.release)(&cdt_val.handle_val);
-							cdt_val.handle_val.release = nullptr;
+							reinterpret_cast<releaser_fptr_t>(cdt_val.handle_val->release)(cdt_val.handle_val);
+							cdt_val.handle_val->release = nullptr;
+							cdt_val.handle_val->handle = nullptr;
+							cdt_val.handle_val->runtime_id = 0;
 						}
 					}break;
 				

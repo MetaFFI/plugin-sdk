@@ -238,16 +238,16 @@ TEST_SUITE("CDTS Tests")
 			return std::get<metaffi_string32>(((std::vector<metaffi_variant>*) context)->at(index[0]));
 		};
 
-		ccb.get_handle = [](const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_free_required, void* context) -> cdt_metaffi_handle {
+		ccb.get_handle = [](const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_free_required, void* context) -> cdt_metaffi_handle* {
 			REQUIRE((index_length == 1));
 			REQUIRE((index[0] == 17));
 			REQUIRE((std::get<cdt_metaffi_handle>(((std::vector<metaffi_variant>*) context)->at(index[0])) ==
 			        cdt_metaffi_handle((void*) 1, 101, nullptr)));
 			*is_free_required = FALSE;
-			return std::get<cdt_metaffi_handle>(((std::vector<metaffi_variant>*) context)->at(index[0]));
+			return new cdt_metaffi_handle(std::get<cdt_metaffi_handle>(((std::vector<metaffi_variant>*) context)->at(index[0])));
 		};
 
-		ccb.get_callable = [](const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_free_required, void* context) -> cdt_metaffi_callable {
+		ccb.get_callable = [](const metaffi_size* index, metaffi_size index_length, metaffi_bool* is_free_required, void* context) -> cdt_metaffi_callable* {
 			REQUIRE((index_length == 1));
 			REQUIRE((index[0] == 18));
 			cdt_metaffi_callable mcallable((void*) 2, {metaffi_int8_type, metaffi_int16_type}, {metaffi_float32_type});
@@ -255,7 +255,7 @@ TEST_SUITE("CDTS Tests")
 			mcallable.free();
 			*is_free_required = TRUE;
 			
-			return std::get<cdt_metaffi_callable>(((std::vector<metaffi_variant>*) context)->at(index[0]));
+			return new cdt_metaffi_callable(std::get<cdt_metaffi_callable>(((std::vector<metaffi_variant>*) context)->at(index[0])));
 		};
 
 		// construct the CDTS

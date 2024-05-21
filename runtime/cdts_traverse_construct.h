@@ -176,8 +176,8 @@ struct construct_cdts_callbacks
 	metaffi_string16 (*get_string16)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context);
 	struct metaffi_char32 (*get_char32)(const metaffi_size* index, metaffi_size index_size, void* context);
 	metaffi_string32 (*get_string32)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context);
-	struct cdt_metaffi_handle (*get_handle)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context);
-	struct cdt_metaffi_callable (*get_callable)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context);
+	struct cdt_metaffi_handle* (*get_handle)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context);
+	struct cdt_metaffi_callable* (*get_callable)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context);
 
 #ifdef __cplusplus
 	
@@ -233,8 +233,8 @@ struct construct_cdts_callbacks
 			metaffi_string16 (*get_string16)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context),
 			struct metaffi_char32 (*get_char32)(const metaffi_size* index, metaffi_size index_size, void* context),
 			metaffi_string32 (*get_string32)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context),
-			struct cdt_metaffi_handle (*get_handle)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context),
-			struct cdt_metaffi_callable (*get_callable)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context)
+			struct cdt_metaffi_handle* (*get_handle)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context),
+			struct cdt_metaffi_callable* (*get_callable)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context)
 	) : context(context),
 	    get_array_metadata(get_array_metadata),
         construct_cdt_array(construct_cdt_array),

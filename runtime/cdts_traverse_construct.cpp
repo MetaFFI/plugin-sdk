@@ -133,7 +133,10 @@ void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbac
 		
 		case metaffi_handle_type:
 		{
-			callbacks.on_handle(current_index.data(), current_index.size(), item.cdt_val.handle_val, callbacks.context);
+			if(!item.cdt_val.handle_val){
+				throw std::runtime_error("Handle value is null");
+			}
+			callbacks.on_handle(current_index.data(), current_index.size(), *item.cdt_val.handle_val, callbacks.context);
 		}break;
 		
 		case metaffi_callable_type:
@@ -467,7 +470,7 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 			}
 			
 			item.free_required = true; // default is true
-			*item.cdt_val.callable_val = callbacks.get_callable(current_index.data(), current_index.size(), &item.free_required, callbacks.context);
+			item.cdt_val.callable_val = callbacks.get_callable(current_index.data(), current_index.size(), &item.free_required, callbacks.context);
 		}break;
 		
 		default:

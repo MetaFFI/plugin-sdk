@@ -347,20 +347,21 @@ struct metaffi_type_info
  * */
 struct cdt_metaffi_handle
 {
-	metaffi_handle val;
+	metaffi_handle handle;
 	uint64_t runtime_id;
-	void* release;
+	void (*release)(struct cdt_metaffi_handle*);
 
 #ifdef __cplusplus
-	typedef void(*release_fptr)(cdt_metaffi_handle*);
-	cdt_metaffi_handle() : val(nullptr), runtime_id(0), release(nullptr) {}
-	cdt_metaffi_handle(metaffi_handle val, uint64_t runtime_id, void* release) : val(val), runtime_id(runtime_id), release(release) {}
-	bool operator==(const cdt_metaffi_handle& other) const { return val == other.val && runtime_id == other.runtime_id; }
+	cdt_metaffi_handle() : handle(nullptr), runtime_id(0), release(nullptr) {}
+	cdt_metaffi_handle(metaffi_handle val, uint64_t runtime_id, void(*release)(cdt_metaffi_handle*)) : handle(val), runtime_id(runtime_id), release(release) {}
+	bool operator==(const cdt_metaffi_handle& other) const { return handle == other.handle && runtime_id == other.runtime_id; }
 #endif
 };
 #ifndef __cplusplus
 typedef void(*release_fptr)(struct cdt_metaffi_handle*);
 #endif
+
+typedef void(*releaser_fptr_t)(struct cdt_metaffi_handle*);
 
 /**
  * @brief A MetaFFI callable object. Allows passing callable objects between different runtimes
