@@ -212,8 +212,27 @@ struct cdt
 		cdt_val.string32_val[val.size()] = 0;
 	}
 	
-	explicit cdt(cdt_metaffi_handle* val): type(metaffi_handle_type), free_required(true) { cdt_val.handle_val = val; }
+	explicit cdt(cdt_metaffi_handle* val): cdt() { set(val); }
+	explicit cdt(const cdt_metaffi_handle* val): cdt() { set(val); }
+	void set(cdt_metaffi_handle* val)
+	{
+		free(); // free the previous cdt
+		
+		cdt_val.handle_val = val;
+		type = metaffi_handle_type;
+		free_required = false;
+	}
+	void set(const cdt_metaffi_handle* val)
+	{
+		free(); // free the previous cdt
+		
+		cdt_val.handle_val = (cdt_metaffi_handle*)val;
+		type = metaffi_handle_type;
+		free_required = false;
+	}
+	
 	explicit cdt(cdt_metaffi_callable* val): type(metaffi_callable_type), free_required(true) { cdt_val.callable_val = val; }
+	explicit cdt(const cdt_metaffi_callable* val): type(metaffi_callable_type), free_required(true) { cdt_val.callable_val = (cdt_metaffi_callable*)val; }
 	
 	explicit cdt(cdts&& val): type(metaffi_array_type), free_required(true) { cdt_val.array_val = &val; }
 	cdt(metaffi_size length, metaffi_int64 fixed_dimensions, metaffi_type common_type = metaffi_any_type): type(metaffi_array_type | common_type), free_required(true)
@@ -221,134 +240,138 @@ struct cdt
 		cdt_val.array_val = new cdts(length, fixed_dimensions);
 	}
 	
-	cdt& operator=(cdt&& other)
-	{
-		if(this != &other)
-		{
-			type = other.type;
-			free_required = other.free_required;
-			
-			// based on the type, move the cdt_val to this
-			metaffi_type type_to_check = type & metaffi_array_type ? metaffi_array_type : type;
-			
-			switch(type_to_check)
-			{
-				case metaffi_float32_type:
-				{
-					cdt_val.float32_val = other.cdt_val.float32_val;
-				}break;
-				
-				case metaffi_float64_type:
-				{
-					cdt_val.float64_val = other.cdt_val.float64_val;
-				}break;
-				
-				case metaffi_int8_type:
-				{
-					cdt_val.int8_val = other.cdt_val.int8_val;
-				}break;
-				
-				case metaffi_uint8_type:
-				{
-					cdt_val.uint8_val = other.cdt_val.uint8_val;
-				}break;
-				
-				case metaffi_int16_type:
-				{
-					cdt_val.int16_val = other.cdt_val.int16_val;
-				}break;
-				
-				case metaffi_uint16_type:
-				{
-					cdt_val.uint16_val = other.cdt_val.uint16_val;
-				}break;
-				
-				case metaffi_int32_type:
-				{
-					cdt_val.int32_val = other.cdt_val.int32_val;
-				}break;
-				
-				case metaffi_uint32_type:
-				{
-					cdt_val.uint32_val = other.cdt_val.uint32_val;
-				}break;
-				
-				case metaffi_int64_type:
-				{
-					cdt_val.int64_val = other.cdt_val.int64_val;
-				}break;
-				
-				case metaffi_uint64_type:
-				{
-					cdt_val.uint64_val = other.cdt_val.uint64_val;
-				}break;
-				
-				case metaffi_bool_type:
-				{
-					cdt_val.bool_val = other.cdt_val.bool_val;
-				}break;
-				
-				case metaffi_char8_type:
-				{
-					cdt_val.char8_val = other.cdt_val.char8_val;
-				}break;
-				
-				case metaffi_string8_type:
-				{
-					cdt_val.string8_val = other.cdt_val.string8_val;
-					other.cdt_val.string8_val = nullptr;
-				}break;
-				
-				case metaffi_char16_type:
-				{
-					cdt_val.char16_val = other.cdt_val.char16_val;
-				}break;
-				
-				case metaffi_string16_type:
-				{
-					cdt_val.string16_val = other.cdt_val.string16_val;
-					other.cdt_val.string16_val = nullptr;
-				}break;
-				
-				case metaffi_char32_type:
-				{
-					cdt_val.char32_val = other.cdt_val.char32_val;
-				}break;
-				
-				case metaffi_string32_type:
-				{
-					cdt_val.string32_val = other.cdt_val.string32_val;
-					other.cdt_val.string32_val = nullptr;
-				}break;
-				
-				case metaffi_handle_type:
-				{
-					cdt_val.handle_val = other.cdt_val.handle_val;
-				}break;
-				
-				case metaffi_callable_type:
-				{
-					cdt_val.callable_val = std::move(other.cdt_val.callable_val);
-				}break;
-				
-				case metaffi_array_type:
-				{
-					cdt_val.array_val = std::move(other.cdt_val.array_val);
-				}break;
-				
-				default:
-				{
-					std::stringstream ss;
-					ss << "Invalid type: " << type;
-					throw std::runtime_error(ss.str());
-				}
-			}
-			
-			other.type = metaffi_null_type;
-			other.free_required = false;
-		}
-		return *this;
-	}
+	cdt(const cdt& other) = delete;
+	cdt(const cdt&& other) = delete;
+	
+	//	cdt& operator=(cdt&& other)
+	//	{
+	//		if(this != &other)
+	//		{
+	//			type = other.type;
+	//			free_required = other.free_required;
+	//
+	//			// based on the type, move the cdt_val to this
+	//			metaffi_type type_to_check = type & metaffi_array_type ? metaffi_array_type : type;
+	//
+	//			switch(type_to_check)
+	//			{
+	//				case metaffi_float32_type:
+	//				{
+	//					cdt_val.float32_val = other.cdt_val.float32_val;
+	//				}break;
+	//
+	//				case metaffi_float64_type:
+	//				{
+	//					cdt_val.float64_val = other.cdt_val.float64_val;
+	//				}break;
+	//
+	//				case metaffi_int8_type:
+	//				{
+	//					cdt_val.int8_val = other.cdt_val.int8_val;
+	//				}break;
+	//
+	//				case metaffi_uint8_type:
+	//				{
+	//					cdt_val.uint8_val = other.cdt_val.uint8_val;
+	//				}break;
+	//
+	//				case metaffi_int16_type:
+	//				{
+	//					cdt_val.int16_val = other.cdt_val.int16_val;
+	//				}break;
+	//
+	//				case metaffi_uint16_type:
+	//				{
+	//					cdt_val.uint16_val = other.cdt_val.uint16_val;
+	//				}break;
+	//
+	//				case metaffi_int32_type:
+	//				{
+	//					cdt_val.int32_val = other.cdt_val.int32_val;
+	//				}break;
+	//
+	//				case metaffi_uint32_type:
+	//				{
+	//					cdt_val.uint32_val = other.cdt_val.uint32_val;
+	//				}break;
+	//
+	//				case metaffi_int64_type:
+	//				{
+	//					cdt_val.int64_val = other.cdt_val.int64_val;
+	//				}break;
+	//
+	//				case metaffi_uint64_type:
+	//				{
+	//					cdt_val.uint64_val = other.cdt_val.uint64_val;
+	//				}break;
+	//
+	//				case metaffi_bool_type:
+	//				{
+	//					cdt_val.bool_val = other.cdt_val.bool_val;
+	//				}break;
+	//
+	//				case metaffi_char8_type:
+	//				{
+	//					cdt_val.char8_val = other.cdt_val.char8_val;
+	//				}break;
+	//
+	//				case metaffi_string8_type:
+	//				{
+	//					cdt_val.string8_val = other.cdt_val.string8_val;
+	//					other.cdt_val.string8_val = nullptr;
+	//				}break;
+	//
+	//				case metaffi_char16_type:
+	//				{
+	//					cdt_val.char16_val = other.cdt_val.char16_val;
+	//				}break;
+	//
+	//				case metaffi_string16_type:
+	//				{
+	//					cdt_val.string16_val = other.cdt_val.string16_val;
+	//					other.cdt_val.string16_val = nullptr;
+	//				}break;
+	//
+	//				case metaffi_char32_type:
+	//				{
+	//					cdt_val.char32_val = other.cdt_val.char32_val;
+	//				}break;
+	//
+	//				case metaffi_string32_type:
+	//				{
+	//					cdt_val.string32_val = other.cdt_val.string32_val;
+	//					other.cdt_val.string32_val = nullptr;
+	//				}break;
+	//
+	//				case metaffi_handle_type:
+	//				{
+	//					cdt_val.handle_val = other.cdt_val.handle_val;
+	//				}break;
+	//
+	//				case metaffi_callable_type:
+	//				{
+	//					cdt_val.callable_val = other.cdt_val.callable_val;
+	//				}break;
+	//
+	//				case metaffi_array_type:
+	//				{
+	//					cdt_val.array_val = other.cdt_val.array_val;
+	//				}break;
+	//
+	//				default:
+	//				{
+	//					std::stringstream ss;
+	//					ss << "Invalid type: " << type;
+	//					throw std::runtime_error(ss.str());
+	//				}
+	//			}
+	//
+	//			other.type = metaffi_null_type;
+	//			other.free_required = false;
+	//			other.cdt_val.int64_val = 0;
+	//		}
+	//		return *this;
+	//	}
 	
 	explicit operator metaffi_float32() const { return cdt_val.float32_val; }
 	explicit operator metaffi_float64() const { return cdt_val.float64_val; }
@@ -398,7 +421,7 @@ struct cdt
 		return *cdt_val.callable_val;
 	}
 	
-	~cdt()
+	void free()
 	{
 		if(free_required)
 		{
@@ -429,18 +452,19 @@ struct cdt
 						cdt_val.string32_val = nullptr;
 					}break;
 				
+					// do not free the handle! as it is a pointer to a handle.
+					// The entities' lifetime is not managed by the CDT, but directly
+					// by the user with the cdt_metaffi_handle object.
 					case metaffi_handle_type:
 					{
-						// if there's a releaser - call it.
-						if(cdt_val.handle_val && cdt_val.handle_val->release)
-						{
-							reinterpret_cast<releaser_fptr_t>(cdt_val.handle_val->release)(cdt_val.handle_val);
-							cdt_val.handle_val->release = nullptr;
-							cdt_val.handle_val->handle = nullptr;
-							cdt_val.handle_val->runtime_id = 0;
-						}
+						cdt_val.handle_val->release = nullptr;
+						cdt_val.handle_val->handle = nullptr;
+						cdt_val.handle_val->runtime_id = 0;
 					}break;
 				
+					// do not free the callable entity! as it is a pointer to a callable.
+					// the callable's lifetime is not managed by the CDT, but directly
+					// by the user with the cdt_metaffi_callable object.
 					case metaffi_callable_type:
 					{
 						delete cdt_val.callable_val;
@@ -449,6 +473,18 @@ struct cdt
 				
 				}
 			}
+		}
+	}
+	
+	~cdt()
+	{
+		try
+		{
+			free();
+		}
+		catch(const std::exception& e)
+		{
+			fprintf(stderr, "Exception in ~cdt: %s\n", e.what());
 		}
 	}
 	

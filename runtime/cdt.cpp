@@ -21,7 +21,13 @@ cdt& cdts::at(metaffi_size index) const
 
 void cdts::set(metaffi_size index, cdt&& val) const
 {
-	arr[index] = std::move(val);
+	arr[index].type = val.type;
+	arr[index].free_required = val.free_required;
+	arr[index].cdt_val = val.cdt_val;
+	
+	val.type = metaffi_null_type;
+	val.free_required = 0;
+	std::memset(&val.cdt_val, 0, sizeof(val.cdt_val));
 }
 
 void cdts::free()
