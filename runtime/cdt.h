@@ -113,21 +113,38 @@ struct cdt
 	
 #ifdef __cplusplus
 	cdt() : type(metaffi_null_type), free_required(false), cdt_val(){}
-	explicit cdt(metaffi_float32 val): type(metaffi_float32_type), free_required(false) { cdt_val.float32_val = val; }
-	explicit cdt(metaffi_float64 val): type(metaffi_float64_type), free_required(false) { cdt_val.float64_val = val; }
-	explicit cdt(metaffi_int8 val): type(metaffi_int8_type), free_required(false) { cdt_val.int8_val = val; }
-	explicit cdt(metaffi_uint8 val): type(metaffi_uint8_type), free_required(false) { cdt_val.uint8_val = val; }
-	explicit cdt(metaffi_int16 val): type(metaffi_int16_type), free_required(false) { cdt_val.int16_val = val; }
-	explicit cdt(metaffi_uint16 val): type(metaffi_uint16_type), free_required(false) { cdt_val.uint16_val = val; }
-	explicit cdt(metaffi_int32 val): type(metaffi_int32_type), free_required(false) { cdt_val.int32_val = val; }
-	explicit cdt(metaffi_uint32 val): type(metaffi_uint32_type), free_required(false) { cdt_val.uint32_val = val; }
-	explicit cdt(metaffi_int64 val): type(metaffi_int64_type), free_required(false) { cdt_val.int64_val = val; }
-	explicit cdt(metaffi_uint64 val): type(metaffi_uint64_type), free_required(false) { cdt_val.uint64_val = val; }
-	explicit cdt(bool val): type(metaffi_bool_type), free_required(false) { cdt_val.bool_val = val ? 1 : 0; }
-	explicit cdt(metaffi_char8 val): type(metaffi_char8_type), free_required(false) { cdt_val.char8_val = val; }
+	explicit cdt(metaffi_float32 val): cdt() { *this = val; }
+	cdt& operator=(metaffi_float32 val) { cdt_val.float32_val = val; type = metaffi_float32_type; return *this; }
+	explicit cdt(metaffi_float64 val): cdt() { *this = val; }
+	cdt& operator=(metaffi_float64 val) { cdt_val.float64_val = val; type = metaffi_float64_type; return *this; }
+	explicit cdt(metaffi_int8 val): cdt() { *this = val; }
+	cdt& operator=(metaffi_int8 val) { cdt_val.int8_val = val; type = metaffi_int8_type; return *this; }
+	explicit cdt(metaffi_uint8 val): cdt() { *this = val; }
+	cdt& operator=(metaffi_uint8 val) { cdt_val.uint8_val = val; type = metaffi_uint8_type; return *this; }
+	explicit cdt(metaffi_int16 val): cdt() { *this = val; }
+	cdt& operator=(metaffi_int16 val) { cdt_val.int16_val = val; type = metaffi_int16_type; return *this; }
+	explicit cdt(metaffi_uint16 val): cdt() { *this = val; }
+	cdt& operator=(metaffi_uint16 val) { cdt_val.uint16_val = val; type = metaffi_uint16_type; return *this; }
+	explicit cdt(metaffi_int32 val): cdt() { *this = val; }
+	cdt& operator=(metaffi_int32 val) { cdt_val.int32_val = val; type = metaffi_int32_type; return *this; }
+	explicit cdt(metaffi_uint32 val): cdt() { *this = val; }
+	cdt& operator=(metaffi_uint32 val) { cdt_val.uint32_val = val; type = metaffi_uint32_type; return *this; }
+	explicit cdt(metaffi_int64 val): cdt() { *this = val; }
+	cdt& operator=(metaffi_int64 val) { cdt_val.int64_val = val; type = metaffi_int64_type; return *this; }
+	explicit cdt(metaffi_uint64 val): cdt() { *this = val; }
+	cdt& operator=(metaffi_uint64 val) { cdt_val.uint64_val = val; type = metaffi_uint64_type; return *this; }
+	explicit cdt(bool val): cdt() { *this = val; }
+	cdt& operator=(bool val) { cdt_val.bool_val = val; type = metaffi_bool_type; return *this; }
+	explicit cdt(metaffi_char8 val): cdt() { *this = val; }
+	cdt& operator=(metaffi_char8 val) { cdt_val.char8_val = val; type = metaffi_char8_type; return *this; }
 	
-	cdt(const char8_t* val, bool is_copy): type(metaffi_string8_type), free_required(is_copy)
+	cdt(const char8_t* val, bool is_copy): cdt(){ set_string(val, is_copy);	}
+	cdt(const std::u8string_view& val, bool is_copy): cdt(){ set_string(val.data(), is_copy); }
+	void set_string(const char8_t* val, bool is_copy)
 	{
+		type = metaffi_string8_type;
+		free_required = is_copy;
+		
 		if(is_copy)
 		{
 			// calculate the length of val - a char8_t*
@@ -144,19 +161,14 @@ struct cdt
 		}
 	}
 	
-	explicit cdt(const std::u8string_view& val): type(metaffi_string8_type), free_required(true)
-	{
-		// calculate the length of val - a char8_t*
-		cdt_val.string8_val = new char8_t[val.size() + 1];
-		
-		// copy val, using val_view to cdt_val.string8_val
-		std::memcpy(cdt_val.string8_val, val.data(), val.size());
-		cdt_val.string8_val[val.size()] = 0;
-	}
-	
 	explicit cdt(metaffi_char16 val): type(metaffi_char16_type), free_required(false) { cdt_val.char16_val = val; }
-	cdt(const char16_t* val, bool is_copy): type(metaffi_string16_type), free_required(true)
+	cdt(const char16_t* val, bool is_copy): cdt(){ set_string(val, is_copy); }
+	explicit cdt(const std::u16string_view& val, bool is_copy): cdt(){ set_string(val.data(), is_copy); }
+	void set_string(const char16_t* val, bool is_copy)
 	{
+		type = metaffi_string16_type;
+		free_required = is_copy;
+		
 		if(is_copy)
 		{
 			// calculate the length of val - a char16_t*
@@ -173,19 +185,14 @@ struct cdt
 		}
 	}
 	
-	explicit cdt(const std::u16string_view val): type(metaffi_string16_type), free_required(true)
-	{
-		// calculate the length of val - a char16_t*
-		cdt_val.string16_val = new char16_t[val.size() + 1];
-		
-		// copy val, using val_view to cdt_val.string16_val
-		std::memcpy(cdt_val.string16_val, val.data(), val.size());
-		cdt_val.string16_val[val.size()] = 0;
-	}
-	
 	explicit cdt(metaffi_char32 val): type(metaffi_char32_type), free_required(false) { cdt_val.char32_val = val; }
-	cdt(const char32_t* val, bool is_copy): type(metaffi_string32_type), free_required(true)
+	cdt(const char32_t* val, bool is_copy): cdt(){ set_string(val, is_copy); }
+	cdt(const std::u32string_view& val, bool is_copy): cdt(){ set_string(val.data(), is_copy); }
+	void set_string(const char32_t* val, bool is_copy)
 	{
+		type = metaffi_string32_type;
+		free_required = is_copy;
+		
 		if(is_copy)
 		{
 			// calculate the length of val - a char32_t*
@@ -202,19 +209,9 @@ struct cdt
 		}
 	}
 	
-	explicit cdt(const std::u32string_view val): type(metaffi_string32_type), free_required(true)
-	{
-		// calculate the length of val - a char32_t*
-		cdt_val.string32_val = new char32_t[val.size() + 1];
-		
-		// copy val, using val_view to cdt_val.string32_val
-		std::memcpy(cdt_val.string32_val, val.data(), val.size());
-		cdt_val.string32_val[val.size()] = 0;
-	}
-	
-	explicit cdt(cdt_metaffi_handle* val): cdt() { set(val); }
-	explicit cdt(const cdt_metaffi_handle* val): cdt() { set(val); }
-	void set(cdt_metaffi_handle* val)
+	explicit cdt(cdt_metaffi_handle* val): cdt() { set_handle(val); }
+	explicit cdt(const cdt_metaffi_handle* val): cdt() { set_handle(val); }
+	void set_handle(cdt_metaffi_handle* val)
 	{
 		free(); // free the previous cdt
 		
@@ -222,7 +219,7 @@ struct cdt
 		type = metaffi_handle_type;
 		free_required = false;
 	}
-	void set(const cdt_metaffi_handle* val)
+	void set_handle(const cdt_metaffi_handle* val)
 	{
 		free(); // free the previous cdt
 		
@@ -234,10 +231,19 @@ struct cdt
 	explicit cdt(cdt_metaffi_callable* val): type(metaffi_callable_type), free_required(true) { cdt_val.callable_val = val; }
 	explicit cdt(const cdt_metaffi_callable* val): type(metaffi_callable_type), free_required(true) { cdt_val.callable_val = (cdt_metaffi_callable*)val; }
 	
-	explicit cdt(cdts&& val): type(metaffi_array_type), free_required(true) { cdt_val.array_val = &val; }
-	cdt(metaffi_size length, metaffi_int64 fixed_dimensions, metaffi_type common_type = metaffi_any_type): type(metaffi_array_type | common_type), free_required(true)
+	cdt(metaffi_size length, metaffi_int64 fixed_dimensions, metaffi_types common_type = metaffi_any_type): cdt()
 	{
-		cdt_val.array_val = new cdts(length, fixed_dimensions);
+		set_array(new cdts(length, fixed_dimensions), common_type);
+	}
+	void set_new_array(metaffi_size length, metaffi_int64 fixed_dimensions, metaffi_types common_type = metaffi_any_type)
+	{
+		set_array(new cdts(length, fixed_dimensions), common_type);
+	}
+	void set_array(cdts* pcdts, metaffi_types common_type = metaffi_any_type)
+	{
+		type = metaffi_array_type | common_type;
+		free_required = true;
+		cdt_val.array_val = pcdts;
 	}
 	
 	cdt(const cdt& other) = delete;
@@ -489,6 +495,7 @@ struct cdt
 	}
 	
 #endif // __cplusplus
+
 };
 
 #endif // CDT_H

@@ -1,5 +1,6 @@
 macro(add_global_policies)
 	cmake_policy(SET CMP0110 NEW) # Allow arbitrary names in CTest names
+	cmake_policy(SET CMP0022 NEW) # Enable INTERFACE_LINK_LIBRARIES
 endmacro()
 
 macro(c_cpp_global_settings)

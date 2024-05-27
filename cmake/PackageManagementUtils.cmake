@@ -42,10 +42,25 @@ macro(add_boost libraries)
 	set(Boost_USE_STATIC_LIBS OFF) # (default is OFF)
 	set(Boost_USE_DEBUG_LIBS OFF) # (default is ON)
 	set(Boost_USE_RELEASE_LIBS ON) # (default is ON)
+
+	# print out the detected boost libraries and properties from Boost::
+	message(STATUS "Boost_LIBRARIES: ${Boost_LIBRARIES}")
+	message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
 endmacro()
 
 macro(add_python3)
 	find_package(Python3 REQUIRED COMPONENTS Development) # Python library
+
+	# print out the detected python libraries and properties from Python3::
+	message(STATUS "Python3_LIBRARIES: ${Python3_LIBRARIES}")
+	message(STATUS "Python3_INCLUDE_DIRS: ${Python3_INCLUDE_DIRS}")
+	message(STATUS "Python3_LIBRARY_DIRS: ${Python3_LIBRARY_DIRS}")
+	message(STATUS "Python3_VERSION: ${Python3_VERSION}")
+	message(STATUS "Python3_Development_FOUND: ${Python3_Development_FOUND}")
+	message(STATUS "Python3 executable: ${Python3_EXECUTABLE}")
+
+	message(STATUS "Python3_LIBRARY_RELEASE: ${Python3_LIBRARY_RELEASE}")
+	message(STATUS "Python3_LIBRARY_DEBUG: ${Python3_LIBRARY_DEBUG}")
 endmacro()
 
 macro(add_jni)

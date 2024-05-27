@@ -1,6 +1,4 @@
 macro(install_globals)
-	install(CODE "set(ENV{METAFFI_HOME}, ${CMAKE_BINARY_DIR})")
-
 	# cmake install directory
 	set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
 	set(CMAKE_SKIP_INSTALL_RPATH OFF)
@@ -24,6 +22,22 @@ macro(install_boost BOOST_LIBS)
             message(STATUS "Boost ${LIB} is a header-only library and doesn't need to be installed.")
         endif()
     endforeach()
+endmacro()
+
+macro(install_python3)
+    # Get the location of the Python3 library
+    get_target_property(PYTHON3_LIB_LOCATION Python3::Python IMPORTED_LOCATION_RELEASE)
+
+    if(PYTHON3_LIB_LOCATION)
+        # Install the Python3 library
+        install(FILES ${PYTHON3_LIB_LOCATION} DESTINATION lib)
+
+        # Print the message during the installation phase
+        install(CODE "message(STATUS \"Installing Python3: ${PYTHON3_LIB_LOCATION}\")")
+    else()
+        # Print a message indicating that the library is not found
+        message(STATUS "Python3 library not found.")
+    endif()
 endmacro()
 
 macro(install_target TARGET DESTINATION)
