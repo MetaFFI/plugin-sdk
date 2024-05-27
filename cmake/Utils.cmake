@@ -15,10 +15,9 @@ function(get_app_path APP_NAME APP_PATH)
 	endif()
 endfunction()
 #-----------------------------------------------------------------------------------------------
-# If not windows - add "dl" to taget
-macro(link_to_dl_for_non_windows TARGET)
-	if(NOT WIN32)
-		target_link_libraries(${TARGET} PRIVATE dl)
+macro(assert_metaffi_env)
+	if(NOT DEFINED ENV{METAFFI_HOME})
+		message(FATAL_ERROR "METAFFI_HOME environment variable is not set")
 	endif()
 endmacro()
 #-----------------------------------------------------------------------------------------------
