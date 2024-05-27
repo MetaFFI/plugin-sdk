@@ -1,4 +1,11 @@
-
+macro(add_rpath)
+	if(APPLE)
+		set(CMAKE_MACOSX_RPATH 1) # tell MacOS RPATH is in use
+		set(CMAKE_INSTALL_RPATH "@loader_path;@loader_path/lib")
+	elseif(UNIX)
+		list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN;$ORIGIN/lib")
+	endif()
+endmacro()
 #-----------------------------------------------------------------------------------------------
 # make sure the given app executable exists and found
 function(get_app_path APP_NAME APP_PATH)

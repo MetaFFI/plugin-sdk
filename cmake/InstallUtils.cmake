@@ -1,9 +1,45 @@
+macro(install_globals)
+	install(CODE "set(ENV{METAFFI_HOME}, ${CMAKE_BINARY_DIR})")
+
+	# cmake install directory
+	set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR})
+	set(CMAKE_SKIP_INSTALL_RPATH OFF)
+endmacro()
+
+macro(install_boost BOOST_LIBS)
+    foreach(LIB ${BOOST_LIBS})
+        # Find the required Boost component
+        find_package(Boost REQUIRED COMPONENTS ${LIB})
+
+        # Check if the library is header-only
+        get_target_property(BOOST_LIB_LOCATION Boost::${LIB} LOCATION)
+        if(BOOST_LIB_LOCATION)
+            # Install the specific Boost library
+            install(FILES ${BOOST_LIB_LOCATION} DESTINATION lib)
+
+            # Print the message during the installation phase
+            install(CODE "message(STATUS \"Installing Boost ${LIB}: ${BOOST_LIB_LOCATION}\")")
+        else()
+            # Print a message indicating that the library is header-only
+            message(STATUS "Boost ${LIB} is a header-only library and doesn't need to be installed.")
+        endif()
+    endforeach()
+endmacro()
+
 macro(install_target TARGET DESTINATION)
+
+	set(options INSTALL_DEPENDENCIES)
+
 	cmake_parse_arguments("install_target"
-			"" # bool vals
+			"${options}" # options - bool value
 			"PATTERN" # single val
 			"" # multi-vals
 			${ARGN})
+
+	# If INSTALL_DEPENDENCIES was not provided, set it to FALSE
+	if(NOT DEFINED install_target_INSTALL_DEPENDENCIES)
+		set(install_target_INSTALL_DEPENDENCIES FALSE)
+	endif()
 
 	if(NOT install_target_PATTERN)
 		set(PATTERN "python|boost|expat|jvm")
@@ -16,23 +52,24 @@ macro(install_target TARGET DESTINATION)
 			RUNTIME_DEPENDENCY_SET DEPENDS_SET)
 
 
+	if(${INSTALL_DEPENDENCIES})
+		list(APPEND SEARCH_DIRS $ENV{METAFFI_HOME})
+		list(APPEND SEARCH_DIRS ${Boost_INCLUDE_DIR}/../lib)
+		if(WIN32) # Add Path environment variable
+			cmake_path(CONVERT "$ENV{Path}" TO_CMAKE_PATH_LIST CMAKE_WIN_PATH)
+			list(APPEND SEARCH_DIRS ${CMAKE_WIN_PATH})
+		endif()
 
-	list(APPEND SEARCH_DIRS $ENV{METAFFI_HOME})
-	list(APPEND SEARCH_DIRS ${Boost_INCLUDE_DIR}/../lib)
-	if(WIN32) # Add Path environment variable
-		cmake_path(CONVERT "$ENV{Path}" TO_CMAKE_PATH_LIST CMAKE_WIN_PATH)
-		list(APPEND SEARCH_DIRS ${CMAKE_WIN_PATH})
+		install(RUNTIME_DEPENDENCY_SET DEPENDS_SET
+				PRE_INCLUDE_REGEXES ${PATTERN}
+				PRE_EXCLUDE_REGEXES
+					[[api-ms-win-.*]] [[ext-ms-.*]] [[kernel32\.dll]]
+					[[bcrypt.dll]] [[mfplat.dll]] [[msvcrt.dll]] [[ole32.dll]] [[secur32.dll]] [[user32.dll]] [[vcruntime140.dll]]
+					[[ws2_32.dll]] [[wpaxholder.dll]]
+					[[libgcc_s_seh-1\.dll]] [[libstdc\+\+\-6.dll]]
+				POST_EXCLUDE_REGEXES
+					[[.*/system32/.*\.dll]]
+				DIRECTORIES ${SEARCH_DIRS})
 	endif()
-
-	install(RUNTIME_DEPENDENCY_SET DEPENDS_SET
-			PRE_INCLUDE_REGEXES ${PATTERN}
-			PRE_EXCLUDE_REGEXES
-				[[api-ms-win-.*]] [[ext-ms-.*]] [[kernel32\.dll]]
-				[[bcrypt.dll]] [[mfplat.dll]] [[msvcrt.dll]] [[ole32.dll]] [[secur32.dll]] [[user32.dll]] [[vcruntime140.dll]]
-				[[ws2_32.dll]] [[wpaxholder.dll]]
-				[[libgcc_s_seh-1\.dll]] [[libstdc\+\+\-6.dll]]
-			POST_EXCLUDE_REGEXES
-				[[.*/system32/.*\.dll]]
-			DIRECTORIES ${SEARCH_DIRS})
 
 endmacro()

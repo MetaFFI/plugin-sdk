@@ -1,51 +1,52 @@
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+
+#include <doctest/doctest.h>
 #include "expand_env.h"
+#include <filesystem>
+using namespace metaffi::utils;
 
+std::string original;
 
-TEST_CASE( "Expand Environment Variable", "[sdk]" )
+struct setup
 {
-	using namespace metaffi::utils;
-	
-	REQUIRE(std::getenv("METAFFI_HOME") != nullptr);
-	
-	std::string original = std::string("Text ")+std::getenv("METAFFI_HOME")+std::string(" Text");
-	
-	SECTION("Windows-Style (%X%)")
+	setup()
+	{
+		original = std::string("Text ")+std::getenv("METAFFI_HOME")+std::string(" Text");
+	}
+};
+static setup s;
+
+TEST_SUITE( "Expand Environment Variable")
+{
+	TEST_CASE("Windows-Style (%X%)")
 	{
 		REQUIRE(expand_env("Text %METAFFI_HOME% Text") == original);
 	}
-
-	SECTION("*nix Style ($X)")
+	
+	TEST_CASE("*nix Style ($X)")
 	{
 		REQUIRE(expand_env("Text $METAFFI_HOME Text") == original);
 	}
-
-	SECTION("PowerShell Style ($ENV:X)")
+	
+	TEST_CASE("PowerShell Style ($ENV:X)")
 	{
 		REQUIRE(expand_env("Text $Env:METAFFI_HOME Text") == original);
 	}
-
-	SECTION("*nix Style 2 (${X})")
+	
+	TEST_CASE("*nix Style 2 (${X})")
 	{
 		REQUIRE(expand_env("Text ${METAFFI_HOME} Text") == original);
 	}
-
-	char cwd[1024] = {0};
-
-#ifdef _WIN32
-	GetCurrentDirectory(MAX_PATH,cwd);
-#else
-	getcwd(cwd, 1024);
-#endif
 	
-	SECTION("Current Dir CD")
+	TEST_CASE("Current Dir CD")
 	{
-		REQUIRE(expand_env("%CD%") == cwd);
+		std::filesystem::path currentDir = std::filesystem::current_path();
+		REQUIRE(expand_env("%CD%") == currentDir.string());
 	}
 	
-	SECTION("Current Dir PWD")
+	TEST_CASE("Current Dir PWD")
 	{
-		REQUIRE(expand_env("$PWD") == cwd);
+		std::filesystem::path currentDir = std::filesystem::current_path();
+		REQUIRE(expand_env("$PWD") == currentDir.string());
 	}
 }
