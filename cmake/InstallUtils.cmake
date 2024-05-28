@@ -5,7 +5,7 @@ macro(install_globals)
 endmacro()
 
 macro(install_boost BOOST_LIBS)
-    foreach(LIB ${BOOST_LIBS})
+    foreach(LIB ${ARGV})
         # Find the required Boost component
         find_package(Boost REQUIRED COMPONENTS ${LIB})
 
@@ -13,7 +13,13 @@ macro(install_boost BOOST_LIBS)
         get_target_property(BOOST_LIB_LOCATION Boost::${LIB} LOCATION)
         if(BOOST_LIB_LOCATION)
             # Install the specific Boost library
-            install(FILES ${BOOST_LIB_LOCATION} DESTINATION lib)
+            if(WIN32)
+				# On Windows, the Boost libraries are installed in the bin directory
+				install(FILES ${BOOST_LIB_LOCATION} DESTINATION bin)
+			else()
+				# On Unix-like systems, the Boost libraries are installed in the lib directory
+				install(FILES ${BOOST_LIB_LOCATION} DESTINATION lib)
+            endif()
 
             # Print the message during the installation phase
             install(CODE "message(STATUS \"Installing Boost ${LIB}: ${BOOST_LIB_LOCATION}\")")
