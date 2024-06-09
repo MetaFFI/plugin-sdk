@@ -44,7 +44,7 @@ struct cdts
 
 #ifdef __cplusplus
 	cdts() : arr(nullptr), length(0), allocated_on_cache(0), fixed_dimensions(1) {}
-	cdts(cdt* pre_allocated_cdts, metaffi_size length, metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS, metaffi_bool allocated_on_cache = 0) : arr(pre_allocated_cdts), length(length), fixed_dimensions(fixed_dimensions), allocated_on_cache(0) {}
+	cdts(cdt* pre_allocated_cdts, metaffi_size length, metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS, metaffi_bool alloc_cache = 0) : arr(pre_allocated_cdts), length(length), fixed_dimensions(fixed_dimensions), allocated_on_cache(alloc_cache) {}
 	explicit cdts(metaffi_size length, metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS);
 	cdts(cdts&& other) noexcept : arr(other.arr), length(other.length), fixed_dimensions(other.fixed_dimensions), allocated_on_cache(other.allocated_on_cache)
 	{

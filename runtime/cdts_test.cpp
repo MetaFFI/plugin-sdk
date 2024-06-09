@@ -35,7 +35,7 @@ TEST_SUITE("CDTS Tests")
 		c8 = u8"א";
 		metaffi_char16 c16;
 		c16 = u"ב";
-		metaffi_char32 c32(U'ג');
+		metaffi_char32 c32(U'ג');	
 		metaffi_string8 s8 = (metaffi_string8) u8"Hello UTF-8";
 		metaffi_string16 s16 = (metaffi_string16) u"Hello UTF-16";
 		metaffi_string32 s32 = (metaffi_string32) U"Hello UTF-32";
