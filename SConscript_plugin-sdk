@@ -8,17 +8,19 @@ import compiler_options
 import post_actions
 import os
 
+from site_scons import ALIAS_CORE, ALIAS_CORE_UNITTESTS
+
 # * Import the parent Environment
 env: SCons.Environment.Environment
 SCons.Script.Import('env')
 
-# * ---- Build MetaFFI Core Targets ----
+# * ---- Fill SDK pathes ----
 
 # Place the file paths in env['sdk_includes']
-env['sdk_includes'] = [env.Dir('./utils').abspath, env.Dir('./runtime').abspath, env.Dir('./compiler').abspath]
+env['sdk_includes'] = [env.Dir('.').abspath, env.Dir('./utils').abspath, env.Dir('./runtime').abspath, env.Dir('./compiler').abspath]
 
-env['sdk_src_c'] = glob.glob('**/*.c', recursive=True)
-env['sdk_src_cpp'] = glob.glob('**/*.cpp', recursive=True)
+env['sdk_src_c'] = [os.path.abspath(c_file) for c_file in glob.glob('**/*.c', recursive=True)]
+env['sdk_src_cpp'] = [os.path.abspath(c_file) for c_file in glob.glob('**/*.cpp', recursive=True)]
 
 # Exclude files ending with _test.cpp or _test.c from sdk_src_c and sdk_src_cpp
 env['sdk_src_c'] = [file for file in env['sdk_src_c'] if not file.endswith('_test.c')]
@@ -27,54 +29,48 @@ env['sdk_src_cpp'] = [file for file in env['sdk_src_cpp'] if not file.endswith('
 env['sdk_src'] = env['sdk_src_c']
 env['sdk_src'].extend(env['sdk_src_cpp'])
 
-# * ---- Plugin SDK Unitests ----
-if 'sdk_tests' in env and (SCons.Script.GetOption('unitests') or SCons.Script.GetOption('all-tests')):
+# * ---- Plugin SDK Unitests ----	
+env_expand_env_test = env.Clone()
+env_expand_env_test.LoadConanPackagesInfo() # make sure doctest is installed in conan (using SCons):
+
+# utils/expand_env_test.cpp
+expand_env_test: SCons.Node.NodeList = env_expand_env_test.CPPProgram('expand_env_test',
+																		'plugin-sdk',
+																		['utils/expand_env.cpp', 'utils/expand_env_test.cpp'],
+																		[	
+																			env_expand_env_test['sdk_includes']
+																		])
+
+env_expand_env_test.AddPostAction(expand_env_test, post_actions.execute_unitest)
+
+# runtime/cdts_test.cpp
+env_cdts_test = env.Clone()
+env_cdts_test.LoadConanPackagesInfo()
+
+cdts_test: SCons.Node.NodeList = env_cdts_test.CPPProgram('cdts_test',
+															'plugin-sdk',
+															['runtime/cdt.cpp', 'runtime/cdts_test.cpp', 'runtime/cdts_traverse_construct.cpp'],
+															[
+																env_cdts_test['sdk_includes'],
+															])
+
+env_cdts_test.AddPostAction(cdts_test, post_actions.execute_unitest)
+
+# Go Tests at "compiler/go/IDL/"
+go_idl_test = env.Clone()
+sdk_go_test = go_idl_test.GoTest(target='go_idl_test_target', path=go_idl_test.Dir('./compiler/go/IDL/').abspath)
+
+
+# * ---- Copy SDK includes ----
+if 'install_sdk_includes' in env:
+	install_sdk_includes = env.Install(env['METAFFI_HOME'], [env.Dir('./runtime').File('cdt.h').abspath,
+								   		env.Dir('./runtime').File('cdts_traverse_construct.h').abspath,
+										env.Dir('./runtime').File('metaffi_primitives.h').abspath,
+										env.Dir('./runtime').File('xcall.h').abspath,
+										env.Dir('./runtime').File('xllr_capi_loader.c').abspath,
+										env.Dir('./runtime').File('xllr_capi_loader.h').abspath])
+	SCons.Script.Alias(ALIAS_CORE, install_sdk_includes)
 	
-	env_expand_env_test = env.Clone()
-	env_expand_env_test.LoadConanPackagesInfo() # make sure doctest is installed in conan (using SCons):
-
-	# utils/expand_env_test.cpp
-	expand_env_test: SCons.Node.NodeList = env_expand_env_test.CPPProgram('expand_env_test',
-																			'plugin-sdk',
-																			['utils/expand_env.cpp', 'utils/expand_env_test.cpp'],
-																			[	
-																				env_expand_env_test['sdk_includes'],
-																				env_expand_env_test['conan_info']['boost']['CPPPATH'], 
-																				env_expand_env_test['conan_info']['doctest']['CPPPATH']
-																			])
-	
-	env_expand_env_test.AddPostAction(expand_env_test, post_actions.execute_unitest)
-
-	# runtime/cdts_test.cpp
-	env_cdts_test = env.Clone()
-	env_cdts_test.LoadConanPackagesInfo()
-
-	cdts_test: SCons.Node.NodeList = env_cdts_test.CPPProgram('cdts_test',
-																'plugin-sdk',
-																['runtime/cdt.cpp', 'runtime/cdts_test.cpp', 'runtime/cdts_traverse_construct.cpp'],
-																[
-																	env_cdts_test['sdk_includes'],
-																	env_cdts_test['conan_info']['doctest']['CPPPATH']
-																])
-	
-	env_cdts_test.AddPostAction(cdts_test, post_actions.execute_unitest)
-
-	# # runtime/xllr_capi_test.cpp
-	# env_xllr_capi_test = env.Clone()
-	# env_xllr_capi_test.LoadConanPackagesInfo()
-
-	# dependet on XLLR dynamic library
-	# xllr_capi_test: SCons.Node.NodeList = env_xllr_capi_test.CPPProgram('xllr_capi_test',
-	# 																		'plugin-sdk',
-	# 																		['runtime/xllr_capi_test.cpp', 'runtime/xllr_capi_loader.c', 'runtime/xllr_static_capi_loader.cpp'],
-	# 																		[
-	# 																			env_xllr_capi_test['sdk_includes'],
-	# 																			env_xllr_capi_test['conan_info']['doctest']['CPPPATH']
-	# 																		])
-	
-	# env_xllr_capi_test.AddPostAction(xllr_capi_test, post_actions.execute_unitest)
-
-	# Go Tests at "compiler/go/IDL/"
-	go_idl_test = env.Clone()
-	go_idl_test.GoTest(target='go_idl_test_target', path=go_idl_test.Dir('./compiler/go/IDL/').abspath)
-
+# metaffi-core should be the only one that checks the SDK
+if 'sdk_tests' in env:
+	SCons.Script.Alias(ALIAS_CORE_UNITTESTS, [expand_env_test, cdts_test, sdk_go_test])
