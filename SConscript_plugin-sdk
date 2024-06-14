@@ -19,8 +19,8 @@ SCons.Script.Import('env')
 # Place the file paths in env['sdk_includes']
 env['sdk_includes'] = [env.Dir('.').abspath, env.Dir('./utils').abspath, env.Dir('./runtime').abspath, env.Dir('./compiler').abspath]
 
-env['sdk_src_c'] = [os.path.abspath(c_file) for c_file in glob.glob('**/*.c', recursive=True)]
-env['sdk_src_cpp'] = [os.path.abspath(c_file) for c_file in glob.glob('**/*.cpp', recursive=True)]
+env['sdk_src_c'] = [os.path.abspath(path) for path in glob.glob('**/*.c', recursive=True)]
+env['sdk_src_cpp'] = [os.path.abspath(path) for path in glob.glob('**/*.cpp', recursive=True)]
 
 # Exclude files ending with _test.cpp or _test.c from sdk_src_c and sdk_src_cpp
 env['sdk_src_c'] = [file for file in env['sdk_src_c'] if not file.endswith('_test.c')]
