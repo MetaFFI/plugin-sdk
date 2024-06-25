@@ -43,7 +43,7 @@ if 'sdk_tests' in env:
 																				env_expand_env_test['sdk_includes']
 																			])
 
-	env_expand_env_test.AddPostAction(expand_env_test, post_actions.execute_unitest)
+	env_expand_env_test.AddPostAction(expand_env_test, post_actions.execute_doctest_unitest)
 
 	# runtime/cdts_test.cpp
 	env_cdts_test = env.Clone()
@@ -56,7 +56,7 @@ if 'sdk_tests' in env:
 																	env_cdts_test['sdk_includes'],
 																])
 
-	env_cdts_test.AddPostAction(cdts_test, post_actions.execute_unitest)
+	env_cdts_test.AddPostAction(cdts_test, post_actions.execute_doctest_unitest)
 
 	# Go Tests at "compiler/go/IDL/"
 	go_idl_test = env.Clone()

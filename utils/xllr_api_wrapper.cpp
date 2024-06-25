@@ -57,7 +57,7 @@ xcall* xllr_api_wrapper::load_entity(const char* runtime_plugin, const char* mod
 	return (*this->pload_entity)(runtime_plugin,
 	                                module_path,
 	                                function_path,
-	                                params_types, retval_count, retvals_types, params_count,
+	                                params_types, params_count, retvals_types, retval_count,
 			                        err);
 }
 //--------------------------------------------------------------------

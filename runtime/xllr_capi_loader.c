@@ -119,72 +119,144 @@ char32_t* xllr_alloc_string32(const char32_t* err_message, uint64_t length)
 void (*pxllr_metaffi_free)(void*);
 void xllr_metaffi_free(void* ptr)
 {
+	if(pxllr_metaffi_free == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: pxllr_metaffi_free is NULL!\n");
+		return;
+	}
+
 	pxllr_metaffi_free(ptr);
 }
 
 void* (*pxllr_metaffi_alloc)(uint64_t);
 void* xllr_metaffi_alloc(uint64_t size)
 {
+	if(pxllr_metaffi_alloc == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: pxllr_metaffi_alloc is NULL!\n");
+		return NULL;
+	}
+
 	return pxllr_metaffi_alloc(size);
 }
 
 void (*pxllr_load_runtime_plugin)(const char*, char**);
 void xllr_load_runtime_plugin(const char* runtime_plugin, char** err)
 {
+	if(pxllr_load_runtime_plugin == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: pxllr_load_runtime_plugin is NULL!\n");
+		return;
+	}
+
 	pxllr_load_runtime_plugin(runtime_plugin, err);
 }
 
 void (*pxllr_free_runtime_plugin)(const char*, char**);
 void xllr_free_runtime_plugin(const char* runtime_plugin, char** err)
 {
+	if(pxllr_free_runtime_plugin == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: pxllr_free_runtime_plugin is NULL!\n");
+		return;
+	}
+
 	pxllr_free_runtime_plugin(runtime_plugin, err);
 }
 
 void (*pxllr_set_runtime_flag)(const char*);
 void xllr_set_runtime_flag(const char* flag_name)
 {
+	if(pxllr_set_runtime_flag == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: pxllr_set_runtime_flag is NULL!\n");
+		return;
+	}
+
 	pxllr_set_runtime_flag(flag_name);
 }
 
 int (*pxllr_is_runtime_flag_set)(const char*);
 int xllr_is_runtime_flag_set(const char* flag_name)
 {
+	if(pxllr_is_runtime_flag_set == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: pxllr_is_runtime_flag_set is NULL!\n");
+		return 0;
+	}
+
 	return pxllr_is_runtime_flag_set(flag_name);
 }
 
 struct cdts* (*palloc_cdts_buffer)(metaffi_size params, metaffi_size rets);
 struct cdts* xllr_alloc_cdts_buffer(metaffi_size params, metaffi_size rets)
 {
+	if(palloc_cdts_buffer == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: palloc_cdts_buffer is NULL!\n");
+		return NULL;
+	}
+
 	return palloc_cdts_buffer(params, rets);
 }
 
 void (*pfree_cdts_buffer)(struct cdts* pcdts);
 void xllr_free_cdts_buffer(struct cdts* pcdts)
 {
+	if(pfree_cdts_buffer == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: pfree_cdts_buffer is NULL!\n");
+		return;
+	}
+
 	pfree_cdts_buffer(pcdts);
 }
 
 void (*pxllr_construct_cdts)(struct cdts*, struct construct_cdts_callbacks*, char** out_nul_term_err);
 void xllr_construct_cdts(struct cdts* pcdts, struct construct_cdts_callbacks* callbacks, char** out_nul_term_err)
 {
+	if(pxllr_construct_cdts == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: pxllr_construct_cdts is NULL!\n");
+		return;
+	}
+
 	pxllr_construct_cdts(pcdts, callbacks, out_nul_term_err);
 }
 
 void (*pxllr_construct_cdt)(struct cdt*, struct construct_cdts_callbacks*, char** out_nul_term_err);
 void xllr_construct_cdt(struct cdt* pcdts, struct construct_cdts_callbacks* callbacks, char** out_nul_term_err)
 {
+	if(pxllr_construct_cdt == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: pxllr_construct_cdt is NULL!\n");
+		return;
+	}
+
 	pxllr_construct_cdt(pcdts, callbacks, out_nul_term_err);
 }
 
 void (*pxllr_traverse_cdts)(struct cdts*, struct traverse_cdts_callbacks*, char** out_nul_term_err);
 void xllr_traverse_cdts(struct cdts* pcdts, struct traverse_cdts_callbacks* callbacks, char** out_nul_term_err)
 {
+	if(pxllr_traverse_cdts == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: pxllr_traverse_cdts is NULL!\n");
+		return;
+	}
+
 	pxllr_traverse_cdts(pcdts, callbacks, out_nul_term_err);
 }
 
 void (*pxllr_traverse_cdt)(struct cdt*, struct traverse_cdts_callbacks*, char** out_nul_term_err);
 void xllr_traverse_cdt(struct cdt* pcdts, struct traverse_cdts_callbacks* callbacks, char** out_nul_term_err)
 {
+	if(pxllr_traverse_cdt == NULL)
+	{
+		fprintf(stderr, "FATAL ERROR: pxllr_traverse_cdt is NULL!\n");
+		return;
+	}
+
 	pxllr_traverse_cdt(pcdts, callbacks, out_nul_term_err);
 }
 
