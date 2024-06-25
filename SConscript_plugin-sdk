@@ -62,17 +62,15 @@ if 'sdk_tests' in env:
 	go_idl_test = env.Clone()
 	sdk_go_test = go_idl_test.GoTest(target='go_idl_test_target', path=go_idl_test.Dir('./compiler/go/IDL/').abspath)
 
+	# * ---- Copy SDK includes ----
+	if 'install_sdk_includes' in env:
+		install_sdk_includes = env.Install(env['METAFFI_HOME']+'/include/', [env.Dir('./runtime').File('cdt.h').abspath,
+											env.Dir('./runtime').File('cdts_traverse_construct.h').abspath,
+											env.Dir('./runtime').File('metaffi_primitives.h').abspath,
+											env.Dir('./runtime').File('xcall.h').abspath,
+											env.Dir('./runtime').File('xllr_capi_loader.c').abspath,
+											env.Dir('./runtime').File('xllr_capi_loader.h').abspath])
+		SCons.Script.Alias(ALIAS_CORE, install_sdk_includes)
+		
 	# metaffi-core should be the only one that checks the SDK
 	SCons.Script.Alias(ALIAS_CORE_UNITTESTS, [expand_env_test, cdts_test, sdk_go_test])
-
-
-# * ---- Copy SDK includes ----
-if 'install_sdk_includes' in env:
-	install_sdk_includes = env.Install(env['METAFFI_HOME'], [env.Dir('./runtime').File('cdt.h').abspath,
-								   		env.Dir('./runtime').File('cdts_traverse_construct.h').abspath,
-										env.Dir('./runtime').File('metaffi_primitives.h').abspath,
-										env.Dir('./runtime').File('xcall.h').abspath,
-										env.Dir('./runtime').File('xllr_capi_loader.c').abspath,
-										env.Dir('./runtime').File('xllr_capi_loader.h').abspath])
-	SCons.Script.Alias(ALIAS_CORE, install_sdk_includes)
-	
