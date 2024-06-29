@@ -66,8 +66,6 @@ inline std::shared_ptr<boost::dll::shared_library> load_plugin(const std::string
 	// prepend METAFFI_HOME directory to the file name
 	boost::filesystem::path plugin_full_path = plugin[0];
 
-	std::cout << "Loading plugin full path: " << plugin_full_path << std::endl;
-
 	// load plugin
 	std::shared_ptr<boost::dll::shared_library> plugin_dll = std::make_shared<boost::dll::shared_library>();
 	try
