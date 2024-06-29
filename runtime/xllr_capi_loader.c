@@ -26,7 +26,6 @@ int64_t get_cache_size(){ return cdt_cache_size; }
 	{ \
 		if(cdt_helper_xllr_handle == NULL) \
 		{ \
-			fprintf(stderr, #func " and cdt_helper_xllr_handle are NULL - load_xllr\n"); \
 			const char* err = load_xllr(); \
 			if(err) \
 			{ \
@@ -36,7 +35,6 @@ int64_t get_cache_size(){ return cdt_cache_size; }
 		} \
 		else \
 		{ \
-			fprintf(stderr, #func " is NULL BUT cdt_helper_xllr_handle is NOT null (how?!) - load_xllr_capi\n"); \
 			const char* err = load_xllr_capi(); \
 			if(err) \
 			{ \
