@@ -463,9 +463,13 @@ struct cdt
 					// by the user with the cdt_metaffi_handle object.
 					case metaffi_handle_type:
 					{
-						cdt_val.handle_val->release = nullptr;
-						cdt_val.handle_val->handle = nullptr;
-						cdt_val.handle_val->runtime_id = 0;
+						if(cdt_val.handle_val)
+						{
+							cdt_val.handle_val->release = nullptr;
+							cdt_val.handle_val->handle = nullptr;
+							cdt_val.handle_val->runtime_id = 0;
+							cdt_val.handle_val = nullptr;
+						}
 					}break;
 				
 					// do not free the callable entity! as it is a pointer to a callable.

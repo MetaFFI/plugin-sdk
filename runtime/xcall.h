@@ -108,11 +108,19 @@ struct xcall
 	// use ONLY if the function foreign function has no parameters and no return values
 	void operator()(char** err)
 	{
+		if(pxcall_and_context[0] == nullptr){
+			throw std::invalid_argument("pxcall_and_context[0] must not be null");
+		}
+
 		((void (*)(void*, char**))pxcall_and_context[0])(pxcall_and_context[1], err);
 	}
 	
 	void operator()()
 	{
+		if(pxcall_and_context[0] == nullptr){
+			throw std::invalid_argument("pxcall_and_context[0] must not be null");
+		}
+
 		char* err = nullptr;
 		((void (*)(void*, char**))pxcall_and_context[0])(pxcall_and_context[1], &err);
 		
@@ -128,11 +136,19 @@ struct xcall
 	
 	void operator()(struct cdts* pcdts, char** err)
 	{
+		if(pxcall_and_context[0] == nullptr){
+			throw std::invalid_argument("pxcall_and_context[0] must not be null");
+		}
+
 		((void (*)(void*, struct cdts*, char**))pxcall_and_context[0])(pxcall_and_context[1], pcdts, err);
 	}
 	
 	void operator()(struct cdts* pcdts)
 	{
+		if(pxcall_and_context[0] == nullptr){
+			throw std::invalid_argument("pxcall_and_context[0] must not be null");
+		}
+
 		char* err = nullptr;
 		((void (*)(void*, struct cdts*, char**))pxcall_and_context[0])(pxcall_and_context[1], pcdts, &err);
 		
