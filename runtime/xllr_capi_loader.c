@@ -7,6 +7,13 @@
 #include <limits.h>
 #endif
 
+#ifdef _MSC_VER
+#include <corecrt.h>
+#define SECURE_FPRINTF fprintf_s
+#else
+#define SECURE_FPRINTF fprintf
+#endif
+
 // === Handlers ===
 void* cdt_helper_xllr_handle = NULL;
 
@@ -29,7 +36,8 @@ int64_t get_cache_size(){ return cdt_cache_size; }
 			const char* err = load_xllr(); \
 			if(err) \
 			{ \
-				fprintf(stderr, "Failed to load xllr: %s\n", err); \
+				\
+				SECURE_FPRINTF(stderr, "Failed to load xllr: %s\n", err); \
 				return retval; \
 			} \
 		} \
@@ -38,7 +46,7 @@ int64_t get_cache_size(){ return cdt_cache_size; }
 			const char* err = load_xllr_capi(); \
 			if(err) \
 			{ \
-				fprintf(stderr, "Failed to load xllr_capi: %s\n", err); \
+				SECURE_FPRINTF(stderr, "Failed to load xllr_capi: %s\n", err); \
 				return retval; \
 			} \
 		}\
