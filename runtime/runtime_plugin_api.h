@@ -25,7 +25,7 @@ void free_runtime(char** err);
 /**
  * Load module of foreign language
  */
-struct xcall* load_entity(const char* module_path, const char* function_path, metaffi_type_info* params_types, int8_t params_count, metaffi_type_info* retvals_types, int8_t retval_count, char** err);
+struct xcall* load_entity(const char* module_path, const char* entity_path, metaffi_type_info* params_types, int8_t params_count, metaffi_type_info* retvals_types, int8_t retval_count, char** err);
 
  /**
   * Load callable of foreign language

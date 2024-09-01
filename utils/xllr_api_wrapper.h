@@ -30,7 +30,7 @@ public:
 	
 	void load_runtime_plugin(const char* runtime_plugin, char** err);
 	void free_runtime_plugin(const char* runtime_plugin, char** err);
-	struct xcall* load_entity(const char* runtime_plugin, const char* module_path, const char* function_path, struct metaffi_type_info* params_types, int8_t params_count, struct metaffi_type_info* retvals_types, int8_t retval_count, char** err);
+	struct xcall* load_entity(const char* runtime_plugin, const char* module_path, const char* entity_path, struct metaffi_type_info* params_types, int8_t params_count, struct metaffi_type_info* retvals_types, int8_t retval_count, char** err);
 	struct xcall* make_callable(const char* runtime_plugin, void* make_callable_context, struct metaffi_type_info* params_types, int8_t params_count, struct metaffi_type_info* retvals_types, int8_t retval_count, char** err);
 	void free_xcall(const char* runtime_plugin, xcall*, char** err);
 	

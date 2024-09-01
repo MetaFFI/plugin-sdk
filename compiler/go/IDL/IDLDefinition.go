@@ -10,8 +10,8 @@ import (
 
 // --------------------------------------------------------------------
 // The expected syntax:
-// metaffi_function_path: "key1=val1,key2=val2...."
-func parseFunctionPath(pathToFunction string, pathMap map[string]string) (map[string]string, error) {
+// metaffi_entity_path: "key1=val1,key2=val2...."
+func parseEntityPath(pathToFunction string, pathMap map[string]string) (map[string]string, error) {
 
 	var res map[string]string
 	if pathMap == nil {
@@ -30,14 +30,14 @@ func parseFunctionPath(pathToFunction string, pathMap map[string]string) (map[st
 		elems := strings.Split(pair, "=")
 
 		if len(elems) != 2 {
-			return nil, fmt.Errorf("Failed parsing metaffi_function_path tag. The pair \"%v\" is invalid.", pair)
+			return nil, fmt.Errorf("Failed parsing metaffi_entity_path tag. The pair \"%v\" is invalid.", pair)
 		}
 
 		elems[0] = strings.TrimSpace(elems[0])
 		elems[1] = strings.TrimSpace(elems[1])
 
 		if elems[0] == "" || elems[1] == "" {
-			return nil, fmt.Errorf("Failed parsing metaffi_function_path tag. The pair \"%v\" is invalid.", pair)
+			return nil, fmt.Errorf("Failed parsing metaffi_entity_path tag. The pair \"%v\" is invalid.", pair)
 		}
 
 		res[elems[0]] = elems[1]
@@ -83,9 +83,9 @@ type EntityIDer interface {
 // --------------------------------------------------------------------
 // --------------------------------------------------------------------
 // --------------------------------------------------------------------
-type FunctionPather interface {
-	SetFunctionPath(key string, val string)
-	GetFunctionPath(key string) string
+type EntityPather interface {
+	SetEntityPath(key string, val string)
+	GetEntityPath(key string) string
 }
 
 // --------------------------------------------------------------------

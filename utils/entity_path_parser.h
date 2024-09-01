@@ -6,15 +6,15 @@
 //-----------------------------------------------------
 namespace metaffi { namespace utils
 {
-class function_path_parser
+class entity_path_parser
 {
 private:
-	std::map<std::string, std::string> function_path_items;
+	std::map<std::string, std::string> entity_path_items;
 	
 public:
-	explicit function_path_parser(const std::string& function_path);
+	explicit entity_path_parser(const std::string& entity_path);
 	
-	~function_path_parser() = default;
+	~entity_path_parser() = default;
 	
 	[[nodiscard]] std::string operator[](const std::string &key) const;
 	[[nodiscard]] bool contains(const std::string& key) const;

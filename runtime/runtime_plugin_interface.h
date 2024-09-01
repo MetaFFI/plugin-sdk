@@ -24,7 +24,7 @@ struct runtime_plugin_interface
 	/**
 	 * Load entity
 	 */ 
-	virtual xcall* load_entity(const char* module_path, const char* function_path, metaffi_type_info* params_types, uint8_t params_count, metaffi_type_info* retvals_types, uint8_t retval_count, char** err) = 0;
+	virtual xcall* load_entity(const char* module_path, const char* entity_path, metaffi_type_info* params_types, uint8_t params_count, metaffi_type_info* retvals_types, uint8_t retval_count, char** err) = 0;
 
 	/**
 	 * Wrap callable with XCall

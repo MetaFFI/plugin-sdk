@@ -38,8 +38,8 @@ func createModule() *ModuleDefinition {
 
 	module.AddGlobal(create5Seconds())
 
-	module.SetFunctionPath("package", "TestFuncs")
-	module.SetFunctionPath("module", "$PWD")
+	module.SetEntityPath("package", "TestFuncs")
+	module.SetEntityPath("module", "$PWD")
 
 	return module
 }

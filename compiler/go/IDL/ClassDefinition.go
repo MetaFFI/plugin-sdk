@@ -5,7 +5,7 @@ type ClassDefinition struct {
 	Name         string                   `json:"name"`
 	Comment      string                   `json:"comment"`
 	Tags         map[string]string        `json:"tags"`
-	FunctionPath map[string]string        `json:"function_path"`
+	EntityPath   map[string]string        `json:"entity_path"`
 	Constructors []*ConstructorDefinition `json:"constructors"`
 	Releaser     *ReleaseDefinition       `json:"release"`
 	Methods      []*MethodDefinition      `json:"methods"`
@@ -23,19 +23,19 @@ func NewClassDefinition(name string) *ClassDefinition {
 		Methods:      make([]*MethodDefinition, 0),
 		Fields:       make([]*FieldDefinition, 0),
 	}
-	
+
 	c.Releaser = NewReleaserDefinition(c, "Release"+c.Name)
-	
+
 	return c
 }
 
 //--------------------------------------------------------------------
 func (this *ClassDefinition) SetTag(tag string, val string) {
-	
+
 	if this.Tags == nil {
 		this.Tags = make(map[string]string)
 	}
-	
+
 	this.Tags[tag] = val
 }
 
@@ -44,7 +44,7 @@ func (this *ClassDefinition) AppendComment(comment string) {
 	if this.Comment != "" {
 		this.Comment += "\n"
 	}
-	
+
 	this.Comment += comment
 }
 
@@ -61,33 +61,33 @@ func (this *ClassDefinition) AddMethod(def *MethodDefinition) {
 }
 
 //--------------------------------------------------------------------
-func (this *ClassDefinition) SetFunctionPath(key string, val string) {
-	
-	if this.FunctionPath == nil {
-		this.FunctionPath = make(map[string]string)
+func (this *ClassDefinition) SetEntityPath(key string, val string) {
+
+	if this.EntityPath == nil {
+		this.EntityPath = make(map[string]string)
 	}
-	
-	this.FunctionPath[key] = val
-	
+
+	this.EntityPath[key] = val
+
 	for _, f := range this.Fields {
 		if f.Getter != nil {
-			f.Getter.SetFunctionPath(key, val)
+			f.Getter.SetEntityPath(key, val)
 		}
 		if f.Setter != nil {
-			f.Setter.SetFunctionPath(key, val)
+			f.Setter.SetEntityPath(key, val)
 		}
 	}
-	
+
 	for _, cstr := range this.Constructors {
-		cstr.SetFunctionPath(key, val)
+		cstr.SetEntityPath(key, val)
 	}
-	
+
 	if this.Releaser != nil {
-		this.Releaser.SetFunctionPath(key, val)
+		this.Releaser.SetEntityPath(key, val)
 	}
-	
+
 	for _, m := range this.Methods {
-		m.SetFunctionPath(key, val)
+		m.SetEntityPath(key, val)
 	}
 }
 

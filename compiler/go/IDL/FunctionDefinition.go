@@ -10,7 +10,7 @@ type FunctionDefinition struct {
 	Name          string            `json:"name"`
 	Comment       string            `json:"comment"`
 	Tags          map[string]string `json:"tags"`
-	FunctionPath  map[string]string `json:"function_path"`
+	EntityPath    map[string]string `json:"entity_path"`
 	Parameters    []*ArgDefinition  `json:"parameters"`
 	ReturnValues  []*ArgDefinition  `json:"return_values"`
 	OverloadIndex int32             `json:"overload_index"`
@@ -22,7 +22,7 @@ func NewFunctionDefinition(name string) *FunctionDefinition {
 		Name:         name,
 		Comment:      "",
 		Tags:         make(map[string]string),
-		FunctionPath: make(map[string]string),
+		EntityPath:   make(map[string]string),
 		Parameters:   make([]*ArgDefinition, 0),
 		ReturnValues: make([]*ArgDefinition, 0),
 	}
@@ -51,7 +51,7 @@ func (this *FunctionDefinition) Duplicate() *FunctionDefinition {
 		Comment:       this.Comment,
 		OverloadIndex: this.OverloadIndex,
 		Tags:          make(map[string]string),
-		FunctionPath:  make(map[string]string),
+		EntityPath:    make(map[string]string),
 		Parameters:    make([]*ArgDefinition, 0),
 		ReturnValues:  make([]*ArgDefinition, 0),
 	}
@@ -60,8 +60,8 @@ func (this *FunctionDefinition) Duplicate() *FunctionDefinition {
 		dupFunc.Tags[k] = v
 	}
 
-	for k, v := range this.FunctionPath {
-		dupFunc.FunctionPath[k] = v
+	for k, v := range this.EntityPath {
+		dupFunc.EntityPath[k] = v
 	}
 
 	for _, p := range this.Parameters {
@@ -149,12 +149,12 @@ func (this *FunctionDefinition) AppendComment(comment string) {
 }
 
 // --------------------------------------------------------------------
-func (this *FunctionDefinition) FunctionPathAsString(definition *IDLDefinition) string {
+func (this *FunctionDefinition) EntityPathAsString(definition *IDLDefinition) string {
 
 	res := ""
 
 	keys := make(map[string]bool)
-	for k := range this.FunctionPath {
+	for k := range this.EntityPath {
 		keys[k] = true
 	}
 	keys["metaffi_guest_lib"] = true
@@ -166,7 +166,7 @@ func (this *FunctionDefinition) FunctionPathAsString(definition *IDLDefinition) 
 	sort.Strings(sortedKeys)
 
 	for _, k := range sortedKeys {
-		v, found := this.FunctionPath[k]
+		v, found := this.EntityPath[k]
 
 		if !found {
 			switch k {
@@ -188,13 +188,13 @@ func (this *FunctionDefinition) FunctionPathAsString(definition *IDLDefinition) 
 }
 
 // --------------------------------------------------------------------
-func (this *FunctionDefinition) SetFunctionPath(key string, val string) {
-	this.FunctionPath[key] = val
+func (this *FunctionDefinition) SetEntityPath(key string, val string) {
+	this.EntityPath[key] = val
 }
 
 // --------------------------------------------------------------------
-func (this *FunctionDefinition) GetFunctionPath(key string) string {
-	val, found := this.FunctionPath[key]
+func (this *FunctionDefinition) GetEntityPath(key string) string {
+	val, found := this.EntityPath[key]
 	if !found {
 		return ""
 	} else {

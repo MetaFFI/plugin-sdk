@@ -103,7 +103,7 @@ void xllr_xcall_no_params_no_ret(struct xcall* pxcall,
 struct xcall* (*pxllr_load_entity)(const char*, const char*, const char*, struct metaffi_type_info*, int8_t, struct metaffi_type_info*, int8_t, char**);
 struct xcall* xllr_load_entity(const char* runtime_plugin,
                           const char* module_path,
-                          const char* function_path,
+                          const char* entity_path,
                           struct metaffi_type_info* params_types, int8_t params_count,
                           struct metaffi_type_info* retval_types, int8_t retval_count,
                           char** out_err)
@@ -111,7 +111,7 @@ struct xcall* xllr_load_entity(const char* runtime_plugin,
 	check_function_pointer(pxllr_load_entity, NULL);
 	return pxllr_load_entity(runtime_plugin,
 	                            module_path,
-						        function_path,
+						        entity_path,
 						       params_types, params_count,
 	                           retval_types, retval_count,
 						        out_err);

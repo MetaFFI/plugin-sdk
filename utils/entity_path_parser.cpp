@@ -1,13 +1,13 @@
-#include "function_path_parser.h"
+#include "entity_path_parser.h"
 #include "expand_env.h"
 
 namespace metaffi { namespace utils
 {
 //--------------------------------------------------------------------
-function_path_parser::function_path_parser(const std::string &function_path)
+entity_path_parser::entity_path_parser(const std::string &entity_path)
 {
 	std::vector<std::string> items;
-	boost::split(items, function_path, boost::is_any_of(","));
+	boost::split(items, entity_path, boost::is_any_of(","));
 	
 	for(const std::string& item : items)
 	{
@@ -23,21 +23,21 @@ function_path_parser::function_path_parser(const std::string &function_path)
 		
 		if(keyval.size() == 1)
 		{
-			function_path_items[keyval[0]] = "";
+			entity_path_items[keyval[0]] = "";
 		}
 		else
 		{
 			// expand environment variable in keyval[1]
 			std::string exp = expand_env(keyval[1]);
-			function_path_items[keyval[0]] = exp;
+			entity_path_items[keyval[0]] = exp;
 		}
 	}
 }
 //--------------------------------------------------------------------
-std::string function_path_parser::operator[](const std::string &key) const
+std::string entity_path_parser::operator[](const std::string &key) const
 {
-	auto i = function_path_items.find(key);
-	if(i == function_path_items.end()){
+	auto i = entity_path_items.find(key);
+	if(i == entity_path_items.end()){
 		return "";
 	}
 	
@@ -47,9 +47,9 @@ std::string function_path_parser::operator[](const std::string &key) const
 	return i->second;
 }
 //--------------------------------------------------------------------
-bool function_path_parser::contains(const std::string& key) const
+bool entity_path_parser::contains(const std::string& key) const
 {
-	return function_path_items.find(key) != function_path_items.end();
+	return entity_path_items.find(key) != entity_path_items.end();
 }
 //--------------------------------------------------------------------
 }}

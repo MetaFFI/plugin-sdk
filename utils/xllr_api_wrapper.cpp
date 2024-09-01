@@ -51,12 +51,12 @@ void xllr_api_wrapper::free_runtime_plugin(const char* runtime_plugin, char** er
 	(*this->pfree_runtime_plugin)(runtime_plugin, err);
 }
 //--------------------------------------------------------------------
-xcall* xllr_api_wrapper::load_entity(const char* runtime_plugin, const char* module_path, const char* function_path, metaffi_type_info* params_types, int8_t params_count, metaffi_type_info* retvals_types, int8_t retval_count, char** err)
+xcall* xllr_api_wrapper::load_entity(const char* runtime_plugin, const char* module_path, const char* entity_path, metaffi_type_info* params_types, int8_t params_count, metaffi_type_info* retvals_types, int8_t retval_count, char** err)
 {
 	*err = nullptr;
 	return (*this->pload_entity)(runtime_plugin,
 	                                module_path,
-	                                function_path,
+	                                entity_path,
 	                                params_types, params_count, retvals_types, retval_count,
 			                        err);
 }

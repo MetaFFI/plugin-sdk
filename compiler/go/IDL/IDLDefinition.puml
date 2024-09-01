@@ -13,7 +13,7 @@ namespace IDL {
         + Name string
         + Comment string
         + Tags <font color=blue>map</font><string,string>
-        + FunctionPath <font color=blue>map</font><string,string>
+        + EntityPath <font color=blue>map</font><string,string>
         + Constructors []ConstructorDefinition
         + Methods []MethodDefinition
         + Fields []FieldDefinition
@@ -32,7 +32,7 @@ namespace IDL {
         + Name string
         + Comment string
         + Tags <font color=blue>map</font><string,string>
-        + FunctionPath <font color=blue>map</font><string,string>
+        + EntityPath <font color=blue>map</font><string,string>
         + Parameters []ArgDefinition
         + ReturnValues []ArgDefinition
         + OverloadIndex int32

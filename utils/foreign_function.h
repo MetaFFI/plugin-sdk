@@ -38,9 +38,9 @@ typedef boost::dll::detail::library_function<foreign_function_entrypoint_signatu
 typedef boost::dll::detail::library_function<foreign_function_entrypoint_signature_params_ret> foreign_function_params_ret_entrypoint;
 #endif
 
-#define function_path_entry_metaffi_guest_lib "metaffi_guest_lib"
-#define function_path_entrypoint_class "entrypoint_class"
-#define function_path_entry_entrypoint_function "entrypoint_function"
+#define entity_path_entry_metaffi_guest_lib "metaffi_guest_lib"
+#define entity_path_entrypoint_class "entrypoint_class"
+#define entity_path_entry_entrypoint_function "entrypoint_function"
 #define guest_package "metaffi_guest."
-#define function_path_entry_parameters "params"
-#define function_path_entry_rets "rets"
+#define entity_path_entry_parameters "params"
+#define entity_path_entry_rets "rets"

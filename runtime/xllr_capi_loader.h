@@ -42,7 +42,7 @@ void xllr_xcall_no_params_no_ret(struct xcall* pxcall,
 
 struct xcall* xllr_load_entity(const char* runtime_plugin,
                           const char* module_path,
-                          const char* function_path,
+                          const char* entity_path,
                           struct metaffi_type_info* params_types, int8_t params_count,
                           struct metaffi_type_info* retvals_types, int8_t retval_count,
                           char** out_err);
