@@ -65,6 +65,7 @@ if 'sdk_tests' in env:
 		print(f'{Fore.RED}Unsupported platform: {platform.system()}{Fore.RESET}')
 		sys.exit(1)
 
+
 	cdts_test: SCons.Node.NodeList = env_cdts_test.CPPProgram('cdts_test',
 																'plugin-sdk',
 																['runtime/cdt.cpp', 'runtime/cdts_test.cpp', 'runtime/cdts_traverse_construct.cpp'],
