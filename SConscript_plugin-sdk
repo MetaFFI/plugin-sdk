@@ -7,6 +7,9 @@ import SCons.Script.SConsOptions
 import compiler_options
 import post_actions
 import os
+from colorama import Fore
+import sys
+import platform
 
 from site_scons import ALIAS_CORE, ALIAS_CORE_UNITTESTS
 
@@ -33,7 +36,14 @@ env['sdk_src'].extend(env['sdk_src_cpp'])
 # * ---- Plugin SDK Unitests ----	
 if 'sdk_tests' in env:
 	env_expand_env_test = env.Clone()
-	env_expand_env_test.LoadConanPackagesInfo() # make sure doctest is installed in conan (using SCons):
+	# make sure doctest is installed in conan (using SCons):
+	if env_expand_env_test.IsWindows():
+		env_expand_env_test.LoadConanPackagesInfo('conanfile.txt', 'SConscript_conandeps_windows')
+	elif env_expand_env_test.IsLinux():
+		env_expand_env_test.LoadConanPackagesInfo('conanfile.txt', 'SConscript_conandeps_linux')
+	else:
+		print(f'{Fore.RED}Unsupported platform: {platform.system()}{Fore.RESET}')
+		sys.exit(1)
 
 	# utils/expand_env_test.cpp
 	expand_env_test: SCons.Node.NodeList = env_expand_env_test.CPPProgram('expand_env_test',
@@ -47,7 +57,13 @@ if 'sdk_tests' in env:
 
 	# runtime/cdts_test.cpp
 	env_cdts_test = env.Clone()
-	env_cdts_test.LoadConanPackagesInfo()
+	if env_cdts_test.IsWindows():
+		env_cdts_test.LoadConanPackagesInfo('conanfile.txt', 'SConscript_conandeps_windows')
+	elif env_cdts_test.IsLinux():
+		env_cdts_test.LoadConanPackagesInfo('conanfile.txt', 'SConscript_conandeps_linux')
+	else:
+		print(f'{Fore.RED}Unsupported platform: {platform.system()}{Fore.RESET}')
+		sys.exit(1)
 
 	cdts_test: SCons.Node.NodeList = env_cdts_test.CPPProgram('cdts_test',
 																'plugin-sdk',
