@@ -63,3 +63,6 @@ go.sum
 vendor/
 
 SConscript_conandeps
+SConscript_conandeps_linux
+
+SConscript_conandeps_windows
