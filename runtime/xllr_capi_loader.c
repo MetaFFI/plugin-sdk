@@ -127,6 +127,34 @@ void xllr_free_xcall(const char* runtime_plugin,
 	                    out_err);
 }
 
+struct cdt* (*pxllr_alloc_cdt_array)(uint64_t);
+struct cdt* xllr_alloc_cdt_array(uint64_t size)
+{
+	check_function_pointer(pxllr_alloc_cdt_array, NULL);
+	return pxllr_alloc_cdt_array(size);
+}
+
+void (*pxllr_free_cdt_array)(struct cdt*);
+void xllr_free_cdt_array(struct cdt* pcdt)
+{
+	check_function_pointer(pxllr_free_cdt_array,);
+	pxllr_free_cdt_array(pcdt);
+}
+
+void* (*pxllr_alloc_memory)(uint64_t);
+void* xllr_alloc_memory(uint64_t size)
+{
+	check_function_pointer(pxllr_alloc_memory, NULL);
+	return pxllr_alloc_memory(size);
+}
+
+void (*pxllr_free_memory)(void*);
+void xllr_free_memory(void* ptr)
+{
+	check_function_pointer(pxllr_free_memory,);
+	pxllr_free_memory(ptr);
+}
+
 void (*pxllr_free_string)(char*);
 void xllr_free_string(char* err_to_free)
 {
@@ -160,21 +188,6 @@ char32_t* xllr_alloc_string32(const char32_t* err_message, uint64_t length)
 {
 	check_function_pointer(pxllr_alloc_string32, NULL);
 	return pxllr_alloc_string32(err_message, length);
-}
-
-void (*pxllr_metaffi_free)(void*);
-void xllr_metaffi_free(void* ptr)
-{
-	check_function_pointer(pxllr_metaffi_free,);
-
-	pxllr_metaffi_free(ptr);
-}
-
-void* (*pxllr_metaffi_alloc)(uint64_t);
-void* xllr_metaffi_alloc(uint64_t size)
-{
-	check_function_pointer(pxllr_metaffi_alloc, NULL);
-	return pxllr_metaffi_alloc(size);
 }
 
 void (*pxllr_load_runtime_plugin)(const char*, char**);
@@ -411,6 +424,34 @@ const char* load_xllr_capi()
 		return out_err;
 	}
 	
+	pxllr_alloc_cdt_array = (struct cdt* (*)(uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_cdt_array", &out_err);
+	if(!pxllr_alloc_cdt_array)
+	{
+		printf("Failed to load alloc_cdt_array: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_free_cdt_array = (void (*)(struct cdt*))load_symbol(cdt_helper_xllr_handle, "free_cdt_array", &out_err);
+	if(!pxllr_free_cdt_array)
+	{
+		printf("Failed to load free_cdt_array: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_alloc_memory = (void* (*)(uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_memory", &out_err);
+	if(!pxllr_alloc_memory)
+	{
+		printf("Failed to load alloc_memory: %s\n", out_err);
+		return out_err;
+	}
+	
+	pxllr_free_memory = (void (*)(void*))load_symbol(cdt_helper_xllr_handle, "free_memory", &out_err);
+	if(!pxllr_free_memory)
+	{
+		printf("Failed to load free_memory: %s\n", out_err);
+		return out_err;
+	}
+	
 	pxllr_free_string = (void (*)(char*))load_symbol(cdt_helper_xllr_handle, "free_string", &out_err);
 	if(!pxllr_free_string)
 	{
@@ -446,20 +487,6 @@ const char* load_xllr_capi()
 		return out_err;
 	}
 	
-	pxllr_metaffi_free = (void (*)(void*))load_symbol(cdt_helper_xllr_handle, "metaffi_free", &out_err);
-	if(!pxllr_metaffi_free)
-	{
-		printf("Failed to load metaffi_free: %s\n", out_err);
-		return out_err;
-	}
-	
-	pxllr_metaffi_alloc = (void* (*)(uint64_t))load_symbol(cdt_helper_xllr_handle, "metaffi_alloc", &out_err);
-	if(!pxllr_metaffi_alloc)
-	{
-		printf("Failed to load metaffi_alloc: %s\n", out_err);
-		return out_err;
-	}
-
 	pxllr_load_runtime_plugin = (void (*)(const char*, char**))load_symbol(cdt_helper_xllr_handle, "load_runtime_plugin", &out_err);
 	if(!pxllr_load_runtime_plugin)
 	{

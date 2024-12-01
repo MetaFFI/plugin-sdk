@@ -61,9 +61,10 @@ char8_t* xllr_alloc_string8(const char8_t* err_message, uint64_t length);
 char16_t* xllr_alloc_string16(const char16_t* err_message, uint64_t length);
 char32_t* xllr_alloc_string32(const char32_t* err_message, uint64_t length);
 void xllr_free_string(char* err_to_free);
-
-void xllr_metaffi_free(void* ptr);
-void* xllr_metaffi_alloc(uint64_t size);
+void* xllr_alloc_memory(uint64_t size);
+void xllr_free_memory(void* ptr);
+struct cdt* xllr_alloc_cdt_array(uint64_t count);
+void xllr_free_cdt_array(struct cdt* arr);
 
 void xllr_load_runtime_plugin(const char* runtime_plugin, char** err);
 void xllr_free_runtime_plugin(const char* runtime_plugin, char** err);

@@ -38,8 +38,10 @@ void cdts::free()
 	}
 	
 	// if NOT allocated on cache (i.e. array)
-	if(!this->allocated_on_cache){
+	if(!this->allocated_on_cache)
+	{
 		delete[] arr; // delete[] calls elements destructors
+		arr = nullptr;
 	}
 	else // arr must not be freed - just free the elements.
 	{
