@@ -593,6 +593,7 @@ const char* load_xllr()
 	
 	const char* metaffi_home_tmp = NULL;
 	metaffi_home_tmp = getenv("METAFFI_HOME");
+	//printf("+++ FOUND METAFFI_HOME: %s\n", metaffi_home_tmp);
 	if(metaffi_home_tmp)
 	{
 	    strncpy(metaffi_home, metaffi_home_tmp, MAX_PATH);
