@@ -658,3 +658,71 @@ const char* free_xllr()
 
 	return NULL;
 }
+
+const char* load_metaffi_library(const char* path_within_metaffi_home, void** out_handle)
+{
+#if defined(_WIN32) && defined(__STDC_LIB_EXT1__)
+	size_t requiredSize;
+	char metaffi_home[MAX_PATH] = {0};
+	getenv_s(&requiredSize, NULL, 0, "METAFFI_HOME");
+	
+	if (requiredSize == 0)
+	{
+	    return "Failed getting METAFFI_HOME. Is it set?";
+	}
+	else if(requiredSize > sizeof(metaffi_home)-1)
+	{
+		return "METAFFI_HOME is larger than MAX_PATH";
+	}
+	else
+	{
+		getenv_s(&requiredSize, metaffi_home, requiredSize, "METAFFI_HOME");
+	}
+	
+#else
+	#ifndef _WIN32
+	#define MAX_PATH PATH_MAX
+	#endif
+	
+	char metaffi_home[MAX_PATH+1] = {0};
+	
+	const char* metaffi_home_tmp = NULL;
+	metaffi_home_tmp = getenv("METAFFI_HOME");
+	if(metaffi_home_tmp)
+	{
+	    strncpy(metaffi_home, metaffi_home_tmp, MAX_PATH);
+	}
+	else
+	{
+	    return "Failed getting METAFFI_HOME. Is it set?";
+	}
+	
+#endif
+	
+	// get correct extension
+#ifdef _WIN32
+	const char* ext = ".dll";
+#elif __APPLE__
+	const char* ext = ".dylib";
+#else
+	const char* ext = ".so";
+#endif
+	
+	// load $METAFFI_HOME/path_within_metaffi_home
+#ifdef _WIN32
+	char full_path[MAX_PATH] = {0};
+	sprintf_s(full_path, sizeof(full_path), "%s\\%s.%s", metaffi_home, path_within_metaffi_home, ext);
+#else
+	char full_path[PATH_MAX+1] = {0};
+	sprintf(full_path, "%s/%s.%s", metaffi_home, path_within_metaffi_home, ext);
+#endif
+	
+	char* out_err;
+	*out_handle = load_library(full_path, &out_err);
+	if(!*out_handle)
+	{
+		return out_err;
+	}
+	
+	return NULL;
+}

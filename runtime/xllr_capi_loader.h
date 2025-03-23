@@ -95,14 +95,16 @@ void get_last_error_string(DWORD err, char** out_err_str);
 void* load_library(const char* name, char** out_err);
 const char* free_library(void* lib);
 void* load_symbol(void* handle, const char* name, char** out_err);
-const char* load_xllr();
-const char* free_xllr();
+
 
 /************************************************
 *   Load cdt functions dynamically
 *************************************************/
 const char* load_xllr_capi();
+const char* load_xllr();
+const char* free_xllr();
 
+const char* load_metaffi_library(const char* path_within_metaffi_home, void** out_handle);
 
 #ifdef __cplusplus
 // make sure you include utils/scope_guard.hpp
