@@ -1,7 +1,7 @@
 package compiler
 
 /*
-#include "../language_plugin_interface.h"
+#include "../compiler_plugin_interface.h"
 */
 import "C"
 import (

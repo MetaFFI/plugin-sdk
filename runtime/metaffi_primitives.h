@@ -345,15 +345,17 @@ struct metaffi_type_info
 /**
  * @brief A handle to a foreign object. Allows passing objects between different runtimes
  * */
+#define METAFFI_HANDLE_MAGIC_NUMBER 0x5F3A8C29
 struct cdt_metaffi_handle
 {
+	metaffi_uint32 magic_number;
 	metaffi_handle handle;
 	uint64_t runtime_id;
 	void (*release)(struct cdt_metaffi_handle*);
 
 #ifdef __cplusplus
-	cdt_metaffi_handle() : handle(nullptr), runtime_id(0), release(nullptr) {}
-	cdt_metaffi_handle(metaffi_handle val, uint64_t runtime_id, void(*release)(cdt_metaffi_handle*)) : handle(val), runtime_id(runtime_id), release(release) {}
+	cdt_metaffi_handle() : magic_number(METAFFI_HANDLE_MAGIC_NUMBER), handle(nullptr), runtime_id(0), release(nullptr) {}
+	cdt_metaffi_handle(metaffi_handle val, uint64_t runtime_id, void(*release)(cdt_metaffi_handle*)) : magic_number(METAFFI_HANDLE_MAGIC_NUMBER), handle(val), runtime_id(runtime_id), release(release) {}
 	bool operator==(const cdt_metaffi_handle& other) const { return handle == other.handle && runtime_id == other.runtime_id; }
 #endif
 };

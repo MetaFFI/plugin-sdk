@@ -137,6 +137,8 @@ struct cdt
 	cdt& operator=(bool val) { cdt_val.bool_val = val; type = metaffi_bool_type; return *this; }
 	explicit cdt(metaffi_char8 val): cdt() { *this = val; }
 	cdt& operator=(metaffi_char8 val) { cdt_val.char8_val = val; type = metaffi_char8_type; return *this; }
+	cdt& operator=(metaffi_char16 val) { cdt_val.char16_val = val; type = metaffi_char16_type; return *this; }
+	cdt& operator=(metaffi_char32 val) { cdt_val.char32_val = val; type = metaffi_char32_type; return *this; }
 	
 	cdt(const char8_t* val, bool is_copy): cdt(){ set_string(val, is_copy);	}
 	cdt(const std::u8string_view& val, bool is_copy): cdt(){ set_string(val.data(), is_copy); }
@@ -225,6 +227,18 @@ struct cdt
 		
 		cdt_val.handle_val = (cdt_metaffi_handle*)val;
 		type = metaffi_handle_type;
+		free_required = false;
+	}
+	void set_callable(const cdt_metaffi_callable* val)
+	{
+		cdt_val.callable_val = (cdt_metaffi_callable*)val;
+		type = metaffi_callable_type;
+		free_required = false;
+	}
+	void set_callable(cdt_metaffi_callable* val)
+	{
+		cdt_val.callable_val = (cdt_metaffi_callable*)val;
+		type = metaffi_callable_type;
 		free_required = false;
 	}
 	

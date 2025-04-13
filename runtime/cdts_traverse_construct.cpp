@@ -48,62 +48,126 @@ void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbac
 	{
 		case metaffi_float64_type:
 		{
-			callbacks.on_float64(current_index.data(), current_index.size(), item.cdt_val.float64_val, callbacks.context);
+			if(callbacks.on_pfloat64 != nullptr){
+				callbacks.on_pfloat64(current_index.data(), current_index.size(), &item.cdt_val.float64_val, callbacks.context);
+			}
+			else{
+				callbacks.on_float64(current_index.data(), current_index.size(), item.cdt_val.float64_val, callbacks.context);
+			}
 		}break;
 		
 		case metaffi_float32_type:
 		{
-			callbacks.on_float32(current_index.data(), current_index.size(), item.cdt_val.float32_val, callbacks.context);
+			if(callbacks.on_pfloat32 != nullptr){
+				callbacks.on_pfloat32(current_index.data(), current_index.size(), &item.cdt_val.float32_val, callbacks.context);
+			}
+			else{
+				callbacks.on_float32(current_index.data(), current_index.size(), item.cdt_val.float32_val, callbacks.context);
+			}
 		}break;
 		
 		case metaffi_int8_type:
 		{
-			callbacks.on_int8(current_index.data(), current_index.size(), item.cdt_val.int8_val, callbacks.context);
+			if(callbacks.on_pint8 != nullptr){
+				callbacks.on_pint8(current_index.data(), current_index.size(), &item.cdt_val.int8_val, callbacks.context);
+			}
+			else{
+				callbacks.on_int8(current_index.data(), current_index.size(), item.cdt_val.int8_val, callbacks.context);
+			}
+			
 		}break;
 		
 		case metaffi_uint8_type:
 		{
-			callbacks.on_uint8(current_index.data(), current_index.size(), item.cdt_val.uint8_val, callbacks.context);
+			if(callbacks.on_puint8 != nullptr){
+				callbacks.on_puint8(current_index.data(), current_index.size(), &item.cdt_val.uint8_val, callbacks.context);
+			}
+			else{
+				callbacks.on_uint8(current_index.data(), current_index.size(), item.cdt_val.uint8_val, callbacks.context);
+			}
+			
 		}break;
 		
 		case metaffi_int16_type:
 		{
-			callbacks.on_int16(current_index.data(), current_index.size(), item.cdt_val.int16_val, callbacks.context);
+			if(callbacks.on_pint16 != nullptr){
+				callbacks.on_pint16(current_index.data(), current_index.size(), &item.cdt_val.int16_val, callbacks.context);
+			}
+			else{
+				callbacks.on_int16(current_index.data(), current_index.size(), item.cdt_val.int16_val, callbacks.context);
+			}
+			
 		}break;
 		
 		case metaffi_uint16_type:
 		{
-			callbacks.on_uint16(current_index.data(), current_index.size(), item.cdt_val.uint16_val, callbacks.context);
+			if(callbacks.on_puint16 != nullptr){
+				callbacks.on_puint16(current_index.data(), current_index.size(), &item.cdt_val.uint16_val, callbacks.context);
+			}
+			else{
+				callbacks.on_uint16(current_index.data(), current_index.size(), item.cdt_val.uint16_val, callbacks.context);
+			}
+			
 		}break;
 		
 		case metaffi_int32_type:
 		{
-			callbacks.on_int32(current_index.data(), current_index.size(), item.cdt_val.int32_val, callbacks.context);
+			if(callbacks.on_pint32 != nullptr){
+				callbacks.on_pint32(current_index.data(), current_index.size(), &item.cdt_val.int32_val, callbacks.context);
+			}
+			else{
+				callbacks.on_int32(current_index.data(), current_index.size(), item.cdt_val.int32_val, callbacks.context);
+			}
 		}break;
 		
 		case metaffi_uint32_type:
 		{
-			callbacks.on_uint32(current_index.data(), current_index.size(), item.cdt_val.uint32_val, callbacks.context);
+			if(callbacks.on_puint32 != nullptr){
+				callbacks.on_puint32(current_index.data(), current_index.size(), &item.cdt_val.uint32_val, callbacks.context);
+			}
+			else{
+				callbacks.on_uint32(current_index.data(), current_index.size(), item.cdt_val.uint32_val, callbacks.context);
+			}
 		}break;
 		
 		case metaffi_int64_type:
 		{
-			callbacks.on_int64(current_index.data(), current_index.size(), item.cdt_val.int64_val, callbacks.context);
+			if(callbacks.on_pint64 != nullptr){
+				callbacks.on_pint64(current_index.data(), current_index.size(), &item.cdt_val.int64_val, callbacks.context);
+			}
+			else{
+				callbacks.on_int64(current_index.data(), current_index.size(), item.cdt_val.int64_val, callbacks.context);
+			}
 		}break;
 		
 		case metaffi_uint64_type:
 		{
-			callbacks.on_uint64(current_index.data(), current_index.size(), item.cdt_val.uint64_val, callbacks.context);
+			if(callbacks.on_puint64 != nullptr){
+				callbacks.on_puint64(current_index.data(), current_index.size(), &item.cdt_val.uint64_val, callbacks.context);
+			}
+			else{
+				callbacks.on_uint64(current_index.data(), current_index.size(), item.cdt_val.uint64_val, callbacks.context);
+			}
 		}break;
 		
 		case metaffi_bool_type:
 		{
-			callbacks.on_bool(current_index.data(), current_index.size(), item.cdt_val.bool_val, callbacks.context);
+			if(callbacks.on_pbool != nullptr){
+				callbacks.on_pbool(current_index.data(), current_index.size(), &item.cdt_val.bool_val, callbacks.context);
+			}
+			else{
+				callbacks.on_bool(current_index.data(), current_index.size(), item.cdt_val.bool_val, callbacks.context);
+			}
 		}break;
 		
 		case metaffi_char8_type:
 		{
-			callbacks.on_char8(current_index.data(), current_index.size(), item.cdt_val.char8_val, callbacks.context);
+			if(callbacks.on_pchar8 != nullptr){
+				callbacks.on_pchar8(current_index.data(), current_index.size(), &item.cdt_val.char8_val, callbacks.context);
+			}
+			else{
+				callbacks.on_char8(current_index.data(), current_index.size(), item.cdt_val.char8_val, callbacks.context);
+			}
 		}break;
 		
 		case metaffi_string8_type:
@@ -113,7 +177,12 @@ void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbac
 		
 		case metaffi_char16_type:
 		{
-			callbacks.on_char16(current_index.data(), current_index.size(), item.cdt_val.char16_val, callbacks.context);
+			if(callbacks.on_pchar16 != nullptr){
+				callbacks.on_pchar16(current_index.data(), current_index.size(), &item.cdt_val.char16_val, callbacks.context);
+			}
+			else{
+				callbacks.on_char16(current_index.data(), current_index.size(), item.cdt_val.char16_val, callbacks.context);
+			}
 		}break;
 		
 		case metaffi_string16_type:
@@ -123,7 +192,12 @@ void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbac
 		
 		case metaffi_char32_type:
 		{
-			callbacks.on_char32(current_index.data(), current_index.size(), item.cdt_val.char32_val, callbacks.context);
+			if(callbacks.on_pchar32 != nullptr){
+				callbacks.on_pchar32(current_index.data(), current_index.size(), &item.cdt_val.char32_val, callbacks.context);
+			}
+			else{
+				callbacks.on_char32(current_index.data(), current_index.size(), item.cdt_val.char32_val, callbacks.context);
+			}
 		}break;
 		
 		case metaffi_string32_type:

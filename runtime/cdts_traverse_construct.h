@@ -15,23 +15,41 @@ struct traverse_cdts_callbacks
 	void* context;
 	
 	void (*on_float64)(const metaffi_size* index, metaffi_size index_size, metaffi_float64 val, void* context);
+	void (*on_pfloat64)(const metaffi_size* index, metaffi_size index_size, const metaffi_float64* val, void* context);
 	void (*on_float32)(const metaffi_size* index, metaffi_size index_size, metaffi_float32 val, void* context);
+	void (*on_pfloat32)(const metaffi_size* index, metaffi_size index_size, const metaffi_float32* val, void* context);
 	void (*on_int8)(const metaffi_size* index, metaffi_size index_size, metaffi_int8 val, void* context);
+	void (*on_pint8)(const metaffi_size* index, metaffi_size index_size, const metaffi_int8* val, void* context);
 	void (*on_uint8)(const metaffi_size* index, metaffi_size index_size, metaffi_uint8 val, void* context);
+	void (*on_puint8)(const metaffi_size* index, metaffi_size index_size, const metaffi_uint8* val, void* context);
 	void (*on_int16)(const metaffi_size* index, metaffi_size index_size, metaffi_int16 val, void* context);
+	void (*on_pint16)(const metaffi_size* index, metaffi_size index_size, const metaffi_int16* val, void* context);
 	void (*on_uint16)(const metaffi_size* index, metaffi_size index_size, metaffi_uint16 val, void* context);
+	void (*on_puint16)(const metaffi_size* index, metaffi_size index_size, const metaffi_uint16* val, void* context);
 	void (*on_int32)(const metaffi_size* index, metaffi_size index_size, metaffi_int32 val, void* context);
+	void (*on_pint32)(const metaffi_size* index, metaffi_size index_size, const metaffi_int32* val, void* context);
 	void (*on_uint32)(const metaffi_size* index, metaffi_size index_size, metaffi_uint32 val, void* context);
+	void (*on_puint32)(const metaffi_size* index, metaffi_size index_size, const metaffi_uint32* val, void* context);
 	void (*on_int64)(const metaffi_size* index, metaffi_size index_size, metaffi_int64 val, void* context);
+	void (*on_pint64)(const metaffi_size* index, metaffi_size index_size, const metaffi_int64* val, void* context);
 	void (*on_uint64)(const metaffi_size* index, metaffi_size index_size, metaffi_uint64 val, void* context);
+	void (*on_puint64)(const metaffi_size* index, metaffi_size index_size, const metaffi_uint64* val, void* context);
 	void (*on_bool)(const metaffi_size* index, metaffi_size index_size, metaffi_bool val, void* context);
-	void (*on_char8)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char8 val, void* context);
+	void (*on_pbool)(const metaffi_size* index, metaffi_size index_size, const metaffi_bool* val, void* context);
+	
 	void (*on_string8)(const metaffi_size* index, metaffi_size index_size, metaffi_string8 val, void* context);
-	void (*on_char16)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char16 val, void* context);
+	void (*on_char8)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char8 val, void* context);
+	void (*on_pchar8)(const metaffi_size* index, metaffi_size index_size, const struct metaffi_char8* val, void* context);
+	
 	void (*on_string16)(const metaffi_size* index, metaffi_size index_size, metaffi_string16 val, void* context);
-	void (*on_char32)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char32 val, void* context);
+	void (*on_char16)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char16 val, void* context);
+	void (*on_pchar16)(const metaffi_size* index, metaffi_size index_size, const struct metaffi_char16* val, void* context);
+	
 	void (*on_string32)(const metaffi_size* index, metaffi_size index_size, metaffi_string32 val, void* context);
-	#ifdef __cplusplus
+	void (*on_char32)(const metaffi_size* index, metaffi_size index_size, struct metaffi_char32 val, void* context);
+	void (*on_pchar32)(const metaffi_size* index, metaffi_size index_size, const struct metaffi_char32* val, void* context);
+	
+#ifdef __cplusplus
 	void (*on_handle)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_handle& val, void* context);
 	void (*on_callable)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_callable& val, void* context);
 	#else
@@ -55,21 +73,35 @@ struct traverse_cdts_callbacks
 	explicit traverse_cdts_callbacks(void* context) : context(context)
 	{
 		on_float64 = nullptr;
+		on_pfloat64 = nullptr;
 		on_float32 = nullptr;
+		on_pfloat32 = nullptr;
 		on_int8 = nullptr;
+		on_pint8 = nullptr;
 		on_uint8 = nullptr;
+		on_puint8 = nullptr;
 		on_int16 = nullptr;
+		on_pint16 = nullptr;
 		on_uint16 = nullptr;
+		on_puint16 = nullptr;
 		on_int32 = nullptr;
+		on_pint32 = nullptr;
 		on_uint32 = nullptr;
+		on_puint32 = nullptr;
 		on_int64 = nullptr;
+		on_pint64 = nullptr;
 		on_uint64 = nullptr;
+		on_puint64 = nullptr;
 		on_bool = nullptr;
+		on_pbool = nullptr;
 		on_char8 = nullptr;
+		on_pchar8 = nullptr;
 		on_string8 = nullptr;
 		on_char16 = nullptr;
+		on_pchar16 = nullptr;
 		on_string16 = nullptr;
 		on_char32 = nullptr;
+		on_pchar32 = nullptr;
 		on_string32 = nullptr;
 		on_handle = nullptr;
 		on_callable = nullptr;
@@ -123,6 +155,55 @@ struct traverse_cdts_callbacks
 	    on_null(on_null),
 	    on_array(on_array)
 	{}
+	
+	traverse_cdts_callbacks(
+			void* context,
+			void (*on_pfloat64)(const metaffi_size* index, metaffi_size index_size, const metaffi_float64* val, void* context),
+			void (*on_pfloat32)(const metaffi_size* index, metaffi_size index_size, const metaffi_float32* val, void* context),
+			void (*on_pint8)(const metaffi_size* index, metaffi_size index_size, const metaffi_int8* val, void* context),
+			void (*on_puint8)(const metaffi_size* index, metaffi_size index_size, const metaffi_uint8* val, void* context),
+			void (*on_pint16)(const metaffi_size* index, metaffi_size index_size, const metaffi_int16* val, void* context),
+			void (*on_puint16)(const metaffi_size* index, metaffi_size index_size, const metaffi_uint16* val, void* context),
+			void (*on_pint32)(const metaffi_size* index, metaffi_size index_size, const metaffi_int32* val, void* context),
+			void (*on_puint32)(const metaffi_size* index, metaffi_size index_size, const metaffi_uint32* val, void* context),
+			void (*on_pint64)(const metaffi_size* index, metaffi_size index_size, const metaffi_int64* val, void* context),
+			void (*on_puint64)(const metaffi_size* index, metaffi_size index_size, const metaffi_uint64* val, void* context),
+			void (*on_pbool)(const metaffi_size* index, metaffi_size index_size, const metaffi_bool* val, void* context),
+			void (*on_pchar8)(const metaffi_size* index, metaffi_size index_size, const struct metaffi_char8* val, void* context),
+			void (*on_string8)(const metaffi_size* index, metaffi_size index_size, metaffi_string8 val, void* context),
+			void (*on_pchar16)(const metaffi_size* index, metaffi_size index_size, const struct metaffi_char16* val, void* context),
+			void (*on_string16)(const metaffi_size* index, metaffi_size index_size, metaffi_string16 val, void* context),
+			void (*on_pchar32)(const metaffi_size* index, metaffi_size index_size, const struct metaffi_char32* val, void* context),
+			void (*on_string32)(const metaffi_size* index, metaffi_size index_size, metaffi_string32 val, void* context),
+			void (*on_handle)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_handle& val, void* context),
+			void (*on_callable)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_callable& val, void* context),
+			void (*on_null)(const metaffi_size* index, metaffi_size index_size, void* context),
+			metaffi_bool (*on_array)(const metaffi_size* index, metaffi_size index_size, const cdts& val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context)
+	) : context(context),
+	    on_pfloat64(on_pfloat64),
+	    on_pfloat32(on_pfloat32),
+	    on_pint8(on_pint8),
+	    on_puint8(on_puint8),
+	    on_pint16(on_pint16),
+	    on_puint16(on_puint16),
+	    on_pint32(on_pint32),
+	    on_puint32(on_puint32),
+	    on_pint64(on_pint64),
+	    on_puint64(on_puint64),
+	    on_pbool(on_pbool),
+	    on_pchar8(on_pchar8),
+	    on_string8(on_string8),
+	    on_pchar16(on_pchar16),
+	    on_string16(on_string16),
+	    on_pchar32(on_pchar32),
+	    on_string32(on_string32),
+	    on_handle(on_handle),
+	    on_callable(on_callable),
+	    on_null(on_null),
+	    on_array(on_array)
+	{}
+	
+	
 #endif // __cplusplus
 };
 #ifdef __cplusplus
