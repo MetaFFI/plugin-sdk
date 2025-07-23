@@ -714,7 +714,7 @@ const char* load_metaffi_library(const char* path_within_metaffi_home, void** ou
 	char full_path[MAX_PATH] = {0};
 	sprintf_s(full_path, sizeof(full_path), "%s\\%s.%s", metaffi_home, path_within_metaffi_home, ext);
 #else
-	char full_path[PATH_MAX+1] = {0};
+	char full_path[PATH_MAX*2] = {0};
 	sprintf(full_path, "%s/%s.%s", metaffi_home, path_within_metaffi_home, ext);
 #endif
 	

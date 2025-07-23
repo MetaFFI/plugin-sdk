@@ -1,6 +1,8 @@
 module github.com/MetaFFI/plugin-sdk
 
-go 1.18
+go 1.23.0
+
+toolchain go1.23.1
 
 require github.com/Masterminds/sprig/v3 v3.2.3
 
@@ -15,5 +17,5 @@ require (
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
+	golang.org/x/crypto v0.37.0 // indirect
 )
