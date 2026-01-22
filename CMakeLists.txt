@@ -6,3 +6,18 @@ collect_c_cpp_files("${CMAKE_CURRENT_LIST_DIR};${CMAKE_CURRENT_LIST_DIR}/compile
 set(sdk_src ${sdk_src} PARENT_SCOPE)
 set(sdk_include ${sdk_include} PARENT_SCOPE)
 set(sdk_include_dir ${sdk_include_dir} PARENT_SCOPE)
+
+set(metaffi_sdk_src $ENV{METAFFI_SOURCE_ROOT}/src PARENT_SCOPE)
+add_subdirectory(cdts_serializer)
+add_subdirectory(compiler)
+add_subdirectory(idl_compiler)
+add_subdirectory(runtime)
+add_subdirectory(runtime_manager)
+add_subdirectory(test_modules)
+
+add_custom_target(metaffi_sdk
+	DEPENDS cdts_serializer compiler idl_compiler sdk_runtime runtime_manager test_modules
+)
+set_target_properties(metaffi_sdk PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+set(metaffi_sdk metaffi_sdk PARENT_SCOPE)

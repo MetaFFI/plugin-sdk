@@ -40,7 +40,7 @@ TEST_SUITE("CDTS Tests")
 		metaffi_string16 s16 = (metaffi_string16) u"Hello UTF-16";
 		metaffi_string32 s32 = (metaffi_string32) U"Hello UTF-32";
 		cdt_metaffi_handle h((void*) 1, 101, nullptr);
-		cdt_metaffi_callable callable((void*) 2, {metaffi_int8_type, metaffi_int16_type}, {metaffi_float32_type});
+		cdt_metaffi_callable callable((void*) 2, {metaffi_int8_type,metaffi_int16_type}, {metaffi_float32_type});
 
 		std::vector<metaffi_variant> data = {f32, f64, i8, ui8, i16, ui16, i32, ui32, i64, ui64, b, c8, s8, c16, s16,
 		                                     c32, s32, h, callable};
@@ -252,7 +252,6 @@ TEST_SUITE("CDTS Tests")
 			REQUIRE((index[0] == 18));
 			cdt_metaffi_callable mcallable((void*) 2, {metaffi_int8_type, metaffi_int16_type}, {metaffi_float32_type});
 			REQUIRE((std::get<cdt_metaffi_callable>(((std::vector<metaffi_variant>*) context)->at(index[0])) == mcallable));
-			mcallable.free();
 			*is_free_required = TRUE;
 			
 			return new cdt_metaffi_callable(std::get<cdt_metaffi_callable>(((std::vector<metaffi_variant>*) context)->at(index[0])));

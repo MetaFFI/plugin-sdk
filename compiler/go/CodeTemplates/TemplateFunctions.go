@@ -2,8 +2,9 @@ package TemplateFunctions
 
 import (
 	"fmt"
-	"github.com/MetaFFI/plugin-sdk/compiler/go/IDL"
 	"os"
+
+	"github.com/MetaFFI/sdk/idl_entities/go/IDL"
 )
 
 var templatesFuncMap = map[string]interface{}{

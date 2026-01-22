@@ -1,6 +1,14 @@
 # ------------- vscode -------------
 .vscode
 
+# ------------- agents -------------
+.cursor
+.claude
+.codex
+AGENTS.md
+nul
+
+
 # ------------- CLion -------------
 .idea
 

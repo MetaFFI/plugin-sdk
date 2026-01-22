@@ -165,11 +165,11 @@ struct xcall
 #endif
 
 #ifndef __cplusplus
-void call_xcall_no_params_no_retvals(struct xcall* pxcall, char** err)
+static inline void call_xcall_no_params_no_retvals(struct xcall* pxcall, char** err)
 {
 	((void (*)(void*, char**))pxcall->pxcall_and_context[0])(pxcall->pxcall_and_context[1], err);
 }
-void call_xcall_with_params_and_or_retvals(struct xcall* pxcall, struct cdts* pcdts, char** err)
+static inline void call_xcall_with_params_and_or_retvals(struct xcall* pxcall, struct cdts* pcdts, char** err)
 {
 	((void (*)(void*, struct cdts*, char**))pxcall->pxcall_and_context[0])(pxcall->pxcall_and_context[1], pcdts, err);
 }

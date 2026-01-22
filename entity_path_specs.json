@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://metaffi.com/schemas/entity-path-specs.json",
+  "title": "MetaFFI Entity Path Specifications",
+  "description": "Defines the entity_path structure expected by each language runtime plugin. IDL compilers use this specification to generate correct entity_path structures.",
+
+  "python3": {
+    "description": "Python3 runtime plugin entity_path structure",
+    "function": {
+      "description": "Module-level function",
+      "required_keys": {
+        "callable": "Function name (e.g., 'my_function')"
+      },
+      "optional_flags": {
+        "varargs": "Set to true if function accepts *args",
+        "named_args": "Set to true if function accepts **kwargs"
+      },
+      "example": {
+        "callable": "my_function",
+        "varargs": true,
+        "named_args": true
+      }
+    },
+    "method": {
+      "description": "Class instance method",
+      "required_keys": {
+        "callable": "Dotted path to method (e.g., 'ClassName.method_name')"
+      },
+      "optional_flags": {
+        "instance_required": "Set to true for instance methods, false for static/class methods",
+        "varargs": "Set to true if method accepts *args",
+        "named_args": "Set to true if method accepts **kwargs"
+      },
+      "example": {
+        "callable": "MyClass.my_method",
+        "instance_required": true,
+        "varargs": false,
+        "named_args": true
+      }
+    },
+    "constructor": {
+      "description": "Class constructor (__init__)",
+      "required_keys": {
+        "callable": "Dotted path to constructor (e.g., 'ClassName.__init__')"
+      },
+      "optional_flags": {
+        "varargs": "Set to true if constructor accepts *args",
+        "named_args": "Set to true if constructor accepts **kwargs"
+      },
+      "example": {
+        "callable": "MyClass.__init__",
+        "varargs": false,
+        "named_args": false
+      }
+    },
+    "global_getter": {
+      "description": "Global variable getter function",
+      "required_keys": {
+        "attribute": "Global variable name (e.g., 'my_global')"
+      },
+      "required_flags": {
+        "getter": "Always true for getters"
+      },
+      "example": {
+        "attribute": "my_global",
+        "getter": true
+      }
+    },
+    "global_setter": {
+      "description": "Global variable setter function",
+      "required_keys": {
+        "attribute": "Global variable name (e.g., 'my_global')"
+      },
+      "required_flags": {
+        "setter": "Always true for setters"
+      },
+      "example": {
+        "attribute": "my_global",
+        "setter": true
+      }
+    },
+    "field_getter": {
+      "description": "Class field getter method",
+      "required_keys": {
+        "attribute": "Dotted path to field (e.g., 'ClassName.field_name')"
+      },
+      "required_flags": {
+        "getter": "Always true for getters"
+      },
+      "optional_flags": {
+        "instance_required": "Set to true for instance fields, false for class/static fields"
+      },
+      "example": {
+        "attribute": "MyClass.my_field",
+        "getter": true,
+        "instance_required": true
+      }
+    },
+    "field_setter": {
+      "description": "Class field setter method",
+      "required_keys": {
+        "attribute": "Dotted path to field (e.g., 'ClassName.field_name')"
+      },
+      "required_flags": {
+        "setter": "Always true for setters"
+      },
+      "optional_flags": {
+        "instance_required": "Set to true for instance fields, false for class/static fields"
+      },
+      "example": {
+        "attribute": "MyClass.my_field",
+        "setter": true,
+        "instance_required": true
+      }
+    }
+  },
+
+  "go": {
+    "description": "Go runtime plugin entity_path structure",
+    "function": {
+      "description": "Package-level function or method",
+      "required_keys": {
+        "callable": "Function name (e.g., 'MyFunction' or 'MyStruct.MyMethod')"
+      },
+      "example": {
+        "callable": "MyFunction"
+      }
+    },
+    "global_getter": {
+      "description": "Package-level global variable getter",
+      "required_keys": {
+        "global": "Global variable name (e.g., 'MyGlobalVar')"
+      },
+      "required_flags": {
+        "getter": "Always true for getters"
+      },
+      "example": {
+        "global": "MyGlobalVar",
+        "getter": true
+      }
+    },
+    "global_setter": {
+      "description": "Package-level global variable setter",
+      "required_keys": {
+        "global": "Global variable name (e.g., 'MyGlobalVar')"
+      },
+      "required_flags": {
+        "setter": "Always true for setters"
+      },
+      "example": {
+        "global": "MyGlobalVar",
+        "setter": true
+      }
+    },
+    "field_getter": {
+      "description": "Struct field getter",
+      "required_keys": {
+        "field": "Dotted path to field (e.g., 'MyStruct.MyField')"
+      },
+      "required_flags": {
+        "getter": "Always true for getters"
+      },
+      "example": {
+        "field": "MyStruct.MyField",
+        "getter": true
+      }
+    },
+    "field_setter": {
+      "description": "Struct field setter",
+      "required_keys": {
+        "field": "Dotted path to field (e.g., 'MyStruct.MyField')"
+      },
+      "required_flags": {
+        "setter": "Always true for setters"
+      },
+      "example": {
+        "field": "MyStruct.MyField",
+        "setter": true
+      }
+    }
+  },
+
+  "jvm": {
+    "description": "JVM runtime plugin entity_path structure",
+    "method": {
+      "description": "Class method or constructor",
+      "required_keys": {
+        "class": "Fully qualified class name (e.g., 'com.example.MyClass')",
+        "callable": "Method name (e.g., 'myMethod' or '<init>' for constructor)"
+      },
+      "optional_flags": {
+        "instance_required": "Set to true for instance methods, false for static methods"
+      },
+      "example": {
+        "class": "com.example.MyClass",
+        "callable": "myMethod",
+        "instance_required": true
+      }
+    },
+    "field_getter": {
+      "description": "Class field getter",
+      "required_keys": {
+        "class": "Fully qualified class name (e.g., 'com.example.MyClass')",
+        "field": "Field name (e.g., 'myField')"
+      },
+      "required_flags": {
+        "getter": "Always true for getters"
+      },
+      "optional_flags": {
+        "instance_required": "Set to true for instance fields, false for static fields"
+      },
+      "example": {
+        "class": "com.example.MyClass",
+        "field": "myField",
+        "getter": true,
+        "instance_required": true
+      }
+    },
+    "field_setter": {
+      "description": "Class field setter",
+      "required_keys": {
+        "class": "Fully qualified class name (e.g., 'com.example.MyClass')",
+        "field": "Field name (e.g., 'myField')"
+      },
+      "required_flags": {
+        "setter": "Always true for setters"
+      },
+      "optional_flags": {
+        "instance_required": "Set to true for instance fields, false for static fields"
+      },
+      "example": {
+        "class": "com.example.MyClass",
+        "field": "myField",
+        "setter": true,
+        "instance_required": true
+      }
+    }
+  }
+}

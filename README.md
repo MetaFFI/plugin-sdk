@@ -17,14 +17,14 @@ The plugin main (`PluginMain.go`) exports a C function called `void init_plugin(
 package main
 
 import (
-	"github.com/MetaFFI/plugin-sdk/compiler/go"
+	"github.com/MetaFFI/sdk/compiler/go/plugin"
 )
 
 import "C"
 
 //export init_plugin
 func init_plugin() {
-	compiler.PluginMain = compiler.NewLanguagePluginMain(NewHostCompiler(), NewGuestCompiler())
+	plugin.PluginMain = plugin.NewLanguagePluginMain(NewHostCompiler(), NewGuestCompiler())
 }
 
 //--------------------------------------------------------------------
@@ -33,10 +33,10 @@ func main() {}
 //--------------------------------------------------------------------
 ```
 
-The line `compiler.PluginMain = compiler.NewLanguagePluginMain` creates an object for MetaFFI providing the objects to use for compilation in MetaFFI. The compilers must implement the following interfaces:
+The line `plugin.PluginMain = plugin.NewLanguagePluginMain` creates an object for MetaFFI providing the objects to use for compilation in MetaFFI. The compilers must implement the following interfaces:
 ```google go
 type GuestCompiler interface {
-	Compile(definition *IDL.IDLDefinition, outputDir string, outputFilename string, blockName string, blockCode string) (err error)
+	Compile(definition *IDL.IDLDefinition, outputDir string, outputFilename string, guestOptions map[string]string) (err error)
 }
 
 type HostCompiler interface {
@@ -48,7 +48,7 @@ Let's examine `GuestCompiler.Compile`:
 * `definition` - MetaFFI definition of the foreign entities
 * `outputDir` - Directory to write compiler output
 * `outputFilename` - Filename to write output. If empty, uses `definition.IDLSource`. If contains a coed block (using # delimiter), contains the code block name
-* `hostOptions` - Plugin specific options passed from MetaFFI CLI to the plugin
+* `guestOptions` - Plugin specific options passed from MetaFFI CLI to the plugin
 
 The function `NewGuestCompiler()` returns an instance of the object implementing the interface.
 
@@ -57,8 +57,6 @@ Let's examine `HostCompiler.Compile`:
 * `definition` - MetaFFI definition of the foreign entities
 * `outputDir` - Directory to write compiler output
 * `outputFilename` - Filename to write output. If empty, uses `definition.IDLSource`. If contains a coed block (using # delimiter), contains the code block name 
-* `blockName` - If IDL generated from source code within an embedded code block, this is the name of the block
-* `blockCode` - If IDL generated from source code within an embedded code block, this is the code of the block
 
 The function `NewHostCompiler()` returns an instance of the object implementing the interface.
 

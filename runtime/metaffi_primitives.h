@@ -384,45 +384,33 @@ struct cdt_metaffi_callable
 	{
 		params_types_length = static_cast<metaffi_int8>(parameters_types.size());
 		retval_types_length = static_cast<metaffi_int8>(retval_types.size());
-		this->parameters_types = new metaffi_type[params_types_length];
-		this->retval_types = new metaffi_type[retval_types_length];
-		memcpy(this->parameters_types, parameters_types.data(), sizeof(metaffi_type) * params_types_length);
-		memcpy(this->retval_types, retval_types.data(), sizeof(metaffi_type) * retval_types_length);
+		// NOTE: Arrays are NOT allocated here. Caller is responsible for memory management.
+		// If you need to store these arrays, allocate them externally (e.g., with xllr_alloc_memory)
+		// and pass the pointers to the parameterized constructor.
+		this->parameters_types = nullptr;
+		this->retval_types = nullptr;
 	}
 	
-	~cdt_metaffi_callable()
-	{
-		free();
-	}
-	
+	// Copy assignment - shallow copy only (no memory allocation/deallocation)
 	cdt_metaffi_callable& operator=(const cdt_metaffi_callable& other) noexcept
 	{
-		// copy other to this
 		if(this != &other)
 		{
 			val = other.val;
-			
-			delete[] parameters_types;
-			delete[] retval_types;
-			
-			retval_types_length = other.retval_types_length;
+			parameters_types = other.parameters_types;
 			params_types_length = other.params_types_length;
-			parameters_types = new metaffi_type[params_types_length];
-			retval_types = new metaffi_type[retval_types_length];
-			memcpy(parameters_types, other.parameters_types, sizeof(metaffi_type) * params_types_length);
-			memcpy(retval_types, other.retval_types, sizeof(metaffi_type) * retval_types_length);
+			retval_types = other.retval_types;
+			retval_types_length = other.retval_types_length;
 		}
 		
 		return *this;
 	}
 	
+	// Move assignment - transfers pointers (no memory deallocation)
 	cdt_metaffi_callable& operator=(cdt_metaffi_callable&& other) noexcept
 	{
 		if(this != &other)
 		{
-			delete[] parameters_types;
-			delete[] retval_types;
-			
 			val = other.val;
 			parameters_types = other.parameters_types;
 			params_types_length = other.params_types_length;
@@ -464,14 +452,6 @@ struct cdt_metaffi_callable
 		return true;
 	}
 	
-	void free()
-	{
-		delete[] parameters_types;
-		delete[] retval_types;
-		
-		parameters_types = nullptr;
-		retval_types = nullptr;
-	}
 #endif // __cplusplus
 };
 

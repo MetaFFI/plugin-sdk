@@ -4,6 +4,16 @@
 
 #pragma once
 #include "metaffi_primitives.h"
+
+// Forward declare xllr functions to avoid circular dependency
+#ifdef __cplusplus
+extern "C" {
+#endif
+void xllr_free_memory(void* ptr);
+#ifdef __cplusplus
+}
+#endif
+
 #ifdef __cplusplus
 #include <vector>
 #include <string_view>
@@ -174,9 +184,9 @@ struct cdt
 			// calculate the length of val - a char16_t*
 			std::u16string_view val_view(val);
 			cdt_val.string16_val = new char16_t[val_view.size() + 1];
-			
+
 			// copy val, using val_view to cdt_val.string16_val
-			std::memcpy(cdt_val.string16_val, val_view.data(), val_view.size());
+			std::memcpy(cdt_val.string16_val, val_view.data(), val_view.size() * sizeof(char16_t));
 			cdt_val.string16_val[val_view.size()] = 0;
 		}
 		else
@@ -198,9 +208,9 @@ struct cdt
 			// calculate the length of val - a char32_t*
 			std::u32string_view val_view(val);
 			cdt_val.string32_val = new char32_t[val_view.size() + 1];
-			
+
 			// copy val, using val_view to cdt_val.string32_val
-			std::memcpy(cdt_val.string32_val, val_view.data(), val_view.size());
+			std::memcpy(cdt_val.string32_val, val_view.data(), val_view.size() * sizeof(char32_t));
 			cdt_val.string32_val[val_view.size()] = 0;
 		}
 		else
@@ -472,14 +482,20 @@ struct cdt
 						}
 					}break;
 				
-					// do not free the callable entity! as it is a pointer to a callable.
-					// the callable's lifetime is not managed by the CDT, but directly
-					// by the user with the cdt_metaffi_callable object.
-					case metaffi_callable_type:
+				case metaffi_callable_type:
+				{
+					// Free callable and its arrays with xllr
+					// Arrays must have been allocated with xllr_alloc_memory
+					if(cdt_val.callable_val)
 					{
-						delete cdt_val.callable_val;
+						if(cdt_val.callable_val->parameters_types)
+							xllr_free_memory(cdt_val.callable_val->parameters_types);
+						if(cdt_val.callable_val->retval_types)
+							xllr_free_memory(cdt_val.callable_val->retval_types);
+						xllr_free_memory(cdt_val.callable_val);
 						cdt_val.callable_val = nullptr;
-					}break;
+					}
+				}break;
 				
 				}
 			}
