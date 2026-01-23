@@ -409,7 +409,7 @@ When a MetaFFI runtime plugin needs to call a foreign function, it uses the enti
 
 MetaFFI maintains a **centralized entity_path specification** at:
 ```
-<MetaFFI_Root>/entity_path_specs.json
+<MetaFFI_Root>/sdk/idl_entities/entity_path_specs.json
 ```
 
 This file defines the entity_path structure for all supported languages, serving as:
@@ -578,7 +578,7 @@ This file defines the entity_path structure for all supported languages, serving
 When implementing an IDL compiler for a new language:
 
 1. **Review Runtime Plugin**: Examine the runtime plugin code to understand what entity_path keys it expects
-2. **Document in Spec**: Add your language's entity_path structure to `entity_path_specs.json`
+2. **Document in Spec**: Add your language's entity_path structure to `sdk/idl_entities/entity_path_specs.json`
 3. **Generate Correctly**: Ensure your IDL compiler produces entity_path matching the spec
 4. **Test with Runtime**: Validate that generated entity_path works with the runtime plugin
 
@@ -1896,7 +1896,7 @@ func extractStruct(structDecl *goparser.StructDeclaration) *IDL.ClassDefinition 
 
 ### 7.1 Schema Location
 
-**File**: `sdk/idl_entities/go/IDL/schema.json`
+**File**: `sdk/idl_entities/idl.schema.json`
 
 **Schema Draft**: JSON Schema 2020-12
 
@@ -1910,7 +1910,7 @@ import json
 import jsonschema
 
 # Load schema
-with open("sdk/idl_entities/go/IDL/schema.json") as f:
+with open("sdk/idl_entities/idl.schema.json") as f:
     schema = json.load(f)
 
 # Load IDL JSON
@@ -1934,7 +1934,7 @@ import (
 )
 
 func validateIDL(idlJSON string) error {
-    schemaLoader := gojsonschema.NewReferenceLoader("file://./sdk/idl_entities/go/IDL/schema.json")
+    schemaLoader := gojsonschema.NewReferenceLoader("file://./sdk/idl_entities/idl.schema.json")
     documentLoader := gojsonschema.NewStringLoader(idlJSON)
 
     result, err := gojsonschema.Validate(schemaLoader, documentLoader)
@@ -2099,7 +2099,7 @@ metaffi --idl myfile.ext --idl-plugin ext --output ./generated
 |------|-------------|
 | `sdk/idl_compiler/` | This documentation |
 | `sdk/idl_entities/go/IDL/` | IDL struct definitions (Go) |
-| `sdk/idl_entities/go/IDL/schema.json` | JSON schema |
+| `sdk/idl_entities/idl.schema.json` | JSON schema |
 | `lang-plugin-*/idl/` | Existing IDL compiler implementations |
 | `metaffi-core/CLI/idl_extractor.cpp` | C++ plugin loader |
 

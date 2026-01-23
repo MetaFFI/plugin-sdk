@@ -5,7 +5,7 @@ import java.util.Map;
 
 /**
  * Generates entity_path strings for JVM runtime.
- * Entity paths are comma-separated key=value pairs matching sdk/entity_path_specs.json.
+ * Entity paths are comma-separated key=value pairs matching sdk/idl_entities/entity_path_specs.json.
  * 
  * Format examples:
  * - Method: "class=com.example.MyClass,callable=myMethod,instance_required"

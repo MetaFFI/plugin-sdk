@@ -1157,7 +1157,7 @@ For each runtime_manager implementation, verify:
 
 - [ ] All runtime lifecycle tests pass
 - [ ] All module loading tests pass
-- [ ] All entity loading tests pass (for all entity types in entity_path_specs.json)
+- [ ] All entity loading tests pass (for all entity types in sdk/idl_entities/entity_path_specs.json)
 - [ ] All entity execution tests pass
 - [ ] All caching tests pass
 - [ ] All thread safety tests pass

@@ -1,0 +1,35 @@
+@startuml classes_metaffi
+set namespaceSeparator none
+
++class MetaFFIModule {
+  + load(entity_path: string, params_metaffi_types: MetaFFITypeWithAlias[], retval_metaffi_types: MetaFFITypeWithAlias[]): xcall_callable
+}
++class MetaFFIRuntime {
+  - runtime_plugin : str
+
+  + MetaFFIRuntime(runtime_name: string)
+
+  + load_runtime_plugin(runtime_plugin_name: string)
+  + release_runtime_plugin()
+
+  + load_module(module_path: string): MetaFFIModule
+
+  + make_callable(f: callable): xcall_callable
+}
+-class XllrApi {
+  + XllrApi()
+
+  + load_runtime_plugin(runtime_plugin: string)
+  + free_runtime_plugin(runtime_plugin: string)
+  + alloc_cdts_buffer(params_count: int, ret_count: int): pcdts*
+  + load_function(runtime_plugin_name: string, module_path: string, entity_path: string, params_types: MetaFFITypeWithAlias[], retvals_types: MetaFFITypeWithAlias[]): void**
+  + free_function(runtime_plugin_name: string, pxcall: void**)
+  + make_callable(runtime_plugin_name: string, make_callable_context: void*, params_types: MetaFFITypeWithAlias[], retvals_types: MetaFFITypeWithAlias[]): xcall_callable
+}
++class MetaFFITypeWithAlias {
+  + alias: string
+  + alias_length: uint64
+  + type : uint64
+}
+MetaFFIModule --o MetaFFIRuntime
+@enduml

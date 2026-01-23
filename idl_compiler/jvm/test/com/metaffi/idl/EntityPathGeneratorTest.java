@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 
 /**
  * Tests for EntityPathGenerator - verifies correct entity_path generation
- * matching sdk/entity_path_specs.json for JVM.
+ * matching sdk/idl_entities/entity_path_specs.json for JVM.
  */
 public class EntityPathGeneratorTest {
 

@@ -1,7 +1,6 @@
 #include "runtime_manager.h"
 #include "module.h"
-#include "jni_api_wrapper.h"
-#include "jni_helpers.h"
+#include "jvm.h"
 
 #include <filesystem>
 #include <fstream>
@@ -11,6 +10,7 @@
 #include <cctype>
 #include <cstring>
 #include <cstdlib>
+#include <utils/env_utils.h>
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -68,8 +68,8 @@ namespace
 		std::ostringstream ss;
 		ss << "-Djava.class.path=.";
 
-		const char* metaffi_home = std::getenv("METAFFI_HOME");
-		if(metaffi_home && std::strlen(metaffi_home) > 0)
+		std::string metaffi_home = get_env_var("METAFFI_HOME");
+		if(!metaffi_home.empty())
 		{
 			std::filesystem::path bridge = std::filesystem::path(metaffi_home) / "jvm" / "xllr.jvm.bridge.jar";
 			if(std::filesystem::exists(bridge))
@@ -78,8 +78,8 @@ namespace
 			}
 		}
 
-		const char* classpath = std::getenv("CLASSPATH");
-		if(classpath && std::strlen(classpath) > 0)
+		std::string classpath = get_env_var("CLASSPATH");
+		if(!classpath.empty())
 		{
 			ss << classpath_separator << classpath;
 		}
@@ -137,13 +137,13 @@ namespace
 	{
 		std::vector<std::filesystem::path> result;
 
-		const char* pathEnv = std::getenv("PATH");
-		if(!pathEnv || std::strlen(pathEnv) == 0)
+		std::string path_env = get_env_var("PATH");
+		if(path_env.empty())
 		{
 			return result;
 		}
 
-		std::string pathStr(pathEnv);
+		std::string pathStr(path_env);
 
 		#ifdef _WIN32
 		const char pathSeparator = ';';
@@ -347,10 +347,10 @@ std::vector<jvm_installed_info> jdk_runtime_manager::detect_installed_jvms()
 	std::unordered_set<std::string> seen;
 
 	// Priority 1: JAVA_HOME environment variable
-	const char* javaHome = std::getenv("JAVA_HOME");
-	if(javaHome && std::strlen(javaHome) > 0)
+	std::string java_home = get_env_var("JAVA_HOME");
+	if(!java_home.empty())
 	{
-		std::filesystem::path homePath(javaHome);
+		std::filesystem::path homePath(java_home);
 		if(std::filesystem::exists(homePath))
 		{
 			add_candidate_if_valid(result, seen, homePath);
@@ -358,10 +358,10 @@ std::vector<jvm_installed_info> jdk_runtime_manager::detect_installed_jvms()
 	}
 
 	// Priority 2: JDK_HOME environment variable (alternative)
-	const char* jdkHome = std::getenv("JDK_HOME");
-	if(jdkHome && std::strlen(jdkHome) > 0)
+	std::string jdk_home = get_env_var("JDK_HOME");
+	if(!jdk_home.empty())
 	{
-		std::filesystem::path homePath(jdkHome);
+		std::filesystem::path homePath(jdk_home);
 		if(std::filesystem::exists(homePath))
 		{
 			add_candidate_if_valid(result, seen, homePath);
@@ -447,122 +447,18 @@ std::function<void()> jdk_runtime_manager::get_env(JNIEnv** env) const
 		throw std::runtime_error("JVM is not initialized");
 	}
 
-	bool attached = false;
-	jint res = m_jvm->GetEnv(reinterpret_cast<void**>(env), JNI_VERSION_1_8);
-	if(res == JNI_EDETACHED)
-	{
-		if(m_jvm->AttachCurrentThread(reinterpret_cast<void**>(env), nullptr) != JNI_OK)
-		{
-			throw std::runtime_error("Failed to attach current thread to JVM");
-		}
-		attached = true;
-	}
-	else if(res == JNI_EVERSION)
-	{
-		throw std::runtime_error("Unsupported JNI version");
-	}
-
-	return attached ? std::function<void()>([this](){ m_jvm->DetachCurrentThread(); }) : [](){};
+	return m_jvm->get_environment(env);
 }
 
 void jdk_runtime_manager::ensure_jvm_loaded()
 {
-	if(m_info.libjvm_path.empty())
+	if(m_jvm)
 	{
-		throw std::runtime_error("libjvm_path is empty in jvm_installed_info");
-	}
-
-#ifdef _WIN32
-	// Setup DLL search paths for Windows
-	if(!m_info.home.empty())
-	{
-		std::filesystem::path bin_path = std::filesystem::path(m_info.home) / "bin";
-		std::filesystem::path server_path = bin_path / "server";
-
-		std::wstring wbin = bin_path.wstring();
-		SetDllDirectoryW(wbin.c_str());
-		SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS | LOAD_LIBRARY_SEARCH_USER_DIRS);
-		AddDllDirectory(bin_path.wstring().c_str());
-		AddDllDirectory(server_path.wstring().c_str());
-
-		std::string existing_path = std::getenv("PATH") ? std::getenv("PATH") : "";
-		std::string prefix = bin_path.string() + ";" + server_path.string();
-		std::string new_path = prefix + (existing_path.empty() ? "" : ";" + existing_path);
-		_putenv_s("PATH", new_path.c_str());
-		_putenv_s("JAVA_HOME", m_info.home.c_str());
-		_putenv_s("JDK_HOME", m_info.home.c_str());
-	}
-
-	// Pre-load jvm.dll to ensure it's found
-	if(!m_info.libjvm_path.empty())
-	{
-		std::wstring wjvm = std::filesystem::path(m_info.libjvm_path).wstring();
-		LoadLibraryExW(wjvm.c_str(), nullptr, LOAD_WITH_ALTERED_SEARCH_PATH);
-	}
-#endif
-
-	// Check for existing JVM first
-	jsize n_vms = 0;
-	jint get_vms_result = JNI_GetCreatedJavaVMs(nullptr, 0, &n_vms);
-	if(get_vms_result == JNI_OK && n_vms > 0)
-	{
-		check_jni_error(JNI_GetCreatedJavaVMs(&m_jvm, 1, &n_vms));
-		m_isEmbedded = false;
 		return;
 	}
 
-	// Create new JVM
-	JavaVMOption options[1];
 	std::string classpath_option = build_classpath_option();
-	options[0].optionString = const_cast<char*>(classpath_option.c_str());
-	options[0].extraInfo = nullptr;
-
-	JavaVMInitArgs vm_args{};
-	vm_args.version = JNI_VERSION_21;
-	vm_args.nOptions = 1;
-	vm_args.options = options;
-	vm_args.ignoreUnrecognized = JNI_FALSE;
-
-	if(!m_info.home.empty())
-	{
-		#ifdef _WIN32
-		_putenv_s("JAVA_HOME", m_info.home.c_str());
-		_putenv_s("JDK_HOME", m_info.home.c_str());
-		#else
-		setenv("JAVA_HOME", m_info.home.c_str(), 1);
-		setenv("JDK_HOME", m_info.home.c_str(), 1);
-		#endif
-	}
-
-	JNIEnv* env = nullptr;
-	check_jni_error(JNI_CreateJavaVM(&m_jvm, reinterpret_cast<void**>(&env), &vm_args));
-	m_isEmbedded = true;
-}
-
-void jdk_runtime_manager::check_jni_error(jint err)
-{
-	if(err == JNI_OK)
-	{
-		return;
-	}
-
-	switch(err)
-	{
-		case JNI_ERR:
-			throw std::runtime_error("JNI error");
-		case JNI_EDETACHED:
-			throw std::runtime_error("Thread detached from JVM");
-		case JNI_EVERSION:
-			throw std::runtime_error("JNI version error");
-		case JNI_ENOMEM:
-			throw std::runtime_error("Not enough memory");
-		case JNI_EEXIST:
-			throw std::runtime_error("JVM already created");
-		case JNI_EINVAL:
-			throw std::runtime_error("Invalid JVM argument");
-		default:
-			throw std::runtime_error("Unknown JNI error");
-	}
+	m_jvm = std::make_shared<jvm>(m_info, classpath_option);
 }
 
 std::string jdk_runtime_manager::normalize_vendor(const std::string& vendor)

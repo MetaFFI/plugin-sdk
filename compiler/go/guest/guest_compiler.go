@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"text/template"
@@ -43,6 +44,24 @@ func NewGuestCompiler() *GuestCompiler {
 }
 
 // --------------------------------------------------------------------
+func getBoolOption(options map[string]string, keys ...string) bool {
+	if options == nil {
+		return false
+	}
+
+	for _, key := range keys {
+		if value, found := options[key]; found {
+			switch strings.ToLower(strings.TrimSpace(value)) {
+			case "1", "true", "yes", "y", "on":
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// --------------------------------------------------------------------
 func (this *GuestCompiler) Compile(definition *IDL.IDLDefinition, outputDir string, outputFilename string, guestOptions map[string]string) (err error) {
 
 	if outputFilename == "" {
@@ -57,6 +76,13 @@ func (this *GuestCompiler) Compile(definition *IDL.IDLDefinition, outputDir stri
 	code, err := this.generateCode()
 	if err != nil {
 		return fmt.Errorf("Failed to generate guest code: %v", err)
+	}
+
+	if getBoolOption(guestOptions, "source_only", "generate_source_only") {
+		if err := this.writeSourceFiles(code); err != nil {
+			return fmt.Errorf("Failed to write guest source code: %v", err)
+		}
+		return nil
 	}
 
 	file, err := this.buildDynamicLibrary(code)
@@ -392,6 +418,31 @@ func (this *GuestCompiler) generateCode() (string, error) {
 }
 
 // --------------------------------------------------------------------
+func (this *GuestCompiler) writeSourceFiles(code string) error {
+	if err := os.MkdirAll(this.outputDir, 0777); err != nil {
+		return fmt.Errorf("failed to create output directory: %v", err)
+	}
+
+	baseName := fmt.Sprintf("%v_MetaFFIGuest", this.outputFilename)
+	sourcePath := filepath.Join(this.outputDir, baseName+".go")
+	if err := ioutil.WriteFile(sourcePath, []byte(code), 0644); err != nil {
+		return fmt.Errorf("failed to write guest source code: %v", err)
+	}
+
+	cgoCode, err := this.parseCImportsCGoFile()
+	if err != nil {
+		return fmt.Errorf("failed to generate CGo guest go code: %v", err)
+	}
+
+	cgoPath := filepath.Join(this.outputDir, baseName+"_cgo.go")
+	if err := ioutil.WriteFile(cgoPath, []byte(cgoCode), 0644); err != nil {
+		return fmt.Errorf("failed to write guest CGo code: %v", err)
+	}
+
+	return nil
+}
+
+// --------------------------------------------------------------------
 func (this *GuestCompiler) buildDynamicLibrary(code string) ([]byte, error) {
 
 	dir, err := os.MkdirTemp("", "metaffi_go_compiler*")
@@ -426,6 +477,11 @@ func (this *GuestCompiler) buildDynamicLibrary(code string) ([]byte, error) {
 
 	// add go.mod
 	_, err = this.goModInit(dir, "main")
+	if err != nil {
+		return nil, err
+	}
+
+	err = this.applyDevReplaces(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -626,17 +682,49 @@ func (this *GuestCompiler) goGet(dir string) (string, error) {
 		return "", err
 	}
 
-	_, err = goGetCommand("github.com/MetaFFI/sdk/idl_entities/go@" + VERSION)
+	idlEntitiesModule := "github.com/MetaFFI/sdk/idl_entities/go"
+	goRuntimeModule := "github.com/MetaFFI/lang-plugin-go/go-runtime"
+	if os.Getenv("METAFFI_SOURCE_ROOT") == "" {
+		idlEntitiesModule += "@" + VERSION
+		goRuntimeModule += "@" + VERSION
+	}
+
+	_, err = goGetCommand(idlEntitiesModule)
 	if err != nil {
 		return "", err
 	}
 
-	_, err = goGetCommand("github.com/MetaFFI/lang-plugin-go/go-runtime@" + VERSION)
+	_, err = goGetCommand(goRuntimeModule)
 	if err != nil {
 		return "", err
 	}
 
 	return "", nil
+}
+
+// --------------------------------------------------------------------
+func (this *GuestCompiler) applyDevReplaces(dir string) error {
+	metaffiRoot := strings.TrimSpace(os.Getenv("METAFFI_SOURCE_ROOT"))
+	if metaffiRoot == "" {
+		return nil
+	}
+
+	idlEntitiesPath := filepath.Join(metaffiRoot, "sdk", "idl_entities", "go")
+	if _, err := os.Stat(idlEntitiesPath); err != nil {
+		return fmt.Errorf("METAFFI_SOURCE_ROOT is set, but idl_entities path is invalid: %v", err)
+	}
+
+	goRuntimePath := filepath.Join(metaffiRoot, "lang-plugin-go", "go-runtime")
+	if _, err := os.Stat(goRuntimePath); err != nil {
+		return fmt.Errorf("METAFFI_SOURCE_ROOT is set, but go-runtime path is invalid: %v", err)
+	}
+
+	err := this.goReplace(dir, "github.com/MetaFFI/sdk/idl_entities/go", idlEntitiesPath)
+	if err != nil {
+		return err
+	}
+
+	return this.goReplace(dir, "github.com/MetaFFI/lang-plugin-go/go-runtime", goRuntimePath)
 }
 
 // --------------------------------------------------------------------

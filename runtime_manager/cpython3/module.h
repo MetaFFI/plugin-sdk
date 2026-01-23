@@ -60,7 +60,7 @@ public:
 	
 	/**
 	 * Load an entity from the module
-	 * @param entity_path Entity path string (from entity_path_specs.json)
+	 * @param entity_path Entity path string (from idl_entities/entity_path_specs.json)
 	 * @param params_types Parameter type information
 	 * @param retval_types Return value type information
 	 * @return Shared pointer to Entity instance

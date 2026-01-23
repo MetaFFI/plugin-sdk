@@ -5,7 +5,7 @@ import (
 )
 
 // EntityPathGenerator generates entity_path structures for Go entities
-// according to entity_path_specs.json
+// according to sdk/idl_entities/entity_path_specs.json
 type EntityPathGenerator struct{}
 
 // NewEntityPathGenerator creates a new EntityPathGenerator

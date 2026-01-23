@@ -18,12 +18,12 @@ class EntityPathGenerator:
 
     @staticmethod
     def _load_spec() -> Dict[str, Any]:
-        """Load entity_path spec for python3 from sdk/entity_path_specs.json"""
+        """Load entity_path spec for python3 from sdk/idl_entities/entity_path_specs.json"""
         # Find SDK root (assume current file is at sdk/idl_compiler/python3/)
         current_dir = os.path.dirname(os.path.abspath(__file__))  # sdk/idl_compiler/python3/
         idl_compiler_dir = os.path.dirname(current_dir)  # sdk/idl_compiler/
         sdk_dir = os.path.dirname(idl_compiler_dir)  # sdk/
-        spec_path = os.path.join(sdk_dir, 'entity_path_specs.json')
+        spec_path = os.path.join(sdk_dir, 'idl_entities', 'entity_path_specs.json')
 
         if not os.path.exists(spec_path):
             raise FileNotFoundError(f"entity_path_specs.json not found at: {spec_path}")

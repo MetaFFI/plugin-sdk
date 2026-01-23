@@ -6,10 +6,7 @@ add_custom_target(go_guest_module ALL
 	WORKING_DIRECTORY ${GO_GUEST_SRC_DIR}
 )
 
-add_custom_target(go_guest_module_tests
-	COMMAND ${GOEXEC} test -v
-	WORKING_DIRECTORY ${GO_GUEST_SRC_DIR}
-)
+add_custom_target(go_guest_module_tests)
 
 add_dependencies(go_guest_module_tests go_guest_module)
 

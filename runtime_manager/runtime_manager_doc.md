@@ -114,7 +114,7 @@ The runtime_manager library consists of three main class types:
 
 **Key Characteristics**:
 - **No base Entity class** - each runtime defines its own entity classes
-- Entity types are determined by `sdk/entity_path_specs.json` for each runtime
+- Entity types are determined by `sdk/idl_entities/entity_path_specs.json` for each runtime
 - Each entity class is a concrete class specific to that runtime
 
 **Entity Types by Runtime**:
@@ -274,7 +274,7 @@ std::shared_ptr<Entity> load_entity(
 **Purpose**: Find and load an entity within the module.
 
 **Parameters**:
-- `entity_path`: Entity path string (format defined in `sdk/entity_path_specs.json`)
+- `entity_path`: Entity path string (format defined in `sdk/idl_entities/entity_path_specs.json`)
 - `params_types`: Vector of runtime-native type descriptors (runtime-specific)
 - `retval_types`: Vector of runtime-native type descriptors (runtime-specific)
 
@@ -285,7 +285,7 @@ std::shared_ptr<Entity> load_entity(
 - Loads the entity from the module
 - Returns cached entity if already loaded with same type signature
 - Thread-safe - can be called concurrently
-- Entity path format is runtime-specific (see `sdk/entity_path_specs.json`)
+- Entity path format is runtime-specific (see `sdk/idl_entities/entity_path_specs.json`)
 
 **Entity Path Examples**:
 
@@ -340,7 +340,7 @@ void unload();
 
 ### 5.1 Overview
 
-Entity classes are runtime-specific concrete classes. There is **no base Entity class**. Each runtime defines its own entity classes based on the entity types required by that runtime (as defined in `sdk/entity_path_specs.json`).
+Entity classes are runtime-specific concrete classes. There is **no base Entity class**. Each runtime defines its own entity classes based on the entity types required by that runtime (as defined in `sdk/idl_entities/entity_path_specs.json`).
 
 ### 5.2 Callable Entity Interface
 
@@ -463,7 +463,7 @@ Both patterns are acceptable. The choice depends on the runtime's natural API.
 
 ### 5.5 Runtime-Specific Entity Classes
 
-Each runtime must implement entity classes for all entity types defined in `sdk/entity_path_specs.json`:
+Each runtime must implement entity classes for all entity types defined in `sdk/idl_entities/entity_path_specs.json`:
 
 **Python (cpython3)**:
 - `PythonFunction` - Implements callable entity interface
@@ -695,7 +695,7 @@ Common error scenarios:
 
 ### 10.2 Entity Path Parsing
 
-Each runtime must parse entity paths according to `sdk/entity_path_specs.json`:
+Each runtime must parse entity paths according to `sdk/idl_entities/entity_path_specs.json`:
 
 **Entity Path Format**:
 - Comma-separated key=value pairs

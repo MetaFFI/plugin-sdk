@@ -3,6 +3,7 @@
 #include "entity.h"
 #include "jni_helpers.h"
 #include <utils/entity_path_parser.h>
+#include <utils/env_utils.h>
 
 #include <filesystem>
 #include <sstream>
@@ -839,8 +840,8 @@ void Module::ensure_class_loader()
 	}
 
 	std::vector<std::string> entries = split_classpath(m_modulePath);
-	const char* metaffi_home = std::getenv("METAFFI_HOME");
-	if(metaffi_home && std::strlen(metaffi_home) > 0)
+	std::string metaffi_home = get_env_var("METAFFI_HOME");
+	if(!metaffi_home.empty())
 	{
 		std::filesystem::path bridge = std::filesystem::path(metaffi_home) / "jvm" / "xllr.jvm.bridge.jar";
 		if(std::filesystem::exists(bridge))

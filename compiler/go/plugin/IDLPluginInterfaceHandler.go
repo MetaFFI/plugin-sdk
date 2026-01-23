@@ -1,7 +1,7 @@
 package plugin
 
 /*
-#include "../../idl_compiler/idl_plugin_interface.h"
+#include "../../../idl_compiler/idl_plugin_interface.h"
 */
 import "C"
 import (

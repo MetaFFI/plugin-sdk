@@ -12,7 +12,7 @@ const HostPackageTemplate = `package {{.Package}}
 
 const HostFunctionStubsTemplate = `
 import (
-	"github.com/MetaFFI/lang-plugin-go/api"
+	api "github.com/MetaFFI/sdk/api/go"
 	"github.com/MetaFFI/sdk/idl_entities/go/IDL"
 	. "github.com/MetaFFI/lang-plugin-go/go-runtime"
 )

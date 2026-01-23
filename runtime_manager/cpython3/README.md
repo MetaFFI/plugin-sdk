@@ -86,7 +86,7 @@ All PyObject* references are managed with proper reference counting:
 
 ## Entity Types
 
-Supported entity types (from `sdk/entity_path_specs.json`):
+Supported entity types (from `sdk/idl_entities/entity_path_specs.json`):
 
 - **PythonFunction** - Module-level functions
 - **PythonMethod** - Class methods (instance and static)

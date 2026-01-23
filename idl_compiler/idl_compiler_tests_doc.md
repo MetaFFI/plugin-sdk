@@ -45,7 +45,7 @@ Tests apply to all IDL compiler implementations:
 ### Test Philosophy
 
 1. **Comprehensive Coverage**: Test all type mappings, entity types, and edge cases
-2. **Schema Compliance**: All output must validate against `sdk/idl_entities/go/IDL/schema.json`
+2. **Schema Compliance**: All output must validate against `sdk/idl_entities/idl.schema.json`
 3. **Language-Specific**: entity_path and features vary by language
 4. **Regression Prevention**: Catch bugs early with exact verification criteria
 
@@ -332,7 +332,7 @@ UnknownType → type=handle, type_alias="UnknownType"
 Verify correct entity_path generation for runtime routing. Entity paths are **language-specific** and must match runtime plugin expectations.
 
 ### Critical Requirements
-- **Read from entity_path_specs.json** for structure
+- **Read from sdk/idl_entities/entity_path_specs.json** for structure
 - **Language-specific keys**: Python uses `callable`/`attribute`, Go uses different keys
 - **Include routing flags**: varargs, named_args, instance_required, getter, setter
 
@@ -1803,7 +1803,7 @@ source = "/nonexistent/path.py"
 ## 8. Schema Validation Tests
 
 ### Purpose
-Verify that generated JSON conforms to `sdk/idl_entities/go/IDL/schema.json`.
+Verify that generated JSON conforms to `sdk/idl_entities/idl.schema.json`.
 
 ---
 
@@ -1818,7 +1818,7 @@ Verify that generated JSON conforms to `sdk/idl_entities/go/IDL/schema.json`.
 import jsonschema
 import json
 
-schema = json.load(open("sdk/idl_entities/go/IDL/schema.json"))
+schema = json.load(open("sdk/idl_entities/idl.schema.json"))
 idl = json.loads(generated_idl_json)
 
 jsonschema.validate(instance=idl, schema=schema)
@@ -2222,7 +2222,7 @@ import json
 
 def validate_idl_json(idl_json_string):
     """Validate IDL JSON against schema"""
-    schema_path = "sdk/idl_entities/go/IDL/schema.json"
+    schema_path = "sdk/idl_entities/idl.schema.json"
     with open(schema_path) as f:
         schema = json.load(f)
 
@@ -2370,7 +2370,7 @@ Use this checklist when implementing a new IDL compiler:
 When creating IDL compilers for new languages:
 
 1. **Read this document thoroughly**
-2. **Reference entity_path_specs.json** for entity_path structure
+2. **Reference sdk/idl_entities/entity_path_specs.json** for entity_path structure
 3. **Implement all applicable tests** (skip language-specific tests that don't apply)
 4. **Add language-specific tests** for unique features
 5. **Validate against schema.json**
@@ -2382,8 +2382,8 @@ When creating IDL compilers for new languages:
 ## Related Documentation
 
 - **IDL Compiler Architecture**: `sdk/idl_compiler/idl_compiler_doc.md`
-- **Entity Path Specification**: `entity_path_specs.json` (MetaFFI root)
-- **JSON Schema**: `sdk/idl_entities/go/IDL/schema.json`
+- **Entity Path Specification**: `sdk/idl_entities/entity_path_specs.json`
+- **JSON Schema**: `sdk/idl_entities/idl.schema.json`
 - **Serializer Tests**: `sdk/cdts_serializer/serializer_tests_doc.md` (similar pattern)
 
 ---

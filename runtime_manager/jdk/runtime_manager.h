@@ -15,7 +15,7 @@
 #endif
 
 class Module;
-class jni_api_wrapper;
+class jvm;
 
 enum class jvm_vendor
 {
@@ -66,14 +66,11 @@ public:
 
 private:
 	jvm_installed_info m_info;
-	std::shared_ptr<jni_api_wrapper> m_jniApi;
-	JavaVM* m_jvm = nullptr;
+	std::shared_ptr<jvm> m_jvm;
 	bool m_isRuntimeLoaded = false;
-	bool m_isEmbedded = false;
 	mutable std::mutex m_mutex;
 
 	void ensure_jvm_loaded();
-	static void check_jni_error(jint err);
 	static std::string normalize_vendor(const std::string& vendor);
 public:
 	static jvm_vendor map_vendor(const std::string& vendor);

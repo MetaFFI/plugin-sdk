@@ -20,13 +20,13 @@ import java.util.List;
 public class SchemaValidationTest {
 
     private JsonObject loadSchema() throws IOException {
-        // Load schema.json from sdk/idl_entities/go/IDL/schema.json
-        String schemaPath = "../../../../idl_entities/go/IDL/schema.json";
+        // Load schema.json from sdk/idl_entities/idl.schema.json
+        String schemaPath = "../../idl_entities/idl.schema.json";
         File schemaFile = new File(schemaPath);
         
         if (!schemaFile.exists()) {
             // Try alternative path
-            schemaPath = "sdk/idl_entities/go/IDL/schema.json";
+            schemaPath = "sdk/idl_entities/idl.schema.json";
             schemaFile = new File(schemaPath);
         }
         
