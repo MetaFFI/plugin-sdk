@@ -186,6 +186,7 @@ typedef PyObject* (*PyObject_Str_t)(PyObject *o);
 // Capsule functions
 typedef PyObject* (*PyCapsule_New_t)(void *pointer, const char *name, void (*destructor)(PyObject *));
 typedef void* (*PyCapsule_GetPointer_t)(PyObject *capsule, const char *name);
+typedef int (*PyCapsule_CheckExact_t)(PyObject *o);
 
 // Extern declarations of function pointers
 extern PyEval_SaveThread_t pPyEval_SaveThread;
@@ -364,6 +365,7 @@ extern PyObject_Str_t pPyObject_Str;
 // Capsule functions
 extern PyCapsule_New_t pPyCapsule_New;
 extern PyCapsule_GetPointer_t pPyCapsule_GetPointer;
+extern PyCapsule_CheckExact_t pPyCapsule_CheckExact;
 
 // Type pointers
 extern PyObject* pPyType_Type;

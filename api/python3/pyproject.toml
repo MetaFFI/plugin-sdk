@@ -15,3 +15,12 @@ Home = "https://github.com/MetaFFI/MetaFFI/"
 
 [tool.flit.module]
 name = "metaffi"
+
+[tool.flit.sdist]
+exclude = [
+    "unittest/**",
+    "dist/**",
+    "build/**",
+    "*.pyc",
+    "__pycache__/**",
+]

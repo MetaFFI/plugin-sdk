@@ -214,6 +214,7 @@ PyObject* pPy_False = nullptr;
 PyObject_Str_t pPyObject_Str = nullptr;
 PyCapsule_New_t pPyCapsule_New = nullptr;
 PyCapsule_GetPointer_t pPyCapsule_GetPointer = nullptr;
+PyCapsule_CheckExact_t pPyCapsule_CheckExact = nullptr;
 
 #ifdef _WIN32
 static HMODULE python_lib_handle = nullptr;
@@ -718,6 +719,7 @@ static void load_all_python_symbols()
 
 	LOAD_SYMBOL(python_lib_handle, PyCapsule_New, PyCapsule_New_t);
 	LOAD_SYMBOL(python_lib_handle, PyCapsule_GetPointer, PyCapsule_GetPointer_t);
+	LOAD_SYMBOL(python_lib_handle, PyCapsule_CheckExact, PyCapsule_CheckExact_t);
 
 	LOAD_SYMBOL(python_lib_handle, PyInterpreterState_Get, PyInterpreterState_Get_t);
 

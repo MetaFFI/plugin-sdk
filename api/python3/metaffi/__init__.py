@@ -1,6 +1,6 @@
 """Python MetaFFI API"""
 
-__version__ = "0.0.53"
+__version__ = "0.0.66"
 
 __all__ = ['metaffi', 'metaffi_types', 'metaffi_runtime', 'metaffi_module', 'MetaFFIHandle', 'metaffi_types', 'xllr_wrapper', 'pycdts_converter', 'metaffi_type_info', 'MetaFFITypes', 'MetaFFIEntity', 'create_lambda']
 
@@ -99,7 +99,7 @@ XCallNoParamsNoRetType = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p
 # as a host or a guest due to the initialization of the python interpreter
 # and loading the functions and variables
 if not hasattr(sys, "__loading_within_xllr_python3"):
-runtime = metaffi.metaffi_runtime.MetaFFIRuntime('python3')
+	runtime = metaffi.metaffi_runtime.MetaFFIRuntime('python3')
 	runtime.load_runtime_plugin()
 
 

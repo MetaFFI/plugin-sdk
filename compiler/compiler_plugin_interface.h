@@ -4,7 +4,7 @@
  * Interface Compiler Plugin Implements
  */
 #ifdef __cplusplus
-struct language_plugin_interface
+struct compiler_plugin_interface
 {
 
 	virtual void init() = 0;

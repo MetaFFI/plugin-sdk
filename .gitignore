@@ -76,3 +76,5 @@ SConscript_conandeps_linux
 SConscript_conandeps_windows
 go.work
 go.work.sum
+
+api/python3/dist/*

@@ -91,10 +91,10 @@ TEST_SUITE("CDTS Python3 Serializer")
 		PyObject* v2 = ser.extract_pyobject();
 		PyObject* v3 = ser.extract_pyobject();
 
-		pPy_DecRef(v1);
-		pPy_DecRef(v2);
-		pPy_DecRef(v3);
-		pPy_DecRef(val);
+		Py_DECREF(v1);
+		Py_DECREF(v2);
+		Py_DECREF(v3);
+		Py_DECREF(val);
 
 		// Now index should be 3, has_more should be false
 		CHECK(ser.has_more() == false);
@@ -112,13 +112,13 @@ TEST_SUITE("CDTS Python3 Serializer")
 		// Serialize with explicit int64 type
 		PyObject* original = pPyLong_FromLongLong(42);
 		ser.add(original, metaffi_int64_type);
-		pPy_DecRef(original);
+		Py_DECREF(original);
 
 		// Deserialize
 		ser.reset();
 		PyObject* extracted = ser.extract_pyobject();
 		CHECK(pPyLong_AsLongLong(extracted) == 42);
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Serialize and deserialize negative int64")
@@ -129,13 +129,13 @@ TEST_SUITE("CDTS Python3 Serializer")
 		// Serialize with explicit int64 type
 		PyObject* original = pPyLong_FromLongLong(-12345);
 		ser.add(original, metaffi_int64_type);
-		pPy_DecRef(original);
+		Py_DECREF(original);
 
 		// Deserialize
 		ser.reset();
 		PyObject* extracted = ser.extract_pyobject();
 		CHECK(pPyLong_AsLongLong(extracted) == -12345);
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Serialize and deserialize float64")
@@ -146,13 +146,13 @@ TEST_SUITE("CDTS Python3 Serializer")
 		// Serialize with explicit float64 type
 		PyObject* original = pPyFloat_FromDouble(3.14159);
 		ser.add(original, metaffi_float64_type);
-		pPy_DecRef(original);
+		Py_DECREF(original);
 
 		// Deserialize
 		ser.reset();
 		PyObject* extracted = ser.extract_pyobject();
 		CHECK(pPyFloat_AsDouble(extracted) == doctest::Approx(3.14159));
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Serialize and deserialize bool")
@@ -171,8 +171,8 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK(b1 == pPy_True);
 		CHECK(b2 == pPy_False);
 
-		pPy_DecRef(b1);
-		pPy_DecRef(b2);
+		Py_DECREF(b1);
+		Py_DECREF(b2);
 	}
 
 	TEST_CASE("Serialize and deserialize null")
@@ -190,7 +190,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		PyObject* extracted = ser.extract_pyobject();
 		CHECK(extracted == pPy_None);
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Serialize multiple primitives")
@@ -208,8 +208,8 @@ TEST_SUITE("CDTS Python3 Serializer")
 		   .add(pPy_False, metaffi_bool_type)
 		   .add(pPy_None, metaffi_null_type);
 
-		pPy_DecRef(i);
-		pPy_DecRef(f);
+		Py_DECREF(i);
+		Py_DECREF(f);
 
 		// Deserialize
 		ser.reset();
@@ -226,11 +226,11 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK(b2_out == pPy_False);
 		CHECK(n_out == pPy_None);
 
-		pPy_DecRef(i_out);
-		pPy_DecRef(f_out);
-		pPy_DecRef(b1_out);
-		pPy_DecRef(b2_out);
-		pPy_DecRef(n_out);
+		Py_DECREF(i_out);
+		Py_DECREF(f_out);
+		Py_DECREF(b1_out);
+		Py_DECREF(b2_out);
+		Py_DECREF(n_out);
 	}
 
 	TEST_CASE("peek_type without extraction")
@@ -246,19 +246,19 @@ TEST_SUITE("CDTS Python3 Serializer")
 		   .add(f, metaffi_float64_type)
 		   .add(pPy_None, metaffi_null_type);
 
-		pPy_DecRef(i);
-		pPy_DecRef(f);
+		Py_DECREF(i);
+		Py_DECREF(f);
 
 		// Peek types without extracting
 		ser.reset();
 
 		CHECK(ser.peek_type() == metaffi_int64_type);
 		PyObject* i_out = ser.extract_pyobject();
-		pPy_DecRef(i_out);
+		Py_DECREF(i_out);
 
 		CHECK(ser.peek_type() == metaffi_float64_type);
 		PyObject* f_out = ser.extract_pyobject();
-		pPy_DecRef(f_out);
+		Py_DECREF(f_out);
 
 		CHECK(ser.is_null() == true);
 		CHECK(ser.peek_type() == metaffi_null_type);
@@ -277,8 +277,8 @@ TEST_SUITE("CDTS Python3 Serializer")
 		   .add(f, metaffi_float64_type)
 		   .add(pPy_True, metaffi_bool_type);
 
-		pPy_DecRef(i);
-		pPy_DecRef(f);
+		Py_DECREF(i);
+		Py_DECREF(f);
 
 		// Extract as tuple
 		ser.reset();
@@ -291,7 +291,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK(pPyFloat_AsDouble(pPyTuple_GetItem(tuple, 1)) == doctest::Approx(20.5));
 		CHECK(pPyTuple_GetItem(tuple, 2) == pPy_True);
 
-		pPy_DecRef(tuple);
+		Py_DECREF(tuple);
 	}
 
 	TEST_CASE("Deserialization from existing CDTS (primitives)")
@@ -309,15 +309,15 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		PyObject* i = deser.extract_pyobject();
 		CHECK(pPyLong_AsLongLong(i) == 123);
-		pPy_DecRef(i);
+		Py_DECREF(i);
 
 		PyObject* d = deser.extract_pyobject();
 		CHECK(pPyFloat_AsDouble(d) == doctest::Approx(9.99));
-		pPy_DecRef(d);
+		Py_DECREF(d);
 
 		PyObject* b = deser.extract_pyobject();
 		CHECK(b == pPy_True);
-		pPy_DecRef(b);
+		Py_DECREF(b);
 	}
 
 	TEST_CASE("Error: Bounds violation on serialization")
@@ -333,9 +333,9 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK_NOTHROW(ser.add(i2, metaffi_int64_type));
 		CHECK_THROWS_AS(ser.add(i3, metaffi_int64_type), std::out_of_range);
 
-		pPy_DecRef(i1);
-		pPy_DecRef(i2);
-		pPy_DecRef(i3);
+		Py_DECREF(i1);
+		Py_DECREF(i2);
+		Py_DECREF(i3);
 	}
 
 	TEST_CASE("Error: Bounds violation on deserialization")
@@ -345,11 +345,11 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		PyObject* i = pPyLong_FromLongLong(42);
 		ser.add(i, metaffi_int64_type);
-		pPy_DecRef(i);
+		Py_DECREF(i);
 
 		ser.reset();
 		PyObject* i1 = ser.extract_pyobject();
-		pPy_DecRef(i1);
+		Py_DECREF(i1);
 
 		CHECK_THROWS_AS(ser.extract_pyobject(), std::out_of_range);
 	}
@@ -361,7 +361,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		PyObject* i = pPyLong_FromLongLong(42);
 		ser.add(i, metaffi_int64_type);
-		pPy_DecRef(i);
+		Py_DECREF(i);
 
 		// Index is now at 1, which is out of bounds
 		CHECK_THROWS_AS(ser.peek_type(), std::out_of_range);
@@ -379,7 +379,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		// Serialize with explicit string8 type
 		PyObject* original = pPyUnicode_FromString("Hello, MetaFFI!");
 		ser.add(original, metaffi_string8_type);
-		pPy_DecRef(original);
+		Py_DECREF(original);
 
 		// Deserialize
 		ser.reset();
@@ -388,7 +388,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		const char* extracted_str = pPyUnicode_AsUTF8(extracted);
 		CHECK(std::string(extracted_str) == "Hello, MetaFFI!");
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Serialize and deserialize empty string")
@@ -399,7 +399,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		// Serialize with explicit string8 type
 		PyObject* original = pPyUnicode_FromString("");
 		ser.add(original, metaffi_string8_type);
-		pPy_DecRef(original);
+		Py_DECREF(original);
 
 		// Deserialize
 		ser.reset();
@@ -408,7 +408,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		const char* extracted_str = pPyUnicode_AsUTF8(extracted);
 		CHECK(std::string(extracted_str) == "");
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Serialize and deserialize UTF-8 with non-ASCII")
@@ -419,7 +419,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		// Serialize string with Hebrew and emoji
 		PyObject* original = pPyUnicode_FromString("שלום 🚀");
 		ser.add(original, metaffi_string8_type);
-		pPy_DecRef(original);
+		Py_DECREF(original);
 
 		// Deserialize
 		ser.reset();
@@ -428,7 +428,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		const char* extracted_str = pPyUnicode_AsUTF8(extracted);
 		CHECK(std::string(extracted_str) == "שלום 🚀");
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Deserialize pre-filled CDTS with string")
@@ -451,7 +451,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		const char* extracted_str = pPyUnicode_AsUTF8(extracted);
 		CHECK(std::string(extracted_str) == "Hello from CDTS");
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	// ========================================================================
@@ -472,7 +472,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		// Serialize with explicit int64 element type
 		ser.add(list, metaffi_int64_type);
-		pPy_DecRef(list);
+		Py_DECREF(list);
 
 		// Deserialize
 		ser.reset();
@@ -485,7 +485,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 			CHECK(pPyLong_AsLongLong(pPyList_GetItem(extracted, i)) == i + 1);
 		}
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Serialize and deserialize 1D array of float64")
@@ -501,7 +501,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		// Serialize with explicit float64 element type
 		ser.add(list, metaffi_float64_type);
-		pPy_DecRef(list);
+		Py_DECREF(list);
 
 		// Deserialize
 		ser.reset();
@@ -513,7 +513,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK(pPyFloat_AsDouble(pPyList_GetItem(extracted, 1)) == doctest::Approx(2.2));
 		CHECK(pPyFloat_AsDouble(pPyList_GetItem(extracted, 2)) == doctest::Approx(3.3));
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Serialize and deserialize empty array")
@@ -524,7 +524,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		PyObject* list = pPyList_New(0);
 		// Empty array - use any_type
 		ser.add(list, metaffi_any_type);
-		pPy_DecRef(list);
+		Py_DECREF(list);
 
 		// Deserialize
 		ser.reset();
@@ -533,7 +533,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK(pPyList_Check(extracted));
 		CHECK(pPyList_Size(extracted) == 0);
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Serialize and deserialize 2D array")
@@ -559,7 +559,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		// Serialize with explicit int64 element type for 2D array
 		ser.add(list, metaffi_int64_type);
-		pPy_DecRef(list);
+		Py_DECREF(list);
 
 		// Deserialize
 		ser.reset();
@@ -582,7 +582,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK(pPyLong_AsLongLong(pPyList_GetItem(r2, 1)) == 5);
 		CHECK(pPyLong_AsLongLong(pPyList_GetItem(r2, 2)) == 6);
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Serialize and deserialize 3D array")
@@ -612,7 +612,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		// Serialize with explicit int64 element type for 3D array
 		ser.add(list, metaffi_int64_type);
-		pPy_DecRef(list);
+		Py_DECREF(list);
 
 		// Deserialize
 		ser.reset();
@@ -637,7 +637,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK(pPyLong_AsLongLong(pPyList_GetItem(e10, 0)) == 3);
 		CHECK(pPyLong_AsLongLong(pPyList_GetItem(e10, 1)) == 4);
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Serialize and deserialize ragged 2D array")
@@ -666,7 +666,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		// Serialize with explicit int64 element type for ragged array
 		ser.add(list, metaffi_int64_type);
-		pPy_DecRef(list);
+		Py_DECREF(list);
 
 		// Deserialize
 		ser.reset();
@@ -690,7 +690,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK(pPyLong_AsLongLong(pPyList_GetItem(r3, 1)) == 5);
 		CHECK(pPyLong_AsLongLong(pPyList_GetItem(r3, 2)) == 6);
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	// ========================================================================
@@ -715,7 +715,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		   .add(val, metaffi_uint32_type)
 		   .add(val, metaffi_uint64_type);
 
-		pPy_DecRef(val);
+		Py_DECREF(val);
 
 		// Verify CDTS has correct types stored
 		CHECK(data[0].type == metaffi_int8_type);
@@ -749,7 +749,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		ser.add(val, metaffi_float32_type)
 		   .add(val, metaffi_float64_type);
 
-		pPy_DecRef(val);
+		Py_DECREF(val);
 
 		// Verify CDTS has correct types stored
 		CHECK(data[0].type == metaffi_float32_type);
@@ -767,7 +767,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		PyObject* val = pPyLong_FromLong(1000);
 		ser.add(val, metaffi_int32_type);
-		pPy_DecRef(val);
+		Py_DECREF(val);
 
 		// Verify int32 type (not default int64)
 		CHECK(data[0].type == metaffi_int32_type);
@@ -781,7 +781,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		PyObject* val = pPyFloat_FromDouble(2.5);
 		ser.add(val, metaffi_float32_type);
-		pPy_DecRef(val);
+		Py_DECREF(val);
 
 		// Verify float32 type (not default float64)
 		CHECK(data[0].type == metaffi_float32_type);
@@ -800,7 +800,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		PyObject* val = pPyLong_FromLong(300);  // Too large for int8 [-128, 127]
 		CHECK_THROWS_WITH(ser.add(val, metaffi_int8_type), 
 		                  doctest::Contains("out of range for int8"));
-		pPy_DecRef(val);
+		Py_DECREF(val);
 	}
 
 	TEST_CASE("Error: Negative value for uint8")
@@ -811,7 +811,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		PyObject* val = pPyLong_FromLong(-10);  // Negative not allowed for unsigned
 		CHECK_THROWS_WITH(ser.add(val, metaffi_uint8_type), 
 		                  doctest::Contains("out of range for uint8"));
-		pPy_DecRef(val);
+		Py_DECREF(val);
 	}
 
 	TEST_CASE("Error: Value out of range for int16")
@@ -822,7 +822,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		PyObject* val = pPyLong_FromLong(50000);  // Too large for int16 [-32768, 32767]
 		CHECK_THROWS_WITH(ser.add(val, metaffi_int16_type), 
 		                  doctest::Contains("out of range for int16"));
-		pPy_DecRef(val);
+		Py_DECREF(val);
 	}
 
 	TEST_CASE("Error: Value out of range for uint32")
@@ -833,7 +833,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		PyObject* val = pPyLong_FromLongLong(5000000000LL);  // Too large for uint32
 		CHECK_THROWS_WITH(ser.add(val, metaffi_uint32_type), 
 		                  doctest::Contains("out of range for uint32"));
-		pPy_DecRef(val);
+		Py_DECREF(val);
 	}
 
 	TEST_CASE("Boundary values: int8 min/max")
@@ -847,8 +847,8 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK_NOTHROW(ser.add(min_val, metaffi_int8_type));
 		CHECK_NOTHROW(ser.add(max_val, metaffi_int8_type));
 		
-		pPy_DecRef(min_val);
-		pPy_DecRef(max_val);
+		Py_DECREF(min_val);
+		Py_DECREF(max_val);
 
 		CHECK(data[0].cdt_val.int8_val == -128);
 		CHECK(data[1].cdt_val.int8_val == 127);
@@ -865,8 +865,8 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK_NOTHROW(ser.add(min_val, metaffi_uint8_type));
 		CHECK_NOTHROW(ser.add(max_val, metaffi_uint8_type));
 		
-		pPy_DecRef(min_val);
-		pPy_DecRef(max_val);
+		Py_DECREF(min_val);
+		Py_DECREF(max_val);
 
 		CHECK(data[0].cdt_val.uint8_val == 0);
 		CHECK(data[1].cdt_val.uint8_val == 255);
@@ -888,12 +888,12 @@ TEST_SUITE("CDTS Python3 Serializer")
 		try
 		{
 			ser.add(huge_val, metaffi_int64_type);
-			pPy_DecRef(huge_val);
+			Py_DECREF(huge_val);
 			FAIL("Expected exception was not thrown");
 		}
 		catch(const std::runtime_error& e)
 		{
-			pPy_DecRef(huge_val);
+			Py_DECREF(huge_val);
 			std::string error_msg(e.what());
 			
 			// Verify that the error message contains our context message
@@ -921,7 +921,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		// Handles are unambiguous - use handle type
 		ser.add(original_dict, metaffi_handle_type);
-		pPy_DecRef(original_dict);  // Serializer should have incremented refcount
+		Py_DECREF(original_dict);  // Serializer should have incremented refcount
 
 		// Deserialize
 		ser.reset();
@@ -932,7 +932,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		PyObject* value = pPyDict_GetItemString(extracted, "key");
 		CHECK(pPyLong_AsLong(value) == 42);
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Deserialize pre-filled CDTS with handle")
@@ -961,7 +961,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		CHECK(pPyLong_AsLong(pPyList_GetItem(extracted, 0)) == 10);
 		CHECK(pPyLong_AsLong(pPyList_GetItem(extracted, 1)) == 20);
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 	}
 
 	TEST_CASE("Deserialize pre-filled CDTS with callable")
@@ -997,7 +997,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		void* func_ptr = pPyCapsule_GetPointer(extracted, "metaffi.callable");
 		CHECK(func_ptr == (void*)0x12345678);
 
-		pPy_DecRef(extracted);
+		Py_DECREF(extracted);
 
 		// No manual cleanup needed - CDT destructor handles it via free_required=true
 	}
