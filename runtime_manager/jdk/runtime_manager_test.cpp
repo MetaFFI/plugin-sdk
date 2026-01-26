@@ -148,28 +148,35 @@ static jvm_installed_info get_test_jvm_info()
 		throw std::runtime_error("No installed JVMs detected");
 	}
 
-	auto prefer_version = [](const std::string& version, const std::string& prefix){
-		return version.rfind(prefix, 0) == 0;
-	};
-
+	std::cerr << "[jdk_runtime_manager_test] Detected JVMs:" << std::endl;
 	for(const auto& info : jvms)
 	{
-		if(prefer_version(info.version, "21") || prefer_version(info.version, "17") || prefer_version(info.version, "11"))
+		std::cerr << "  home=" << info.home
+		          << " version=" << info.version
+		          << " libjvm=" << info.libjvm_path
+		          << std::endl;
+	}
+
+	auto has_version_prefix = [](const std::string& version, const std::string& prefix)
+	{
+		return !version.empty() && version.rfind(prefix, 0) == 0;
+	};
+
+	const std::vector<std::string> preferred_versions = {"22", "21", "17", "11"};
+	for(const auto& preferred : preferred_versions)
+	{
+		for(const auto& info : jvms)
 		{
-			return info;
+			if(has_version_prefix(info.version, preferred))
+			{
+				std::cerr << "[jdk_runtime_manager_test] Selected JVM: " << info.home << std::endl;
+				return info;
+			}
 		}
 	}
-	return jvms[0];
-}
 
-static bool can_load_jvm(const jvm_installed_info& info)
-{
-	jdk_runtime_manager manager(info);
-	if(!expect_no_throw([&]() { manager.load_runtime(); }))
-	{
-		return false;
-	}
-	return manager.is_runtime_loaded();
+	std::cerr << "[jdk_runtime_manager_test] Selected JVM: " << jvms.front().home << std::endl;
+	return jvms.front();
 }
 
 TEST_SUITE("JDK Runtime Manager Tests")
@@ -179,7 +186,7 @@ TEST_SUITE("JDK Runtime Manager Tests")
 	// ============================================================================
 
 	TEST_CASE("3.1 Load Runtime - Success")
-	{
+	{// TODO: NO reason to "load_runtime", as get_test_jvm_info() loads all available...
 		auto info = get_test_jvm_info();
 		jdk_runtime_manager manager(info);
 

@@ -1,5 +1,6 @@
 #include "jarray_wrapper.h"
 #include "jni_class.h"
+#include "jni_size_utils.h"
 #include <string>
 
 jarray_wrapper::jarray_wrapper(JNIEnv* env, jarray array, metaffi_type t) : env(env), array(array), type(t)
@@ -300,7 +301,7 @@ std::pair<jvalue, char> jarray_wrapper::get_element(JNIEnv* env, jarray obj, con
 
     for(metaffi_size i = 0; i < index_length; ++i)
     {
-		jsize element_index = static_cast<jsize>(index[i]);
+		jsize element_index = to_jsize(index[i]);
         if(env->IsInstanceOf(current_array, env->FindClass("[Ljava/lang/Object;")))
         {
             current_array = (jarray)env->GetObjectArrayElement((jobjectArray) current_array, element_index);
@@ -373,7 +374,7 @@ std::pair<jvalue, char> jarray_wrapper::get_element(JNIEnv* env, jarray obj, con
 
 jarray jarray_wrapper::create_jni_array(JNIEnv* env, metaffi_type t, metaffi_int64 fixed_dimensions, metaffi_size length)
 {
-	jsize jlength = static_cast<jsize>(length);
+	jsize jlength = to_jsize(length);
 	if(fixed_dimensions == -1)
 	{
 		jclass objectClass = env->FindClass("java/lang/Object");
@@ -469,5 +470,4 @@ bool jarray_wrapper::is_array(JNIEnv* env, jobject obj)
 	std::string cls = jni_class::get_object_class_name(env, obj);
 	return cls[0] == '[';
 }
-
 

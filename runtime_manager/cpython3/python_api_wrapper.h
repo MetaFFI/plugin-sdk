@@ -181,6 +181,11 @@ typedef PyObject* (*PyObject_CallFunctionObjArgs_t)(PyObject *callable, ...);
 typedef PyObject* (*PyUnicode_Join_t)(PyObject *separator, PyObject *seq);
 typedef int (*PyObject_RichCompareBool_t)(PyObject *o1, PyObject *o2, int opid);
 typedef int (*PyObject_IsInstance_t)(PyObject *inst, PyObject *cls);
+typedef PyObject* (*PyObject_Str_t)(PyObject *o);
+
+// Capsule functions
+typedef PyObject* (*PyCapsule_New_t)(void *pointer, const char *name, void (*destructor)(PyObject *));
+typedef void* (*PyCapsule_GetPointer_t)(PyObject *capsule, const char *name);
 
 // Extern declarations of function pointers
 extern PyEval_SaveThread_t pPyEval_SaveThread;
@@ -354,6 +359,11 @@ extern PyObject_CallFunctionObjArgs_t pPyObject_CallFunctionObjArgs;
 extern PyUnicode_Join_t pPyUnicode_Join;
 extern PyObject_RichCompareBool_t pPyObject_RichCompareBool;
 extern PyObject_IsInstance_t pPyObject_IsInstance;
+extern PyObject_Str_t pPyObject_Str;
+
+// Capsule functions
+extern PyCapsule_New_t pPyCapsule_New;
+extern PyCapsule_GetPointer_t pPyCapsule_GetPointer;
 
 // Type pointers
 extern PyObject* pPyType_Type;
@@ -383,6 +393,11 @@ std::vector<std::string> detect_installed_python3();
 // Function to load Python API for a specific version
 // version should be like "3.8", "3.9", etc.
 bool load_python3_api(const std::string& version);
+
+// Load Python API from an already-loaded Python library
+// Returns true on success, false if Python is not loaded in the process
+// On success, out_detected_version is set to the detected Python version (e.g., "3.11")
+bool load_python3_api_from_loaded_library(std::string& out_detected_version);
 
 #ifndef _WIN32
 void load_python3_variables_from_interpreter();

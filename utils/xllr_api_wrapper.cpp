@@ -1,4 +1,5 @@
 #include "xllr_api_wrapper.h"
+#include "env_utils.h"
 #include <filesystem>
 #include "function_loader.hpp"
 
@@ -10,7 +11,7 @@ xllr_api_wrapper::xllr_api_wrapper()
 {
 	try
 	{
-		std::string metaffi_home = std::getenv("METAFFI_HOME");
+		std::string metaffi_home = get_env_var("METAFFI_HOME");
 		if(metaffi_home.empty()){
 			throw std::runtime_error("METAFFI_HOME environment variable is not set");
 		}

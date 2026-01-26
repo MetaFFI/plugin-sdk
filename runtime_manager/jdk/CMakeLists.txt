@@ -7,6 +7,7 @@ find_or_install_package(doctest)
 collect_c_cpp_files(${CMAKE_CURRENT_LIST_DIR} jdk_runtime_manager)
 
 collect_c_cpp_files("${CMAKE_CURRENT_SOURCE_DIR}/../../utils" sdk_utils)
+list(APPEND sdk_utils_src "${metaffi_sdk_root}/utils/env_utils.cpp")
 
 build_jar(jdk_runtime_manager_test_jar
 	SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/tests/java/com/metaffi/jdk/*.java"
@@ -17,7 +18,7 @@ build_jar(jdk_runtime_manager_test_jar
 set(JDK_TEST_JAR_PATH "$ENV{METAFFI_HOME}/sdk/runtime_manager/jvm/tests/jdk_runtime_manager_test.jar")
 string(REPLACE "\\" "/" JDK_TEST_JAR_PATH "${JDK_TEST_JAR_PATH}")
 
-set(jdk_runtime_manager_test_libs "doctest::doctest;Boost::filesystem;Boost::system;${JNI_LIBRARIES}")
+set(jdk_runtime_manager_test_libs "doctest::doctest;Boost::filesystem;Boost::system")
 
 c_cpp_exe(jdk_runtime_manager_test
 	"${jdk_runtime_manager_src};${sdk_utils_src};runtime_manager_test.cpp"

@@ -1,8 +1,10 @@
 #include "jni_class.h"
 #include "exception_macro.h"
 #include "jbyte_wrapper.h"
+#include "jni_size_utils.h"
 #include "runtime_id.h"
 #include <sstream>
+#include <limits>
 #include <utils/scope_guard.hpp>
 
 
@@ -247,20 +249,31 @@ void jni_class::call(const cdts_java_wrapper& params_wrapper, const cdts_java_wr
                      const std::set<uint8_t>& any_type_indices, jmethodID method)
 {
 	int start_index = instance_required ? 1 : 0;
-	int params_length = static_cast<int>(params_wrapper.length() - start_index);
-	std::vector<jvalue> args(params_length);
-
-	for(int i = 0; i < params_length; ++i)
+	auto total_length = params_wrapper.length();
+	if(total_length < static_cast<metaffi_size>(start_index))
 	{
+		throw std::runtime_error("invalid parameters length");
+	}
+
+	jsize params_length = to_jsize(total_length - static_cast<metaffi_size>(start_index));
+	std::vector<jvalue> args(static_cast<size_t>(params_length));
+
+	for(jsize i = 0; i < params_length; ++i)
+	{
+		int param_index = i + start_index;
+			bool is_any_type = param_index >= 0 &&
+			                   param_index <= static_cast<int>((std::numeric_limits<uint8_t>::max)()) &&
+			                   any_type_indices.contains(static_cast<uint8_t>(param_index));
+
 		// if parameter expects a primitive in its object form - switch to object
-		if(params_wrapper[i + start_index].type != metaffi_handle_type &&
-		   (params_wrapper[i + start_index].type & metaffi_array_type) == 0 &&
-		   any_type_indices.contains(i + start_index))
+		if(params_wrapper[param_index].type != metaffi_handle_type &&
+		   (params_wrapper[param_index].type & metaffi_array_type) == 0 &&
+		   is_any_type)
 		{
-			params_wrapper.switch_to_object(env, i + start_index);
+			params_wrapper.switch_to_object(env, param_index);
 		}
 
-		args[i] = params_wrapper.to_jvalue(env, i + start_index);
+		args[static_cast<size_t>(i)] = params_wrapper.to_jvalue(env, param_index);
 	}
 
 	if(!instance_required)

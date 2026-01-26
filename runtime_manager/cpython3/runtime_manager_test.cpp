@@ -78,12 +78,15 @@ std::string get_test_python_version()
 // Helper to check if we can actually load Python
 bool can_load_python(const std::string& version)
 {
-	cpython3_runtime_manager manager(version);
-	if(!expect_no_throw([&]() { manager.load_runtime(); }))
+	try
+	{
+		auto manager = cpython3_runtime_manager::create(version);
+		return manager && manager->is_runtime_loaded();
+	}
+	catch(...)
 	{
 		return false;
 	}
-	return manager.is_runtime_loaded();
 }
 
 // Test module content
@@ -149,76 +152,83 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	TEST_CASE("3.1 Load Runtime - Success")
 	{
 		std::string version = get_test_python_version();
-		cpython3_runtime_manager manager(version);
+		std::shared_ptr<cpython3_runtime_manager> manager;
 		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
-		CHECK(manager.is_runtime_loaded() == true);
+		CHECK(expect_no_throw([&]() { manager = cpython3_runtime_manager::create(version); }));
+		CHECK(manager != nullptr);
+		CHECK(manager->is_runtime_loaded() == true);
 	}
 	
-	TEST_CASE("3.2 Load Runtime - Idempotency")
+	TEST_CASE("3.2 Load Runtime - Factory Method Idempotency")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
+		// Creating multiple managers is valid - each manages its own state
+		auto manager1 = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager1 != nullptr);
+		CHECK(manager1->is_runtime_loaded() == true);
 		
-		// Call multiple times
-		for(int i = 0; i < 5; i++)
-		{
-			CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
-			CHECK(manager.is_runtime_loaded() == true);
-		}
+		// Second creation should also work (Python runtime is shared)
+		auto manager2 = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager2 != nullptr);
+		CHECK(manager2->is_runtime_loaded() == true);
 	}
 	
 	TEST_CASE("3.3 Release Runtime - Success")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
-		
-		CHECK(expect_no_throw([&]() { manager.release_runtime(); }));
-		CHECK(manager.is_runtime_loaded() == false);
+		CHECK(expect_no_throw([&]() { manager->release_runtime(); }));
+		CHECK(manager->is_runtime_loaded() == false);
 		
 	}
 	
 	TEST_CASE("3.4 Release Runtime - Idempotency")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		// Call multiple times
 		for(int i = 0; i < 5; i++)
 		{
-			CHECK(expect_no_throw([&]() { manager.release_runtime(); }));
-			CHECK(manager.is_runtime_loaded() == false);
+			CHECK(expect_no_throw([&]() { manager->release_runtime(); }));
+			CHECK(manager->is_runtime_loaded() == false);
 		}
 	}
 	
-	TEST_CASE("3.5 Release Runtime Without Load")
+	TEST_CASE("3.5 Release Runtime Then Create New Manager")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
-		// Release without loading
-		CHECK(expect_no_throw([&]() { manager.release_runtime(); }));
-		// Should not crash, error handling is implementation-specific
+		// Release runtime
+		CHECK(expect_no_throw([&]() { manager->release_runtime(); }));
+		CHECK(manager->is_runtime_loaded() == false);
+		
+		// Create new manager - should work
+		auto manager2 = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager2 != nullptr);
+		CHECK(manager2->is_runtime_loaded() == true);
 	}
 	
-	TEST_CASE("3.6 Load After Release")
+	TEST_CASE("3.6 Load After Release - New Manager")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		CHECK(expect_no_throw([&]() { manager->release_runtime(); }));
 		
-		CHECK(expect_no_throw([&]() { manager.release_runtime(); }));
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
-		CHECK(manager.is_runtime_loaded() == true);
+		// After release, create a new manager to reload
+		auto manager2 = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager2 != nullptr);
+		CHECK(manager2->is_runtime_loaded() == true);
 		
 	}
 	
 	TEST_CASE("3.7 Destructor Cleanup")
 	{
 		{
-			cpython3_runtime_manager manager(get_test_python_version());
-			CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+			auto manager = cpython3_runtime_manager::create(get_test_python_version());
+			CHECK(manager != nullptr);
 		}
 		// Destructor should release runtime
 		// No explicit check, but should not crash
@@ -245,12 +255,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("4.1 Load Valid Module")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		CHECK(module != nullptr);
 		if(module)
@@ -262,41 +271,40 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("4.2 Load Invalid Module Path")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
 		CHECK(expect_throw([&]() {
-			(void)manager.load_module("/invalid/path/module_that_does_not_exist.py");
+			(void)manager->load_module("/invalid/path/module_that_does_not_exist.py");
 		}));
 		
 	}
 	
-	TEST_CASE("4.3 Load Module Without Runtime")
+	TEST_CASE("4.3 Load Module - Runtime Auto-Initialized")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
+		// With factory pattern, runtime is always initialized after create()
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
+		CHECK(manager->is_runtime_loaded() == true);
 		
-		// Don't load runtime
 		std::string module_path = create_test_module("test_module", test_module_content);
-		std::shared_ptr<Module> module;
-		CHECK(expect_no_throw([&]() { module = manager.load_module(module_path); }));
+		auto module = manager->load_module(module_path);
 		CHECK(module != nullptr);
-		CHECK(manager.is_runtime_loaded() == true);
 	}
 	
 	TEST_CASE("4.4 Load Same Module Multiple Times - No Caching")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
 		
 		// Load first time
-		auto module1 = manager.load_module(module_path);
+		auto module1 = manager->load_module(module_path);
 		CHECK(module1 != nullptr);
 		
 		// Load second time - should create new instance (no caching)
-		auto module2 = manager.load_module(module_path);
+		auto module2 = manager->load_module(module_path);
 		CHECK(module2 != nullptr);
 		
 		// Verify they are different instances (no caching per requirements)
@@ -305,17 +313,16 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("4.5 Load Different Modules")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module1_path = create_test_module("test_module1", test_module_content);
 		std::string module2_path = create_test_module("test_module2", test_module_content);
 		
-		auto module1 = manager.load_module(module1_path);
+		auto module1 = manager->load_module(module1_path);
 		CHECK(module1 != nullptr);
 		
-		auto module2 = manager.load_module(module2_path);
+		auto module2 = manager->load_module(module2_path);
 		CHECK(module2 != nullptr);
 		
 		CHECK(module1.get() != module2.get());
@@ -324,24 +331,22 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("4.6 Module Path Variations")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		// Test absolute file path
 		std::string abs_path = create_test_module("test_abs", test_module_content);
-		auto module_abs = manager.load_module(abs_path);
+		auto module_abs = manager->load_module(abs_path);
 		CHECK(module_abs != nullptr);
 	}
 	
 	TEST_CASE("4.7 Module Unload")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		CHECK(module != nullptr);
 		
 		// Load an entity first
@@ -355,12 +360,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("4.8 Module Unload Without Entities")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		CHECK(module != nullptr);
 		
 		module->unload();
@@ -372,12 +376,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.1 Load Function Entity")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}, {pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -389,12 +392,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.2 Load Method Entity")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -406,12 +408,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.3 Load Constructor Entity")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyBaseObject_Type}};
@@ -423,12 +424,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.4 Load Global Getter Entity")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params;
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -440,12 +440,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.5 Load Global Setter Entity")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals;
@@ -457,12 +456,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.6 Load Field Getter Entity")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params;
 		std::vector<PyObject*> retvals = {{pPyUnicode_Type}};
@@ -474,12 +472,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.7 Load Field Setter Entity")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyUnicode_Type}};
 		std::vector<PyObject*> retvals;
@@ -490,12 +487,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.8 Load Entity with Correct Types")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}, {pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -507,12 +503,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.9 Load Entity with Incorrect Types")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		// Wrong parameter count
 		std::vector<PyObject*> params = {{pPyLong_Type}}; // Should be 2
@@ -525,12 +520,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.10 Load Non-Existent Entity")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -542,12 +536,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.11 Load Same Entity Multiple Times - No Caching")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}, {pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -566,12 +559,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.12 Load Same Entity with Different Types")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params1 = {{pPyLong_Type}, {pPyLong_Type}};
 		std::vector<PyObject*> retvals1 = {{pPyLong_Type}};
@@ -589,12 +581,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.13 Load Entity with Invalid Entity Path")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -606,12 +597,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("5.14 Load Entity from Unloaded Module")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		module->unload();
 		
@@ -631,12 +621,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("6.1 Call Function with Parameters and Return Value - Interface")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}, {pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -653,12 +642,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("6.2 Call Function with No Parameters - Interface")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params;
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -672,12 +660,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("6.3 Call Function with No Return Value - Interface")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals;
@@ -687,12 +674,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("6.4 Call Function with No Parameters and No Return Value - Interface")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params;
 		std::vector<PyObject*> retvals;
@@ -702,12 +688,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("6.5 Call Method - Instance Method - Interface")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -717,12 +702,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("6.6 Call Method - Static Method - Interface")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -732,12 +716,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("6.7 Call Constructor - Interface")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyBaseObject_Type}};
@@ -747,12 +730,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("6.12 Get Global Variable - Interface")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params;
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -768,12 +750,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("6.13 Set Global Variable - Interface")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals;
@@ -789,12 +770,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("6.16 Call with Null Pointers")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}, {pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -812,18 +792,17 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("7.1 Module Cache - No Caching")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
 		
 		// Load first time
-		auto module1 = manager.load_module(module_path);
+		auto module1 = manager->load_module(module_path);
 		CHECK(module1 != nullptr);
 		
 		// Load second time
-		auto module2 = manager.load_module(module_path);
+		auto module2 = manager->load_module(module_path);
 		CHECK(module2 != nullptr);
 		
 		// Verify different instances (no caching)
@@ -832,28 +811,26 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("7.2 Module Cache Miss - Different Paths")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module1_path = create_test_module("test_module1", test_module_content);
 		std::string module2_path = create_test_module("test_module2", test_module_content);
 		
-		auto module1 = manager.load_module(module1_path);
+		auto module1 = manager->load_module(module1_path);
 		
-		auto module2 = manager.load_module(module2_path);
+		auto module2 = manager->load_module(module2_path);
 		
 		CHECK(module1.get() != module2.get());
 	}
 	
 	TEST_CASE("7.3 Entity Cache - No Caching")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}, {pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -872,12 +849,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("7.4 Entity Cache Miss - Different Types")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params1 = {{pPyLong_Type}, {pPyLong_Type}};
 		std::vector<PyObject*> retvals1 = {{pPyLong_Type}};
@@ -894,22 +870,33 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	// 8. Thread Safety Tests
 	// ============================================================================
 	
-	TEST_CASE("8.1 Concurrent Runtime Load")
+	TEST_CASE("8.1 Concurrent Runtime Create")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
 		std::vector<std::thread> threads;
+		std::vector<std::shared_ptr<cpython3_runtime_manager>> managers;
+		std::mutex managers_mutex;
 		std::atomic<int> success_count(0);
 		std::atomic<int> fail_count(0);
 		
 		const int num_threads = 10;
+		std::string version = get_test_python_version();
 		
 		for(int i = 0; i < num_threads; i++)
 		{
-			threads.emplace_back([&manager, &success_count, &fail_count]() {
+			threads.emplace_back([&version, &managers, &managers_mutex, &success_count, &fail_count]() {
 				try
 				{
-					CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
-					success_count++;
+					auto manager = cpython3_runtime_manager::create(version);
+					if(manager && manager->is_runtime_loaded())
+					{
+						std::lock_guard<std::mutex> lock(managers_mutex);
+						managers.push_back(manager);
+						success_count++;
+					}
+					else
+					{
+						fail_count++;
+					}
 				}
 				catch(const std::exception&)
 				{
@@ -925,13 +912,12 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 		
 		CHECK(success_count == num_threads);
 		CHECK(fail_count == 0);
-		CHECK(manager.is_runtime_loaded() == true);
 	}
 	
 	TEST_CASE("8.2 Concurrent Runtime Release")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::vector<std::thread> threads;
 		std::atomic<int> success_count(0);
@@ -942,7 +928,7 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 			threads.emplace_back([&manager, &success_count]() {
 				try
 				{
-					CHECK(expect_no_throw([&]() { manager.release_runtime(); }));
+					CHECK(expect_no_throw([&]() { manager->release_runtime(); }));
 					success_count++;
 				}
 				catch(const std::exception&)
@@ -957,13 +943,13 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 		}
 		
 		CHECK(success_count == num_threads);
-		CHECK(manager.is_runtime_loaded() == false);
+		CHECK(manager->is_runtime_loaded() == false);
 	}
 	
 	TEST_CASE("8.3 Concurrent Module Load")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
 		std::vector<std::thread> threads;
@@ -976,7 +962,7 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 			threads.emplace_back([&manager, &module_path, &modules, &modules_mutex]() {
 				try
 				{
-					auto module = manager.load_module(module_path);
+					auto module = manager->load_module(module_path);
 					std::lock_guard<std::mutex> lock(modules_mutex);
 					modules.push_back(module);
 				}
@@ -1004,11 +990,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("8.4 Concurrent Entity Load")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}, {pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -1051,11 +1037,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("8.5 Concurrent Entity Calls")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}, {pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -1098,11 +1084,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	TEST_CASE("9.1 Destructor Cleanup")
 	{
 		{
-			cpython3_runtime_manager manager(get_test_python_version());
-			CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+			auto manager = cpython3_runtime_manager::create(get_test_python_version());
+			CHECK(manager != nullptr);
 			
 			std::string module_path = create_test_module("test_module", test_module_content);
-			auto module = manager.load_module(module_path);
+			auto module = manager->load_module(module_path);
 			
 			std::vector<PyObject*> params = {{pPyLong_Type}};
 			std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -1113,11 +1099,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("9.2 Module Cleanup")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -1130,11 +1116,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("9.3 Entity Cleanup")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		{
 			std::vector<PyObject*> params = {{pPyLong_Type}};
@@ -1146,11 +1132,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("9.4 Error Path Cleanup")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		// Trigger error - load invalid entity
 		std::vector<PyObject*> params = {{pPyLong_Type}};
@@ -1170,11 +1156,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("10.1 Error Message Format")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		// Trigger error
 		std::vector<PyObject*> params = {{pPyLong_Type}};
@@ -1193,11 +1179,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("10.2 Error Message Memory")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		// Trigger error
 		std::vector<PyObject*> params = {{pPyLong_Type}};
@@ -1210,11 +1196,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("10.3 Error Propagation")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		// Load entity fails
 		std::vector<PyObject*> params = {{pPyLong_Type}};
@@ -1230,13 +1216,13 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("10.4 Null Pointer Handling")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		// load_module with empty string might fail
 		try
 		{
-			(void)manager.load_module("");
+			(void)manager->load_module("");
 		}
 		catch(const std::exception&)
 		{
@@ -1251,14 +1237,13 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("11.1 End-to-End Function Call")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
-		// Load runtime
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		// Create manager (runtime auto-loaded)
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		// Load module
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		// Load function entity
 		std::vector<PyObject*> params = {{pPyLong_Type}, {pPyLong_Type}};
@@ -1267,21 +1252,21 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 		CHECK(entity != nullptr);
 		
 		// Release runtime
-		CHECK(expect_no_throw([&]() { manager.release_runtime(); }));
+		CHECK(expect_no_throw([&]() { manager->release_runtime(); }));
 	}
 	
 	TEST_CASE("11.2 Multiple Modules and Entities")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		// Load multiple modules
 		std::string module1_path = create_test_module("test_module1", test_module_content);
 		std::string module2_path = create_test_module("test_module2", test_module_content);
 		
-		auto module1 = manager.load_module(module1_path);
+		auto module1 = manager->load_module(module1_path);
 		
-		auto module2 = manager.load_module(module2_path);
+		auto module2 = manager->load_module(module2_path);
 		
 		// Load entities from each module
 		std::vector<PyObject*> params = {{pPyLong_Type}};
@@ -1297,11 +1282,11 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("11.3 Complex Entity Paths")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		// Test nested class
 		std::vector<PyObject*> params;
@@ -1312,20 +1297,20 @@ TEST_SUITE("CPython3 Runtime Manager Tests")
 	
 	TEST_CASE("11.4 Runtime Reload Scenario")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		
 		// First cycle
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager1 = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager1 != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module1 = manager.load_module(module_path);
+		auto module1 = manager1->load_module(module_path);
 		
-		CHECK(expect_no_throw([&]() { manager.release_runtime(); }));
+		CHECK(expect_no_throw([&]() { manager1->release_runtime(); }));
 		
-		// Second cycle
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		// Second cycle - create new manager
+		auto manager2 = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager2 != nullptr);
 		
-		auto module2 = manager.load_module(module_path);
+		auto module2 = manager2->load_module(module_path);
 		
 		CHECK(module1.get() != module2.get());
 	}
@@ -1341,11 +1326,11 @@ def varargs_function(x, *args):
     return x + sum(args)
 )";
 		
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("varargs_module", varargs_module);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -1360,11 +1345,11 @@ def kwargs_function(x, **kwargs):
     return x + kwargs.get('y', 0)
 )";
 		
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("kwargs_module", kwargs_module);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -1374,11 +1359,11 @@ def kwargs_function(x, **kwargs):
 	
 	TEST_CASE("12.3 Python Static Method")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyLong_Type}};
@@ -1389,11 +1374,11 @@ def kwargs_function(x, **kwargs):
 	
 	TEST_CASE("12.4 Python Class Method")
 	{
-		cpython3_runtime_manager manager(get_test_python_version());
-		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
+		auto manager = cpython3_runtime_manager::create(get_test_python_version());
+		CHECK(manager != nullptr);
 		
 		std::string module_path = create_test_module("test_module", test_module_content);
-		auto module = manager.load_module(module_path);
+		auto module = manager->load_module(module_path);
 		
 		std::vector<PyObject*> params = {{pPyLong_Type}};
 		std::vector<PyObject*> retvals = {{pPyUnicode_Type}};

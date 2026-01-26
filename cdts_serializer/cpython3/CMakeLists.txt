@@ -8,9 +8,12 @@ find_or_install_package(Boost COMPONENTS filesystem)
 # Collect source files
 collect_c_cpp_files(${CMAKE_CURRENT_LIST_DIR} cdts_python3_serializer)
 
+# Collect runtime_manager source files (cpython3 serializer depends on it)
+collect_c_cpp_files("${metaffi_sdk_root}/runtime_manager/cpython3" cpython3_runtime_manager)
+
 # Build test executable
 c_cpp_exe(cdts_python3_serializer_test
-	"${cdts_python3_serializer_src};${sdk_src};cdts_python3_serializer_test.cpp"
+	"${cdts_python3_serializer_src};${cpython3_runtime_manager_src};${sdk_src};cdts_python3_serializer_test.cpp"
 	"${sdk_include_dir};${doctest_INCLUDE_DIRS};${CMAKE_CURRENT_LIST_DIR};${Boost_INCLUDE_DIRS};${Python3_INCLUDE_DIRS}"
 	"doctest::doctest;Boost::filesystem;Python3::Python"
 	"sdk/cdts_serializer/cpython3")

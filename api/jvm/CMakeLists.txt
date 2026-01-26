@@ -12,12 +12,13 @@ file(GLOB API_RUNTIME_SRC ${CMAKE_CURRENT_LIST_DIR}/runtime/*.cpp)
 set(API_JVM_SRC
 	${metaffi_sdk_root}/runtime_manager/jdk/jvm.cpp
 	${metaffi_sdk_root}/runtime_manager/jdk/jni_api_wrapper.cpp
+	${metaffi_sdk_root}/utils/env_utils.cpp
 )
 
 c_cpp_shared_lib(metaffi.api.accessor
 		"${API_ACCESSOR_SRC};${API_RUNTIME_SRC};${API_JVM_SRC};${sdk_src}"
 		"${sdk_include_dir};${CMAKE_CURRENT_LIST_DIR};${CMAKE_CURRENT_LIST_DIR}/accessor;${CMAKE_CURRENT_LIST_DIR}/runtime;${Boost_INCLUDE_DIRS};${JNI_INCLUDE_DIRS};"
-		"Boost::filesystem;${JNI_LIBRARIES}"
+		"Boost::filesystem"
 		"sdk/api/jvm")
 
 set(metaffi.api.accessor metaffi.api.accessor PARENT_SCOPE)

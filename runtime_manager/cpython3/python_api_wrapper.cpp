@@ -208,6 +208,12 @@ PyObject* pPyExc_ValueError = nullptr;
 PyObject* pPyProperty_Type = nullptr;
 PyObject* pPyTuple_Type = nullptr;
 PyObject* pPy_None = nullptr;
+PyObject* pPy_True = nullptr;
+PyObject* pPy_False = nullptr;
+
+PyObject_Str_t pPyObject_Str = nullptr;
+PyCapsule_New_t pPyCapsule_New = nullptr;
+PyCapsule_GetPointer_t pPyCapsule_GetPointer = nullptr;
 
 #ifdef _WIN32
 static HMODULE python_lib_handle = nullptr;
@@ -512,14 +518,10 @@ std::vector<std::string> detect_installed_python3()
 	return detected_versions;
 }
 
-// Load Python API for a specific version
-bool load_python3_api(const std::string& version)
+// Helper function to load all Python API symbols from the library handle
+// Assumes python_lib_handle is already set
+static void load_all_python_symbols()
 {
-	if(!try_load_python_library(version))
-	{
-		throw std::runtime_error("Failed to load Python library for version " + version);
-	}
-
 #ifdef _WIN32
 #define LOAD_SYMBOL(handle, symbol, type)                                    \
 	p##symbol = (type)GetProcAddress(handle, #symbol);                   \
@@ -712,6 +714,10 @@ bool load_python3_api(const std::string& version)
 	LOAD_SYMBOL(python_lib_handle, PyUnicode_AsUTF8String, PyUnicode_AsUTF8String_t);
 
 	LOAD_SYMBOL(python_lib_handle, PyObject_IsInstance, PyObject_IsInstance_t);
+	LOAD_SYMBOL(python_lib_handle, PyObject_Str, PyObject_Str_t);
+
+	LOAD_SYMBOL(python_lib_handle, PyCapsule_New, PyCapsule_New_t);
+	LOAD_SYMBOL(python_lib_handle, PyCapsule_GetPointer, PyCapsule_GetPointer_t);
 
 	LOAD_SYMBOL(python_lib_handle, PyInterpreterState_Get, PyInterpreterState_Get_t);
 
@@ -737,11 +743,161 @@ bool load_python3_api(const std::string& version)
 		std::string err = GetLastErrorAsString();
 		throw std::runtime_error(std::string("Failed to load ") + "_Py_NoneStruct" + (err.empty() ? "" : ": " + err));
 	}
-#else
-	// On non-Windows, load variables from interpreter after initialization
-	// This will be called after Py_Initialize
+
+	pPy_True = (PyObject*)GetProcAddress(python_lib_handle, "_Py_TrueStruct");
+	if(!pPy_True)
+	{
+		std::string err = GetLastErrorAsString();
+		throw std::runtime_error(std::string("Failed to load ") + "_Py_TrueStruct" + (err.empty() ? "" : ": " + err));
+	}
+
+	pPy_False = (PyObject*)GetProcAddress(python_lib_handle, "_Py_FalseStruct");
+	if(!pPy_False)
+	{
+		std::string err = GetLastErrorAsString();
+		throw std::runtime_error(std::string("Failed to load ") + "_Py_FalseStruct" + (err.empty() ? "" : ": " + err));
+	}
 #endif
+
 #undef LOAD_SYMBOL
+}
+
+// Load Python API for a specific version
+bool load_python3_api(const std::string& version)
+{
+	if(!try_load_python_library(version))
+	{
+		throw std::runtime_error("Failed to load Python library for version " + version);
+	}
+
+	load_all_python_symbols();
+	return true;
+}
+
+// Load Python API from an already-loaded Python library
+// Returns true on success, false if Python is not loaded in the process
+// On success, out_detected_version is set to the detected Python version (e.g., "3.11")
+bool load_python3_api_from_loaded_library(std::string& out_detected_version)
+{
+#ifdef _WIN32
+	// On Windows, find the loaded Python DLL and get its version
+	HMODULE found_handle = nullptr;
+	std::string found_version;
+	
+	// Try version-specific DLLs first (3.8 to 3.13)
+	for(int minor = 8; minor <= 13; minor++)
+	{
+		std::string dll_name = "python3" + std::to_string(minor) + ".dll";
+		HMODULE h = GetModuleHandleA(dll_name.c_str());
+		if(h != nullptr)
+		{
+			found_handle = h;
+			found_version = "3." + std::to_string(minor);
+			break;
+		}
+	}
+	
+	// If not found, try python3.dll and extract version from it
+	if(found_handle == nullptr)
+	{
+		HMODULE h = GetModuleHandleA("python3.dll");
+		if(h != nullptr)
+		{
+			// Get the full path to determine the version
+			char path[MAX_PATH];
+			if(GetModuleFileNameA(h, path, MAX_PATH) != 0)
+			{
+				found_version = get_python_version_from_dll(path);
+				if(!found_version.empty())
+				{
+					found_handle = h;
+				}
+			}
+		}
+	}
+	
+	if(found_handle == nullptr)
+	{
+		return false;
+	}
+	
+	python_lib_handle = found_handle;
+	out_detected_version = found_version;
+	
+#else
+	// On Linux/macOS, first try RTLD_DEFAULT (Python loaded with RTLD_GLOBAL)
+	void* test_symbol = dlsym(RTLD_DEFAULT, "Py_IsInitialized");
+	if(test_symbol)
+	{
+		python_lib_handle = RTLD_DEFAULT;
+	}
+	else
+	{
+		// Try to find the library using dl_iterate_phdr
+		void* found_handle = nullptr;
+		
+		dl_iterate_phdr([](struct dl_phdr_info* info, size_t size, void* data) -> int {
+			if(info->dlpi_name && strstr(info->dlpi_name, "libpython"))
+			{
+				void** handle = static_cast<void**>(data);
+				*handle = dlopen(info->dlpi_name, RTLD_NOLOAD | RTLD_NOW);
+				if(*handle)
+				{
+					return 1;  // Stop iteration
+				}
+			}
+			return 0;  // Continue iteration
+		}, &found_handle);
+		
+		if(found_handle == nullptr)
+		{
+			return false;
+		}
+		
+		python_lib_handle = found_handle;
+	}
+	
+	// Detect version by querying Py_GetVersion after loading symbols
+	// We'll set a placeholder version first, then detect it properly
+	out_detected_version = "unknown";
+#endif
+
+	// Load all the API function pointers
+	load_all_python_symbols();
+
+#ifndef _WIN32
+	// On non-Windows, we need to detect the version from the running Python
+	// Since Python is already initialized, we can query it via Py_GetVersion
+	typedef const char* (*Py_GetVersion_t)(void);
+	Py_GetVersion_t pPy_GetVersion = (Py_GetVersion_t)dlsym(python_lib_handle, "Py_GetVersion");
+	if(pPy_GetVersion)
+	{
+		const char* version_str = pPy_GetVersion();
+		if(version_str)
+		{
+			// Version string is like "3.11.0 (main, ...)" - extract "3.11"
+			std::string ver(version_str);
+			size_t first_dot = ver.find('.');
+			if(first_dot != std::string::npos)
+			{
+				size_t second_dot = ver.find('.', first_dot + 1);
+				if(second_dot != std::string::npos)
+				{
+					out_detected_version = ver.substr(0, second_dot);
+				}
+				else
+				{
+					// Find space after minor version
+					size_t space = ver.find(' ', first_dot + 1);
+					if(space != std::string::npos)
+					{
+						out_detected_version = ver.substr(0, space);
+					}
+				}
+			}
+		}
+	}
+#endif
 
 	return true;
 }
@@ -769,7 +925,9 @@ type_dict = {
     'PyExc_ValueError': ValueError,
     'PyProperty_Type': property,
     'PyTuple_Type': tuple,
-    'Py_None': None
+    'Py_None': None,
+    'Py_True': True,
+    'Py_False': False
 }
 
 # Store in sys module for access from C
@@ -822,6 +980,8 @@ sys.type_dict = type_dict
 	pPyProperty_Type = get_type("PyProperty_Type");
 	pPyTuple_Type = get_type("PyTuple_Type");
 	pPy_None = get_type("Py_None");
+	pPy_True = get_type("Py_True");
+	pPy_False = get_type("Py_False");
 	
 	// Clean up the temporary dictionary from sys module
 	if (pPyRun_SimpleString("del sys.type_dict") != 0) {

@@ -1,5 +1,7 @@
 #include "entity.h"
 #include "python_api_wrapper.h"
+#include "gil_guard.h"
+#include <utils/scope_guard.hpp>
 #include <sstream>
 #include <mutex>
 #include <algorithm>
@@ -8,16 +10,10 @@
 
 namespace
 {
-	class GilGuard
+	bool is_python_runtime_active()
 	{
-	public:
-		GilGuard(): state_(pPyGILState_Ensure()) {}
-		~GilGuard() { pPyGILState_Release(state_); }
-		GilGuard(const GilGuard&) = delete;
-		GilGuard& operator=(const GilGuard&) = delete;
-	private:
-		PyGILState_STATE state_;
-	};
+		return pPy_IsInitialized && pPy_IsInitialized() && pPyGILState_Ensure && pPyGILState_Release;
+	}
 
 	void organize_arguments(PyObject* params_tuple,
 	                        PyObject*& out_params_tuple,
@@ -154,8 +150,14 @@ namespace
 		}
 	}
 
-	void decref_types(std::vector<PyObject*>& types)
+	void decref_types(std::vector<PyObject*>& types, bool allow_python_calls)
 	{
+		if(!allow_python_calls)
+		{
+			types.clear();
+			return;
+		}
+
 		for(auto* type_obj : types)
 		{
 			Py_XDECREF(type_obj);
@@ -184,13 +186,28 @@ CallableEntity::CallableEntity(PyObject* py_callable,
 CallableEntity::~CallableEntity()
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
+	const bool can_call_python = is_python_runtime_active();
+	PyGILState_STATE gil_state{};
+	auto gil_release = metaffi::utils::scope_guard([&]() {
+		if(can_call_python)
+		{
+			pPyGILState_Release(gil_state);
+		}
+	});
+	if(can_call_python)
+	{
+		gil_state = pPyGILState_Ensure();
+	}
 	if(m_pyCallable)
 	{
-		Py_DECREF(m_pyCallable);
+		if(can_call_python)
+		{
+			Py_DECREF(m_pyCallable);
+		}
 		m_pyCallable = nullptr;
 	}
-	decref_types(m_paramsTypes);
-	decref_types(m_retvalTypes);
+	decref_types(m_paramsTypes, can_call_python);
+	decref_types(m_retvalTypes, can_call_python);
 }
 
 CallableEntity::CallableEntity(const CallableEntity& other)
@@ -223,12 +240,27 @@ CallableEntity& CallableEntity::operator=(const CallableEntity& other)
 		std::unique_lock<std::mutex> lock2(other.m_mutex, std::defer_lock);
 		std::lock(lock1, lock2);
 		
+		const bool can_call_python = is_python_runtime_active();
+		PyGILState_STATE gil_state{};
+		auto gil_release = metaffi::utils::scope_guard([&]() {
+			if(can_call_python)
+			{
+				pPyGILState_Release(gil_state);
+			}
+		});
+		if(can_call_python)
+		{
+			gil_state = pPyGILState_Ensure();
+		}
 		if(m_pyCallable)
 		{
-			Py_DECREF(m_pyCallable);
+			if(can_call_python)
+			{
+				Py_DECREF(m_pyCallable);
+			}
 		}
-		decref_types(m_paramsTypes);
-		decref_types(m_retvalTypes);
+		decref_types(m_paramsTypes, can_call_python);
+		decref_types(m_retvalTypes, can_call_python);
 		
 		m_pyCallable = other.m_pyCallable;
 		if(m_pyCallable)
@@ -252,12 +284,27 @@ CallableEntity& CallableEntity::operator=(CallableEntity&& other) noexcept
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		
+		const bool can_call_python = is_python_runtime_active();
+		PyGILState_STATE gil_state{};
+		auto gil_release = metaffi::utils::scope_guard([&]() {
+			if(can_call_python)
+			{
+				pPyGILState_Release(gil_state);
+			}
+		});
+		if(can_call_python)
+		{
+			gil_state = pPyGILState_Ensure();
+		}
 		if(m_pyCallable)
 		{
-			Py_DECREF(m_pyCallable);
+			if(can_call_python)
+			{
+				Py_DECREF(m_pyCallable);
+			}
 		}
-		decref_types(m_paramsTypes);
-		decref_types(m_retvalTypes);
+		decref_types(m_paramsTypes, can_call_python);
+		decref_types(m_retvalTypes, can_call_python);
 		
 		m_pyCallable = other.m_pyCallable;
 		other.m_pyCallable = nullptr;
@@ -328,7 +375,7 @@ PyObject* CallableEntity::call(PyObject* args_tuple)
 		throw std::runtime_error("Arguments object must be a tuple");
 	}
 
-	GilGuard gil_guard;
+	gil_guard guard;
 
 	if(!pPyCallable_Check(m_pyCallable))
 	{
@@ -466,13 +513,28 @@ VariableEntity::VariableEntity(PyObject* attribute_holder, const std::string& at
 VariableEntity::~VariableEntity()
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
+	const bool can_call_python = is_python_runtime_active();
+	PyGILState_STATE gil_state{};
+	auto gil_release = metaffi::utils::scope_guard([&]() {
+		if(can_call_python)
+		{
+			pPyGILState_Release(gil_state);
+		}
+	});
+	if(can_call_python)
+	{
+		gil_state = pPyGILState_Ensure();
+	}
 	if(m_attributeHolder)
 	{
-		Py_DECREF(m_attributeHolder);
+		if(can_call_python)
+		{
+			Py_DECREF(m_attributeHolder);
+		}
 		m_attributeHolder = nullptr;
 	}
-	decref_types(m_paramsTypes);
-	decref_types(m_retvalTypes);
+	decref_types(m_paramsTypes, can_call_python);
+	decref_types(m_retvalTypes, can_call_python);
 }
 
 VariableEntity::VariableEntity(const VariableEntity& other)
@@ -508,12 +570,27 @@ VariableEntity& VariableEntity::operator=(const VariableEntity& other)
 		std::unique_lock<std::mutex> lock2(other.m_mutex, std::defer_lock);
 		std::lock(lock1, lock2);
 		
+		const bool can_call_python = is_python_runtime_active();
+		PyGILState_STATE gil_state{};
+		auto gil_release = metaffi::utils::scope_guard([&]() {
+			if(can_call_python)
+			{
+				pPyGILState_Release(gil_state);
+			}
+		});
+		if(can_call_python)
+		{
+			gil_state = pPyGILState_Ensure();
+		}
 		if(m_attributeHolder)
 		{
-			Py_DECREF(m_attributeHolder);
+			if(can_call_python)
+			{
+				Py_DECREF(m_attributeHolder);
+			}
 		}
-		decref_types(m_paramsTypes);
-		decref_types(m_retvalTypes);
+		decref_types(m_paramsTypes, can_call_python);
+		decref_types(m_retvalTypes, can_call_python);
 		
 		m_attributeHolder = other.m_attributeHolder;
 		if(m_attributeHolder)
@@ -536,12 +613,27 @@ VariableEntity& VariableEntity::operator=(VariableEntity&& other) noexcept
 	{
 		std::lock_guard<std::mutex> lock(m_mutex);
 		
+		const bool can_call_python = is_python_runtime_active();
+		PyGILState_STATE gil_state{};
+		auto gil_release = metaffi::utils::scope_guard([&]() {
+			if(can_call_python)
+			{
+				pPyGILState_Release(gil_state);
+			}
+		});
+		if(can_call_python)
+		{
+			gil_state = pPyGILState_Ensure();
+		}
 		if(m_attributeHolder)
 		{
-			Py_DECREF(m_attributeHolder);
+			if(can_call_python)
+			{
+				Py_DECREF(m_attributeHolder);
+			}
 		}
-		decref_types(m_paramsTypes);
-		decref_types(m_retvalTypes);
+		decref_types(m_paramsTypes, can_call_python);
+		decref_types(m_retvalTypes, can_call_python);
 		
 		m_attributeHolder = other.m_attributeHolder;
 		other.m_attributeHolder = nullptr;
@@ -661,7 +753,7 @@ PyObject* PythonGlobalGetter::get()
 		throw std::runtime_error("Attribute holder is null for global getter: " + m_attributeName);
 	}
 	
-	GilGuard gil_guard;
+	gil_guard guard;
 	
 	PyObject* value = pPyObject_GetAttrString(m_attributeHolder, m_attributeName.c_str());
 	if(!value)
@@ -720,7 +812,7 @@ void PythonGlobalSetter::set(PyObject* value)
 		throw std::runtime_error("Value is null for global setter: " + m_attributeName);
 	}
 
-	GilGuard gil_guard;
+	gil_guard guard;
 
 	if(pPyObject_SetAttrString(m_attributeHolder, m_attributeName.c_str(), value) != 0)
 	{
@@ -761,7 +853,7 @@ PyObject* PythonFieldGetter::get()
 		throw std::runtime_error("Attribute holder is null for field getter: " + m_attributeName);
 	}
 	
-	GilGuard gil_guard;
+	gil_guard guard;
 	
 	PyObject* value = pPyObject_GetAttrString(m_attributeHolder, m_attributeName.c_str());
 	if(!value)
@@ -820,7 +912,7 @@ void PythonFieldSetter::set(PyObject* value)
 		throw std::runtime_error("Value is null for field setter: " + m_attributeName);
 	}
 
-	GilGuard gil_guard;
+	gil_guard guard;
 
 	if(pPyObject_SetAttrString(m_attributeHolder, m_attributeName.c_str(), value) != 0)
 	{

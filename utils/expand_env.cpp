@@ -1,4 +1,5 @@
 #include "expand_env.h"
+#include "env_utils.h"
 #include <boost/algorithm/string.hpp>
 #include <regex>
 #include <algorithm>
@@ -50,8 +51,8 @@ std::string expand_env(const std::string& str)
 		}
 		else
 		{
-			const char* tmp = std::getenv(env_var_name.c_str());
-			if(tmp)
+			std::string tmp = get_env_var(env_var_name.c_str());
+			if(!tmp.empty())
 			{
 				boost::algorithm::replace_all(res, m.str(), tmp);
 			}

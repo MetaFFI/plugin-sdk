@@ -1,6 +1,7 @@
 #include "jchar_wrapper.h"
 #include "runtime/metaffi_primitives.h"
 #include "exception_macro.h"
+#include "jni_size_utils.h"
 
 
 jchar_wrapper::jchar_wrapper(JNIEnv* env, metaffi_char8 c8) : env(env)
@@ -62,7 +63,7 @@ jchar_wrapper::operator metaffi_char32() const
 
 jcharArray jchar_wrapper::new_1d_array(JNIEnv* env, const char8_t* s, metaffi_size length)
 {
-	jcharArray array = env->NewCharArray(static_cast<jsize>(length));
+	jcharArray array = env->NewCharArray(to_jsize(length));
 	jchar* elements = env->GetCharArrayElements(array, nullptr);
 	for(size_t i = 0; i < std::char_traits<char8_t>::length(s); ++i)
 	{
@@ -74,7 +75,7 @@ jcharArray jchar_wrapper::new_1d_array(JNIEnv* env, const char8_t* s, metaffi_si
 
 jcharArray jchar_wrapper::new_1d_array(JNIEnv* env, const char16_t* s, metaffi_size length)
 {
-	jcharArray array = env->NewCharArray(static_cast<jsize>(length));
+	jcharArray array = env->NewCharArray(to_jsize(length));
 	jchar* elements = env->GetCharArrayElements(array, nullptr);
 	for(size_t i = 0; i < std::char_traits<char16_t>::length(s); ++i)
 	{
@@ -87,7 +88,7 @@ jcharArray jchar_wrapper::new_1d_array(JNIEnv* env, const char16_t* s, metaffi_s
 jcharArray jchar_wrapper::new_1d_array(JNIEnv* env, const char32_t* s, metaffi_size length)
 {
 	std::u16string u16(reinterpret_cast<const char16_t*>(s), length);
-	jcharArray array = env->NewCharArray(static_cast<jsize>(u16.length()));
+	jcharArray array = env->NewCharArray(to_jsize(u16.length()));
 	jchar* elements = env->GetCharArrayElements(array, nullptr);
 	for(size_t i = 0; i < u16.length(); ++i)
 	{
@@ -104,5 +105,4 @@ jchar_wrapper::jchar_wrapper(JNIEnv* env, jobject obj)
 	value = env->CallCharMethod(obj, charValue);
 	check_and_throw_jvm_exception(env, true);
 }
-
 

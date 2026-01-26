@@ -1,4 +1,14 @@
 #include "cdts_python3_serializer.h"
+#include <runtime_manager/cpython3/runtime_manager.h>
+#include <runtime_manager/cpython3/py_utils.h>
+#include <runtime_manager/cpython3/py_int.h>
+#include <runtime_manager/cpython3/py_float.h>
+#include <runtime_manager/cpython3/py_bool.h>
+#include <runtime_manager/cpython3/py_str.h>
+#include <runtime_manager/cpython3/py_bytes.h>
+#include <runtime_manager/cpython3/py_list.h>
+#include <runtime_manager/cpython3/py_tuple.h>
+#include <runtime_manager/cpython3/py_object.h>
 #include <runtime/xllr_capi_loader.h>
 #include <sstream>
 #include <cstring>
@@ -10,25 +20,25 @@ namespace metaffi::utils
 // CORE INFRASTRUCTURE
 // ============================================================================
 
-// Helper function to extract Python error message
+// Helper function to extract Python error message (uses dynamically loaded API)
 static std::string get_python_error_message()
 {
-	if(!PyErr_Occurred())
+	if(!pPyErr_Occurred())
 	{
 		return "Unknown Python error";
 	}
 
 	PyObject *ptype, *pvalue, *ptraceback;
-	PyErr_Fetch(&ptype, &pvalue, &ptraceback);
+	pPyErr_Fetch(&ptype, &pvalue, &ptraceback);
 
 	std::ostringstream oss;
 	
 	if(pvalue)
 	{
-		PyObject* str_obj = PyObject_Str(pvalue);
+		PyObject* str_obj = pPyObject_Str(pvalue);
 		if(str_obj)
 		{
-			const char* error_str = PyUnicode_AsUTF8(str_obj);
+			const char* error_str = pPyUnicode_AsUTF8(str_obj);
 			if(error_str)
 			{
 				oss << error_str;
@@ -39,10 +49,10 @@ static std::string get_python_error_message()
 
 	if(ptype)
 	{
-		PyObject* type_str = PyObject_Str(ptype);
+		PyObject* type_str = pPyObject_Str(ptype);
 		if(type_str)
 		{
-			const char* type_name = PyUnicode_AsUTF8(type_str);
+			const char* type_name = pPyUnicode_AsUTF8(type_str);
 			if(type_name && oss.str().empty())
 			{
 				oss << type_name;
@@ -60,10 +70,10 @@ static std::string get_python_error_message()
 	return result.empty() ? "Unknown Python error" : result;
 }
 
-cdts_python3_serializer::cdts_python3_serializer(cdts& pcdts)
-	: data(pcdts), current_index(0)
+cdts_python3_serializer::cdts_python3_serializer(cpython3_runtime_manager& runtime, cdts& pcdts)
+	: m_runtime(runtime), data(pcdts), current_index(0)
 {
-	// Constructor - CDTS reference stored, index initialized to 0
+	// Constructor - runtime and CDTS references stored, index initialized to 0
 }
 
 void cdts_python3_serializer::reset()
@@ -120,7 +130,7 @@ bool cdts_python3_serializer::is_null() const
 
 cdts_python3_serializer& cdts_python3_serializer::add(PyObject* obj, metaffi_type target_type)
 {
-	gil_scoped_acquire gil;
+	auto gil = m_runtime.acquire_gil();
 
 	check_bounds(current_index);
 
@@ -209,7 +219,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 	}
 
 	// Handle None (null) - ignore target_type
-	if(obj == Py_None)
+	if(obj == pPy_None)
 	{
 		target.type = metaffi_null_type;
 		target.free_required = false;
@@ -217,19 +227,19 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 	}
 
 	// Handle bool (must check before int, as bool is subclass of int) - ignore target_type
-	if(PyBool_Check(obj))
+	if(py_bool::check(obj))
 	{
 		target.type = metaffi_bool_type;
-		target.cdt_val.bool_val = (obj == Py_True) ? 1 : 0;
+		target.cdt_val.bool_val = (obj == pPy_True) ? 1 : 0;
 		target.free_required = false;
 		return;
 	}
 
 	// Handle int with explicit type
-	if(PyLong_Check(obj))
+	if(py_int::check(obj))
 	{
-		long long value = PyLong_AsLongLong(obj);
-		if(value == -1 && PyErr_Occurred())
+		long long value = pPyLong_AsLongLong(obj);
+		if(value == -1 && pPyErr_Occurred())
 		{
 			std::string error_msg = get_python_error_message();
 			throw std::runtime_error("Failed to convert Python int to long long: " + error_msg);
@@ -279,10 +289,10 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 	}
 
 	// Handle float with explicit type
-	if(PyFloat_Check(obj))
+	if(py_float::check(obj))
 	{
-		double value = PyFloat_AsDouble(obj);
-		if(value == -1.0 && PyErr_Occurred())
+		double value = pPyFloat_AsDouble(obj);
+		if(value == -1.0 && pPyErr_Occurred())
 		{
 			std::string error_msg = get_python_error_message();
 			throw std::runtime_error("Failed to convert Python float to double: " + error_msg);
@@ -311,14 +321,14 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 	}
 
 	// Handle string - use target_type to determine encoding
-	if(PyUnicode_Check(obj))
+	if(py_str::check(obj))
 	{
 		switch(target_type)
 		{
 			case metaffi_string8_type:
 			{
 				// Convert to UTF-8
-				PyObject* utf8_bytes = PyUnicode_AsUTF8String(obj);
+				PyObject* utf8_bytes = pPyUnicode_AsUTF8String(obj);
 				if(!utf8_bytes)
 				{
 					std::string error_msg = get_python_error_message();
@@ -327,7 +337,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 
 				Py_ssize_t size;
 				char* str_data;
-				if(PyBytes_AsStringAndSize(utf8_bytes, &str_data, &size) == -1)
+				if(pPyBytes_AsStringAndSize(utf8_bytes, &str_data, &size) == -1)
 				{
 					Py_DECREF(utf8_bytes);
 					std::string error_msg = get_python_error_message();
@@ -367,11 +377,11 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 	}
 
 	// Handle bytes (as uint8 array) - ignore target_type
-	if(PyBytes_Check(obj))
+	if(py_bytes::check(obj))
 	{
 		Py_ssize_t size;
 		char* data;
-		if(PyBytes_AsStringAndSize(obj, &data, &size) == -1)
+		if(pPyBytes_AsStringAndSize(obj, &data, &size) == -1)
 		{
 			std::string error_msg = get_python_error_message();
 			throw std::runtime_error("Failed to get bytes data: " + error_msg);
@@ -393,7 +403,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 	}
 
 	// Handle list/tuple - need element type from target_type
-	if(PyList_Check(obj) || PyTuple_Check(obj))
+	if(py_list::check(obj) || py_tuple::check(obj))
 	{
 		// Extract element type from target_type (if it's an array type)
 		metaffi_type element_type = metaffi_any_type;
@@ -420,13 +430,13 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 	target.cdt_val.handle_val = new cdt_metaffi_handle();
 	target.cdt_val.handle_val->handle = obj;
 	target.cdt_val.handle_val->runtime_id = 0;  // Python runtime ID (0 for now)
-	target.cdt_val.handle_val->release = py_object_releaser;
+	target.cdt_val.handle_val->release = cpython3_runtime_manager::py_object_releaser;
 	target.free_required = true;
 }
 
 PyObject* cdts_python3_serializer::extract_pyobject()
 {
-	gil_scoped_acquire gil;
+	auto gil = m_runtime.acquire_gil();
 
 	check_bounds(current_index);
 
@@ -444,65 +454,65 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 	{
 		case metaffi_null_type:
 		{
-			Py_INCREF(Py_None);
-			return Py_None;
+			Py_INCREF(pPy_None);
+			return pPy_None;
 		}
 
 		case metaffi_bool_type:
 		{
-			PyObject* result = source.cdt_val.bool_val ? Py_True : Py_False;
+			PyObject* result = source.cdt_val.bool_val ? pPy_True : pPy_False;
 			Py_INCREF(result);
 			return result;
 		}
 
 		case metaffi_int8_type:
 		{
-			return PyLong_FromLongLong(source.cdt_val.int8_val);
+			return pPyLong_FromLongLong(source.cdt_val.int8_val);
 		}
 
 		case metaffi_int16_type:
 		{
-			return PyLong_FromLongLong(source.cdt_val.int16_val);
+			return pPyLong_FromLongLong(source.cdt_val.int16_val);
 		}
 
 		case metaffi_int32_type:
 		{
-			return PyLong_FromLongLong(source.cdt_val.int32_val);
+			return pPyLong_FromLongLong(source.cdt_val.int32_val);
 		}
 
 		case metaffi_int64_type:
 		{
-			return PyLong_FromLongLong(source.cdt_val.int64_val);
+			return pPyLong_FromLongLong(source.cdt_val.int64_val);
 		}
 
 		case metaffi_uint8_type:
 		{
-			return PyLong_FromUnsignedLongLong(source.cdt_val.uint8_val);
+			return pPyLong_FromUnsignedLongLong(source.cdt_val.uint8_val);
 		}
 
 		case metaffi_uint16_type:
 		{
-			return PyLong_FromUnsignedLongLong(source.cdt_val.uint16_val);
+			return pPyLong_FromUnsignedLongLong(source.cdt_val.uint16_val);
 		}
 
 		case metaffi_uint32_type:
 		{
-			return PyLong_FromUnsignedLongLong(source.cdt_val.uint32_val);
+			return pPyLong_FromUnsignedLongLong(source.cdt_val.uint32_val);
 		}
 
 		case metaffi_uint64_type:
 		{
-			return PyLong_FromUnsignedLongLong(source.cdt_val.uint64_val);
+			return pPyLong_FromUnsignedLongLong(source.cdt_val.uint64_val);
 		}
 
 		case metaffi_float32_type:
 		{
-			return PyFloat_FromDouble(source.cdt_val.float32_val);
+			return pPyFloat_FromDouble(source.cdt_val.float32_val);
 		}
 
 		case metaffi_float64_type:
 		{
-			return PyFloat_FromDouble(source.cdt_val.float64_val);
+			return pPyFloat_FromDouble(source.cdt_val.float64_val);
 		}
 
 		case metaffi_string8_type:
@@ -510,9 +520,9 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 			if(!source.cdt_val.string8_val)
 			{
 				// Empty string
-				return PyUnicode_FromString("");
+				return pPyUnicode_FromString("");
 			}
-			return PyUnicode_FromString((const char*)source.cdt_val.string8_val);
+			return pPyUnicode_FromString((const char*)source.cdt_val.string8_val);
 		}
 
 		case metaffi_string16_type:
@@ -520,7 +530,7 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 			if(!source.cdt_val.string16_val)
 			{
 				// Empty string
-				return PyUnicode_New(0, 127);
+				return pPyUnicode_FromString("");
 			}
 
 			// Count UTF-16 code units (find null terminator)
@@ -530,7 +540,7 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 				length++;
 			}
 
-			return PyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND,
+			return pPyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND,
 			                                 source.cdt_val.string16_val,
 			                                 length);
 		}
@@ -540,7 +550,7 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 			if(!source.cdt_val.string32_val)
 			{
 				// Empty string
-				return PyUnicode_New(0, 127);
+				return pPyUnicode_FromString("");
 			}
 
 			// Count UTF-32 code units (find null terminator)
@@ -550,7 +560,7 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 				length++;
 			}
 
-			return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+			return pPyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
 			                                 source.cdt_val.string32_val,
 			                                 length);
 		}
@@ -563,7 +573,7 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 				if(!source.cdt_val.array_val)
 				{
 					// Empty array
-					return PyList_New(0);
+					return pPyList_New(0);
 				}
 
 				return cdt_array_to_pylist(*source.cdt_val.array_val);
@@ -574,8 +584,8 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 				if(!source.cdt_val.handle_val || !source.cdt_val.handle_val->handle)
 				{
 					// Null handle
-					Py_INCREF(Py_None);
-					return Py_None;
+					Py_INCREF(pPy_None);
+					return pPy_None;
 				}
 
 				PyObject* obj = static_cast<PyObject*>(source.cdt_val.handle_val->handle);
@@ -589,14 +599,14 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 				// They're typically kept as opaque handles for cross-language calls
 				if(!source.cdt_val.callable_val)
 				{
-					Py_INCREF(Py_None);
-					return Py_None;
+					Py_INCREF(pPy_None);
+					return pPy_None;
 				}
 
 				// Return the function pointer wrapped as a Python capsule
 				// This allows Python to hold the callable without calling it
 				void* func_ptr = source.cdt_val.callable_val->val;
-				PyObject* capsule = PyCapsule_New(func_ptr, "metaffi.callable", nullptr);
+				PyObject* capsule = pPyCapsule_New(func_ptr, "metaffi.callable", nullptr);
 				return capsule;  // New reference
 			}
 			else
@@ -611,10 +621,10 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 
 PyObject* cdts_python3_serializer::extract_as_tuple()
 {
-	gil_scoped_acquire gil;
+	auto gil = m_runtime.acquire_gil();
 
 	metaffi_size remaining = data.length - current_index;
-	PyObject* tuple = PyTuple_New(remaining);
+	PyObject* tuple = pPyTuple_New(remaining);
 
 	if(!tuple)
 	{
@@ -626,7 +636,7 @@ PyObject* cdts_python3_serializer::extract_as_tuple()
 		for(metaffi_size i = 0; i < remaining; i++)
 		{
 			PyObject* item = cdt_to_pyobject(data[current_index + i]);
-			PyTuple_SetItem(tuple, i, item);  // Steals reference to item
+			pPyTuple_SetItem(tuple, i, item);  // Steals reference to item
 		}
 
 		current_index = data.length;  // Mark all extracted
@@ -646,12 +656,12 @@ PyObject* cdts_python3_serializer::extract_as_tuple()
 // Helper: Detect array dimensions from nested lists
 static Py_ssize_t detect_dimensions(PyObject* list)
 {
-	if(!PyList_Check(list) && !PyTuple_Check(list))
+	if(!py_list::check(list) && !py_tuple::check(list))
 	{
 		return 0;  // Not an array
 	}
 
-	Py_ssize_t len = PyList_Check(list) ? PyList_Size(list) : PyTuple_Size(list);
+	Py_ssize_t len = py_list::check(list) ? pPyList_Size(list) : pPyTuple_Size(list);
 
 	if(len == 0)
 	{
@@ -659,10 +669,10 @@ static Py_ssize_t detect_dimensions(PyObject* list)
 	}
 
 	// Get first element to check if nested
-	PyObject* first = PyList_Check(list) ? PyList_GetItem(list, 0) : PyTuple_GetItem(list, 0);
+	PyObject* first = py_list::check(list) ? pPyList_GetItem(list, 0) : pPyTuple_GetItem(list, 0);
 
 	// Check if first element is a nested list (multi-dimensional array)
-	if(PyList_Check(first) || PyTuple_Check(first))
+	if(py_list::check(first) || py_tuple::check(first))
 	{
 		// Nested array - recurse
 		return 1 + detect_dimensions(first);
@@ -676,12 +686,12 @@ void cdts_python3_serializer::pylist_to_cdt_array(PyObject* list, cdt& target, m
 {
 	// GIL assumed to be held
 
-	if(!PyList_Check(list) && !PyTuple_Check(list))
+	if(!py_list::check(list) && !py_tuple::check(list))
 	{
 		throw std::runtime_error("pylist_to_cdt_array: not a list or tuple");
 	}
 
-	Py_ssize_t len = PyList_Check(list) ? PyList_Size(list) : PyTuple_Size(list);
+	Py_ssize_t len = py_list::check(list) ? pPyList_Size(list) : pPyTuple_Size(list);
 
 	if(len == 0)
 	{
@@ -700,7 +710,7 @@ void cdts_python3_serializer::pylist_to_cdt_array(PyObject* list, cdt& target, m
 	// Fill array elements
 	for(Py_ssize_t i = 0; i < len; i++)
 	{
-		PyObject* item = PyList_Check(list) ? PyList_GetItem(list, i) : PyTuple_GetItem(list, i);
+		PyObject* item = py_list::check(list) ? pPyList_GetItem(list, i) : pPyTuple_GetItem(list, i);
 		pyobject_to_cdt(item, arr[i], element_type);
 	}
 }
@@ -709,7 +719,7 @@ PyObject* cdts_python3_serializer::cdt_array_to_pylist(const cdts& arr)
 {
 	// GIL assumed to be held
 
-	PyObject* list = PyList_New(arr.length);
+	PyObject* list = pPyList_New(arr.length);
 	if(!list)
 	{
 		throw std::runtime_error("Failed to create Python list");
@@ -720,7 +730,7 @@ PyObject* cdts_python3_serializer::cdt_array_to_pylist(const cdts& arr)
 		for(metaffi_size i = 0; i < arr.length; i++)
 		{
 			PyObject* item = cdt_to_pyobject(arr[i]);
-			PyList_SetItem(list, i, item);  // Steals reference
+			pPyList_SetItem(list, i, item);  // Steals reference
 		}
 
 		return list;  // New reference
@@ -729,20 +739,6 @@ PyObject* cdts_python3_serializer::cdt_array_to_pylist(const cdts& arr)
 	{
 		Py_DECREF(list);
 		throw;
-	}
-}
-
-// ============================================================================
-// HANDLE SUPPORT
-// ============================================================================
-
-void cdts_python3_serializer::py_object_releaser(cdt_metaffi_handle* handle)
-{
-	if(handle && handle->handle)
-	{
-		PyGILState_STATE gstate = PyGILState_Ensure();
-		Py_DECREF(static_cast<PyObject*>(handle->handle));
-		PyGILState_Release(gstate);
 	}
 }
 

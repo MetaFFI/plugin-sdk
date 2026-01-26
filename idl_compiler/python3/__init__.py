@@ -9,7 +9,7 @@ __author__ = "MetaFFI"
 
 from .extractor import PythonExtractor, SourceType
 from .idl_generator import IDLGenerator
-from .type_mapper import TypeMapper
+from ...idl_entities.python3.type_mapper import TypeMapper
 from .entity_path import EntityPathGenerator
 
 __all__ = [

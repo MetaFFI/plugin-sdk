@@ -2,9 +2,12 @@
 
 #include <runtime/cdt.h>
 #include <runtime/metaffi_primitives.h>
-#include <Python.h>
+#include <runtime_manager/cpython3/python_api_wrapper.h>
 #include <stdexcept>
 #include <string>
+
+// Forward declaration
+class cpython3_runtime_manager;
 
 namespace metaffi::utils
 {
@@ -24,42 +27,26 @@ namespace metaffi::utils
  * Memory Management:
  * - Uses XLLR allocation for CDTS (xllr_alloc_string*, xllr_alloc_cdt_array)
  * - Returns new Python references (caller must DECREF)
- * - Manages GIL automatically via RAII
+ * - Manages GIL automatically via runtime_manager
  *
  * Thread Safety:
- * - Acquires GIL in all public methods
+ * - Acquires GIL in all public methods via runtime_manager
  * - Safe to call from any thread
  */
 class cdts_python3_serializer
 {
 private:
-	cdts& data;                    // Reference to CDTS being serialized/deserialized
-	metaffi_size current_index;    // Current position in CDTS
-
-	/**
-	 * @brief RAII wrapper for Python GIL (Global Interpreter Lock)
-	 * Ensures GIL is acquired on construction and released on destruction
-	 */
-	struct gil_scoped_acquire
-	{
-		PyGILState_STATE state;
-
-		gil_scoped_acquire() : state(PyGILState_Ensure()) {}
-		~gil_scoped_acquire() { PyGILState_Release(state); }
-
-		// Non-copyable, non-movable
-		gil_scoped_acquire(const gil_scoped_acquire&) = delete;
-		gil_scoped_acquire& operator=(const gil_scoped_acquire&) = delete;
-		gil_scoped_acquire(gil_scoped_acquire&&) = delete;
-		gil_scoped_acquire& operator=(gil_scoped_acquire&&) = delete;
-	};
+	cpython3_runtime_manager& m_runtime;  // Reference to runtime manager for GIL
+	cdts& data;                           // Reference to CDTS being serialized/deserialized
+	metaffi_size current_index;           // Current position in CDTS
 
 public:
 	/**
-	 * @brief Construct serializer for given CDTS
+	 * @brief Construct serializer for given CDTS with runtime manager
+	 * @param runtime Reference to cpython3_runtime_manager for GIL management
 	 * @param pcdts CDTS reference to serialize/deserialize
 	 */
-	explicit cdts_python3_serializer(cdts& pcdts);
+	cdts_python3_serializer(cpython3_runtime_manager& runtime, cdts& pcdts);
 
 	// ===== SERIALIZATION (Python → CDTS) =====
 
@@ -165,12 +152,10 @@ public:
 	bool has_more() const;
 
 	/**
-	 * @brief Handle releaser callback for Python objects in handles
-	 * @param handle Handle containing PyObject*
-	 *
-	 * This is public so it can be used in tests and when manually creating handles
+	 * @brief Get the runtime manager reference
+	 * @return Reference to the runtime manager
 	 */
-	static void py_object_releaser(cdt_metaffi_handle* handle);
+	cpython3_runtime_manager& get_runtime() { return m_runtime; }
 
 private:
 	// ===== CONVERSION HELPERS =====

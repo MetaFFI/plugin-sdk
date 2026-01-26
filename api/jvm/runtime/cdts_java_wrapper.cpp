@@ -11,6 +11,7 @@
 #include "jni_caller.h"
 #include "jni_class.h"
 #include "jni_metaffi_handle.h"
+#include "jni_size_utils.h"
 #include "jobject_wrapper.h"
 #include "jshort_wrapper.h"
 #include "jstring_wrapper.h"
@@ -48,7 +49,7 @@ DLL_PRIVATE void on_traverse_float64(const metaffi_size* index, metaffi_size ind
 		if(env->IsInstanceOf(obj, env->FindClass("[D")))// if jobject is jdoubleArray
 		{
 			jdoubleArray array = static_cast<jdoubleArray>(obj);
-			env->SetDoubleArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, &val);
+			env->SetDoubleArrayRegion(array, to_jsize(index[index_size - 1]), 1, &val);
 		}
 
 		// if context is a pair of JNIEnv* and jobject, where jobject is jdoubleArray
@@ -60,7 +61,7 @@ DLL_PRIVATE void on_traverse_float64(const metaffi_size* index, metaffi_size ind
 			jclass doubleClass = env->FindClass("java/lang/Double");
 			jmethodID constructor = env->GetMethodID(doubleClass, "<init>", "(D)V");
 			jobject doubleObject = env->NewObject(doubleClass, constructor, val);
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), doubleObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), doubleObject);
 		}
 		else
 		{
@@ -92,7 +93,7 @@ DLL_PRIVATE void on_traverse_float32(const metaffi_size* index, metaffi_size ind
 		if(env->IsInstanceOf(obj, env->FindClass("[F")))// if jobject is jfloatArray
 		{
 			jfloatArray array = static_cast<jfloatArray>(obj);
-			env->SetFloatArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, &val);
+			env->SetFloatArrayRegion(array, to_jsize(index[index_size - 1]), 1, &val);
 		}
 		else if(env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Float;")) ||// if jobject is jobjectArray of Float
 		        env->IsInstanceOf(obj,
@@ -102,7 +103,7 @@ DLL_PRIVATE void on_traverse_float32(const metaffi_size* index, metaffi_size ind
 			jclass floatClass = env->FindClass("java/lang/Float");
 			jmethodID constructor = env->GetMethodID(floatClass, "<init>", "(F)V");
 			jobject floatObject = env->NewObject(floatClass, constructor, val);
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), floatObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), floatObject);
 		}
 		else
 		{
@@ -134,7 +135,7 @@ DLL_PRIVATE void on_traverse_int8(const metaffi_size* index, metaffi_size index_
 		if(env->IsInstanceOf(obj, env->FindClass("[B")))// if jobject is jbyteArray
 		{
 			jbyteArray array = static_cast<jbyteArray>(obj);
-			env->SetByteArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, &val);
+			env->SetByteArrayRegion(array, to_jsize(index[index_size - 1]), 1, &val);
 		}
 		else if(env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Byte;")) ||// if jobject is jobjectArray of Byte
 		        env->IsInstanceOf(obj,
@@ -144,7 +145,7 @@ DLL_PRIVATE void on_traverse_int8(const metaffi_size* index, metaffi_size index_
 			jclass byteClass = env->FindClass("java/lang/Byte");
 			jmethodID constructor = env->GetMethodID(byteClass, "<init>", "(B)V");
 			jobject byteObject = env->NewObject(byteClass, constructor, val);
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), byteObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), byteObject);
 		}
 		else
 		{
@@ -177,7 +178,7 @@ DLL_PRIVATE void on_traverse_uint8(const metaffi_size* index, metaffi_size index
 		{
 			jbyteArray array = static_cast<jbyteArray>(obj);
 			jbyte jval = (jbyte) val;// Cast to signed byte
-			env->SetByteArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, &jval);
+			env->SetByteArrayRegion(array, to_jsize(index[index_size - 1]), 1, &jval);
 		}
 		else if(env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Byte;")) ||// if jobject is jobjectArray of Byte
 		        env->IsInstanceOf(obj,
@@ -187,7 +188,7 @@ DLL_PRIVATE void on_traverse_uint8(const metaffi_size* index, metaffi_size index
 			jclass byteClass = env->FindClass("java/lang/Byte");
 			jmethodID constructor = env->GetMethodID(byteClass, "<init>", "(B)V");
 			jobject byteObject = env->NewObject(byteClass, constructor, (jbyte) val);// Cast to signed byte
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), byteObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), byteObject);
 		}
 		else
 		{
@@ -219,7 +220,7 @@ DLL_PRIVATE void on_traverse_int16(const metaffi_size* index, metaffi_size index
 		if(env->IsInstanceOf(obj, env->FindClass("[S")))// if jobject is jshortArray
 		{
 			jshortArray array = static_cast<jshortArray>(obj);
-			env->SetShortArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, &val);
+			env->SetShortArrayRegion(array, to_jsize(index[index_size - 1]), 1, &val);
 		}
 		else if(env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Short;")) ||// if jobject is jobjectArray of Short
 		        env->IsInstanceOf(obj,
@@ -229,7 +230,7 @@ DLL_PRIVATE void on_traverse_int16(const metaffi_size* index, metaffi_size index
 			jclass shortClass = env->FindClass("java/lang/Short");
 			jmethodID constructor = env->GetMethodID(shortClass, "<init>", "(S)V");
 			jobject shortObject = env->NewObject(shortClass, constructor, val);
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), shortObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), shortObject);
 		}
 		else
 		{
@@ -262,7 +263,7 @@ DLL_PRIVATE void on_traverse_uint16(const metaffi_size* index, metaffi_size inde
 		{
 			jshortArray array = static_cast<jshortArray>(obj);
 			jshort jval = (jshort) val;// Cast to signed short
-			env->SetShortArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, &jval);
+			env->SetShortArrayRegion(array, to_jsize(index[index_size - 1]), 1, &jval);
 		}
 		else if(env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Short;")) ||// if jobject is jobjectArray of Short
 		        env->IsInstanceOf(obj,
@@ -272,7 +273,7 @@ DLL_PRIVATE void on_traverse_uint16(const metaffi_size* index, metaffi_size inde
 			jclass shortClass = env->FindClass("java/lang/Short");
 			jmethodID constructor = env->GetMethodID(shortClass, "<init>", "(S)V");
 			jobject shortObject = env->NewObject(shortClass, constructor, (jshort) val);// Cast to signed short
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), shortObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), shortObject);
 		}
 		else
 		{
@@ -304,7 +305,7 @@ DLL_PRIVATE void on_traverse_int32(const metaffi_size* index, metaffi_size index
 		if(env->IsInstanceOf(obj, env->FindClass("[I")))// if jobject is jintArray
 		{
 			jintArray array = static_cast<jintArray>(obj);
-			env->SetIntArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, (jint*) &val);
+			env->SetIntArrayRegion(array, to_jsize(index[index_size - 1]), 1, (jint*) &val);
 		}
 		else if(env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Integer;")) ||
 		        // if jobject is jobjectArray of Integer
@@ -315,7 +316,7 @@ DLL_PRIVATE void on_traverse_int32(const metaffi_size* index, metaffi_size index
 			jclass integerClass = env->FindClass("java/lang/Integer");
 			jmethodID constructor = env->GetMethodID(integerClass, "<init>", "(I)V");
 			jobject integerObject = env->NewObject(integerClass, constructor, val);
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), integerObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), integerObject);
 		}
 		else
 		{
@@ -348,7 +349,7 @@ DLL_PRIVATE void on_traverse_uint32(const metaffi_size* index, metaffi_size inde
 		{
 			jintArray array = (jintArray) obj;
 			jint jval = (jint) val;// Cast to signed int
-			env->SetIntArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, &jval);
+			env->SetIntArrayRegion(array, to_jsize(index[index_size - 1]), 1, &jval);
 		}
 		else if(env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Integer;")) ||
 		        // if jobject is jobjectArray of Integer
@@ -359,7 +360,7 @@ DLL_PRIVATE void on_traverse_uint32(const metaffi_size* index, metaffi_size inde
 			jclass integerClass = env->FindClass("java/lang/Integer");
 			jmethodID constructor = env->GetMethodID(integerClass, "<init>", "(I)V");
 			jobject integerObject = env->NewObject(integerClass, constructor, (jint) val);// Cast to signed int
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), integerObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), integerObject);
 		}
 		else
 		{
@@ -391,7 +392,7 @@ DLL_PRIVATE void on_traverse_int64(const metaffi_size* index, metaffi_size index
 		if(env->IsInstanceOf(obj, env->FindClass("[J")))// if jobject is jlongArray
 		{
 			jlongArray array = static_cast<jlongArray>(obj);
-			env->SetLongArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, &val);
+			env->SetLongArrayRegion(array, to_jsize(index[index_size - 1]), 1, &val);
 		}
 		else if(env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Long;")) ||// if jobject is jobjectArray of Long
 		        env->IsInstanceOf(obj,
@@ -401,7 +402,7 @@ DLL_PRIVATE void on_traverse_int64(const metaffi_size* index, metaffi_size index
 			jclass longClass = env->FindClass("java/lang/Long");
 			jmethodID constructor = env->GetMethodID(longClass, "<init>", "(J)V");
 			jobject longObject = env->NewObject(longClass, constructor, val);
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), longObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), longObject);
 		}
 		else
 		{
@@ -434,7 +435,7 @@ DLL_PRIVATE void on_traverse_uint64(const metaffi_size* index, metaffi_size inde
 		{
 			auto array = (jlongArray) obj;
 			auto jval = (jlong) val;// Cast to signed long
-			env->SetLongArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, &jval);
+			env->SetLongArrayRegion(array, to_jsize(index[index_size - 1]), 1, &jval);
 		}
 		else if(env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Long;")) ||// if jobject is jobjectArray of Long
 		        env->IsInstanceOf(obj,
@@ -444,7 +445,7 @@ DLL_PRIVATE void on_traverse_uint64(const metaffi_size* index, metaffi_size inde
 			jclass longClass = env->FindClass("java/lang/Long");
 			jmethodID constructor = env->GetMethodID(longClass, "<init>", "(J)V");
 			jobject longObject = env->NewObject(longClass, constructor, (jlong) val);// Cast to signed long
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), longObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), longObject);
 		}
 		else
 		{
@@ -477,7 +478,7 @@ DLL_PRIVATE void on_traverse_bool(const metaffi_size* index, metaffi_size index_
 		{
 			jbooleanArray array = static_cast<jbooleanArray>(obj);
 			jboolean jval = val ? JNI_TRUE : JNI_FALSE;
-			env->SetBooleanArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, &jval);
+			env->SetBooleanArrayRegion(array, to_jsize(index[index_size - 1]), 1, &jval);
 		}
 		else if(env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Boolean;")) ||
 		        // if jobject is jobjectArray of Boolean
@@ -488,7 +489,7 @@ DLL_PRIVATE void on_traverse_bool(const metaffi_size* index, metaffi_size index_
 			jclass booleanClass = env->FindClass("java/lang/Boolean");
 			jmethodID constructor = env->GetMethodID(booleanClass, "<init>", "(Z)V");
 			jobject booleanObject = env->NewObject(booleanClass, constructor, val);
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), booleanObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), booleanObject);
 		}
 		else
 		{
@@ -525,7 +526,7 @@ DLL_PRIVATE void on_traverse_char8(const metaffi_size* index, metaffi_size index
 			jcharArray array = static_cast<jcharArray>(obj);
 			jchar_wrapper wrapper(env, val);
 			jchar jval = static_cast<jchar>(wrapper);
-			env->SetCharArrayRegion(array, static_cast<jsize>(index[index_size - 1]), 1, &jval);
+			env->SetCharArrayRegion(array, to_jsize(index[index_size - 1]), 1, &jval);
 		}
 		else if(env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Character;")) ||
 		        // if jobject is jobjectArray of Character
@@ -538,7 +539,7 @@ DLL_PRIVATE void on_traverse_char8(const metaffi_size* index, metaffi_size index
 			jclass characterClass = env->FindClass("java/lang/Character");
 			jmethodID constructor = env->GetMethodID(characterClass, "<init>", "(C)V");
 			jobject characterObject = env->NewObject(characterClass, constructor, jval);
-			env->SetObjectArrayElement(array, static_cast<jsize>(index[index_size - 1]), characterObject);
+			env->SetObjectArrayElement(array, to_jsize(index[index_size - 1]), characterObject);
 		}
 		else
 		{
@@ -575,7 +576,7 @@ DLL_PRIVATE void on_traverse_string8(const metaffi_size* index, metaffi_size ind
 			jobjectArray jarr = (jobjectArray) obj;
 			jstring_wrapper wrapper(env, val);
 			jstring jstr = static_cast<jstring>(wrapper);
-			env->SetObjectArrayElement(jarr, static_cast<jsize>(index[0]), jstr);
+			env->SetObjectArrayElement(jarr, to_jsize(index[0]), jstr);
 		}
 	}
 }
@@ -604,7 +605,7 @@ DLL_PRIVATE void on_traverse_char16(const metaffi_size* index, metaffi_size inde
 		{
 			jcharArray jarr = (jcharArray) obj;
 			jchar jch = static_cast<jchar>(val.c[0]);
-			env->SetCharArrayRegion(jarr, static_cast<jsize>(index[0]), 1, &jch);
+			env->SetCharArrayRegion(jarr, to_jsize(index[0]), 1, &jch);
 		}
 		else if(env->IsInstanceOf(obj,
 		                          env->FindClass("[Ljava/lang/Character;")))// if jobject is jobjectArray of Character
@@ -613,7 +614,7 @@ DLL_PRIVATE void on_traverse_char16(const metaffi_size* index, metaffi_size inde
 			jclass charClass = env->FindClass("java/lang/Character");
 			jmethodID charConstructor = env->GetMethodID(charClass, "<init>", "(C)V");
 			jobject jcharObj = env->NewObject(charClass, charConstructor, static_cast<jchar>(val.c[0]));
-			env->SetObjectArrayElement(jarr, static_cast<jsize>(index[0]), jcharObj);
+			env->SetObjectArrayElement(jarr, to_jsize(index[0]), jcharObj);
 		}
 	}
 }
@@ -644,7 +645,7 @@ DLL_PRIVATE void on_traverse_string16(const metaffi_size* index, metaffi_size in
 			jobjectArray jarr = (jobjectArray) obj;
 			jstring_wrapper wrapper(env, val);
 			jstring jstr = static_cast<jstring>(wrapper);
-			env->SetObjectArrayElement(jarr, static_cast<jsize>(index[0]), jstr);
+			env->SetObjectArrayElement(jarr, to_jsize(index[0]), jstr);
 		}
 	}
 }
@@ -673,7 +674,7 @@ DLL_PRIVATE void on_traverse_char32(const metaffi_size* index, metaffi_size inde
 		{
 			jcharArray jarr = (jcharArray) obj;
 			jchar jch = static_cast<jchar>(val.c);
-			env->SetCharArrayRegion(jarr, static_cast<jsize>(index[0]), 1, &jch);
+			env->SetCharArrayRegion(jarr, to_jsize(index[0]), 1, &jch);
 		}
 		else if(env->IsInstanceOf(obj,
 		                          env->FindClass("[Ljava/lang/Character;")))// if jobject is jobjectArray of Character
@@ -682,7 +683,7 @@ DLL_PRIVATE void on_traverse_char32(const metaffi_size* index, metaffi_size inde
 			jclass charClass = env->FindClass("java/lang/Character");
 			jmethodID charConstructor = env->GetMethodID(charClass, "<init>", "(C)V");
 			jobject jcharObj = env->NewObject(charClass, charConstructor, static_cast<jchar>(val.c));
-			env->SetObjectArrayElement(jarr, static_cast<jsize>(index[0]), jcharObj);
+			env->SetObjectArrayElement(jarr, to_jsize(index[0]), jcharObj);
 		}
 	}
 }
@@ -713,7 +714,7 @@ DLL_PRIVATE void on_traverse_string32(const metaffi_size* index, metaffi_size in
 			jobjectArray jarr = (jobjectArray) obj;
 			jstring_wrapper wrapper(env, val);
 			jstring jstr = static_cast<jstring>(wrapper);
-			env->SetObjectArrayElement(jarr, static_cast<jsize>(index[0]), jstr);
+			env->SetObjectArrayElement(jarr, to_jsize(index[0]), jstr);
 		}
 	}
 }
@@ -778,7 +779,7 @@ DLL_PRIVATE void on_traverse_handle(const metaffi_size* index, metaffi_size inde
 				jobj = (jobject) val.handle;
 			}
 
-			env->SetObjectArrayElement(jarr, static_cast<jsize>(index[0]), jobj);
+			env->SetObjectArrayElement(jarr, to_jsize(index[0]), jobj);
 		}
 		else
 		{
@@ -849,7 +850,7 @@ DLL_PRIVATE void on_traverse_callable(const metaffi_size* index, metaffi_size in
 		{
 			jobjectArray jarr = (jobjectArray) obj;
 			jobject jobj = pcreate_caller(env, val);
-			env->SetObjectArrayElement(jarr, static_cast<jsize>(index[0]), jobj);
+			env->SetObjectArrayElement(jarr, to_jsize(index[0]), jobj);
 		}
 	}
 }
@@ -874,7 +875,7 @@ DLL_PRIVATE void on_traverse_null(const metaffi_size* index, metaffi_size index_
 		check_and_throw_jvm_exception(env, true);
 		jarray obj = index_size == 1 ? root : (jarray) element.first.l;
 
-		pair->first->SetObjectArrayElement((jobjectArray) obj, static_cast<jsize>(index[0]), nullptr);
+		pair->first->SetObjectArrayElement((jobjectArray) obj, to_jsize(index[0]), nullptr);
 	}
 }
 
@@ -899,7 +900,7 @@ DLL_PRIVATE metaffi_bool on_traverse_array(const metaffi_size* index, metaffi_si
 		}
 
 		jarray_wrapper jarr(env, (jarray) hosting_array, metaffi_array_type);
-		jarr.set(static_cast<jsize>(index[index_size - 1]), new_arr);
+		jarr.set(to_jsize(index[index_size - 1]), new_arr);
 	}
 	else if(!obj)
 	{
@@ -2848,5 +2849,4 @@ cdts_java_wrapper::operator cdts*() const
 	return this->pcdts;
 }
 //--------------------------------------------------------------------
-
 

@@ -432,6 +432,12 @@ struct cdt_metaffi_callable
 		{
 			return false;
 		}
+
+		if(parameters_types == nullptr || other.parameters_types == nullptr ||
+		   retval_types == nullptr || other.retval_types == nullptr)
+		{
+			return parameters_types == other.parameters_types && retval_types == other.retval_types;
+		}
 		
 		for(int i = 0; i < params_types_length; i++)
 		{

@@ -10,6 +10,7 @@
 #include "../runtime/objects_table.h"
 #include "../runtime/cdts_java_wrapper.h"
 #include "../runtime/exception_macro.h"
+#include "../runtime/jni_size_utils.h"
 #include "../runtime/contexts.h"
 
 // JNI to call XLLR from java
@@ -588,7 +589,7 @@ JNIEXPORT jobjectArray JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_cdts_1t
 	try
 	{
 		cdts_java_wrapper wrapper((cdts*)pcdts);
-		jsize jlength = static_cast<jsize>(length);
+		jsize jlength = to_jsize(length);
 		jobjectArray arr = env->NewObjectArray(jlength, env->FindClass("Ljava/lang/Object;"), nullptr);
 		for (jsize i = 0; i < jlength; i++)
 		{
@@ -613,4 +614,3 @@ JNIEXPORT jobjectArray JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_cdts_1t
 	}
 }
 //--------------------------------------------------------------------
-

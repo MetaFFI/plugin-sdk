@@ -2,7 +2,9 @@
 #include "runtime_manager.h"
 #include "entity.h"
 #include "python_api_wrapper.h"
+#include "gil_guard.h"
 #include <utils/entity_path_parser.h>
+#include <utils/scope_guard.hpp>
 #include <filesystem>
 #include <boost/algorithm/string.hpp>
 #include <mutex>
@@ -10,16 +12,10 @@
 
 namespace
 {
-	class GilGuard
+	bool is_python_runtime_active()
 	{
-	public:
-		GilGuard(): state_(pPyGILState_Ensure()) {}
-		~GilGuard() { pPyGILState_Release(state_); }
-		GilGuard(const GilGuard&) = delete;
-		GilGuard& operator=(const GilGuard&) = delete;
-	private:
-		PyGILState_STATE state_;
-	};
+		return pPy_IsInitialized && pPy_IsInitialized() && pPyGILState_Ensure && pPyGILState_Release;
+	}
 }
 
 Module::Module(cpython3_runtime_manager* runtime_manager, const std::string& module_path)
@@ -33,7 +29,19 @@ Module::~Module()
 	std::lock_guard<std::mutex> lock(m_mutex);
 	if(m_pyModule)
 	{
-		Py_DECREF(m_pyModule);
+		const bool can_call_python = is_python_runtime_active();
+		PyGILState_STATE gil_state{};
+		auto gil_release = metaffi::utils::scope_guard([&]() {
+			if(can_call_python)
+			{
+				pPyGILState_Release(gil_state);
+			}
+		});
+		if(can_call_python)
+		{
+			gil_state = pPyGILState_Ensure();
+			Py_DECREF(m_pyModule);
+		}
 		m_pyModule = nullptr;
 	}
 }
@@ -116,7 +124,7 @@ std::shared_ptr<Entity> Module::load_entity(
 	}
 	
 	// Acquire GIL
-	GilGuard gil_guard;
+	gil_guard guard;
 	
 	metaffi::utils::entity_path_parser fp(entity_path);
 		
@@ -272,7 +280,7 @@ void Module::unload()
 
 void Module::load_python_module()
 {
-	GilGuard gil_guard;
+	gil_guard guard;
 	std::filesystem::path p(m_modulePath);
 	
 	// Add module directory to sys.path if it's a file path

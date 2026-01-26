@@ -307,8 +307,10 @@ struct _ts {
     _PyCFrame root_cframe;
 };
 
-// None object
+// Python singletons
 extern PyObject* pPy_None;
+extern PyObject* pPy_True;
+extern PyObject* pPy_False;
 
 // Reference counting macros
 #define Py_INCREF(op) (((PyObject *)(op))->ob_refcnt++)

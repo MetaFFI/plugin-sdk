@@ -7,6 +7,7 @@
 #include <filesystem>
 #include <iostream>
 #include <vector>
+#include <utils/env_utils.h>
 
 namespace fs = std::filesystem;
 
@@ -40,12 +41,10 @@ inline std::shared_ptr<boost::dll::shared_library> load_plugin(const std::string
 {
 	std::cout << "Loading plugin: " << plugin_filename_without_extension << std::endl;
 
-	const char* mhome_env = std::getenv("METAFFI_HOME");
-	if(mhome_env == nullptr){
+	std::string metaffi_home = get_env_var("METAFFI_HOME");
+	if(metaffi_home.empty()){
 		throw std::runtime_error("METAFFI_HOME environment variable is not set");
 	}
-	
-	std::string metaffi_home(mhome_env);
 
 	auto plugin = find_files_recursively(metaffi_home, plugin_filename_without_extension, boost::dll::shared_library::suffix().generic_string());
 	if(plugin.empty())

@@ -10,7 +10,7 @@ import os
 from typing import Dict, List, Any, Optional
 
 from .extractor import ModuleInfo, FunctionInfo, ClassInfo, FieldInfo, ParameterInfo
-from .type_mapper import TypeMapper
+from ...idl_entities.python3.type_mapper import TypeMapper
 from .entity_path import EntityPathGenerator
 
 

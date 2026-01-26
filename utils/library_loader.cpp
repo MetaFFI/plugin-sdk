@@ -1,4 +1,5 @@
 #include "library_loader.h"
+#include "env_utils.h"
 
 namespace metaffi { namespace utils
 {
@@ -7,7 +8,7 @@ std::shared_ptr<boost::dll::shared_library> load_library(const std::string& libr
 	// first try to load from METAFFI_HOME
 	if(load_from_metaffi_home)
 	{
-		std::string metaffi_home = std::getenv("METAFFI_HOME");
+		std::string metaffi_home = get_env_var("METAFFI_HOME");
 		if(metaffi_home.empty()){
 			throw std::runtime_error("METAFFI_HOME environment variable is not set");
 		}

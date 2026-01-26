@@ -1,4 +1,5 @@
 #include "jstring_wrapper.h"
+#include "jni_size_utils.h"
 #include <iostream>
 
 jstring_wrapper::jstring_wrapper(JNIEnv* env, const char8_t* s) : env(env)
@@ -9,7 +10,7 @@ jstring_wrapper::jstring_wrapper(JNIEnv* env, const char8_t* s) : env(env)
 
 jstring_wrapper::jstring_wrapper(JNIEnv* env, const char16_t* s) : env(env)
 {
-	value = env->NewString(reinterpret_cast<const jchar*>(s), (jsize)std::char_traits<char16_t>::length(s));
+	value = env->NewString(reinterpret_cast<const jchar*>(s), to_jsize(std::char_traits<char16_t>::length(s)));
 }
 
 jstring_wrapper::jstring_wrapper(JNIEnv* env, const char32_t* s) : env(env)
@@ -30,7 +31,7 @@ jstring_wrapper::jstring_wrapper(JNIEnv* env, const char32_t* s) : env(env)
 		}
 	}
 	
-	value = env->NewString(reinterpret_cast<const jchar*>(tmp.c_str()), (jsize)tmp.length());
+	value = env->NewString(reinterpret_cast<const jchar*>(tmp.c_str()), to_jsize(tmp.length()));
 }
 
 jstring_wrapper::jstring_wrapper(JNIEnv* env, jstring s) : env(env), value(s) {}
