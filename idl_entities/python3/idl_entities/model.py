@@ -107,6 +107,35 @@ class FunctionDefinition:
     return_values: List[ArgDefinition] = field(default_factory=list)
     overload_index: int = 0
 
+    def entity_path_as_string(self, idl_definition: "IDLDefinition") -> str:
+        """
+        Convert entity_path dict to comma-separated string format.
+        Similar to Go's EntityPathAsString().
+        
+        Args:
+            idl_definition: The IDLDefinition containing metaffi_guest_lib
+            
+        Returns:
+            String in format "key1=value1,key2=value2"
+        """
+        keys = set(self.entity_path.keys())
+        keys.add("metaffi_guest_lib")
+        
+        sorted_keys = sorted(keys)
+        parts = []
+        
+        for k in sorted_keys:
+            v = self.entity_path.get(k)
+            if v is None:
+                if k == "metaffi_guest_lib":
+                    v = idl_definition.metaffi_guest_lib
+                else:
+                    raise ValueError(f"Unexpected key {k}")
+            
+            parts.append(f"{k}={v}")
+        
+        return ",".join(parts)
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "name": self.name,
@@ -135,6 +164,39 @@ class FunctionDefinition:
 class MethodDefinition(FunctionDefinition):
     instance_required: bool = True
 
+    def entity_path_as_string(self, idl_definition: "IDLDefinition", parent_entity_path: Optional[Dict[str, str]] = None) -> str:
+        """
+        Convert entity_path dict to comma-separated string format.
+        Also checks parent class entity_path if provided.
+        
+        Args:
+            idl_definition: The IDLDefinition containing metaffi_guest_lib
+            parent_entity_path: Optional parent class entity_path to merge
+        """
+        keys = set(self.entity_path.keys())
+        if parent_entity_path:
+            keys.update(parent_entity_path.keys())
+        keys.add("metaffi_guest_lib")
+        
+        sorted_keys = sorted(keys)
+        parts = []
+        
+        for k in sorted_keys:
+            v = self.entity_path.get(k)
+            if v is None:
+                # Check parent class entity_path
+                if parent_entity_path:
+                    v = parent_entity_path.get(k)
+                if v is None:
+                    if k == "metaffi_guest_lib":
+                        v = idl_definition.metaffi_guest_lib
+                    else:
+                        raise ValueError(f"Unexpected key {k}")
+            
+            parts.append(f"{k}={v}")
+        
+        return ",".join(parts)
+
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()
         data["instance_required"] = bool(self.instance_required)
@@ -157,6 +219,7 @@ class MethodDefinition(FunctionDefinition):
 
 @dataclass
 class ConstructorDefinition(FunctionDefinition):
+    # Inherits entity_path_as_string from FunctionDefinition
     pass
 
 
@@ -169,6 +232,25 @@ class ReleaseDefinition(MethodDefinition):
 class FieldDefinition(ArgDefinition):
     getter: Optional[MethodDefinition] = None
     setter: Optional[MethodDefinition] = None
+
+    def entity_path_as_string(self, idl_definition: "IDLDefinition", use_getter: bool = True) -> str:
+        """
+        Convert entity_path dict to comma-separated string format.
+        Uses getter's or setter's entity_path_as_string.
+        
+        Args:
+            idl_definition: The IDLDefinition containing metaffi_guest_lib
+            use_getter: If True, use getter's entity_path; if False, use setter's
+            
+        Returns:
+            String in format "key1=value1,key2=value2"
+        """
+        if use_getter and self.getter:
+            return self.getter.entity_path_as_string(idl_definition)
+        elif not use_getter and self.setter:
+            return self.setter.entity_path_as_string(idl_definition)
+        else:
+            raise ValueError(f"Field {self.name} does not have {'getter' if use_getter else 'setter'}")
 
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()
@@ -197,6 +279,25 @@ class FieldDefinition(ArgDefinition):
 class GlobalDefinition(ArgDefinition):
     getter: Optional[FunctionDefinition] = None
     setter: Optional[FunctionDefinition] = None
+
+    def entity_path_as_string(self, idl_definition: "IDLDefinition", use_getter: bool = True) -> str:
+        """
+        Convert entity_path dict to comma-separated string format.
+        Uses getter's or setter's entity_path_as_string.
+        
+        Args:
+            idl_definition: The IDLDefinition containing metaffi_guest_lib
+            use_getter: If True, use getter's entity_path; if False, use setter's
+            
+        Returns:
+            String in format "key1=value1,key2=value2"
+        """
+        if use_getter and self.getter:
+            return self.getter.entity_path_as_string(idl_definition)
+        elif not use_getter and self.setter:
+            return self.setter.entity_path_as_string(idl_definition)
+        else:
+            raise ValueError(f"Global {self.name} does not have {'getter' if use_getter else 'setter'}")
 
     def to_dict(self) -> Dict[str, Any]:
         data = super().to_dict()

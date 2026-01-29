@@ -10,8 +10,15 @@
 #include <runtime_manager/cpython3/py_tuple.h>
 #include <runtime_manager/cpython3/py_object.h>
 #include <runtime/xllr_capi_loader.h>
+#include <runtime/xcall.h>
 #include <sstream>
 #include <cstring>
+#include <iostream>
+
+
+# define throw_py_err(err) \
+	std::cerr << __FILE__ << ":" << __LINE__ << " - " << err << std::endl; \
+	throw std::runtime_error(err)
 
 namespace metaffi::utils
 {
@@ -19,56 +26,6 @@ namespace metaffi::utils
 // ============================================================================
 // CORE INFRASTRUCTURE
 // ============================================================================
-
-// Helper function to extract Python error message (uses dynamically loaded API)
-static std::string get_python_error_message()
-{
-	if(!pPyErr_Occurred())
-	{
-		return "Unknown Python error";
-	}
-
-	PyObject *ptype, *pvalue, *ptraceback;
-	pPyErr_Fetch(&ptype, &pvalue, &ptraceback);
-
-	std::ostringstream oss;
-	
-	if(pvalue)
-	{
-		PyObject* str_obj = pPyObject_Str(pvalue);
-		if(str_obj)
-		{
-			const char* error_str = pPyUnicode_AsUTF8(str_obj);
-			if(error_str)
-			{
-				oss << error_str;
-			}
-			Py_DECREF(str_obj);
-		}
-	}
-
-	if(ptype)
-	{
-		PyObject* type_str = pPyObject_Str(ptype);
-		if(type_str)
-		{
-			const char* type_name = pPyUnicode_AsUTF8(type_str);
-			if(type_name && oss.str().empty())
-			{
-				oss << type_name;
-			}
-			Py_DECREF(type_str);
-		}
-	}
-
-	// Clean up
-	Py_XDECREF(ptype);
-	Py_XDECREF(pvalue);
-	Py_XDECREF(ptraceback);
-
-	std::string result = oss.str();
-	return result.empty() ? "Unknown Python error" : result;
-}
 
 cdts_python3_serializer::cdts_python3_serializer(cpython3_runtime_manager& runtime, cdts& pcdts)
 	: m_runtime(runtime), data(pcdts), current_index(0)
@@ -153,21 +110,21 @@ void cdts_python3_serializer::validate_int_range(long long value, metaffi_type t
 		case metaffi_int8_type:
 			if(value < -128 || value > 127) {
 				oss << "Value " << value << " out of range for int8 [-128, 127]";
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 			break;
 			
 		case metaffi_int16_type:
 			if(value < -32768 || value > 32767) {
 				oss << "Value " << value << " out of range for int16 [-32768, 32767]";
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 			break;
 			
 		case metaffi_int32_type:
 			if(value < -2147483648LL || value > 2147483647LL) {
 				oss << "Value " << value << " out of range for int32 [-2147483648, 2147483647]";
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 			break;
 			
@@ -178,34 +135,34 @@ void cdts_python3_serializer::validate_int_range(long long value, metaffi_type t
 		case metaffi_uint8_type:
 			if(value < 0 || value > 255) {
 				oss << "Value " << value << " out of range for uint8 [0, 255]";
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 			break;
 			
 		case metaffi_uint16_type:
 			if(value < 0 || value > 65535) {
 				oss << "Value " << value << " out of range for uint16 [0, 65535]";
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 			break;
 			
 		case metaffi_uint32_type:
 			if(value < 0 || value > 4294967295LL) {
 				oss << "Value " << value << " out of range for uint32 [0, 4294967295]";
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 			break;
 			
 		case metaffi_uint64_type:
 			if(value < 0) {
 				oss << "Value " << value << " out of range for uint64 [0, 18446744073709551615]";
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 			break;
 			
 		default:
 			oss << "Invalid integer type: " << target_type;
-			throw std::runtime_error(oss.str());
+			throw_py_err(oss.str());
 	}
 }
 
@@ -215,7 +172,23 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 
 	if(obj == nullptr)
 	{
-		throw std::runtime_error("Cannot serialize null PyObject*");
+		throw_py_err("Cannot serialize null PyObject*");
+	}
+
+	// Handle metaffi_any_type - detect actual type and serialize accordingly
+	// BUT: for lists/arrays, we need special handling to detect element type
+	if(target_type == metaffi_any_type)
+	{
+		// For lists/tuples, we'll handle them specially below (they need element type detection)
+		// For other types, detect and recurse
+		if(!py_list::check(obj) && !py_tuple::check(obj))
+		{
+			metaffi_type detected_type = py_object::get_metaffi_type(obj);
+			// Recursively call with detected type
+			pyobject_to_cdt(obj, target, detected_type);
+			return;
+		}
+		// For lists/tuples, fall through to list handling below which will detect element type
 	}
 
 	// Handle None (null) - ignore target_type
@@ -241,8 +214,8 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 		long long value = pPyLong_AsLongLong(obj);
 		if(value == -1 && pPyErr_Occurred())
 		{
-			std::string error_msg = get_python_error_message();
-			throw std::runtime_error("Failed to convert Python int to long long: " + error_msg);
+			std::string error_msg = check_python_error();
+			throw_py_err("Failed to convert Python int to long long: " + error_msg);
 		}
 
 		// Validate range for target type
@@ -282,7 +255,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 			{
 				std::ostringstream oss;
 				oss << "Invalid integer target type: " << target_type;
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 		}
 		return;
@@ -294,8 +267,8 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 		double value = pPyFloat_AsDouble(obj);
 		if(value == -1.0 && pPyErr_Occurred())
 		{
-			std::string error_msg = get_python_error_message();
-			throw std::runtime_error("Failed to convert Python float to double: " + error_msg);
+			std::string error_msg = check_python_error();
+			throw_py_err("Failed to convert Python float to double: " + error_msg);
 		}
 
 		// Set value based on target type
@@ -314,7 +287,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 			{
 				std::ostringstream oss;
 				oss << "Invalid float target type: " << target_type << " (must be float32 or float64)";
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 		}
 		return;
@@ -331,8 +304,8 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 				PyObject* utf8_bytes = pPyUnicode_AsUTF8String(obj);
 				if(!utf8_bytes)
 				{
-					std::string error_msg = get_python_error_message();
-					throw std::runtime_error("Failed to convert Unicode to UTF-8: " + error_msg);
+					std::string error_msg = check_python_error();
+					throw_py_err("Failed to convert Unicode to UTF-8: " + error_msg);
 				}
 
 				Py_ssize_t size;
@@ -340,8 +313,8 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 				if(pPyBytes_AsStringAndSize(utf8_bytes, &str_data, &size) == -1)
 				{
 					Py_DECREF(utf8_bytes);
-					std::string error_msg = get_python_error_message();
-					throw std::runtime_error("Failed to get UTF-8 string data: " + error_msg);
+					std::string error_msg = check_python_error();
+					throw_py_err("Failed to get UTF-8 string data: " + error_msg);
 				}
 
 				// Allocate using xllr
@@ -350,7 +323,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 
 				if(!allocated_str)
 				{
-					throw std::runtime_error("xllr_alloc_string8 failed");
+					throw_py_err("xllr_alloc_string8 failed");
 				}
 
 				target.type = metaffi_string8_type;
@@ -364,13 +337,13 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 				std::ostringstream oss;
 				oss << "String encoding " << (target_type == metaffi_string16_type ? "UTF-16" : "UTF-32") 
 				    << " not yet implemented for Python3 serializer";
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 			default:
 			{
 				std::ostringstream oss;
 				oss << "Invalid string target type: " << target_type;
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 		}
 		return;
@@ -383,8 +356,8 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 		char* data;
 		if(pPyBytes_AsStringAndSize(obj, &data, &size) == -1)
 		{
-			std::string error_msg = get_python_error_message();
-			throw std::runtime_error("Failed to get bytes data: " + error_msg);
+			std::string error_msg = check_python_error();
+			throw_py_err("Failed to get bytes data: " + error_msg);
 		}
 
 		// Create uint8 array
@@ -412,6 +385,25 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 			// Extract base type from array type
 			element_type = static_cast<metaffi_type>(target_type & ~metaffi_array_type);
 		}
+		else if(target_type == metaffi_any_type)
+		{
+			// For metaffi_any_type, detect element type from first element
+			Py_ssize_t len = py_list::check(obj) ? pPyList_Size(obj) : pPyTuple_Size(obj);
+			if(len > 0)
+			{
+				PyObject* first_item = py_list::check(obj) ? pPyList_GetItem(obj, 0) : pPyTuple_GetItem(obj, 0);
+				element_type = py_object::get_metaffi_type(first_item);
+				
+				// Validate detected type
+				if(element_type == 0 || element_type == metaffi_null_type)
+				{
+					std::ostringstream oss;
+					oss << "Failed to detect element type from first list element (got type: " << element_type << ")";
+					throw_py_err(oss.str());
+				}
+			}
+			// If empty list, keep element_type as metaffi_any_type (will be handled in pylist_to_cdt_array)
+		}
 		else
 		{
 			// target_type should indicate the element type directly
@@ -422,12 +414,213 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 		return;
 	}
 
+	// Handle callable type - extract xcall from Python callable created by make_metaffi_callable
+	if(target_type == metaffi_callable_type)
+	{
+		// Check if this is a callable created by make_metaffi_callable
+		// It should have pxcall_and_context, params_metaffi_types, and retval_metaffi_types attributes
+		if(!pPyObject_HasAttrString(obj, "pxcall_and_context"))
+		{
+			std::ostringstream oss;
+			oss << "Python object does not have pxcall_and_context attribute (not a MetaFFI callable)";
+			throw_py_err(oss.str());
+		}
+
+		// Get pxcall_and_context attribute
+		PyObject* pxcall_and_context_attr = pPyObject_GetAttrString(obj, "pxcall_and_context");
+		if(!pxcall_and_context_attr || pPyErr_Occurred())
+		{
+			if(pxcall_and_context_attr)
+			{
+				Py_DECREF(pxcall_and_context_attr);
+			}
+			std::string error_msg = check_python_error();
+			throw_py_err("Failed to get pxcall_and_context attribute: " + error_msg);
+		}
+
+		// Get params_metaffi_types and retval_metaffi_types
+		PyObject* params_types_attr = pPyObject_GetAttrString(obj, "params_metaffi_types");
+		PyObject* retval_types_attr = pPyObject_GetAttrString(obj, "retval_metaffi_types");
+		
+		if(!params_types_attr || !retval_types_attr || pPyErr_Occurred())
+		{
+			Py_XDECREF(pxcall_and_context_attr);
+			Py_XDECREF(params_types_attr);
+			Py_XDECREF(retval_types_attr);
+			std::string error_msg = check_python_error();
+			throw_py_err("Failed to get params_metaffi_types or retval_metaffi_types: " + error_msg);
+		}
+
+		// Convert pxcall_and_context to xcall* pointer
+		// It's stored as an integer (address) in the attribute, which points to the xcall structure
+		xcall* pxcall_ptr = nullptr;
+		if(pPyLong_Check(pxcall_and_context_attr))
+		{
+			void* addr = reinterpret_cast<void*>(pPyLong_AsUnsignedLongLong(pxcall_and_context_attr));
+			if(pPyErr_Occurred())
+			{
+				Py_DECREF(pxcall_and_context_attr);
+				Py_DECREF(params_types_attr);
+				Py_DECREF(retval_types_attr);
+				std::string error_msg = check_python_error();
+				throw_py_err("Failed to convert pxcall_and_context to pointer: " + error_msg);
+			}
+			// The address points to the xcall structure (pxcall_and_context is the first member)
+			pxcall_ptr = static_cast<xcall*>(addr);
+		}
+		else
+		{
+			Py_DECREF(pxcall_and_context_attr);
+			Py_DECREF(params_types_attr);
+			Py_DECREF(retval_types_attr);
+			throw_py_err("pxcall_and_context is not a valid pointer");
+		}
+
+		// Get parameter and return type counts
+		Py_ssize_t params_count = pPyTuple_Size(params_types_attr);
+		Py_ssize_t retval_count = pPyTuple_Size(retval_types_attr);
+
+		// Allocate callable structure
+		void* callable_mem = xllr_alloc_memory(sizeof(cdt_metaffi_callable));
+		if(!callable_mem)
+		{
+			Py_DECREF(pxcall_and_context_attr);
+			Py_DECREF(params_types_attr);
+			Py_DECREF(retval_types_attr);
+			throw_py_err("Failed to allocate memory for cdt_metaffi_callable");
+		}
+
+		cdt_metaffi_callable* callable = new (callable_mem) cdt_metaffi_callable();
+		callable->val = static_cast<metaffi_callable>(pxcall_ptr);  // Store xcall pointer as metaffi_callable (void*)
+		callable->params_types_length = static_cast<metaffi_int8>(params_count);
+		callable->retval_types_length = static_cast<metaffi_int8>(retval_count);
+
+		// Allocate and copy parameter types
+		if(params_count > 0)
+		{
+			callable->parameters_types = static_cast<metaffi_type*>(xllr_alloc_memory(sizeof(metaffi_type) * params_count));
+			if(!callable->parameters_types)
+			{
+				xllr_free_memory(callable_mem);
+				Py_DECREF(pxcall_and_context_attr);
+				Py_DECREF(params_types_attr);
+				Py_DECREF(retval_types_attr);
+				throw_py_err("Failed to allocate memory for callable parameter types");
+			}
+
+			for(Py_ssize_t i = 0; i < params_count; i++)
+			{
+				PyObject* type_obj = pPyTuple_GetItem(params_types_attr, i);
+				if(pPyLong_Check(type_obj))
+				{
+					callable->parameters_types[i] = static_cast<metaffi_type>(pPyLong_AsUnsignedLongLong(type_obj));
+				}
+				else
+				{
+					// Try to get .type attribute if it's a metaffi_type_info instance
+					PyObject* type_attr = pPyObject_GetAttrString(type_obj, "type");
+					if(type_attr && pPyLong_Check(type_attr))
+					{
+						callable->parameters_types[i] = static_cast<metaffi_type>(pPyLong_AsUnsignedLongLong(type_attr));
+						Py_DECREF(type_attr);
+					}
+					else
+					{
+						Py_XDECREF(type_attr);
+						xllr_free_memory(callable->parameters_types);
+						xllr_free_memory(callable_mem);
+						Py_DECREF(pxcall_and_context_attr);
+						Py_DECREF(params_types_attr);
+						Py_DECREF(retval_types_attr);
+						throw_py_err("Failed to extract parameter type");
+					}
+				}
+			}
+		}
+		else
+		{
+			callable->parameters_types = nullptr;
+		}
+
+		// Allocate and copy return value types
+		if(retval_count > 0)
+		{
+			callable->retval_types = static_cast<metaffi_type*>(xllr_alloc_memory(sizeof(metaffi_type) * retval_count));
+			if(!callable->retval_types)
+			{
+				if(callable->parameters_types)
+				{
+					xllr_free_memory(callable->parameters_types);
+				}
+				xllr_free_memory(callable_mem);
+				Py_DECREF(pxcall_and_context_attr);
+				Py_DECREF(params_types_attr);
+				Py_DECREF(retval_types_attr);
+				throw_py_err("Failed to allocate memory for callable return value types");
+			}
+
+			for(Py_ssize_t i = 0; i < retval_count; i++)
+			{
+				PyObject* type_obj = pPyTuple_GetItem(retval_types_attr, i);
+				if(pPyLong_Check(type_obj))
+				{
+					callable->retval_types[i] = static_cast<metaffi_type>(pPyLong_AsUnsignedLongLong(type_obj));
+				}
+				else
+				{
+					// Try to get .type attribute if it's a metaffi_type_info instance
+					PyObject* type_attr = pPyObject_GetAttrString(type_obj, "type");
+					if(type_attr && pPyLong_Check(type_attr))
+					{
+						callable->retval_types[i] = static_cast<metaffi_type>(pPyLong_AsUnsignedLongLong(type_attr));
+						Py_DECREF(type_attr);
+					}
+					else
+					{
+						Py_XDECREF(type_attr);
+						xllr_free_memory(callable->retval_types);
+						if(callable->parameters_types)
+						{
+							xllr_free_memory(callable->parameters_types);
+						}
+						xllr_free_memory(callable_mem);
+						Py_DECREF(pxcall_and_context_attr);
+						Py_DECREF(params_types_attr);
+						Py_DECREF(retval_types_attr);
+						throw_py_err("Failed to extract return value type");
+					}
+				}
+			}
+		}
+		else
+		{
+			callable->retval_types = nullptr;
+		}
+
+		// Clean up Python references
+		Py_DECREF(pxcall_and_context_attr);
+		Py_DECREF(params_types_attr);
+		Py_DECREF(retval_types_attr);
+
+		// Set target CDT
+		target.type = metaffi_callable_type;
+		target.cdt_val.callable_val = callable;
+		target.free_required = true;
+		return;
+	}
+
 	// Handle everything else as handle - ignore target_type
 	// Wrap the PyObject in a handle and increment refcount
 	Py_INCREF(obj);  // Keep object alive while in handle
 
 	target.type = metaffi_handle_type;
-	target.cdt_val.handle_val = new cdt_metaffi_handle();
+	void* handle_mem = xllr_alloc_memory(sizeof(cdt_metaffi_handle));
+	if(!handle_mem)
+	{
+		Py_DECREF(obj);  // Release the reference we just added
+		throw_py_err("Failed to allocate memory for cdt_metaffi_handle");
+	}
+	target.cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
 	target.cdt_val.handle_val->handle = obj;
 	target.cdt_val.handle_val->runtime_id = 0;  // Python runtime ID (0 for now)
 	target.cdt_val.handle_val->release = cpython3_runtime_manager::py_object_releaser;
@@ -446,11 +639,447 @@ PyObject* cdts_python3_serializer::extract_pyobject()
 	return result;  // New reference
 }
 
+// ============================================================================
+// CALLABLE CONVERSION HELPERS
+// ============================================================================
+
+PyObject* cdts_python3_serializer::create_callable_params_types_tuple(const cdt_metaffi_callable* callable)
+{
+	// GIL is assumed to be held by caller
+	PyObject* params_types_tuple = pPyTuple_New(callable->params_types_length);
+	if(!params_types_tuple || pPyErr_Occurred())
+	{
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create params_types tuple";
+		}
+		throw_py_err(error);
+	}
+
+	if(callable->parameters_types)
+	{
+		for(int8_t i = 0; i < callable->params_types_length; i++)
+		{
+			PyObject* type_obj = pPyLong_FromUnsignedLongLong(callable->parameters_types[i]);
+			if(!type_obj || pPyErr_Occurred())
+			{
+				Py_DECREF(params_types_tuple);
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create param type";
+				}
+				throw_py_err(error);
+			}
+			pPyTuple_SetItem(params_types_tuple, i, type_obj);  // Steals reference
+		}
+	}
+	else
+	{
+		// If parameters_types is NULL, create a tuple with metaffi_any_type for each parameter
+		for(int8_t i = 0; i < callable->params_types_length; i++)
+		{
+			PyObject* type_obj = pPyLong_FromUnsignedLongLong(metaffi_any_type);
+			if(!type_obj || pPyErr_Occurred())
+			{
+				Py_DECREF(params_types_tuple);
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create param type";
+				}
+				throw_py_err(error);
+			}
+			pPyTuple_SetItem(params_types_tuple, i, type_obj);  // Steals reference
+		}
+	}
+
+	return params_types_tuple;  // New reference
+}
+
+PyObject* cdts_python3_serializer::create_callable_retval_types_tuple(const cdt_metaffi_callable* callable)
+{
+	// GIL is assumed to be held by caller
+	PyObject* retval_types_tuple = pPyTuple_New(callable->retval_types_length);
+	if(!retval_types_tuple || pPyErr_Occurred())
+	{
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create retval_types tuple";
+		}
+		throw_py_err(error);
+	}
+
+	if(callable->retval_types)
+	{
+		for(int8_t i = 0; i < callable->retval_types_length; i++)
+		{
+			PyObject* type_obj = pPyLong_FromUnsignedLongLong(callable->retval_types[i]);
+			if(!type_obj || pPyErr_Occurred())
+			{
+				Py_DECREF(retval_types_tuple);
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create retval type";
+				}
+				throw_py_err(error);
+			}
+			pPyTuple_SetItem(retval_types_tuple, i, type_obj);  // Steals reference
+		}
+	}
+	else
+	{
+		// If retval_types is NULL, create a tuple with metaffi_any_type for each return value
+		for(int8_t i = 0; i < callable->retval_types_length; i++)
+		{
+			PyObject* type_obj = pPyLong_FromUnsignedLongLong(metaffi_any_type);
+			if(!type_obj || pPyErr_Occurred())
+			{
+				Py_DECREF(retval_types_tuple);
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create retval type";
+				}
+				throw_py_err(error);
+			}
+			pPyTuple_SetItem(retval_types_tuple, i, type_obj);  // Steals reference
+		}
+	}
+
+	return retval_types_tuple;  // New reference
+}
+
+PyObject* cdts_python3_serializer::create_callable_from_lambda(void* pxcall, void* context, PyObject* params_types, PyObject* retval_types)
+{
+	// GIL is assumed to be held by caller
+	// Import metaffi module
+	PyObject* metaffi_module = pPyImport_ImportModule("metaffi");
+	if(!metaffi_module || pPyErr_Occurred())
+	{
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to import metaffi module";
+		}
+		throw_py_err(error);
+	}
+
+	// Get create_lambda function
+	PyObject* create_lambda_func = pPyObject_GetAttrString(metaffi_module, "create_lambda");
+	Py_DECREF(metaffi_module);
+	if(!create_lambda_func || pPyErr_Occurred())
+	{
+		Py_XDECREF(create_lambda_func);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to get create_lambda function";
+		}
+		throw_py_err(error);
+	}
+
+	if(!pPyCallable_Check(create_lambda_func))
+	{
+		Py_DECREF(create_lambda_func);
+		throw_py_err("create_lambda is not callable");
+	}
+
+	// Create PyLong objects for pxcall and context
+	PyObject* pxcall_obj = pPyLong_FromVoidPtr(pxcall);
+	if(!pxcall_obj || pPyErr_Occurred())
+	{
+		Py_XDECREF(pxcall_obj);
+		Py_DECREF(create_lambda_func);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create pxcall object";
+		}
+		throw_py_err(error);
+	}
+
+	PyObject* context_obj = pPyLong_FromVoidPtr(context);
+	if(!context_obj || pPyErr_Occurred())
+	{
+		Py_XDECREF(context_obj);
+		Py_DECREF(pxcall_obj);
+		Py_DECREF(create_lambda_func);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create context object";
+		}
+		throw_py_err(error);
+	}
+
+	// Call create_lambda(pxcall, context, params_types, retval_types)
+	PyObject* callable_obj = pPyObject_CallFunctionObjArgs(
+		create_lambda_func,
+		pxcall_obj,
+		context_obj,
+		params_types,
+		retval_types,
+		nullptr
+	);
+	Py_DECREF(pxcall_obj);
+	Py_DECREF(context_obj);
+	Py_DECREF(create_lambda_func);
+
+	if(!callable_obj || pPyErr_Occurred())
+	{
+		Py_XDECREF(callable_obj);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create callable from create_lambda";
+		}
+		throw_py_err(error);
+	}
+
+	if(!pPyCallable_Check(callable_obj))
+	{
+		Py_DECREF(callable_obj);
+		throw_py_err("Failed to create callable: result is not callable");
+	}
+
+	return callable_obj;  // New reference
+}
+
+void cdts_python3_serializer::set_callable_attributes(PyObject* callable_obj, void* pxcall, void* context, PyObject* params_types, PyObject* retval_types)
+{
+	// GIL is assumed to be held by caller
+	// Set params_metaffi_types and retval_metaffi_types attributes
+	int result = pPyObject_SetAttrString(callable_obj, "params_metaffi_types", params_types);
+	if(result == -1 || pPyErr_Occurred())
+	{
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to set params_metaffi_types attribute";
+		}
+
+		throw_py_err(error);
+	}
+
+	result = pPyObject_SetAttrString(callable_obj, "retval_metaffi_types", retval_types);
+	if(result == -1 || pPyErr_Occurred())
+	{
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to set retval_metaffi_types attribute";
+		}
+		throw_py_err(error);
+	}
+
+	// Create pxcall_and_context array for the attribute
+	PyObject* ctypes_module = pPyImport_ImportModule("ctypes");
+	if(!ctypes_module || pPyErr_Occurred())
+	{
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to import ctypes module";
+		}
+		throw_py_err(error);
+	}
+
+	PyObject* c_void_p = pPyObject_GetAttrString(ctypes_module, "c_void_p");
+	Py_DECREF(ctypes_module);
+	if(!c_void_p || pPyErr_Occurred())
+	{
+		Py_XDECREF(c_void_p);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to get c_void_p from ctypes";
+		}
+		throw_py_err(error);
+	}
+
+	// Create array type: c_void_p * 2
+	PyObject* two = pPyLong_FromLong(2);
+	PyObject* array_type = pPyNumber_Multiply(c_void_p, two);  // c_void_p * 2
+	Py_DECREF(two);
+
+	Py_DECREF(c_void_p);
+	if(!array_type || pPyErr_Occurred())
+	{
+		Py_XDECREF(array_type);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create array type c_void_p * 2";
+		}
+		throw_py_err(error);
+	}
+
+	// Create array instance with pxcall and context
+	PyObject* array_args = pPyTuple_New(2);
+	if(!array_args || pPyErr_Occurred())
+	{
+		Py_XDECREF(array_args);
+		Py_DECREF(array_type);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create array_args tuple";
+		}
+		throw_py_err(error);
+	}
+
+	PyObject* pxcall_long = pPyLong_FromVoidPtr(pxcall);
+	if(!pxcall_long || pPyErr_Occurred())
+	{
+		Py_XDECREF(pxcall_long);
+		Py_DECREF(array_args);
+		Py_DECREF(array_type);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create pxcall PyLong";
+		}
+		throw_py_err(error);
+	}
+
+	PyObject* context_long = pPyLong_FromVoidPtr(context);
+	if(!context_long || pPyErr_Occurred())
+	{
+		Py_XDECREF(context_long);
+		Py_DECREF(pxcall_long);
+		Py_DECREF(array_args);
+		Py_DECREF(array_type);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create context PyLong";
+		}
+		throw_py_err(error);
+	}
+
+
+	PyObject* pxcall_cvp  = pPyObject_CallFunctionObjArgs(c_void_p, pxcall_long, nullptr);
+	PyObject* context_cvp = pPyObject_CallFunctionObjArgs(c_void_p, context_long, nullptr);
+
+	int set_result = pPyTuple_SetItem(array_args, 0, pxcall_cvp);  // Steals reference
+	if(set_result == -1 || pPyErr_Occurred())
+	{
+		Py_DECREF(array_args);
+		Py_DECREF(array_type);
+		Py_DECREF(pxcall_cvp);
+		Py_DECREF(context_cvp);
+
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to set pxcall in array_args tuple";
+		}
+		throw_py_err(error);
+	}
+
+	set_result = pPyTuple_SetItem(array_args, 1, context_cvp);  // Steals reference
+	if(set_result == -1 || pPyErr_Occurred())
+	{
+		Py_DECREF(array_args);
+		Py_DECREF(array_type);
+		Py_DECREF(pxcall_cvp);
+		Py_DECREF(context_cvp);
+
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to set context in array_args tuple";
+		}
+		throw_py_err(error);
+	}
+
+	// Call array_type(array_args) to create the array instance
+	PyObject* array_instance = pPyObject_CallObject(array_type, array_args);  // <-- HERE
+	Py_DECREF(array_args);
+	Py_DECREF(array_type);
+	Py_DECREF(pxcall_cvp);
+	Py_DECREF(context_cvp);
+
+	
+	if(!array_instance || pPyErr_Occurred())
+	{
+		Py_XDECREF(array_instance);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create ctypes array instance from array_type and array_args";
+		}
+		throw_py_err(error);
+	}
+
+	// Get addressof function
+	PyObject* ctypes_module_for_addressof = pPyImport_ImportModule("ctypes");
+	if(!ctypes_module_for_addressof || pPyErr_Occurred())
+	{
+		Py_XDECREF(ctypes_module_for_addressof);
+		Py_DECREF(array_instance);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to import ctypes module for addressof";
+		}
+		throw_py_err(error);
+	}
+
+	PyObject* addressof_func = pPyObject_GetAttrString(ctypes_module_for_addressof, "addressof");
+	Py_DECREF(ctypes_module_for_addressof);
+	if(!addressof_func || pPyErr_Occurred())
+	{
+		Py_XDECREF(addressof_func);
+		Py_DECREF(array_instance);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to get addressof function from ctypes";
+		}
+		throw_py_err(error);
+	}
+
+	PyObject* address_obj = pPyObject_CallFunctionObjArgs(addressof_func, array_instance, nullptr);
+	Py_DECREF(addressof_func);
+	Py_DECREF(array_instance);
+	if(!address_obj || pPyErr_Occurred())
+	{
+		Py_XDECREF(address_obj);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to call addressof on array_instance";
+		}
+		throw_py_err(error);
+	}
+
+	result = pPyObject_SetAttrString(callable_obj, "pxcall_and_context", address_obj);
+	Py_DECREF(address_obj);
+	if(result == -1 || pPyErr_Occurred())
+	{
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to set pxcall_and_context attribute";
+		}
+		throw_py_err(error);
+	}
+}
+
 PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 {
 	// GIL is assumed to be held by caller
+	std::cerr << "[DEBUG] cdt_to_pyobject: type=" << source.type << std::endl;
+	std::cerr.flush();
 
-	switch(source.type)
+	try
+	{
+		switch(source.type)
 	{
 		case metaffi_null_type:
 		{
@@ -467,102 +1096,242 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 
 		case metaffi_int8_type:
 		{
-			return pPyLong_FromLongLong(source.cdt_val.int8_val);
+			PyObject* result = pPyLong_FromLongLong(source.cdt_val.int8_val);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create int8 PyLong";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_int16_type:
 		{
-			return pPyLong_FromLongLong(source.cdt_val.int16_val);
+			PyObject* result = pPyLong_FromLongLong(source.cdt_val.int16_val);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create int16 PyLong";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_int32_type:
 		{
-			return pPyLong_FromLongLong(source.cdt_val.int32_val);
+			PyObject* result = pPyLong_FromLongLong(source.cdt_val.int32_val);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create int32 PyLong";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_int64_type:
 		{
-			return pPyLong_FromLongLong(source.cdt_val.int64_val);
+			PyObject* result = pPyLong_FromLongLong(source.cdt_val.int64_val);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create int64 PyLong";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_uint8_type:
 		{
-			return pPyLong_FromUnsignedLongLong(source.cdt_val.uint8_val);
+			PyObject* result = pPyLong_FromUnsignedLongLong(source.cdt_val.uint8_val);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create uint8 PyLong";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_uint16_type:
 		{
-			return pPyLong_FromUnsignedLongLong(source.cdt_val.uint16_val);
+			PyObject* result = pPyLong_FromUnsignedLongLong(source.cdt_val.uint16_val);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create uint16 PyLong";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_uint32_type:
 		{
-			return pPyLong_FromUnsignedLongLong(source.cdt_val.uint32_val);
+			PyObject* result = pPyLong_FromUnsignedLongLong(source.cdt_val.uint32_val);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create uint32 PyLong";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_uint64_type:
 		{
-			return pPyLong_FromUnsignedLongLong(source.cdt_val.uint64_val);
+			PyObject* result = pPyLong_FromUnsignedLongLong(source.cdt_val.uint64_val);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create uint64 PyLong";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_float32_type:
 		{
-			return pPyFloat_FromDouble(source.cdt_val.float32_val);
+			PyObject* result = pPyFloat_FromDouble(source.cdt_val.float32_val);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create float32 PyFloat";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_float64_type:
 		{
-			return pPyFloat_FromDouble(source.cdt_val.float64_val);
+			PyObject* result = pPyFloat_FromDouble(source.cdt_val.float64_val);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create float64 PyFloat";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_string8_type:
 		{
+			PyObject* result;
 			if(!source.cdt_val.string8_val)
 			{
 				// Empty string
-				return pPyUnicode_FromString("");
+				result = pPyUnicode_FromString("");
 			}
-			return pPyUnicode_FromString((const char*)source.cdt_val.string8_val);
+			else
+			{
+				result = pPyUnicode_FromString((const char*)source.cdt_val.string8_val);
+			}
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create string8 PyUnicode";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_string16_type:
 		{
+			PyObject* result;
 			if(!source.cdt_val.string16_val)
 			{
 				// Empty string
-				return pPyUnicode_FromString("");
+				result = pPyUnicode_FromString("");
 			}
-
-			// Count UTF-16 code units (find null terminator)
-			size_t length = 0;
-			while(source.cdt_val.string16_val[length] != 0)
+			else
 			{
-				length++;
-			}
+				// Count UTF-16 code units (find null terminator)
+				size_t length = 0;
+				while(source.cdt_val.string16_val[length] != 0)
+				{
+					length++;
+				}
 
-			return pPyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND,
-			                                 source.cdt_val.string16_val,
-			                                 length);
+				result = pPyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND,
+				                                 source.cdt_val.string16_val,
+				                                 length);
+			}
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create string16 PyUnicode";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		case metaffi_string32_type:
 		{
+			PyObject* result;
 			if(!source.cdt_val.string32_val)
 			{
 				// Empty string
-				return pPyUnicode_FromString("");
+				result = pPyUnicode_FromString("");
 			}
-
-			// Count UTF-32 code units (find null terminator)
-			size_t length = 0;
-			while(source.cdt_val.string32_val[length] != 0)
+			else
 			{
-				length++;
-			}
+				// Count UTF-32 code units (find null terminator)
+				size_t length = 0;
+				while(source.cdt_val.string32_val[length] != 0)
+				{
+					length++;
+				}
 
-			return pPyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
-			                                 source.cdt_val.string32_val,
-			                                 length);
+				result = pPyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+				                                 source.cdt_val.string32_val,
+				                                 length);
+			}
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty())
+				{
+					error = "Failed to create string32 PyUnicode";
+				}
+				throw_py_err(error);
+			}
+			return result;
 		}
 
 		default:
@@ -573,7 +1342,17 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 				if(!source.cdt_val.array_val)
 				{
 					// Empty array
-					return pPyList_New(0);
+					PyObject* result = pPyList_New(0);
+					if(!result || pPyErr_Occurred())
+					{
+						std::string error = check_python_error();
+						if(error.empty())
+						{
+							error = "Failed to create empty array PyList";
+						}
+						throw_py_err(error);
+					}
+					return result;
 				}
 
 				return cdt_array_to_pylist(*source.cdt_val.array_val);
@@ -594,28 +1373,94 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 			}
 			else if(source.type == metaffi_callable_type)
 			{
-				// For callable, wrap it as a handle-like PyObject
-				// In practice, callables are rarely deserialized directly to Python
-				// They're typically kept as opaque handles for cross-language calls
+				std::cerr << "[DEBUG] cdt_to_pyobject: entering metaffi_callable_type case, callable_val=" << source.cdt_val.callable_val << std::endl;
+				// For callable, create a Python callable object that wraps the xcall
 				if(!source.cdt_val.callable_val)
 				{
 					Py_INCREF(pPy_None);
 					return pPy_None;
 				}
 
-				// Return the function pointer wrapped as a Python capsule
-				// This allows Python to hold the callable without calling it
-				void* func_ptr = source.cdt_val.callable_val->val;
-				PyObject* capsule = pPyCapsule_New(func_ptr, "metaffi.callable", nullptr);
-				return capsule;  // New reference
+				cdt_metaffi_callable* callable = source.cdt_val.callable_val;
+				
+				std::cerr << "[DEBUG] cdt_to_pyobject callable: callable=" << (void*)callable << std::endl;
+				std::cerr.flush();
+				
+				if(!callable)
+				{
+					std::cerr << "[DEBUG] cdt_to_pyobject callable: callable is NULL!" << std::endl;
+					std::cerr.flush();
+					Py_INCREF(pPy_None);
+					return pPy_None;
+				}
+				
+				std::cerr << "[DEBUG] cdt_to_pyobject callable: callable->val=" << callable->val << std::endl;
+				std::cerr.flush();
+				
+				if(!callable->val)
+				{
+					std::cerr << "[DEBUG] cdt_to_pyobject callable: callable->val is NULL!" << std::endl;
+					std::cerr.flush();
+					Py_INCREF(pPy_None);
+					return pPy_None;
+				}
+
+				// callable->val is a metaffi_callable (void*), which points to an xcall structure
+				// The xcall structure's first member is pxcall_and_context[2], so we can access it directly
+				void** pxcall_and_context_array = static_cast<void**>(callable->val);
+				if(!pxcall_and_context_array)
+				{
+					std::cerr << "[DEBUG] cdt_to_pyobject callable: pxcall_and_context_array is NULL!" << std::endl;
+					std::cerr.flush();
+					Py_INCREF(pPy_None);
+					return pPy_None;
+				}
+
+				// Extract pxcall and context from the array
+				void* pxcall = pxcall_and_context_array[0];
+				void* context = pxcall_and_context_array[1];
+				
+				// Debug output
+				std::cerr << "[DEBUG] cdt_to_pyobject callable: pxcall=" << pxcall << ", context=" << context << std::endl;
+				std::cerr << "[DEBUG] cdt_to_pyobject callable: params_count=" << static_cast<int>(callable->params_types_length) << ", retval_count=" << static_cast<int>(callable->retval_types_length) << std::endl;
+				std::cerr.flush();
+				
+				if(!pxcall)
+				{
+					std::cerr << "[DEBUG] cdt_to_pyobject callable: pxcall is NULL!" << std::endl;
+					std::cerr.flush();
+					Py_INCREF(pPy_None);
+					return pPy_None;
+				}
+
+				// Create params and retval type tuples using helper functions
+				PyObject* params_types = create_callable_params_types_tuple(callable);
+				PyObject* retval_types = create_callable_retval_types_tuple(callable);
+
+				// Create callable from lambda
+				PyObject* callable_obj = create_callable_from_lambda(pxcall, context, params_types, retval_types);
+
+				// Set attributes
+				set_callable_attributes(callable_obj, pxcall, context, params_types, retval_types);
+
+				// Clean up type tuples (callable_obj now owns references via attributes)
+				Py_DECREF(params_types);
+				Py_DECREF(retval_types);
+
+				return callable_obj;  // New reference
 			}
 			else
 			{
 				std::ostringstream oss;
 				oss << "Unsupported CDTS type: " << source.type;
-				throw std::runtime_error(oss.str());
+				throw_py_err(oss.str());
 			}
 		}
+	}
+	}
+	catch(...)
+	{
+		throw;
 	}
 }
 
@@ -624,19 +1469,52 @@ PyObject* cdts_python3_serializer::extract_as_tuple()
 	auto gil = m_runtime.acquire_gil();
 
 	metaffi_size remaining = data.length - current_index;
+	std::cerr << "[DEBUG] extract_as_tuple: remaining=" << remaining << ", current_index=" << current_index << ", data.length=" << data.length << std::endl;
+	std::cerr << "[DEBUG] extract_as_tuple: data.arr=" << (void*)data.arr << std::endl;
+	std::cerr.flush();
 	PyObject* tuple = pPyTuple_New(remaining);
 
 	if(!tuple)
 	{
-		throw std::runtime_error("Failed to create Python tuple");
+		throw_py_err("Failed to create Python tuple");
 	}
 
 	try
 	{
 		for(metaffi_size i = 0; i < remaining; i++)
 		{
-			PyObject* item = cdt_to_pyobject(data[current_index + i]);
-			pPyTuple_SetItem(tuple, i, item);  // Steals reference to item
+			std::cerr << "[DEBUG] extract_as_tuple: processing index " << i << ", current_index=" << current_index << std::endl;
+			std::cerr.flush();
+			std::cerr << "[DEBUG] extract_as_tuple: data[" << (current_index + i) << "].type=" << data[current_index + i].type << std::endl;
+			std::cerr.flush();
+			try
+			{
+				PyObject* item = cdt_to_pyobject(data[current_index + i]);
+				std::cerr << "[DEBUG] extract_as_tuple: cdt_to_pyobject returned " << (void*)item << std::endl;
+				std::cerr.flush();
+				int set_result = pPyTuple_SetItem(tuple, i, item);  // Steals reference to item
+				if(set_result == -1 || pPyErr_Occurred())
+				{
+					std::string error = check_python_error();
+					if(error.empty())
+					{
+						error = "Failed to set item in tuple at index " + std::to_string(i);
+					}
+					throw_py_err(error);
+				}
+			}
+			catch(const std::exception& e)
+			{
+				std::cerr << "[DEBUG] extract_as_tuple: EXCEPTION at index " << i << ": " << e.what() << std::endl;
+				std::cerr.flush();
+				throw;
+			}
+			catch(...)
+			{
+				std::cerr << "[DEBUG] extract_as_tuple: UNKNOWN EXCEPTION at index " << i << std::endl;
+				std::cerr.flush();
+				throw;
+			}
 		}
 
 		current_index = data.length;  // Mark all extracted
@@ -688,16 +1566,31 @@ void cdts_python3_serializer::pylist_to_cdt_array(PyObject* list, cdt& target, m
 
 	if(!py_list::check(list) && !py_tuple::check(list))
 	{
-		throw std::runtime_error("pylist_to_cdt_array: not a list or tuple");
+		throw_py_err("pylist_to_cdt_array: not a list or tuple");
 	}
 
 	Py_ssize_t len = py_list::check(list) ? pPyList_Size(list) : pPyTuple_Size(list);
 
 	if(len == 0)
 	{
-		// Empty array
-		target.set_new_array(0, 1, static_cast<metaffi_types>(element_type));
+		// Empty array - use element_type if valid, otherwise use metaffi_any_type
+		metaffi_type final_type = (element_type == 0 || element_type == metaffi_null_type) ? metaffi_any_type : element_type;
+		target.set_new_array(0, 1, static_cast<metaffi_types>(final_type));
 		return;
+	}
+
+	// If element_type is metaffi_any_type or invalid, detect from first element
+	if(element_type == metaffi_any_type || element_type == 0 || element_type == metaffi_null_type)
+	{
+		PyObject* first_item = py_list::check(list) ? pPyList_GetItem(list, 0) : pPyTuple_GetItem(list, 0);
+		element_type = py_object::get_metaffi_type(first_item);
+		
+		if(element_type == 0 || element_type == metaffi_null_type)
+		{
+			std::ostringstream oss;
+			oss << "Failed to detect element type from first list element (got type: " << element_type << ")";
+			throw_py_err(oss.str());
+		}
 	}
 
 	// Detect array dimensions
@@ -722,7 +1615,7 @@ PyObject* cdts_python3_serializer::cdt_array_to_pylist(const cdts& arr)
 	PyObject* list = pPyList_New(arr.length);
 	if(!list)
 	{
-		throw std::runtime_error("Failed to create Python list");
+		throw_py_err("Failed to create Python list");
 	}
 
 	try

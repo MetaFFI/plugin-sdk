@@ -3,8 +3,9 @@ add_subdirectory(java)
 add_subdirectory(go)
 add_subdirectory(cpp)
 add_subdirectory(c)
+add_subdirectory(test)
 
 add_custom_target(guest_modules
-	DEPENDS python3_guest_module java_guest_module go_guest_module cpp_guest_module c_guest_module java_guest_module_tests go_guest_module_tests cpp_guest_module_tests c_guest_module_tests
+	DEPENDS python3_guest_module java_guest_module go_guest_module cpp_guest_module c_guest_module xllr.test java_guest_module_tests go_guest_module_tests cpp_guest_module_tests c_guest_module_tests
 )
 set(guest_modules guest_modules PARENT_SCOPE)

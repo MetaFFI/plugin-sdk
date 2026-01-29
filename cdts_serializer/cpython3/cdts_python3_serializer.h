@@ -218,6 +218,54 @@ private:
 	 * @throws std::out_of_range if index >= size
 	 */
 	void check_bounds(metaffi_size index) const;
+
+	// ===== CALLABLE CONVERSION HELPERS =====
+
+	/**
+	 * @brief Create params_metaffi_types tuple from callable structure
+	 * @param callable Callable structure with parameter types
+	 * @return New Python tuple reference (caller must DECREF)
+	 * @throws std::runtime_error on error
+	 * 
+	 * Assumes GIL is held
+	 */
+	PyObject* create_callable_params_types_tuple(const cdt_metaffi_callable* callable);
+
+	/**
+	 * @brief Create retval_metaffi_types tuple from callable structure
+	 * @param callable Callable structure with return value types
+	 * @return New Python tuple reference (caller must DECREF)
+	 * @throws std::runtime_error on error
+	 * 
+	 * Assumes GIL is held
+	 */
+	PyObject* create_callable_retval_types_tuple(const cdt_metaffi_callable* callable);
+
+	/**
+	 * @brief Create Python callable from lambda using create_lambda function
+	 * @param pxcall Function pointer
+	 * @param context Context pointer
+	 * @param params_types Parameter types tuple (borrowed reference)
+	 * @param retval_types Return value types tuple (borrowed reference)
+	 * @return New Python callable reference (caller must DECREF)
+	 * @throws std::runtime_error on error
+	 * 
+	 * Assumes GIL is held
+	 */
+	PyObject* create_callable_from_lambda(void* pxcall, void* context, PyObject* params_types, PyObject* retval_types);
+
+	/**
+	 * @brief Set attributes on callable object (pxcall_and_context, params_metaffi_types, retval_metaffi_types)
+	 * @param callable_obj Callable object to set attributes on (borrowed reference)
+	 * @param pxcall Function pointer
+	 * @param context Context pointer
+	 * @param params_types Parameter types tuple (borrowed reference)
+	 * @param retval_types Return value types tuple (borrowed reference)
+	 * @throws std::runtime_error on error
+	 * 
+	 * Assumes GIL is held
+	 */
+	void set_callable_attributes(PyObject* callable_obj, void* pxcall, void* context, PyObject* params_types, PyObject* retval_types);
 };
 
 } // namespace metaffi::utils

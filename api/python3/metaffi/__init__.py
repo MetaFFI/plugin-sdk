@@ -1,14 +1,31 @@
 """Python MetaFFI API"""
 
-__version__ = "0.0.66"
+__version__ = "0.0.70"
 
-__all__ = ['metaffi', 'metaffi_types', 'metaffi_runtime', 'metaffi_module', 'MetaFFIHandle', 'metaffi_types', 'xllr_wrapper', 'pycdts_converter', 'metaffi_type_info', 'MetaFFITypes', 'MetaFFIEntity', 'create_lambda']
+__all__ = ['metaffi', 'metaffi_types', 'metaffi_runtime', 'metaffi_module', 'MetaFFIHandle', 'metaffi_types', 'xllr_wrapper', 'pycdts_converter', 'metaffi_type_info', 'MetaFFITypes', 'MetaFFIEntity', 'create_lambda', 'make_metaffi_callable']
 
 
 # TODO: replace pxcall and context to a single parameter
 # 		to xcall*. The current problem is that I can't find how to pass
 #		xcall* into the Tuple when calling the function from C++
 def create_lambda(pxcall, context, param_types_without_alias, retval_types_without_alias):
+	# Import here to avoid circular import issues and ensure xllr_wrapper is fully initialized
+	from . import xllr_wrapper
+	import ctypes
+	
+	# Ensure XCall types are available (they're defined later in the file, but we need them here)
+	# Define them locally if not already available
+	if 'XCallParamsRetType' not in globals():
+		XCallParamsRetType = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_char_p), ctypes.POINTER(ctypes.c_uint64))
+		XCallNoParamsRetType = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_char_p), ctypes.POINTER(ctypes.c_uint64))
+		XCallParamsNoRetType = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_char_p), ctypes.POINTER(ctypes.c_uint64))
+		XCallNoParamsNoRetType = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_uint64))
+	else:
+		XCallParamsRetType = globals()['XCallParamsRetType']
+		XCallNoParamsRetType = globals()['XCallNoParamsRetType']
+		XCallParamsNoRetType = globals()['XCallParamsNoRetType']
+		XCallNoParamsNoRetType = globals()['XCallNoParamsNoRetType']
+	
 	if param_types_without_alias is None:
 		param_types_without_alias = tuple()
 
@@ -30,11 +47,15 @@ def create_lambda(pxcall, context, param_types_without_alias, retval_types_witho
 	else:
 		pxcall = XCallNoParamsNoRetType(pxcall)
 
-	return lambda *args: xllr_python3.call_xcall(pxcall, context, param_types_without_alias, retval_types_without_alias, None if not args else args)
+	# Cache the PyDLL object reference, not the function, to avoid stale function references
+	xllr_python3_dll = xllr_wrapper.xllr_python3
+	return lambda *args: xllr_python3_dll.call_xcall(pxcall, context, param_types_without_alias, retval_types_without_alias, None if not args else args)
 
 
-
-
+import sys
+import os
+if os.getenv('METAFFI_SOURCE_ROOT') is not None:
+	sys.path.insert(0, os.path.join(os.getenv('METAFFI_SOURCE_ROOT'), 'sdk', 'api', 'python3'))
 
 import metaffi
 from . import metaffi_types
@@ -46,6 +67,7 @@ from . import pycdts_converter
 from .metaffi_types import metaffi_type_info
 from .metaffi_types import MetaFFITypes
 from .metaffi_module import MetaFFIEntity
+from .metaffi_module import make_metaffi_callable
 
 
 import platform
@@ -85,10 +107,6 @@ if platform.system() == 'Windows':
 
 	os.add_dll_directory(metaffi_home)
 	os.add_dll_directory(metaffi_home + f'/{python_plugin_dir}/')
-
-xllr_python3 = ctypes.cdll.LoadLibrary(get_dynamic_lib_path_from_metaffi_home(python_plugin_dir))
-xllr_python3.call_xcall.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.py_object, ctypes.py_object, ctypes.py_object]
-xllr_python3.call_xcall.restype = ctypes.py_object
 
 XCallParamsRetType = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_char_p), ctypes.POINTER(ctypes.c_uint64))
 XCallNoParamsRetType = ctypes.CFUNCTYPE(None, ctypes.c_void_p, ctypes.c_void_p, ctypes.POINTER(ctypes.c_char_p), ctypes.POINTER(ctypes.c_uint64))

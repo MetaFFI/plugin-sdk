@@ -35,7 +35,7 @@ if platform.system() == 'Windows':
 	os.add_dll_directory(metaffi_home)
 	os.add_dll_directory(metaffi_home + f'\\{python_plugin_dir}\\')
 
-xllr_python3 = ctypes.cdll.LoadLibrary(get_dynamic_lib_path_from_metaffi_home(python_plugin_dir))
+xllr_python3 = ctypes.PyDLL(get_dynamic_lib_path_from_metaffi_home(python_plugin_dir))
 xllr_python3.call_xcall.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.py_object, ctypes.py_object, ctypes.py_object]
 xllr_python3.call_xcall.restype = ctypes.py_object
 

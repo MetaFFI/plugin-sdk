@@ -468,17 +468,22 @@ struct cdt
 						cdt_val.string32_val = nullptr;
 					}break;
 				
-					// do not free the handle! as it is a pointer to a handle.
-					// The entities' lifetime is not managed by the CDT, but directly
-					// by the user with the cdt_metaffi_handle object.
+					// If free_required is true, the handle was allocated with xllr_alloc_memory
+					// and should be freed with xllr_free_memory. Otherwise, it's managed externally.
 					case metaffi_handle_type:
 					{
 						if(cdt_val.handle_val)
 						{
-							cdt_val.handle_val->release = nullptr;
-							cdt_val.handle_val->handle = nullptr;
-							cdt_val.handle_val->runtime_id = 0;
+							// Call release callback if it exists
+							if(cdt_val.handle_val->release)
+							{
+								cdt_val.handle_val->release(cdt_val.handle_val);
+							}
+							// If free_required is true, free the handle structure itself
+							// (it was allocated with xllr_alloc_memory)
+							void* handle_ptr = cdt_val.handle_val;
 							cdt_val.handle_val = nullptr;
+							xllr_free_memory(handle_ptr);
 						}
 					}break;
 				

@@ -23,6 +23,7 @@
 #include <cstdlib>
 #endif
 
+
 // Initialize all function pointers to nullptr
 PyLong_FromUnsignedLongLong_t pPyLong_FromUnsignedLongLong = nullptr;
 PyBool_FromLong_t pPyBool_FromLong = nullptr;
@@ -62,6 +63,8 @@ PyLong_AsLong_t pPyLong_AsLong = nullptr;
 PyLong_AsLongLong_t pPyLong_AsLongLong = nullptr;
 PyLong_AsUnsignedLong_t pPyLong_AsUnsignedLong = nullptr;
 PyLong_AsUnsignedLongLong_t pPyLong_AsUnsignedLongLong = nullptr;
+
+PyNumber_Multiply_t pPyNumber_Multiply = nullptr;
 
 PyFloat_FromDouble_t pPyFloat_FromDouble = nullptr;
 PyFloat_FromString_t pPyFloat_FromString = nullptr;
@@ -168,6 +171,7 @@ PySys_ResetWarnOptions_t pPySys_ResetWarnOptions = nullptr;
 PySys_GetXOptions_t pPySys_GetXOptions = nullptr;
 
 Py_CompileString_t pPy_CompileString = nullptr;
+PyRun_String_t pPyRun_String = nullptr;
 PyRun_SimpleString_t pPyRun_SimpleString = nullptr;
 PyErr_PrintEx_t pPyErr_PrintEx = nullptr;
 PyErr_Display_t pPyErr_Display = nullptr;
@@ -207,6 +211,7 @@ PyObject* pPyExc_RuntimeError = nullptr;
 PyObject* pPyExc_ValueError = nullptr;
 PyObject* pPyProperty_Type = nullptr;
 PyObject* pPyTuple_Type = nullptr;
+PyObject* pPyCapsule_Type = nullptr;
 PyObject* pPy_None = nullptr;
 PyObject* pPy_True = nullptr;
 PyObject* pPy_False = nullptr;
@@ -214,10 +219,10 @@ PyObject* pPy_False = nullptr;
 PyObject_Str_t pPyObject_Str = nullptr;
 PyCapsule_New_t pPyCapsule_New = nullptr;
 PyCapsule_GetPointer_t pPyCapsule_GetPointer = nullptr;
-PyCapsule_CheckExact_t pPyCapsule_CheckExact = nullptr;
 
 #ifdef _WIN32
 static HMODULE python_lib_handle = nullptr;
+static std::string python_lib_path;  // Track the loaded library path for error messages
 
 std::string GetLastErrorAsString()
 {
@@ -240,6 +245,7 @@ std::string GetLastErrorAsString()
 }
 #else
 static void* python_lib_handle = nullptr;
+static std::string python_lib_path;  // Track the loaded library path for error messages
 
 std::vector<std::string> get_python_search_paths()
 {
@@ -413,7 +419,20 @@ static bool try_load_python_library(const std::string& version)
 	
 	// Try version-specific DLL first
 	python_lib_handle = LoadLibraryA(python_dll.c_str());
-	if(python_lib_handle) return true;
+	if(python_lib_handle)
+	{
+		// Get the full path of the loaded DLL
+		char path[MAX_PATH];
+		if(GetModuleFileNameA(python_lib_handle, path, MAX_PATH) != 0)
+		{
+			python_lib_path = path;
+		}
+		else
+		{
+			python_lib_path = python_dll;  // Fallback to just the name
+		}
+		return true;
+	}
 	
 	// Try generic python3.dll, but verify its version matches
 	std::string python3_dll_path = find_python3_dll();
@@ -424,7 +443,19 @@ static bool try_load_python_library(const std::string& version)
 		{
 			// Version matches, load it
 			python_lib_handle = LoadLibraryA("python3.dll");
-			if(python_lib_handle) return true;
+			if(python_lib_handle)
+			{
+				char path[MAX_PATH];
+				if(GetModuleFileNameA(python_lib_handle, path, MAX_PATH) != 0)
+				{
+					python_lib_path = path;
+				}
+				else
+				{
+					python_lib_path = python3_dll_path;
+				}
+				return true;
+			}
 		}
 		// If version doesn't match, don't load it - return false
 	}
@@ -435,26 +466,31 @@ static bool try_load_python_library(const std::string& version)
 	void* test_symbol = dlsym(RTLD_DEFAULT, "Py_Initialize");
 	if(test_symbol) {
 		python_lib_handle = RTLD_DEFAULT;
+		python_lib_path = "RTLD_DEFAULT (already loaded in process)";
 		return true;
 	}
 
 	// Try to find already loaded Python library
-	struct dl_phdr_info info = {0};
-	void* found_handle = nullptr;
+	struct {
+		void* handle;
+		std::string path;
+	} found_info = {nullptr, ""};
 	
 	dl_iterate_phdr([](struct dl_phdr_info* info, size_t size, void* data) -> int {
 		if (info->dlpi_name && strstr(info->dlpi_name, "libpython")) {
-			void** handle = static_cast<void**>(data);
-			*handle = dlopen(info->dlpi_name, RTLD_NOLOAD | RTLD_NOW);
-			if (*handle) {
+			auto* found_info = static_cast<decltype(found_info)*>(data);
+			found_info->handle = dlopen(info->dlpi_name, RTLD_NOLOAD | RTLD_NOW);
+			if (found_info->handle) {
+				found_info->path = info->dlpi_name;
 				return 1; // Stop iteration
 			}
 		}
 		return 0; // Continue iteration
-	}, &found_handle);
+	}, &found_info);
 
-	if(found_handle) {
-		python_lib_handle = found_handle;
+	if(found_info.handle) {
+		python_lib_handle = found_info.handle;
+		python_lib_path = found_info.path.empty() ? "already loaded (path unknown)" : found_info.path;
 		return true;
 	}
 
@@ -473,9 +509,13 @@ static bool try_load_python_library(const std::string& version)
 	for(const char* lib_name: lib_names)
 	{
 		python_lib_handle = dlopen(lib_name, RTLD_NOW | RTLD_GLOBAL);
-		if(python_lib_handle) return true;
+		if(python_lib_handle)
+		{
+			python_lib_path = lib_name;
+			return true;
+		}
 	}
-
+	
 	// If direct loading failed, try explicit paths
 	std::vector<std::string> search_paths = get_python_search_paths();
 	for(const auto& path: search_paths)
@@ -484,7 +524,11 @@ static bool try_load_python_library(const std::string& version)
 		{
 			std::string full_path = path + lib_name;
 			python_lib_handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
-			if(python_lib_handle) return true;
+			if(python_lib_handle)
+			{
+				python_lib_path = full_path;
+				return true;
+			}
 		}
 	}
 
@@ -529,13 +573,17 @@ static void load_all_python_symbols()
 	if(!p##symbol)                                                                \
 	{                                                                       \
 		std::string err = GetLastErrorAsString();                           \
+		std::string lib_info = python_lib_path.empty() ? "" : " from library: " + python_lib_path; \
 		throw std::runtime_error(std::string("Failed to load ") + #symbol + \
-		                         (err.empty() ? "" : ": " + err));          \
+		                         (err.empty() ? "" : ": " + err) + lib_info); \
 	}
 #else
 #define LOAD_SYMBOL(handle, symbol, type)         \
 	p##symbol = (type)dlsym(handle, #symbol); \
-	if(!p##symbol && handle != RTLD_DEFAULT) throw std::runtime_error(std::string("Failed to load ") + #symbol + ": " + dlerror())
+	if(!p##symbol && handle != RTLD_DEFAULT) { \
+		std::string lib_info = python_lib_path.empty() ? "" : " from library: " + python_lib_path; \
+		throw std::runtime_error(std::string("Failed to load ") + #symbol + ": " + dlerror() + lib_info); \
+	}
 #endif
 
 	// Load all the function pointers with their correct symbol names
@@ -573,6 +621,7 @@ static void load_all_python_symbols()
 	LOAD_SYMBOL(python_lib_handle, PyLong_AsLongLong, PyLong_AsLongLong_t);
 	LOAD_SYMBOL(python_lib_handle, PyLong_AsUnsignedLong, PyLong_AsUnsignedLong_t);
 	LOAD_SYMBOL(python_lib_handle, PyLong_AsUnsignedLongLong, PyLong_AsUnsignedLongLong_t);
+	LOAD_SYMBOL(python_lib_handle, PyNumber_Multiply, PyNumber_Multiply_t);
 
 	LOAD_SYMBOL(python_lib_handle, PyFloat_FromDouble, PyFloat_FromDouble_t);
 	LOAD_SYMBOL(python_lib_handle, PyFloat_FromString, PyFloat_FromString_t);
@@ -679,6 +728,7 @@ static void load_all_python_symbols()
 	LOAD_SYMBOL(python_lib_handle, PySys_GetXOptions, PySys_GetXOptions_t);
 
 	LOAD_SYMBOL(python_lib_handle, Py_CompileString, Py_CompileString_t);
+	LOAD_SYMBOL(python_lib_handle, PyRun_String, PyRun_String_t);
 	LOAD_SYMBOL(python_lib_handle, PyRun_SimpleString, PyRun_SimpleString_t);
 	LOAD_SYMBOL(python_lib_handle, PyErr_PrintEx, PyErr_PrintEx_t);
 	LOAD_SYMBOL(python_lib_handle, PyErr_Display, PyErr_Display_t);
@@ -719,13 +769,29 @@ static void load_all_python_symbols()
 
 	LOAD_SYMBOL(python_lib_handle, PyCapsule_New, PyCapsule_New_t);
 	LOAD_SYMBOL(python_lib_handle, PyCapsule_GetPointer, PyCapsule_GetPointer_t);
-	LOAD_SYMBOL(python_lib_handle, PyCapsule_CheckExact, PyCapsule_CheckExact_t);
 
 	LOAD_SYMBOL(python_lib_handle, PyInterpreterState_Get, PyInterpreterState_Get_t);
 
 #ifdef _WIN32
-	LOAD_SYMBOL(python_lib_handle, PyExc_RuntimeError, PyTypeObject*);
-	LOAD_SYMBOL(python_lib_handle, PyExc_ValueError, PyTypeObject*);
+	// PyExc_RuntimeError and PyExc_ValueError are exported data symbols (PyObject*)
+	// GetProcAddress returns the address of the variable (PyObject**), so we must dereference
+	void* sym_addr = GetProcAddress(python_lib_handle, "PyExc_RuntimeError");
+	if(!sym_addr)
+	{
+		std::string err = GetLastErrorAsString();
+		std::string lib_info = python_lib_path.empty() ? "" : " from library: " + python_lib_path;
+		throw std::runtime_error(std::string("Failed to load ") + "PyExc_RuntimeError" + (err.empty() ? "" : ": " + err) + lib_info);
+	}
+	pPyExc_RuntimeError = *(PyObject**)sym_addr;
+	
+	sym_addr = GetProcAddress(python_lib_handle, "PyExc_ValueError");
+	if(!sym_addr)
+	{
+		std::string err = GetLastErrorAsString();
+		std::string lib_info = python_lib_path.empty() ? "" : " from library: " + python_lib_path;
+		throw std::runtime_error(std::string("Failed to load ") + "PyExc_ValueError" + (err.empty() ? "" : ": " + err) + lib_info);
+	}
+	pPyExc_ValueError = *(PyObject**)sym_addr;
 	LOAD_SYMBOL(python_lib_handle, PyProperty_Type, PyTypeObject*);
 	LOAD_SYMBOL(python_lib_handle, PyType_Type, PyTypeObject*);
 	LOAD_SYMBOL(python_lib_handle, PyBaseObject_Type, PyTypeObject*);
@@ -738,26 +804,30 @@ static void load_all_python_symbols()
 	LOAD_SYMBOL(python_lib_handle, PyDict_Type, PyTypeObject*);
 	LOAD_SYMBOL(python_lib_handle, PyUnicode_Type, PyTypeObject*);
 	LOAD_SYMBOL(python_lib_handle, PyBytes_Type, PyTypeObject*);
+	LOAD_SYMBOL(python_lib_handle, PyCapsule_Type, PyTypeObject*);
 
 	pPy_None = (PyObject*)GetProcAddress(python_lib_handle, "_Py_NoneStruct");
 	if(!pPy_None)
 	{
 		std::string err = GetLastErrorAsString();
-		throw std::runtime_error(std::string("Failed to load ") + "_Py_NoneStruct" + (err.empty() ? "" : ": " + err));
+		std::string lib_info = python_lib_path.empty() ? "" : " from library: " + python_lib_path;
+		throw std::runtime_error(std::string("Failed to load ") + "_Py_NoneStruct" + (err.empty() ? "" : ": " + err) + lib_info);
 	}
 
 	pPy_True = (PyObject*)GetProcAddress(python_lib_handle, "_Py_TrueStruct");
 	if(!pPy_True)
 	{
 		std::string err = GetLastErrorAsString();
-		throw std::runtime_error(std::string("Failed to load ") + "_Py_TrueStruct" + (err.empty() ? "" : ": " + err));
+		std::string lib_info = python_lib_path.empty() ? "" : " from library: " + python_lib_path;
+		throw std::runtime_error(std::string("Failed to load ") + "_Py_TrueStruct" + (err.empty() ? "" : ": " + err) + lib_info);
 	}
 
 	pPy_False = (PyObject*)GetProcAddress(python_lib_handle, "_Py_FalseStruct");
 	if(!pPy_False)
 	{
 		std::string err = GetLastErrorAsString();
-		throw std::runtime_error(std::string("Failed to load ") + "_Py_FalseStruct" + (err.empty() ? "" : ": " + err));
+		std::string lib_info = python_lib_path.empty() ? "" : " from library: " + python_lib_path;
+		throw std::runtime_error(std::string("Failed to load ") + "_Py_FalseStruct" + (err.empty() ? "" : ": " + err) + lib_info);
 	}
 #endif
 
@@ -826,37 +896,54 @@ bool load_python3_api_from_loaded_library(std::string& out_detected_version)
 	python_lib_handle = found_handle;
 	out_detected_version = found_version;
 	
+	// Get the full path of the loaded DLL
+	char path[MAX_PATH];
+	if(GetModuleFileNameA(found_handle, path, MAX_PATH) != 0)
+	{
+		python_lib_path = path;
+	}
+	else
+	{
+		python_lib_path = "python3.dll (path unknown)";
+	}
+	
 #else
 	// On Linux/macOS, first try RTLD_DEFAULT (Python loaded with RTLD_GLOBAL)
 	void* test_symbol = dlsym(RTLD_DEFAULT, "Py_IsInitialized");
 	if(test_symbol)
 	{
 		python_lib_handle = RTLD_DEFAULT;
+		python_lib_path = "RTLD_DEFAULT (already loaded in process)";
 	}
 	else
 	{
 		// Try to find the library using dl_iterate_phdr
-		void* found_handle = nullptr;
+		struct {
+			void* handle;
+			std::string path;
+		} found_info = {nullptr, ""};
 		
 		dl_iterate_phdr([](struct dl_phdr_info* info, size_t size, void* data) -> int {
 			if(info->dlpi_name && strstr(info->dlpi_name, "libpython"))
 			{
-				void** handle = static_cast<void**>(data);
-				*handle = dlopen(info->dlpi_name, RTLD_NOLOAD | RTLD_NOW);
-				if(*handle)
+				auto* found_info = static_cast<decltype(found_info)*>(data);
+				found_info->handle = dlopen(info->dlpi_name, RTLD_NOLOAD | RTLD_NOW);
+				if(found_info->handle)
 				{
+					found_info->path = info->dlpi_name ? info->dlpi_name : "";
 					return 1;  // Stop iteration
 				}
 			}
 			return 0;  // Continue iteration
-		}, &found_handle);
+		}, &found_info);
 		
-		if(found_handle == nullptr)
+		if(found_info.handle == nullptr)
 		{
 			return false;
 		}
 		
-		python_lib_handle = found_handle;
+		python_lib_handle = found_info.handle;
+		python_lib_path = found_info.path.empty() ? "already loaded (path unknown)" : found_info.path;
 	}
 	
 	// Detect version by querying Py_GetVersion after loading symbols

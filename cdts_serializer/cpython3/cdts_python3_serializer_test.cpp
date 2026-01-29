@@ -946,7 +946,9 @@ TEST_SUITE("CDTS Python3 Serializer")
 		pPyList_SetItem(py_list, 1, pPyLong_FromLong(20));
 
 		data[0].type = metaffi_handle_type;
-		data[0].cdt_val.handle_val = new cdt_metaffi_handle();
+		void* handle_mem = xllr_alloc_memory(sizeof(cdt_metaffi_handle));
+		REQUIRE(handle_mem != nullptr);
+		data[0].cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
 		data[0].cdt_val.handle_val->handle = py_list;
 		data[0].cdt_val.handle_val->runtime_id = 0;
 		data[0].cdt_val.handle_val->release = cpython3_runtime_manager::py_object_releaser;

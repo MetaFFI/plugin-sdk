@@ -3,25 +3,23 @@ import sys
 import os
 import unittest
 
+from sdk.api.python3.metaffi.xllr_wrapper import xllr_python3
+
 # make sure metaffi module is loaded from the local path, and not from the installed package
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 import metaffi
 
-# Create a MetaFFIRuntime object
-runtime: metaffi.metaffi_runtime.MetaFFIRuntime = metaffi.metaffi_runtime.MetaFFIRuntime('python3')
-current_path = os.path.dirname(os.path.realpath(__file__))
-
-test_runtime_module: metaffi.metaffi_module.MetaFFIModule | None = None
-test_map_module: metaffi.metaffi_module.MetaFFIModule | None = None
+# Create a MetaFFIRuntime object for test plugin
+runtime: metaffi.metaffi_runtime.MetaFFIRuntime = metaffi.metaffi_runtime.MetaFFIRuntime('test')
+test_module: metaffi.metaffi_module.MetaFFIModule | None = None
 
 
 def init():
 	global runtime
-	global test_runtime_module
-	global test_map_module
+	global test_module
 	
-	test_runtime_module = runtime.load_module(os.path.join(os.path.dirname(__file__), '..', '..', 'runtime', 'test', 'runtime_test_target.py'))
-	
+	# Test plugin doesn't use modules, so use empty string
+	test_module = runtime.load_module("")
+
 
 def fini():
 	pass
@@ -54,286 +52,515 @@ class TestAPI(unittest.TestCase):
 	def tearDownClass(cls):
 		fini()
 	
-	def test_hello_world(self):
-		global test_runtime_module
-		assert test_runtime_module is not None
-		
-		# load hello world
-		hello_world = test_runtime_module.load_entity('callable=hello_world', None, None)
-		hello_world()
-		del hello_world
-		
-		# assert_objects_not_loaded_of_type(self, 'MetaFFIEntity')
+	# ========================================================================
+	# Primitives - No Params, No Return
+	# ========================================================================
 	
-	def test_returns_an_error(self):
-		global test_runtime_module
-		assert test_runtime_module is not None
+	def test_primitives_no_params_no_ret(self):
+		"""Test entities that take no parameters and return nothing"""
+		global test_module
+		assert test_module is not None
 		
-		# Load the function that is expected to return an error
-		returns_an_error = test_runtime_module.load_entity('callable=returns_an_error', None, None)
-		try:
-			returns_an_error()
-			self.fail("Expected an error but none occurred.")
-		except Exception as e:
-			# Assuming the error is raised as an exception in Python
-			pass
+		# test::no_op - Does nothing, just logs
+		no_op = test_module.load_entity("test::no_op", None, None)
+		no_op()
+		del no_op
 		
-		del returns_an_error
-		
-		# assert_objects_not_loaded_of_type(self, 'MetaFFIEntity')
+		# test::print_hello - Prints "Hello from test plugin!" to STDOUT
+		print_hello = test_module.load_entity("test::print_hello", None, None)
+		print_hello()
+		del print_hello
 	
-	def test_div_integers(self):
-		global test_runtime_module
-		assert test_runtime_module is not None
-		
-		# Load the function for dividing integers
-		div_integers = test_runtime_module.load_entity('callable=div_integers', [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type), metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)], [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_float64_type)])
-		try:
-			# Prepare parameters and call the function
-			result = div_integers(10, 2)
-			# Check if the result is as expected
-			self.assertEqual(5.0, result)
-		except Exception as e:
-			# Handle any errors that occur
-			self.fail(f"Unexpected error occurred: {str(e)}")
-		
-		del div_integers
-		
-		# assert_objects_not_loaded_of_type(self, 'MetaFFIEntity')
+	# ========================================================================
+	# Primitives - Return Values Only
+	# ========================================================================
 	
-	def test_join_strings(self):
-		global test_runtime_module
-		assert test_runtime_module is not None
+	def test_primitives_return_only(self):
+		"""Test entities that return specific primitive values"""
+		global test_module
+		assert test_module is not None
 		
-		# Load the function for joining strings
-		join_strings = test_runtime_module.load_entity('callable=join_strings',
-			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_array_type)],
-			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)])
-		try:
-			# Prepare parameters and call the function
-			result = join_strings(["one", "two", "three"])
-			# Check if the result is as expected
-			self.assertEqual("one,two,three", result)
-		except Exception as e:
-			# Handle any errors that occur
-			self.fail(f"Unexpected error occurred: {str(e)}")
+		# Integer types
+		return_int8 = test_module.load_entity("test::return_int8", None, 
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int8_type)])
+		self.assertEqual(return_int8(), 42)
+		del return_int8
 		
-		del join_strings
+		return_int16 = test_module.load_entity("test::return_int16", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int16_type)])
+		self.assertEqual(return_int16(), 1000)
+		del return_int16
 		
-		# assert_objects_not_loaded_of_type(self, 'MetaFFIEntity')
-	
-	def test_wait_a_bit(self):
-		global test_runtime_module
-		assert test_runtime_module is not None
+		return_int32 = test_module.load_entity("test::return_int32", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int32_type)])
+		self.assertEqual(return_int32(), 100000)
+		del return_int32
 		
-		# Retrieve the global variable five_seconds
-		five_seconds_getter = test_runtime_module.load_entity('attribute=five_seconds,getter', [], [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)])
-		try:
-			five_seconds = five_seconds_getter()
-		except Exception as e:
-			self.fail(f"Failed to get five_seconds: {str(e)}")
+		return_int64 = test_module.load_entity("test::return_int64", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)])
+		self.assertEqual(return_int64(), 9223372036854775807)
+		del return_int64
 		
-		self.assertEqual(five_seconds, 5, "Expected five_seconds to be 5")
+		# Unsigned integer types
+		return_uint8 = test_module.load_entity("test::return_uint8", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_uint8_type)])
+		self.assertEqual(return_uint8(), 255)
+		del return_uint8
 		
-		# Call wait_a_bit function with five_seconds
-		wait_a_bit = test_runtime_module.load_entity('callable=wait_a_bit', [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)], None)
-		try:
-			wait_a_bit(five_seconds)
-		except Exception as e:
-			self.fail(f"wait_a_bit function failed: {str(e)}")
+		return_uint16 = test_module.load_entity("test::return_uint16", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_uint16_type)])
+		self.assertEqual(return_uint16(), 65535)
+		del return_uint16
 		
-		del five_seconds_getter
-		del wait_a_bit
+		return_uint32 = test_module.load_entity("test::return_uint32", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_uint32_type)])
+		self.assertEqual(return_uint32(), 4294967295)
+		del return_uint32
 		
-		# assert_objects_not_loaded_of_type(self, 'MetaFFIEntity')
-	
-	def test_testmap_set_get_contains(self):
-		global test_runtime_module
-		assert test_runtime_module is not None
+		return_uint64 = test_module.load_entity("test::return_uint64", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_uint64_type)])
+		self.assertEqual(return_uint64(), 18446744073709551615)
+		del return_uint64
 		
-		new_testmap = test_runtime_module.load_entity('callable=testmap', [], [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_type)])
-		testmap_set = test_runtime_module.load_entity('callable=testmap.set,instance_required',
-			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_type),
-			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type),
-			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_any_type)],
-			[])
-		testmap_contains = test_runtime_module.load_entity('callable=testmap.contains,instance_required',
-			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_type),
-			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)],
+		# Float types
+		return_float32 = test_module.load_entity("test::return_float32", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_float32_type)])
+		self.assertAlmostEqual(return_float32(), 3.14159, places=5)
+		del return_float32
+		
+		return_float64 = test_module.load_entity("test::return_float64", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_float64_type)])
+		self.assertAlmostEqual(return_float64(), 3.141592653589793, places=15)
+		del return_float64
+		
+		# Boolean types
+		return_bool_true = test_module.load_entity("test::return_bool_true", None,
 			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_bool_type)])
+		self.assertEqual(return_bool_true(), True)
+		del return_bool_true
 		
-		testmap_get = test_runtime_module.load_entity('callable=testmap.get,instance_required',
+		return_bool_false = test_module.load_entity("test::return_bool_false", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_bool_type)])
+		self.assertEqual(return_bool_false(), False)
+		del return_bool_false
+		
+		# String type
+		return_string8 = test_module.load_entity("test::return_string8", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)])
+		self.assertEqual(return_string8(), "Hello from test plugin")
+		del return_string8
+		
+		# Null type
+		return_null = test_module.load_entity("test::return_null", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_null_type)])
+		self.assertIsNone(return_null())
+		del return_null
+	
+	# ========================================================================
+	# Primitives - Accept Values Only
+	# ========================================================================
+	
+	def test_primitives_accept_only(self):
+		"""Test entities that accept primitive values and log them"""
+		global test_module
+		assert test_module is not None
+		
+		# Integer types
+		accept_int8 = test_module.load_entity("test::accept_int8",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int8_type)], None)
+		accept_int8(42)
+		del accept_int8
+		
+		accept_int16 = test_module.load_entity("test::accept_int16",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int16_type)], None)
+		accept_int16(1000)
+		del accept_int16
+		
+		accept_int32 = test_module.load_entity("test::accept_int32",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int32_type)], None)
+		accept_int32(100000)
+		del accept_int32
+		
+		accept_int64 = test_module.load_entity("test::accept_int64",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)], None)
+		accept_int64(9223372036854775807)
+		del accept_int64
+		
+		# Float types
+		accept_float32 = test_module.load_entity("test::accept_float32",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_float32_type)], None)
+		accept_float32(3.14159)
+		del accept_float32
+		
+		accept_float64 = test_module.load_entity("test::accept_float64",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_float64_type)], None)
+		accept_float64(3.141592653589793)
+		del accept_float64
+		
+		# Boolean type
+		accept_bool = test_module.load_entity("test::accept_bool",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_bool_type)], None)
+		accept_bool(True)
+		accept_bool(False)
+		del accept_bool
+		
+		# String type
+		accept_string8 = test_module.load_entity("test::accept_string8",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)], None)
+		accept_string8("test string")
+		del accept_string8
+	
+	# ========================================================================
+	# Echo Functions
+	# ========================================================================
+	
+	def test_echo_functions(self):
+		"""Test entities that echo (return) their input unchanged"""
+		global test_module
+		assert test_module is not None
+		
+		# Echo int64
+		echo_int64 = test_module.load_entity("test::echo_int64",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)])
+		self.assertEqual(echo_int64(42), 42)
+		self.assertEqual(echo_int64(-100), -100)
+		del echo_int64
+		
+		# Echo float64
+		echo_float64 = test_module.load_entity("test::echo_float64",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_float64_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_float64_type)])
+		self.assertAlmostEqual(echo_float64(3.14), 3.14, places=10)
+		del echo_float64
+		
+		# Echo string8
+		echo_string8 = test_module.load_entity("test::echo_string8",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)])
+		self.assertEqual(echo_string8("hello"), "hello")
+		self.assertIsNone(echo_string8(None))  # null input returns null
+		del echo_string8
+		
+		# Echo bool
+		echo_bool = test_module.load_entity("test::echo_bool",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_bool_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_bool_type)])
+		self.assertEqual(echo_bool(True), True)
+		self.assertEqual(echo_bool(False), False)
+		del echo_bool
+	
+	# ========================================================================
+	# Arithmetic Functions
+	# ========================================================================
+	
+	def test_arithmetic_functions(self):
+		"""Test arithmetic operations"""
+		global test_module
+		assert test_module is not None
+		
+		# Add int64
+		add_int64 = test_module.load_entity("test::add_int64",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type),
+			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)])
+		self.assertEqual(add_int64(10, 20), 30)
+		self.assertEqual(add_int64(-5, 5), 0)
+		del add_int64
+		
+		# Add float64
+		add_float64 = test_module.load_entity("test::add_float64",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_float64_type),
+			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_float64_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_float64_type)])
+		self.assertAlmostEqual(add_float64(1.5, 2.5), 4.0, places=10)
+		del add_float64
+		
+		# Concat strings
+		concat_strings = test_module.load_entity("test::concat_strings",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type),
+			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)])
+		self.assertEqual(concat_strings("hello", "world"), "helloworld")
+		del concat_strings
+	
+	# ========================================================================
+	# Arrays
+	# ========================================================================
+	
+	def test_arrays(self):
+		"""Test array operations - 1D, 2D, 3D, ragged, and string arrays"""
+		global test_module
+		assert test_module is not None
+		
+		# Return 1D int64 array
+		return_int64_array_1d = test_module.load_entity("test::return_int64_array_1d", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_array_type, dims=1)])
+		result_1d = return_int64_array_1d()
+		self.assertEqual(result_1d, [1, 2, 3])
+		del return_int64_array_1d
+		
+		# Return 2D int64 array
+		return_int64_array_2d = test_module.load_entity("test::return_int64_array_2d", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_array_type, dims=2)])
+		result_2d = return_int64_array_2d()
+		self.assertEqual(result_2d, [[1, 2], [3, 4]])
+		del return_int64_array_2d
+		
+		# Return 3D int64 array
+		return_int64_array_3d = test_module.load_entity("test::return_int64_array_3d", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_array_type, dims=3)])
+		result_3d = return_int64_array_3d()
+		self.assertEqual(result_3d, [[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+		del return_int64_array_3d
+		
+		# Return ragged array
+		return_ragged_array = test_module.load_entity("test::return_ragged_array", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_array_type, dims=2)])
+		result_ragged = return_ragged_array()
+		self.assertEqual(result_ragged, [[1, 2, 3], [4], [5, 6]])
+		del return_ragged_array
+		
+		# Return string array
+		return_string_array = test_module.load_entity("test::return_string_array", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_array_type, dims=1)])
+		result_strings = return_string_array()
+		self.assertEqual(result_strings, ["one", "two", "three"])
+		del return_string_array
+		
+		# Sum int64 array
+		sum_int64_array = test_module.load_entity("test::sum_int64_array",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_array_type, dims=1)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)])
+		self.assertEqual(sum_int64_array([1, 2, 3, 4, 5]), 15)
+		del sum_int64_array
+		
+		# Echo int64 array
+		echo_int64_array = test_module.load_entity("test::echo_int64_array",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_array_type, dims=1)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_array_type, dims=1)])
+		input_arr = [10, 20, 30]
+		result = echo_int64_array(input_arr)
+		self.assertEqual(result, input_arr)
+		del echo_int64_array
+		
+		# Join strings
+		join_strings = test_module.load_entity("test::join_strings",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_array_type, dims=1)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)])
+		result = join_strings(["one", "two", "three"])
+		self.assertEqual(result, "one, two, three")
+		del join_strings
+	
+	# ========================================================================
+	# Handles (Opaque Objects)
+	# ========================================================================
+	
+	def test_handles(self):
+		"""Test handle (opaque object) operations"""
+		global test_module
+		assert test_module is not None
+		
+		# Create handle
+		create_handle = test_module.load_entity("test::create_handle", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_type)])
+		handle = create_handle()
+		self.assertIsNotNone(handle)
+		del create_handle
+		
+		# Get handle data
+		get_handle_data = test_module.load_entity("test::get_handle_data",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)])
+		data = get_handle_data(handle)
+		self.assertEqual(data, "test_data")
+		del get_handle_data
+		
+		# Set handle data
+		set_handle_data = test_module.load_entity("test::set_handle_data",
 			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_type),
 			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)],
+			None)
+		set_handle_data(handle, "new_data")
+		del set_handle_data
+		
+		# Verify data was updated
+		get_handle_data2 = test_module.load_entity("test::get_handle_data",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)])
+		data2 = get_handle_data2(handle)
+		self.assertEqual(data2, "new_data")
+		del get_handle_data2
+		
+		# Release handle (logs release request)
+		release_handle = test_module.load_entity("test::release_handle",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_type)],
+			None)
+		release_handle(handle)
+		del release_handle
+		del handle
+	
+	# ========================================================================
+	# Callables (Callbacks)
+	# ========================================================================
+	
+	def test_callables(self):
+		"""Test callable (callback) operations"""
+		global test_module
+		assert test_module is not None
+		
+		# sys.path.insert(0, os.path.join(os.getenv('METAFFI_SOURCE_ROOT'), 'sdk', 'api', 'python3'))
+		from metaffi import xllr_wrapper
+		
+		
+		print(f'1 - type(metaffi.xllr_wrapper.xllr_python3.call_xcall) {type(xllr_wrapper.xllr_python3.call_xcall)}')
+		print(f'1 - id(metaffi.xllr_wrapper.xllr_python3) {id(xllr_wrapper.xllr_python3)}')
+
+		# Define a Python function to pass as callback
+		def adder(a: int, b: int) -> int:
+			return a + b
+
+		# Call callback add
+		call_callback_add = test_module.load_entity("test::call_callback_add",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_callable_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)])
+
+		metaffi_callable = metaffi.make_metaffi_callable(adder)
+		result = call_callback_add(metaffi_callable)
+		self.assertEqual(result, 7)  # 3 + 4 = 7
+		del call_callback_add
+		del metaffi_callable
+		
+		print(f'2 - type(metaffi.xllr_wrapper.xllr_python3.call_xcall) {type(xllr_wrapper.xllr_python3.call_xcall)}')
+		print(f'2 - id(metaffi.xllr_wrapper.xllr_python3) {id(xllr_wrapper.xllr_python3)}')
+
+		# Call callback string
+		def string_processor(s: str) -> str:
+			return s.upper()
+
+		call_callback_string = test_module.load_entity("test::call_callback_string",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_callable_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)])
+
+		metaffi_callable2 = metaffi.make_metaffi_callable(string_processor)
+		result2 = call_callback_string(metaffi_callable2)
+		self.assertEqual(result2, "TEST")
+		del call_callback_string
+		del metaffi_callable2
+		
+		print(f'3 - type(metaffi.xllr_wrapper.xllr_python3.call_xcall) {type(xllr_wrapper.xllr_python3.call_xcall)}')
+		print(f'3 - id(metaffi.xllr_wrapper.xllr_python3) {id(xllr_wrapper.xllr_python3)}')
+		
+		
+		# Return adder callback
+		return_adder_callback = test_module.load_entity("test::return_adder_callback", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_callable_type)])
+		adder_callback = return_adder_callback()
+		result3 = adder_callback(10, 20)
+		self.assertEqual(result3[0], 30)
+		del return_adder_callback
+		del adder_callback
+	
+	# ========================================================================
+	# Error Handling
+	# ========================================================================
+	
+	def test_error_handling(self):
+		"""Test error handling scenarios"""
+		global test_module
+		assert test_module is not None
+		
+		# Throw error - always returns error
+		throw_error = test_module.load_entity("test::throw_error", None, None)
+		with self.assertRaises(RuntimeError) as context:
+			throw_error()
+		self.assertIn("Test error thrown intentionally", str(context.exception))
+		del throw_error
+		
+		# Throw with message
+		throw_with_message = test_module.load_entity("test::throw_with_message",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)],
+			None)
+		with self.assertRaises(RuntimeError) as context:
+			throw_with_message("Custom error message")
+		self.assertIn("Custom error message", str(context.exception))
+		del throw_with_message
+		
+		# Error if negative - succeeds for positive
+		error_if_negative = test_module.load_entity("test::error_if_negative",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)],
+			None)
+		error_if_negative(42)  # Should succeed
+		
+		# Error if negative - fails for negative
+		with self.assertRaises(RuntimeError) as context:
+			error_if_negative(-1)
+		self.assertIn("negative", str(context.exception).lower())
+		del error_if_negative
+	
+	# ========================================================================
+	# Any Type (Dynamic Type)
+	# ========================================================================
+	
+	def test_any_type(self):
+		"""Test accept_any entity that accepts any type at runtime"""
+		global test_module
+		assert test_module is not None
+		
+		accept_any = test_module.load_entity("test::accept_any",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_any_type)],
 			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_any_type)])
 		
-		# Create new testmap
-		testmap_instance = new_testmap()
-		self.assertIsNotNone(testmap_instance, "Failed to create testmap instance")
+		# Test with int64 - returns int64 with different value (input + 100)
+		result1 = accept_any(42)
+		self.assertEqual(142, result1)  # 42 + 100 = 142
 		
-		# Set a value in the testmap
-		testmap_set(testmap_instance, "key", 42)
+		# Test with float64 - returns float64 with different value (input * 2.0)
+		result2 = accept_any(3.14)
+		self.assertAlmostEqual(6.28, result2, places=10)  # 3.14 * 2.0 = 6.28
 		
-		# Check if the key exists in the testmap
-		contains_result = testmap_contains(testmap_instance, "key")
-		self.assertTrue(contains_result, "Key does not exist in testmap")
+		# Test with string8 - returns string8 with different value
+		result3 = accept_any("hello")
+		self.assertEqual("echoed: hello", result3)
 		
-		# Get the value from the testmap
-		get_result = testmap_get(testmap_instance, "key")
-		self.assertEqual(get_result, 42, "Retrieved value does not match expected")
+		# Test with int64[] array (Python ints serialize as int64) - returns different array
+		result4 = accept_any([1, 2, 3])
+		self.assertEqual([10, 20, 30], result4)
 		
-		del new_testmap
-		del testmap_set
-		del testmap_contains
-		del testmap_get
-		
-		# no need to check the "releaser" as we are calling Python from Python
-		
-		# assert_objects_not_loaded_of_type(self, 'MetaFFIEntity')
+		del accept_any
 	
-	def test_runtime_test_target_SomeClass(self):
-		global test_runtime_module
-		assert test_runtime_module is not None
-
-		pgetSomeClasses = test_runtime_module.load_entity('callable=get_some_classes', [], [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_array_type)])
-		someclassList = pgetSomeClasses()
-		
-		self.assertEqual(3, len(someclassList))
-		self.assertTrue(isinstance(someclassList, list))
-		
-		pSomeClassPrint = test_runtime_module.load_entity('callable=SomeClass.print', [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_type)], [])
-		for some_class in someclassList:
-			pSomeClassPrint(some_class)
-		
-		pexpectThreeSomeClasses = test_runtime_module.load_entity('callable=expect_three_some_classes', [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_array_type)], [])
-		pexpectThreeSomeClasses(someclassList)
-		
-		del pgetSomeClasses
-		del pSomeClassPrint
-		del pexpectThreeSomeClasses
-		
-		# assert_objects_not_loaded_of_type(self, 'MetaFFIEntity')
+	# ========================================================================
+	# Multiple Return Values
+	# ========================================================================
 	
-	def test_runtime_test_target_ThreeBuffers(self):
-		global test_runtime_module
-		assert test_runtime_module is not None
-
-		pexpectThreeBuffers = test_runtime_module.load_entity('callable=expect_three_buffers', [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_uint8_array_type, dims=2)], [])
-		pgetThreeBuffers = test_runtime_module.load_entity('callable=get_three_buffers', [], [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_uint8_array_type, dims=2)])
+	def test_multiple_return_values(self):
+		"""Test entities that return multiple values (as tuples)"""
+		global test_module
+		assert test_module is not None
 		
-		# Pass 3 buffers
-		buffers_to_pass = [
-			bytes([1, 2]),  # First buffer with 2 elements
-			bytes([3, 4, 5]),  # Second buffer with 3 elements
-			bytes([6, 7, 8, 9])  # Third buffer with 4 elements
-		]
-		pexpectThreeBuffers(buffers_to_pass)
+		# Return two values
+		return_two_values = test_module.load_entity("test::return_two_values", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type),
+			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)])
+		result = return_two_values()
+		self.assertEqual(result, (42, "answer"))
+		del return_two_values
 		
-		# Get 3 buffers
-		retrieved_buffers = pgetThreeBuffers()
+		# Return three values
+		return_three_values = test_module.load_entity("test::return_three_values", None,
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type),
+			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_float64_type),
+			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_bool_type)])
+		result = return_three_values()
+		self.assertEqual(result, (1, 2.5, True))
+		del return_three_values
 		
-		# Assertions for retrieved buffers
-		self.assertEqual(len(retrieved_buffers), 3)
-		self.assertEqual(len(retrieved_buffers[0]), 4)  # First buffer length
-		self.assertEqual(len(retrieved_buffers[1]), 3)  # Second buffer length
-		self.assertEqual(len(retrieved_buffers[2]), 2)  # Third buffer length
-		
-		self.assertEqual(retrieved_buffers[0][0], 1)
-		self.assertEqual(retrieved_buffers[0][1], 2)
-		self.assertEqual(retrieved_buffers[0][2], 3)
-		self.assertEqual(retrieved_buffers[0][3], 4)
-		
-		self.assertEqual(retrieved_buffers[1][0], 5)
-		self.assertEqual(retrieved_buffers[1][1], 6)
-		self.assertEqual(retrieved_buffers[1][2], 7)
-		
-		self.assertEqual(retrieved_buffers[2][0], 8)
-		self.assertEqual(retrieved_buffers[2][1], 9)
-		
-		del pexpectThreeBuffers
-		del pgetThreeBuffers
-		
-		# assert_objects_not_loaded_of_type(self, 'MetaFFIEntity')
-	
-	def test_return_null(self):
-		global test_runtime_module
-		assert test_runtime_module is not None
-
-		# Load the entity that is expected to return null
-		preturn_null = test_runtime_module.load_entity('callable=return_null', [], [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_type)])
-		
-		result = preturn_null()
-		# Assert that the result is None, which is the expected equivalent of null in Python
-		self.assertIsNone(result, "Expected result to be None")
-		
-		del preturn_null
-		
-		# assert_objects_not_loaded_of_type(self, 'MetaFFIEntity')
-	
-	def test_returns_array_of_different_objects(self):
-		global test_runtime_module
-		assert test_runtime_module is not None
-
-		# Load the entity that returns an array of different objects
-		preturns_array_of_different_objects = test_runtime_module.load_entity('callable=returns_array_of_different_objects', [], [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_any_type)])
-		
-		# Execute the callable and get the result
-		result = preturns_array_of_different_objects()
-		
-		# Assertions on the returned array
-		self.assertIsInstance(result, list, "Result is not a list")
-		self.assertEqual(len(result), 6, "Array length is not 6")
-		
-		# Asserting types of elements in the array
-		self.assertIsInstance(result[0], int, "First element is not an int")
-		self.assertEqual(result[0], 1, "First element value is not 1")
-		
-		self.assertIsInstance(result[1], str, "Second element is not a string")
-		self.assertEqual(result[1], "string", "Second element value is not 'string'")
-		
-		self.assertIsInstance(result[2], float, "Third element is not a float")
-		self.assertEqual(result[2], 3.0, "Third element value is not 3.0")
-		
-		self.assertIsNone(result[3], "Fourth element is not None")
-		
-		self.assertIsInstance(result[4], bytes, "Fifth element is not bytes")
-		self.assertEqual(result[4], bytes([1, 2, 3]), "Fifth element value is not bytes([1, 2, 3])")
-		
-		# Assuming SomeClass() is represented as a dict or custom object in Python
-		# Adjust this assertion based on the actual representation of SomeClass in Python
-		self.assertTrue('SomeClass' in str(result[5]), "Sixth element is not a SomeClass object")
-		
-		del preturns_array_of_different_objects
-		
-		# assert_objects_not_loaded_of_type(self, 'MetaFFIEntity')
-	
-	def test_call_any(self):
-		global test_runtime_module
-		assert test_runtime_module is not None
-
-		# Load the callable that accepts any type
-		pcall_any = test_runtime_module.load_entity('callable=accepts_any', [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type), metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_any_type)], None)
-		
-		# Load the SomeClass callable
-		pnew_someclass = test_runtime_module.load_entity('callable=SomeClass', None, [metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_handle_type)])
-		
-		# Call with various types
-		
-		# Integer
-		pcall_any(0, 1)
-		# String
-		pcall_any(1, 'string')
-		# Float
-		pcall_any(2, 3.0)
-		# None
-		pcall_any(3, None)
-		# Bytes
-		pcall_any(4, bytes([1, 2, 3]))
-		# SomeClass instance
-		some_class_instance = pnew_someclass()
-		pcall_any(5, some_class_instance)
-		
-		del pcall_any
-		del pnew_someclass
-		
-		# assert_objects_not_loaded_of_type(self, 'MetaFFIEntity')
+		# Swap values
+		swap_values = test_module.load_entity("test::swap_values",
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type),
+			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type)],
+			[metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_string8_type),
+			 metaffi.metaffi_type_info(metaffi.MetaFFITypes.metaffi_int64_type)])
+		result = swap_values(42, "hello")
+		self.assertEqual(result, ("hello", 42))
+		del swap_values

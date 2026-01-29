@@ -30,6 +30,7 @@ typedef const char* (*PyUnicode_AsUTF8_t)(PyObject *unicode);
 typedef const char* (*PyUnicode_AsUTF8AndSize_t)(PyObject *unicode, Py_ssize_t *size);
 
 typedef PyObject* (*PyLong_FromLong_t)(long);
+typedef PyObject* (*PyNumber_Multiply_t)(PyObject*, PyObject*);
 typedef PyObject* (*PyLong_FromUnsignedLong_t)(unsigned long);
 typedef PyObject* (*PyLong_FromDouble_t)(double);
 typedef PyObject* (*PyLong_FromString_t)(const char *str, char **pend, int base);
@@ -146,6 +147,7 @@ typedef void (*PySys_ResetWarnOptions_t)(void);
 typedef PyObject* (*PySys_GetXOptions_t)(void);
 
 typedef PyObject* (*Py_CompileString_t)(const char *, const char *, int);
+typedef PyObject* (*PyRun_String_t)(const char *, int, PyObject *, PyObject *);
 typedef int (*PyRun_SimpleString_t)(const char *);
 typedef void (*PyErr_PrintEx_t)(int);
 typedef void (*PyErr_Display_t)(PyObject *, PyObject *, PyObject *);
@@ -186,7 +188,6 @@ typedef PyObject* (*PyObject_Str_t)(PyObject *o);
 // Capsule functions
 typedef PyObject* (*PyCapsule_New_t)(void *pointer, const char *name, void (*destructor)(PyObject *));
 typedef void* (*PyCapsule_GetPointer_t)(PyObject *capsule, const char *name);
-typedef int (*PyCapsule_CheckExact_t)(PyObject *o);
 
 // Extern declarations of function pointers
 extern PyEval_SaveThread_t pPyEval_SaveThread;
@@ -218,6 +219,7 @@ extern PyLong_AsLong_t pPyLong_AsLong;
 extern PyLong_AsLongLong_t pPyLong_AsLongLong;
 extern PyLong_AsUnsignedLong_t pPyLong_AsUnsignedLong;
 extern PyLong_AsUnsignedLongLong_t pPyLong_AsUnsignedLongLong;
+extern PyNumber_Multiply_t pPyNumber_Multiply;
 
 extern PyFloat_FromDouble_t pPyFloat_FromDouble;
 extern PyFloat_FromString_t pPyFloat_FromString;
@@ -325,6 +327,7 @@ extern PySys_ResetWarnOptions_t pPySys_ResetWarnOptions;
 extern PySys_GetXOptions_t pPySys_GetXOptions;
 
 extern Py_CompileString_t pPy_CompileString;
+extern PyRun_String_t pPyRun_String;
 extern PyRun_SimpleString_t pPyRun_SimpleString;
 extern PyErr_PrintEx_t pPyErr_PrintEx;
 extern PyErr_Display_t pPyErr_Display;
@@ -365,7 +368,6 @@ extern PyObject_Str_t pPyObject_Str;
 // Capsule functions
 extern PyCapsule_New_t pPyCapsule_New;
 extern PyCapsule_GetPointer_t pPyCapsule_GetPointer;
-extern PyCapsule_CheckExact_t pPyCapsule_CheckExact;
 
 // Type pointers
 extern PyObject* pPyType_Type;
@@ -378,6 +380,7 @@ extern PyObject* pPyList_Type;
 extern PyObject* pPyDict_Type;
 extern PyObject* pPyUnicode_Type;
 extern PyObject* pPyBytes_Type;
+extern PyObject* pPyCapsule_Type;
 extern PyObject* pPyExc_RuntimeError;
 extern PyObject* pPyExc_ValueError;
 extern PyObject* pPyProperty_Type;

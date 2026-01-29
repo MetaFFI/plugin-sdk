@@ -281,13 +281,15 @@ void Module::unload()
 void Module::load_python_module()
 {
 	gil_guard guard;
-	std::filesystem::path p(m_modulePath);
+	// Normalize the path to handle Windows paths and relative paths correctly
+	std::filesystem::path p = std::filesystem::absolute(std::filesystem::path(m_modulePath));
 	
 	// Add module directory to sys.path if it's a file path
 	if(std::filesystem::exists(p) && std::filesystem::is_regular_file(p))
 	{
 		std::filesystem::path dir = p.parent_path();
-		std::string dir_str = dir.string();
+		// Convert to string and normalize separators for Python (use forward slashes)
+		std::string dir_str = dir.generic_string();
 		
 		PyObject* sysPath = pPySys_GetObject("path");
 		PyObject* path = pPyUnicode_FromString(dir_str.c_str());

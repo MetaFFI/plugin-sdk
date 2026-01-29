@@ -352,6 +352,7 @@ typedef enum PyGILState_STATE {
 #define pPyDict_Check(op) (Py_TYPE(op) == pPyDict_Type)
 #define pPyUnicode_Check(op) (Py_TYPE(op) == pPyUnicode_Type)
 #define pPyBytes_Check(op) (Py_TYPE(op) == pPyBytes_Type)
+#define pPyCapsule_CheckExact(op) (Py_TYPE(op) == pPyCapsule_Type)
 
 // Type access macros
 static inline PyTypeObject* Py_TYPE(PyObject *ob) {
