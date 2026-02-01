@@ -2,8 +2,20 @@
 #include <doctest/doctest.h>
 #include "cdts_cpp_serializer.h"
 #include <runtime/xllr_capi_loader.h>
+#include <cdts_serializer/cpp/runtime_id.h>
 
 using namespace metaffi::utils;
+
+static std::string take_string8_new(metaffi_string8 value)
+{
+	if(!value)
+	{
+		return {};
+	}
+	std::string result(reinterpret_cast<const char*>(value));
+	delete[] value;
+	return result;
+}
 
 TEST_SUITE("CDTS C++ Serializer")
 {
@@ -457,8 +469,8 @@ TEST_SUITE("CDTS C++ Serializer")
 		ser.reset();
 		auto value = ser.extract_any();
 
-		CHECK(std::holds_alternative<std::string>(value));
-		CHECK(std::get<std::string>(value) == "test string");
+		CHECK(std::holds_alternative<metaffi_string8>(value));
+		CHECK(take_string8_new(std::get<metaffi_string8>(value)) == "test string");
 	}
 
 	TEST_CASE("Extract ANY type - float64")
@@ -485,8 +497,8 @@ TEST_SUITE("CDTS C++ Serializer")
 		ser.reset();
 		auto value = ser.extract_any();
 
-		CHECK(std::holds_alternative<bool>(value));
-		CHECK(std::get<bool>(value) == true);
+		CHECK(std::holds_alternative<metaffi_uint8>(value));
+		CHECK(std::get<metaffi_uint8>(value) == 1);
 	}
 
 	TEST_CASE("Extract ANY type - null")
@@ -499,7 +511,8 @@ TEST_SUITE("CDTS C++ Serializer")
 		ser.reset();
 		auto value = ser.extract_any();
 
-		CHECK(std::holds_alternative<std::monostate>(value));
+		CHECK(std::holds_alternative<cdt_metaffi_handle>(value));
+		CHECK(std::get<cdt_metaffi_handle>(value).handle == nullptr);
 	}
 
 	TEST_CASE("Utility methods")
@@ -659,6 +672,28 @@ TEST_SUITE("CDTS C++ Serializer")
 		CHECK(extracted.handle == handle.handle);
 		CHECK(extracted.runtime_id == handle.runtime_id);
 		CHECK(*static_cast<int*>(extracted.handle) == 42);
+	}
+
+	TEST_CASE("Handle serialization from native pointer")
+	{
+		cdts data(1);
+		cdts_cpp_serializer ser(data);
+
+		int some_value = 7;
+		metaffi_handle handle = &some_value;
+
+		ser << handle;
+
+		CHECK(data[0].type == metaffi_handle_type);
+		CHECK(data[0].cdt_val.handle_val != nullptr);
+		CHECK(data[0].cdt_val.handle_val->runtime_id == CPP_RUNTIME_ID);
+
+		ser.reset();
+		int* extracted = nullptr;
+		ser >> extracted;
+
+		CHECK(extracted == &some_value);
+		CHECK(*extracted == 7);
 	}
 
 	TEST_CASE("Callable serialization")
@@ -1039,9 +1074,9 @@ TEST_SUITE("CDTS C++ Serializer")
 		auto v3 = deser.extract_any();
 		auto v4 = deser.extract_any();
 
-		CHECK(std::get<int32_t>(v1) == 42);
-		CHECK(std::get<std::string>(v2) == "hello");
-		CHECK(std::get<double>(v3) == doctest::Approx(3.14));
-		CHECK(std::get<bool>(v4) == true);
+		CHECK(std::get<metaffi_int32>(v1) == 42);
+		CHECK(take_string8_new(std::get<metaffi_string8>(v2)) == "hello");
+		CHECK(std::get<metaffi_float64>(v3) == doctest::Approx(3.14));
+		CHECK(std::get<metaffi_uint8>(v4) == 1);
 	}
 }

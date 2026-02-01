@@ -5,8 +5,21 @@
 #include <utils/entity_path_parser.h>
 #include <filesystem>
 #include <mutex>
+#include <iostream>
 #include <stdexcept>
 #include <boost/filesystem.hpp>
+
+namespace
+{
+std::mutex g_python_runtime_mutex;
+
+#ifndef NDEBUG
+#define RUNTIME_LOG(msg) \
+	do { std::cerr << __FILE__ << ":" << __LINE__ << " - " << msg << std::endl; } while(0)
+#else
+#define RUNTIME_LOG(msg) do { } while(0)
+#endif
+}
 
 // ============================================================================
 // GIL MANAGEMENT
@@ -81,6 +94,7 @@ std::shared_ptr<cpython3_runtime_manager> cpython3_runtime_manager::load_loaded_
 	{
 		return nullptr;
 	}
+	RUNTIME_LOG(std::string("Python already loaded, detected version: ") + detected_version);
 	
 	auto manager = std::shared_ptr<cpython3_runtime_manager>(new cpython3_runtime_manager(detected_version));
 	
@@ -124,7 +138,7 @@ std::vector<std::string> cpython3_runtime_manager::detect_installed_python3()
 
 void cpython3_runtime_manager::load_runtime()
 {
-	std::lock_guard<std::mutex> lock(m_mutex);
+	std::scoped_lock lock(g_python_runtime_mutex, m_mutex);
 	
 	if(m_is_runtime_loaded)
 	{
@@ -134,6 +148,8 @@ void cpython3_runtime_manager::load_runtime()
 	try
 	{
 		// Load Python API for the specified version
+		RUNTIME_LOG(std::string("Using Python version: ") + m_python_version);
+		RUNTIME_LOG("Loading Python API");
 		load_python3_api(m_python_version);
 	}
 	catch(const std::exception&)
@@ -144,6 +160,7 @@ void cpython3_runtime_manager::load_runtime()
 	// Initialize Python interpreter if not already initialized
 	if(!pPy_IsInitialized())
 	{
+		RUNTIME_LOG("Initializing Python interpreter");
 		pPy_InitializeEx(0); // Do not install signal handlers
 		// After Py_InitializeEx, the calling thread already holds the GIL
 		// We can do our setup work directly without PyGILState_Ensure
@@ -161,6 +178,7 @@ void cpython3_runtime_manager::load_runtime()
 			(void)e;
 			// Release GIL before returning
 			// PyEval_SaveThread releases the GIL and returns thread state
+			RUNTIME_LOG("Initialization failed - releasing GIL");
 			pPyEval_SaveThread();
 			throw;
 		}
@@ -169,12 +187,14 @@ void cpython3_runtime_manager::load_runtime()
 		// https://stackoverflow.com/questions/75846775/embedded-python-3-10-py-finalizeex-hangs-deadlock-on-threading-shutdown/
 		// PyEval_SaveThread releases the GIL - we don't need to store the thread state
 		// since we're not going to restore it (Python will handle cleanup)
+		RUNTIME_LOG("Initialization done - releasing GIL");
 		pPyEval_SaveThread();
 	}
 	else
 	{
 		// Python already initialized by another process/thread
 		// Use PyGILState_Ensure/Release for thread-safe GIL access
+		RUNTIME_LOG("Python already initialized - using GILState");
 		auto gil = pPyGILState_Ensure();
 		try
 		{
@@ -508,7 +528,7 @@ std::string cpython3_runtime_manager::check_python_error() const
 	std::string error_msg;
 	if(pvalue)
 	{
-		PyObject* pstr = pPyObject_Repr(pvalue);
+		PyObject* pstr = pPyObject_Str(pvalue);
 		if(pstr)
 		{
 			const char* err_str = pPyUnicode_AsUTF8(pstr);

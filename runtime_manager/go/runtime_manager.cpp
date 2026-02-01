@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <array>
 #include <stdexcept>
+#include <utils/safe_func.h>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -167,7 +168,7 @@ std::vector<go_installed_info> go_runtime_manager::detect_installed_go()
 	};
 
 	// 1. Check GOROOT environment variable
-	const char* goroot_env = std::getenv("GOROOT");
+	char* goroot_env = metaffi_getenv_alloc("GOROOT");
 	if (goroot_env && std::strlen(goroot_env) > 0)
 	{
 		std::filesystem::path goroot_path(goroot_env);
@@ -182,6 +183,7 @@ std::vector<go_installed_info> go_runtime_manager::detect_installed_go()
 			add_candidate(goroot_env, go_exe_path.string());
 		}
 	}
+	metaffi_free_env(goroot_env);
 
 	// 2. Find go from PATH
 	for (const auto& go_exe : find_go_from_path())
@@ -274,13 +276,15 @@ std::vector<std::string> go_runtime_manager::find_go_from_path()
 {
 	std::vector<std::string> result;
 
-	const char* pathEnv = std::getenv("PATH");
+	char* pathEnv = metaffi_getenv_alloc("PATH");
 	if (!pathEnv || std::strlen(pathEnv) == 0)
 	{
+		metaffi_free_env(pathEnv);
 		return result;
 	}
 
 	std::string pathStr(pathEnv);
+	metaffi_free_env(pathEnv);
 
 #ifdef _WIN32
 	const char pathSeparator = ';';

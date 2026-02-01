@@ -4,11 +4,23 @@
 #include <runtime_manager/cpython3/runtime_manager.h>
 #include <runtime_manager/cpython3/python_api_wrapper.h>
 #include <runtime/xllr_capi_loader.h>
+#include <runtime/xcall.h>
+#include <cdts_serializer/cpython3/runtime_id.h>
+#include <cstdlib>
+#include <utils/safe_func.h>
 
 using namespace metaffi::utils;
 
 // Global runtime manager for tests
 static std::shared_ptr<cpython3_runtime_manager> g_runtime;
+static std::unique_ptr<cpython3_runtime_manager::scoped_gil> g_gil;
+
+#define TEST_LOG(msg) \
+	do { std::cerr << __FILE__ << ":" << __LINE__ << " - " << msg << std::endl; } while(0)
+
+static void dummy_xcall(void*, cdts*, char**)
+{
+}
 
 // Main function with Python initialization
 int main(int argc, char** argv)
@@ -22,6 +34,20 @@ int main(int argc, char** argv)
 	}
 	
 	g_runtime = cpython3_runtime_manager::create(versions[0]);
+	g_gil = std::make_unique<cpython3_runtime_manager::scoped_gil>();
+
+	char* source_root = metaffi_getenv_alloc("METAFFI_SOURCE_ROOT");
+	if(source_root && *source_root)
+	{
+		std::string metaffi_path = std::string(source_root) + "/sdk/api/python3";
+		TEST_LOG(("Adding to sys.path: " + metaffi_path).c_str());
+		g_runtime->add_sys_path(metaffi_path);
+	}
+	else
+	{
+		TEST_LOG("METAFFI_SOURCE_ROOT is not set; metaffi package may not be importable");
+	}
+	metaffi_free_env(source_root);
 
 	// Run doctest
 	doctest::Context context;
@@ -29,6 +55,7 @@ int main(int argc, char** argv)
 	int res = context.run();
 
 	// Release runtime
+	g_gil.reset();
 	g_runtime.reset();
 
 	return res;
@@ -75,21 +102,28 @@ TEST_SUITE("CDTS Python3 Serializer")
 		cdts data(3);
 		cdts_python3_serializer ser(*g_runtime, data);
 
+		TEST_LOG("Start has_more utility test");
 		CHECK(ser.has_more() == true);
 
 		ser.set_index(2);
+		TEST_LOG("After set_index(2)");
 		CHECK(ser.has_more() == true);
 
 		// Add a value then extract to move index to 3
+		TEST_LOG("Creating PyLong for sanity");
 		PyObject* val = pPyLong_FromLong(42);
 		data[0] = int32_t(42);
 		data[1] = int32_t(43);
 		data[2] = int32_t(44);
 
 		ser.reset();
+		TEST_LOG("About to extract v1");
 		PyObject* v1 = ser.extract_pyobject();
+		TEST_LOG("Extracted v1");
 		PyObject* v2 = ser.extract_pyobject();
+		TEST_LOG("Extracted v2");
 		PyObject* v3 = ser.extract_pyobject();
+		TEST_LOG("Extracted v3");
 
 		Py_DECREF(v1);
 		Py_DECREF(v2);
@@ -97,6 +131,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		Py_DECREF(val);
 
 		// Now index should be 3, has_more should be false
+		TEST_LOG("Checking has_more after extracts");
 		CHECK(ser.has_more() == false);
 	}
 
@@ -693,6 +728,71 @@ TEST_SUITE("CDTS Python3 Serializer")
 		Py_DECREF(extracted);
 	}
 
+	TEST_CASE("Serialize mixed-type array with metaffi_any_type")
+	{
+		cdts data(1);
+		cdts_python3_serializer ser(*g_runtime, data);
+
+		// Create [1, "two", 3.0]
+		PyObject* list = pPyList_New(3);
+		pPyList_SetItem(list, 0, pPyLong_FromLongLong(1));
+		pPyList_SetItem(list, 1, pPyUnicode_FromString("two"));
+		pPyList_SetItem(list, 2, pPyFloat_FromDouble(3.0));
+
+		ser.add(list, metaffi_any_type);
+		Py_DECREF(list);
+
+		CHECK((data[0].type & metaffi_array_type) == metaffi_array_type);
+		CHECK((data[0].type & metaffi_any_type) == metaffi_any_type);
+
+		cdts& arr = static_cast<cdts&>(data[0]);
+		CHECK(arr.length == 3);
+		CHECK(arr[0].type == metaffi_int64_type);
+		CHECK(arr[1].type == metaffi_string8_type);
+		CHECK(arr[2].type == metaffi_float64_type);
+
+		ser.reset();
+		PyObject* extracted = ser.extract_pyobject();
+		CHECK(pPyList_Check(extracted));
+		CHECK(pPyList_Size(extracted) == 3);
+		CHECK(pPyLong_AsLongLong(pPyList_GetItem(extracted, 0)) == 1);
+		CHECK(std::string(pPyUnicode_AsUTF8(pPyList_GetItem(extracted, 1))) == "two");
+		CHECK(pPyFloat_AsDouble(pPyList_GetItem(extracted, 2)) == doctest::Approx(3.0));
+		Py_DECREF(extracted);
+	}
+
+	TEST_CASE("Serialize mixed-dimension array with metaffi_any_type")
+	{
+		cdts data(1);
+		cdts_python3_serializer ser(*g_runtime, data);
+
+		// Create [ [1,2], 3, [[4]] ]
+		PyObject* list = pPyList_New(3);
+
+		PyObject* row = pPyList_New(2);
+		pPyList_SetItem(row, 0, pPyLong_FromLongLong(1));
+		pPyList_SetItem(row, 1, pPyLong_FromLongLong(2));
+		pPyList_SetItem(list, 0, row);
+
+		pPyList_SetItem(list, 1, pPyLong_FromLongLong(3));
+
+		PyObject* nested = pPyList_New(1);
+		PyObject* inner = pPyList_New(1);
+		pPyList_SetItem(inner, 0, pPyLong_FromLongLong(4));
+		pPyList_SetItem(nested, 0, inner);
+		pPyList_SetItem(list, 2, nested);
+
+		ser.add(list, metaffi_any_type);
+		Py_DECREF(list);
+
+		cdts& arr = static_cast<cdts&>(data[0]);
+		CHECK(arr.fixed_dimensions == MIXED_OR_UNKNOWN_DIMENSIONS);
+		CHECK(arr.length == 3);
+		CHECK((arr[0].type & metaffi_array_type) != 0);
+		CHECK(arr[1].type == metaffi_int64_type);
+		CHECK((arr[2].type & metaffi_array_type) != 0);
+	}
+
 	// ========================================================================
 	// TYPE PRESERVATION TESTS
 	// Verify that CDTS stores the exact type that was specified
@@ -950,7 +1050,7 @@ TEST_SUITE("CDTS Python3 Serializer")
 		REQUIRE(handle_mem != nullptr);
 		data[0].cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
 		data[0].cdt_val.handle_val->handle = py_list;
-		data[0].cdt_val.handle_val->runtime_id = 0;
+		data[0].cdt_val.handle_val->runtime_id = PYTHON3_RUNTIME_ID;
 		data[0].cdt_val.handle_val->release = cpython3_runtime_manager::py_object_releaser;
 		data[0].free_required = true;
 
@@ -974,7 +1074,12 @@ TEST_SUITE("CDTS Python3 Serializer")
 		// Create a mock callable structure using xllr allocation
 		data[0].type = metaffi_callable_type;
 		data[0].cdt_val.callable_val = (cdt_metaffi_callable*)xllr_alloc_memory(sizeof(cdt_metaffi_callable));
-		data[0].cdt_val.callable_val->val = (void*)0x12345678;  // Mock function pointer
+		void* xcall_mem = xllr_alloc_memory(sizeof(xcall));
+		REQUIRE(xcall_mem != nullptr);
+		auto* xcall_ptr = new (xcall_mem) xcall();
+		xcall_ptr->pxcall_and_context[0] = reinterpret_cast<void*>(&dummy_xcall);
+		xcall_ptr->pxcall_and_context[1] = nullptr;
+		data[0].cdt_val.callable_val->val = static_cast<metaffi_callable>(xcall_ptr);
 
 		// Allocate parameter and return type arrays using xllr
 		data[0].cdt_val.callable_val->parameters_types = (metaffi_type*)xllr_alloc_memory(2 * sizeof(metaffi_type));
@@ -989,15 +1094,13 @@ TEST_SUITE("CDTS Python3 Serializer")
 		data[0].free_required = true;  // CDT destructor will handle cleanup
 
 		// Deserialize
+		TEST_LOG("About to extract callable");
 		cdts_python3_serializer deser(*g_runtime, data);
 		PyObject* extracted = deser.extract_pyobject();
 
-		// Should be a PyCapsule
-		CHECK(pPyCapsule_CheckExact(extracted));
-
-		// Verify we can extract the function pointer
-		void* func_ptr = pPyCapsule_GetPointer(extracted, "metaffi.callable");
-		CHECK(func_ptr == (void*)0x12345678);
+		// Should be callable
+		CHECK(pPyCallable_Check(extracted));
+		TEST_LOG("Extracted callable");
 
 		Py_DECREF(extracted);
 

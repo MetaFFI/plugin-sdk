@@ -1,6 +1,7 @@
 #include "cdts_cpp_serializer.h"
 #include <cstring>
 #include <runtime/xllr_capi_loader.h>
+#include <cdts_serializer/cpp/runtime_id.h>
 
 namespace metaffi::utils
 {
@@ -178,6 +179,28 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator<<(const metaffi_char32& val)
 }
 
 // Handles
+cdts_cpp_serializer& cdts_cpp_serializer::operator<<(metaffi_handle val)
+{
+	check_bounds(current_index);
+
+	void* handle_mem = xllr_alloc_memory(sizeof(cdt_metaffi_handle));
+	if(!handle_mem)
+	{
+		throw std::runtime_error("Failed to allocate memory for cdt_metaffi_handle");
+	}
+
+	cdt_metaffi_handle* handle = new (handle_mem) cdt_metaffi_handle();
+	handle->handle = val;
+	handle->runtime_id = CPP_RUNTIME_ID;
+	handle->release = nullptr;
+
+	data[current_index].type = metaffi_handle_type;
+	data[current_index].cdt_val.handle_val = handle;
+	data[current_index].free_required = true;
+	current_index++;
+	return *this;
+}
+
 cdts_cpp_serializer& cdts_cpp_serializer::operator<<(const cdt_metaffi_handle& handle)
 {
 	check_bounds(current_index);
@@ -191,16 +214,27 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator<<(const cdt_metaffi_callable&
 {
 	check_bounds(current_index);
 	
-	// Create a copy of the callable with heap-allocated arrays
-	// The input callable might have stack-allocated arrays, so we need to copy them to the heap
-	cdt_metaffi_callable* callable_copy = new cdt_metaffi_callable();
+	// Create a copy of the callable with xllr-allocated arrays
+	// The input callable might have stack-allocated arrays, so we need to copy them to xllr memory
+	void* callable_mem = xllr_alloc_memory(sizeof(cdt_metaffi_callable));
+	if(!callable_mem)
+	{
+		throw std::runtime_error("Failed to allocate callable memory");
+	}
+	cdt_metaffi_callable* callable_copy = new (callable_mem) cdt_metaffi_callable();
 	callable_copy->val = callable.val;
 	callable_copy->params_types_length = callable.params_types_length;
 	callable_copy->retval_types_length = callable.retval_types_length;
 	
 	// Allocate and copy parameter types
 	if (callable.params_types_length > 0) {
-		callable_copy->parameters_types = new metaffi_type[callable.params_types_length];
+		void* params_mem = xllr_alloc_memory(sizeof(metaffi_type) * callable.params_types_length);
+		if(!params_mem)
+		{
+			xllr_free_memory(callable_mem);
+			throw std::runtime_error("Failed to allocate callable parameters memory");
+		}
+		callable_copy->parameters_types = static_cast<metaffi_type*>(params_mem);
 		memcpy(callable_copy->parameters_types, callable.parameters_types, sizeof(metaffi_type) * callable.params_types_length);
 	} else {
 		callable_copy->parameters_types = nullptr;
@@ -208,7 +242,17 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator<<(const cdt_metaffi_callable&
 	
 	// Allocate and copy return value types
 	if (callable.retval_types_length > 0) {
-		callable_copy->retval_types = new metaffi_type[callable.retval_types_length];
+		void* ret_mem = xllr_alloc_memory(sizeof(metaffi_type) * callable.retval_types_length);
+		if(!ret_mem)
+		{
+			if(callable_copy->parameters_types)
+			{
+				xllr_free_memory(callable_copy->parameters_types);
+			}
+			xllr_free_memory(callable_mem);
+			throw std::runtime_error("Failed to allocate callable return types memory");
+		}
+		callable_copy->retval_types = static_cast<metaffi_type*>(ret_mem);
 		memcpy(callable_copy->retval_types, callable.retval_types, sizeof(metaffi_type) * callable.retval_types_length);
 	} else {
 		callable_copy->retval_types = nullptr;
@@ -218,6 +262,75 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator<<(const cdt_metaffi_callable&
 	data[current_index].cdt_val.callable_val = callable_copy;
 	data[current_index].free_required = true;  // CDT owns the callable copy
 	current_index++;
+	return *this;
+}
+
+cdts_cpp_serializer& cdts_cpp_serializer::operator<<(std::nullptr_t)
+{
+	check_bounds(current_index);
+	data[current_index].type = metaffi_null_type;
+	data[current_index].free_required = false;
+	current_index++;
+	return *this;
+}
+
+cdts_cpp_serializer& cdts_cpp_serializer::operator<<(const metaffi_variant& val)
+{
+	check_bounds(current_index);
+
+	std::visit([this](auto&& v)
+	{
+		using V = std::decay_t<decltype(v)>;
+		if constexpr (std::is_same_v<V, metaffi_float32> || std::is_same_v<V, metaffi_float64> ||
+		              std::is_same_v<V, metaffi_int8> || std::is_same_v<V, metaffi_uint8> ||
+		              std::is_same_v<V, metaffi_int16> || std::is_same_v<V, metaffi_uint16> ||
+		              std::is_same_v<V, metaffi_int32> || std::is_same_v<V, metaffi_uint32> ||
+		              std::is_same_v<V, metaffi_int64> || std::is_same_v<V, metaffi_uint64> ||
+		              std::is_same_v<V, metaffi_char8> || std::is_same_v<V, metaffi_char16> ||
+		              std::is_same_v<V, metaffi_char32> || std::is_same_v<V, cdt_metaffi_handle> ||
+		              std::is_same_v<V, cdt_metaffi_callable>)
+		{
+			*this << v;
+		}
+		else if constexpr (std::is_same_v<V, metaffi_string8>)
+		{
+			if(v == nullptr)
+			{
+				this->null();
+			}
+			else
+			{
+				*this << std::string(reinterpret_cast<const char*>(v));
+			}
+		}
+		else if constexpr (std::is_same_v<V, metaffi_string16>)
+		{
+			if(v == nullptr)
+			{
+				this->null();
+			}
+			else
+			{
+				*this << std::u16string(reinterpret_cast<const char16_t*>(v));
+			}
+		}
+		else if constexpr (std::is_same_v<V, metaffi_string32>)
+		{
+			if(v == nullptr)
+			{
+				this->null();
+			}
+			else
+			{
+				*this << std::u32string(reinterpret_cast<const char32_t*>(v));
+			}
+		}
+		else
+		{
+			this->null();
+		}
+	}, val);
+
 	return *this;
 }
 
@@ -381,6 +494,55 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator>>(cdt_metaffi_handle& handle)
 	return *this;
 }
 
+cdts_cpp_serializer& cdts_cpp_serializer::operator>>(cdt_metaffi_handle*& handle)
+{
+	check_bounds(current_index);
+	if(data[current_index].type != metaffi_handle_type)
+	{
+		std::stringstream ss;
+		ss << "Type mismatch at index " << current_index << ": expected handle, got type "
+		   << data[current_index].type;
+		throw std::runtime_error(ss.str());
+	}
+	handle = data[current_index].cdt_val.handle_val;
+	data[current_index].cdt_val.handle_val = nullptr;
+	data[current_index].free_required = false;
+	current_index++;
+	return *this;
+}
+
+cdts_cpp_serializer& cdts_cpp_serializer::operator>>(metaffi_handle& val)
+{
+	check_bounds(current_index);
+	if(data[current_index].type != metaffi_handle_type)
+	{
+		std::stringstream ss;
+		ss << "Type mismatch at index " << current_index << ": expected handle, got type "
+		   << data[current_index].type;
+		throw std::runtime_error(ss.str());
+	}
+
+	cdt_metaffi_handle* handle = data[current_index].cdt_val.handle_val;
+	if(handle == nullptr || handle->handle == nullptr)
+	{
+		val = nullptr;
+		current_index++;
+		return *this;
+	}
+
+	if(handle->runtime_id != CPP_RUNTIME_ID)
+	{
+		std::stringstream ss;
+		ss << "Handle runtime_id mismatch at index " << current_index << ": expected "
+		   << CPP_RUNTIME_ID << ", got " << handle->runtime_id;
+		throw std::runtime_error(ss.str());
+	}
+
+	val = handle->handle;
+	current_index++;
+	return *this;
+}
+
 // Callables
 cdts_cpp_serializer& cdts_cpp_serializer::operator>>(cdt_metaffi_callable& callable)
 {
@@ -389,6 +551,29 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator>>(cdt_metaffi_callable& calla
 	// User must not free the arrays (they're owned by the CDT)
 	callable = *data[current_index].cdt_val.callable_val;
 	current_index++;
+	return *this;
+}
+
+cdts_cpp_serializer& cdts_cpp_serializer::operator>>(cdt_metaffi_callable*& callable)
+{
+	check_bounds(current_index);
+	if(data[current_index].type != metaffi_callable_type)
+	{
+		std::stringstream ss;
+		ss << "Type mismatch at index " << current_index << ": expected callable, got type "
+		   << data[current_index].type;
+		throw std::runtime_error(ss.str());
+	}
+	callable = data[current_index].cdt_val.callable_val;
+	data[current_index].cdt_val.callable_val = nullptr;
+	data[current_index].free_required = false;
+	current_index++;
+	return *this;
+}
+
+cdts_cpp_serializer& cdts_cpp_serializer::operator>>(metaffi_variant& val)
+{
+	val = extract_any();
 	return *this;
 }
 
@@ -403,7 +588,7 @@ cdts_cpp_serializer::cdts_any_variant cdts_cpp_serializer::extract_any()
 	if (type == metaffi_null_type)
 	{
 		current_index++;
-		return std::monostate{};
+		return cdt_metaffi_handle{};
 	}
 
 	// Check if array (NOTE: arrays not fully supported in variant yet)
@@ -417,104 +602,110 @@ cdts_cpp_serializer::cdts_any_variant cdts_cpp_serializer::extract_any()
 	{
 		case metaffi_int8_type:
 		{
-			int8_t val;
-			*this >> val;
+			metaffi_int8 val = data[current_index].cdt_val.int8_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_int16_type:
 		{
-			int16_t val;
-			*this >> val;
+			metaffi_int16 val = data[current_index].cdt_val.int16_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_int32_type:
 		{
-			int32_t val;
-			*this >> val;
+			metaffi_int32 val = data[current_index].cdt_val.int32_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_int64_type:
 		{
-			int64_t val;
-			*this >> val;
+			metaffi_int64 val = data[current_index].cdt_val.int64_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_uint8_type:
 		{
-			uint8_t val;
-			*this >> val;
+			metaffi_uint8 val = data[current_index].cdt_val.uint8_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_uint16_type:
 		{
-			uint16_t val;
-			*this >> val;
+			metaffi_uint16 val = data[current_index].cdt_val.uint16_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_uint32_type:
 		{
-			uint32_t val;
-			*this >> val;
+			metaffi_uint32 val = data[current_index].cdt_val.uint32_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_uint64_type:
 		{
-			uint64_t val;
-			*this >> val;
+			metaffi_uint64 val = data[current_index].cdt_val.uint64_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_float32_type:
 		{
-			float val;
-			*this >> val;
+			metaffi_float32 val = data[current_index].cdt_val.float32_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_float64_type:
 		{
-			double val;
-			*this >> val;
+			metaffi_float64 val = data[current_index].cdt_val.float64_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_bool_type:
 		{
-			bool val;
-			*this >> val;
+			metaffi_uint8 val = data[current_index].cdt_val.bool_val ? 1 : 0;
+			current_index++;
 			return val;
 		}
 		case metaffi_char8_type:
 		{
-			metaffi_char8 val;
-			*this >> val;
+			metaffi_char8 val = data[current_index].cdt_val.char8_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_char16_type:
 		{
-			metaffi_char16 val;
-			*this >> val;
+			metaffi_char16 val = data[current_index].cdt_val.char16_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_char32_type:
 		{
-			metaffi_char32 val;
-			*this >> val;
+			metaffi_char32 val = data[current_index].cdt_val.char32_val;
+			current_index++;
 			return val;
 		}
 		case metaffi_string8_type:
 		{
-			std::string val;
-			*this >> val;
+			cdt& source = data[current_index];
+			metaffi_string8 val = source.cdt_val.string8_val;
+			source.free_required = false;
+			current_index++;
 			return val;
 		}
 		case metaffi_string16_type:
 		{
-			std::u16string val;
-			*this >> val;
+			cdt& source = data[current_index];
+			metaffi_string16 val = source.cdt_val.string16_val;
+			source.free_required = false;
+			current_index++;
 			return val;
 		}
 		case metaffi_string32_type:
 		{
-			std::u32string val;
-			*this >> val;
+			cdt& source = data[current_index];
+			metaffi_string32 val = source.cdt_val.string32_val;
+			source.free_required = false;
+			current_index++;
 			return val;
 		}
 		case metaffi_handle_type:

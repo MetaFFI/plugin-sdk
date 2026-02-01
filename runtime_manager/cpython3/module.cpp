@@ -283,14 +283,14 @@ void Module::load_python_module()
 	gil_guard guard;
 	// Normalize the path to handle Windows paths and relative paths correctly
 	std::filesystem::path p = std::filesystem::absolute(std::filesystem::path(m_modulePath));
-	
+
 	// Add module directory to sys.path if it's a file path
 	if(std::filesystem::exists(p) && std::filesystem::is_regular_file(p))
 	{
 		std::filesystem::path dir = p.parent_path();
 		// Convert to string and normalize separators for Python (use forward slashes)
 		std::string dir_str = dir.generic_string();
-		
+
 		PyObject* sysPath = pPySys_GetObject("path");
 		PyObject* path = pPyUnicode_FromString(dir_str.c_str());
 		if(path != nullptr)
@@ -301,9 +301,28 @@ void Module::load_python_module()
 			}
 			Py_DECREF(path);
 		}
-		
+
 		// Import module by file stem
 		m_pyModule = pPyImport_ImportModuleLevel(p.stem().string().c_str(), pPy_None, pPy_None, pPy_None, 0);
+	}
+	else if(std::filesystem::exists(p) && std::filesystem::is_directory(p))
+	{
+		// Add parent directory to sys.path and import by directory name
+		std::filesystem::path dir = p.parent_path();
+		std::string dir_str = dir.generic_string();
+
+		PyObject* sysPath = pPySys_GetObject("path");
+		PyObject* path = pPyUnicode_FromString(dir_str.c_str());
+		if(path != nullptr)
+		{
+			if(pPySequence_Contains(sysPath, path) == 0)
+			{
+				pPyList_Append(sysPath, path);
+			}
+			Py_DECREF(path);
+		}
+
+		m_pyModule = pPyImport_ImportModule(p.filename().string().c_str());
 	}
 	else
 	{
@@ -340,7 +359,7 @@ std::string Module::check_python_error() const
 	std::string error_msg;
 	if(pvalue)
 	{
-		PyObject* pstr = pPyObject_Repr(pvalue);
+		PyObject* pstr = pPyObject_Str(pvalue);
 		if(pstr)
 		{
 			const char* err_str = pPyUnicode_AsUTF8(pstr);

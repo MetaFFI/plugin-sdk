@@ -7,14 +7,21 @@ package guest
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "../../../utils/safe_func.h"
 
 #ifndef _WIN32
 #include <dlfcn.h>
 int call_guest_test()
 {
-	const char* metaffi_home = getenv("METAFFI_HOME");
+	char* metaffi_home = metaffi_getenv_alloc("METAFFI_HOME");
+	if(!metaffi_home)
+	{
+		printf("METAFFI_HOME is not set\n");
+		return -1;
+	}
 	char lib_dir[260] = {0};
-	sprintf(lib_dir, "%s/xllr.test.so", metaffi_home);
+	metaffi_sprintf(lib_dir, sizeof(lib_dir), "%s/xllr.test.so", metaffi_home);
+	metaffi_free_env(metaffi_home);
 
 	void* lib_handle = dlopen(lib_dir, RTLD_NOW);
 	if(!lib_handle)
@@ -36,9 +43,15 @@ int call_guest_test()
 #include <windows.h>
 int call_guest_test()
 {
-	const char* metaffi_home = getenv("METAFFI_HOME");
+	char* metaffi_home = metaffi_getenv_alloc("METAFFI_HOME");
+	if(!metaffi_home)
+	{
+		printf("METAFFI_HOME is not set\n");
+		return -1;
+	}
 	char lib_dir[260] = {0};
-	sprintf(lib_dir, "%s/xllr.test.dll", metaffi_home);
+	metaffi_sprintf(lib_dir, sizeof(lib_dir), "%s/xllr.test.dll", metaffi_home);
+	metaffi_free_env(metaffi_home);
 
 	void* lib_handle = LoadLibraryA(lib_dir);
 	if(!lib_handle)

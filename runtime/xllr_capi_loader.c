@@ -1,4 +1,5 @@
 #include "xllr_capi_loader.h"
+#include <utils/safe_func.h>
 
 #include <stdlib.h>
 #ifndef WIN32
@@ -331,7 +332,7 @@ void* load_symbol(void* handle, const char* name, char** out_err)
 		// write to out_err "Failed to load symbol %s. win error: %s"
 		int err_len = snprintf(NULL, 0, "Failed to load symbol %s. win error: %s", name, win_out_err);
 		*out_err = calloc(1, err_len+1);
-		sprintf(*out_err, "Failed to load symbol %s. win error: %s", name, win_out_err);
+		metaffi_sprintf(*out_err, (size_t)(err_len + 1), "Failed to load symbol %s. win error: %s", name, win_out_err);
 		
 		return NULL;
 	}
@@ -567,42 +568,26 @@ const char* load_xllr()
 	}
 
 	
-#if defined(_WIN32) && defined(__STDC_LIB_EXT1__)
-	size_t requiredSize;
-	char metaffi_home[MAX_PATH] = {0};
-	getenv_s(&requiredSize, NULL, 0, "METAFFI_HOME");
-	
-	if (requiredSize == 0)
+#ifndef _WIN32
+	#define MAX_PATH PATH_MAX
+#endif
+
+	char metaffi_home[MAX_PATH+1] = {0};
+	char* metaffi_home_tmp = metaffi_getenv_alloc("METAFFI_HOME");
+	if(!metaffi_home_tmp)
 	{
 	    return "Failed getting METAFFI_HOME. Is it set?";
 	}
-	else if(requiredSize > sizeof(metaffi_home)-1)
+
+	size_t metaffi_home_len = strlen(metaffi_home_tmp);
+	if(metaffi_home_len > MAX_PATH-1)
 	{
+		metaffi_free_env(metaffi_home_tmp);
 		return "METAFFI_HOME is larger than MAX_PATH";
 	}
-	else
-	{
-		getenv_s(&requiredSize, metaffi_home, requiredSize, "METAFFI_HOME");
-	}
-#else
-	#ifndef _WIN32
-	#define MAX_PATH PATH_MAX
-	#endif
-	
-	char metaffi_home[MAX_PATH+1] = {0};
-	
-	const char* metaffi_home_tmp = NULL;
-	metaffi_home_tmp = getenv("METAFFI_HOME");
-	//printf("+++ FOUND METAFFI_HOME: %s\n", metaffi_home_tmp);
-	if(metaffi_home_tmp)
-	{
-	    strncpy(metaffi_home, metaffi_home_tmp, MAX_PATH);
-	}
-	else
-	{
-	    return "Failed getting METAFFI_HOME. Is it set?";
-	}
-#endif
+
+	metaffi_strncpy(metaffi_home, sizeof(metaffi_home), metaffi_home_tmp, MAX_PATH);
+	metaffi_free_env(metaffi_home_tmp);
 
 #ifdef _WIN32
 	const char* ext = ".dll";
@@ -615,10 +600,10 @@ const char* load_xllr()
 
 #ifdef _WIN32
 	char xllr_full_path[MAX_PATH] = {0};
-	sprintf_s(xllr_full_path, sizeof(xllr_full_path), "%s\\xllr%s", metaffi_home, ext);
+	metaffi_sprintf(xllr_full_path, sizeof(xllr_full_path), "%s\\xllr%s", metaffi_home, ext);
 #else
 	char xllr_full_path[PATH_MAX+6] = {0};
-	sprintf(xllr_full_path, "%s/xllr%s", metaffi_home, ext);
+	metaffi_sprintf(xllr_full_path, sizeof(xllr_full_path), "%s/xllr%s", metaffi_home, ext);
 #endif
 
 	char* out_err;
@@ -662,43 +647,26 @@ const char* free_xllr()
 
 const char* load_metaffi_library(const char* path_within_metaffi_home, void** out_handle)
 {
-#if defined(_WIN32) && defined(__STDC_LIB_EXT1__)
-	size_t requiredSize;
-	char metaffi_home[MAX_PATH] = {0};
-	getenv_s(&requiredSize, NULL, 0, "METAFFI_HOME");
-	
-	if (requiredSize == 0)
+#ifndef _WIN32
+	#define MAX_PATH PATH_MAX
+#endif
+
+	char metaffi_home[MAX_PATH+1] = {0};
+	char* metaffi_home_tmp = metaffi_getenv_alloc("METAFFI_HOME");
+	if(!metaffi_home_tmp)
 	{
 	    return "Failed getting METAFFI_HOME. Is it set?";
 	}
-	else if(requiredSize > sizeof(metaffi_home)-1)
+
+	size_t metaffi_home_len = strlen(metaffi_home_tmp);
+	if(metaffi_home_len > MAX_PATH-1)
 	{
+		metaffi_free_env(metaffi_home_tmp);
 		return "METAFFI_HOME is larger than MAX_PATH";
 	}
-	else
-	{
-		getenv_s(&requiredSize, metaffi_home, requiredSize, "METAFFI_HOME");
-	}
-	
-#else
-	#ifndef _WIN32
-	#define MAX_PATH PATH_MAX
-	#endif
-	
-	char metaffi_home[MAX_PATH+1] = {0};
-	
-	const char* metaffi_home_tmp = NULL;
-	metaffi_home_tmp = getenv("METAFFI_HOME");
-	if(metaffi_home_tmp)
-	{
-	    strncpy(metaffi_home, metaffi_home_tmp, MAX_PATH);
-	}
-	else
-	{
-	    return "Failed getting METAFFI_HOME. Is it set?";
-	}
-	
-#endif
+
+	metaffi_strncpy(metaffi_home, sizeof(metaffi_home), metaffi_home_tmp, MAX_PATH);
+	metaffi_free_env(metaffi_home_tmp);
 	
 	// get correct extension
 #ifdef _WIN32
@@ -712,10 +680,10 @@ const char* load_metaffi_library(const char* path_within_metaffi_home, void** ou
 	// load $METAFFI_HOME/path_within_metaffi_home
 #ifdef _WIN32
 	char full_path[MAX_PATH] = {0};
-	sprintf_s(full_path, sizeof(full_path), "%s\\%s.%s", metaffi_home, path_within_metaffi_home, ext);
+	metaffi_sprintf(full_path, sizeof(full_path), "%s\\%s.%s", metaffi_home, path_within_metaffi_home, ext);
 #else
 	char full_path[PATH_MAX*2] = {0};
-	sprintf(full_path, "%s/%s.%s", metaffi_home, path_within_metaffi_home, ext);
+	metaffi_sprintf(full_path, sizeof(full_path), "%s/%s.%s", metaffi_home, path_within_metaffi_home, ext);
 #endif
 	
 	char* out_err;

@@ -44,22 +44,10 @@ class cdts_cpp_serializer
 {
 public:
 	// Forward declaration for recursive variant
-	struct cdts_any_variant_impl;
-
 	/**
-	 * @brief Variant type for ANY values (using standard C++ types)
-	 *
-	 * Can hold any MetaFFI type using standard C++ representations
+	 * @brief Variant type for ANY values (MetaFFI primitive types)
 	 */
-	using cdts_any_variant = std::variant<
-		int8_t, int16_t, int32_t, int64_t,
-		uint8_t, uint16_t, uint32_t, uint64_t,
-		float, double, bool,
-		std::string, std::u16string, std::u32string,
-		metaffi_char8, metaffi_char16, metaffi_char32,
-		cdt_metaffi_handle, cdt_metaffi_callable,
-		std::monostate  // For null/uninitialized
-	>;
+	using cdts_any_variant = metaffi_variant;
 
 private:
 	cdts& data;
@@ -159,10 +147,17 @@ public:
 	cdts_cpp_serializer& operator<<(const std::vector<T>& vec);
 
 	// Handles
+	cdts_cpp_serializer& operator<<(metaffi_handle val);
 	cdts_cpp_serializer& operator<<(const cdt_metaffi_handle& handle);
 
 	// Callables
 	cdts_cpp_serializer& operator<<(const cdt_metaffi_callable& callable);
+
+	// Null
+	cdts_cpp_serializer& operator<<(std::nullptr_t);
+
+	// Any (variant)
+	cdts_cpp_serializer& operator<<(const metaffi_variant& val);
 
 	/**
 	 * @brief Insert null value
@@ -199,10 +194,18 @@ public:
 	cdts_cpp_serializer& operator>>(std::vector<T>& vec);
 
 	// Handles
+	cdts_cpp_serializer& operator>>(metaffi_handle& val);
 	cdts_cpp_serializer& operator>>(cdt_metaffi_handle& handle);
+	cdts_cpp_serializer& operator>>(cdt_metaffi_handle*& handle);
+	template<typename T>
+	cdts_cpp_serializer& operator>>(T*& val);
 
 	// Callables
 	cdts_cpp_serializer& operator>>(cdt_metaffi_callable& callable);
+	cdts_cpp_serializer& operator>>(cdt_metaffi_callable*& callable);
+
+	// Any (variant)
+	cdts_cpp_serializer& operator>>(metaffi_variant& val);
 
 	// ===== ANY TYPE SUPPORT =====
 
@@ -306,25 +309,37 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator<<(const std::vector<T>& vec)
 	using ElementType = typename vector_element_type<std::vector<T>>::type;
 	constexpr metaffi_type common_type = get_metaffi_type<ElementType>();
 
+	// Special-case: vector<vector<uint8_t/int8_t>> -> array of bytes buffers (list of bytes)
+	if constexpr (depth == 2 && (std::is_same_v<ElementType, metaffi_uint8> || std::is_same_v<ElementType, metaffi_int8>))
+	{
+		data[current_index].set_new_array(vec.size(), 1, metaffi_any_type);
+		cdts& arr = static_cast<cdts&>(data[current_index]);
+		for(size_t i = 0; i < vec.size(); ++i)
+		{
+			const auto& inner = vec[i];
+			const metaffi_types inner_type = std::is_same_v<ElementType, metaffi_uint8> ? metaffi_uint8_type : metaffi_int8_type;
+			arr[i].set_new_array(inner.size(), 1, inner_type);
+			cdts& inner_arr = static_cast<cdts&>(arr[i]);
+			for(size_t j = 0; j < inner.size(); ++j)
+			{
+				inner_arr[j] = inner[j];
+			}
+		}
+
+		current_index++;
+		return *this;
+	}
+
 	// Create nested CDTS structure
 	data[current_index].set_new_array(vec.size(), depth, static_cast<metaffi_types>(common_type));
 	cdts& arr = static_cast<cdts&>(data[current_index]);
 
 	// Fill array elements
+	cdts_cpp_serializer nested(arr);
 	for (size_t i = 0; i < vec.size(); ++i)
 	{
-		if constexpr (is_vector<T>::value)
-		{
-			// Nested vector - recurse
-			cdts_cpp_serializer nested(arr);
-			nested.set_index(i);
-			nested << vec[i];
-		}
-		else
-		{
-			// Base type - use assignment operator
-			arr[i] = vec[i];
-		}
+		nested.set_index(i);
+		nested << vec[i];
 	}
 
 	current_index++;
@@ -349,23 +364,23 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator>>(std::vector<T>& vec)
 	vec.resize(arr.length);
 
 	// Extract array elements
+	cdts_cpp_serializer nested(arr);
 	for (size_t i = 0; i < arr.length; ++i)
 	{
-		if constexpr (is_vector<T>::value)
-		{
-			// Nested vector - recurse
-			cdts_cpp_serializer nested(arr);
-			nested.set_index(i);
-			nested >> vec[i];
-		}
-		else
-		{
-			// Base type - direct extraction
-			vec[i] = static_cast<T>(arr[i]);
-		}
+		nested.set_index(i);
+		nested >> vec[i];
 	}
 
 	current_index++;
+	return *this;
+}
+
+template<typename T>
+cdts_cpp_serializer& cdts_cpp_serializer::operator>>(T*& val)
+{
+	metaffi_handle handle{};
+	*this >> handle;
+	val = static_cast<T*>(handle);
 	return *this;
 }
 

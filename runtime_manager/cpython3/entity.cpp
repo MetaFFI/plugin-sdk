@@ -467,7 +467,7 @@ std::string CallableEntity::check_python_error() const
 	std::string error_msg;
 	if(pvalue)
 	{
-		PyObject* pstr = pPyObject_Repr(pvalue);
+		PyObject* pstr = pPyObject_Str(pvalue);
 		if(pstr)
 		{
 			const char* err_str = pPyUnicode_AsUTF8(pstr);
@@ -671,7 +671,7 @@ std::string VariableEntity::check_python_error() const
 	std::string error_msg;
 	if(pvalue)
 	{
-		PyObject* pstr = pPyObject_Repr(pvalue);
+		PyObject* pstr = pPyObject_Str(pvalue);
 		if(pstr)
 		{
 			const char* err_str = pPyUnicode_AsUTF8(pstr);

@@ -203,6 +203,17 @@ private:
 	PyObject* cdt_array_to_pylist(const cdts& arr);
 
 	/**
+	 * @brief Convert CDT uint8/int8 array to Python bytes
+	 * @param arr Source CDTS array
+	 * @param element_type Element type (metaffi_uint8_type or metaffi_int8_type)
+	 * @return New Python bytes reference
+	 * @throws std::runtime_error on conversion error
+	 *
+	 * Assumes GIL is held
+	 */
+	PyObject* cdt_array_to_pybytes(const cdts& arr, metaffi_type element_type);
+
+	/**
 	 * @brief Validate that a Python integer fits in the target type
 	 * @param value Python long long value
 	 * @param target_type Target MetaFFI integer type

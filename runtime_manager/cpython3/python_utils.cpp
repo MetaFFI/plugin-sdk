@@ -19,7 +19,7 @@ std::string check_python_error()
 	std::string error_msg;
 	if(pvalue)
 	{
-		PyObject* pstr = pPyObject_Repr(pvalue);
+		PyObject* pstr = pPyObject_Str(pvalue);
 		if(pstr)
 		{
 			const char* err_str = pPyUnicode_AsUTF8(pstr);

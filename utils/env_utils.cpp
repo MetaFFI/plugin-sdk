@@ -1,22 +1,16 @@
 #include "env_utils.h"
 
-#include <cstdlib>
+#include <utils/safe_func.h>
 
 std::string get_env_var(const char* name)
 {
-#if defined(_MSC_VER)
-	char* value = nullptr;
-	size_t value_size = 0;
-	if(_dupenv_s(&value, &value_size, name) != 0 || value == nullptr)
+	char* value = metaffi_getenv_alloc(name);
+	if(!value)
 	{
 		return std::string();
 	}
 
 	std::string result(value);
-	free(value);
+	metaffi_free_env(value);
 	return result;
-#else
-	const char* value = std::getenv(name);
-	return value ? std::string(value) : std::string();
-#endif
 }

@@ -42,11 +42,11 @@ if os.path.exists(build_dir):
 subprocess.run(['flit', 'publish', '--repository', 'pypi', '--pypirc', os.path.expanduser("~")+'/.pypirc', '--no-use-vcs'], check=True)
 
 # wait for pypi to update
-print("waiting 5 seconds for pypi to update")
-time.sleep(5)
+#print("waiting 5 seconds for pypi to update")
+#time.sleep(5)
 
 # Update metaffi-api pip package
-subprocess.run(['py', '-m', 'pip', 'install', 'metaffi-api', '--upgrade'], check=True)
+# subprocess.run(['py', '-m', 'pip', 'install', 'metaffi-api', '--upgrade'], check=True)
 
 # Change back to the previous current directory
 os.chdir(current_dir)

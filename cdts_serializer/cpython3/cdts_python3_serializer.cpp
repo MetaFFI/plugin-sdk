@@ -9,8 +9,10 @@
 #include <runtime_manager/cpython3/py_list.h>
 #include <runtime_manager/cpython3/py_tuple.h>
 #include <runtime_manager/cpython3/py_object.h>
+#include <runtime_manager/cpython3/py_metaffi_handle.h>
 #include <runtime/xllr_capi_loader.h>
 #include <runtime/xcall.h>
+#include <cdts_serializer/cpython3/runtime_id.h>
 #include <sstream>
 #include <cstring>
 #include <iostream>
@@ -349,104 +351,153 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 		return;
 	}
 
-	// Handle bytes (as uint8 array) - ignore target_type
+	// Handle bytes (as uint8 array) - only when not explicitly requested as handle
 	if(py_bytes::check(obj))
 	{
-		Py_ssize_t size;
-		char* data;
-		if(pPyBytes_AsStringAndSize(obj, &data, &size) == -1)
+		if(target_type != metaffi_handle_type)
 		{
-			std::string error_msg = check_python_error();
-			throw_py_err("Failed to get bytes data: " + error_msg);
+			Py_ssize_t size;
+			char* data;
+			if(pPyBytes_AsStringAndSize(obj, &data, &size) == -1)
+			{
+				std::string error_msg = check_python_error();
+				throw_py_err("Failed to get bytes data: " + error_msg);
+			}
+
+			// Create uint8 array
+			target.set_new_array(size, 1, static_cast<metaffi_types>(metaffi_uint8_type));
+			cdts& arr = static_cast<cdts&>(target);
+
+			// Copy bytes to array
+			for(Py_ssize_t i = 0; i < size; i++)
+			{
+				arr[i].type = metaffi_uint8_type;
+				arr[i].cdt_val.uint8_val = static_cast<metaffi_uint8>(data[i]);
+				arr[i].free_required = false;
+			}
+
+			return;
 		}
-
-		// Create uint8 array
-		target.set_new_array(size, 1, static_cast<metaffi_types>(metaffi_uint8_type));
-		cdts& arr = static_cast<cdts&>(target);
-
-		// Copy bytes to array
-		for(Py_ssize_t i = 0; i < size; i++)
-		{
-			arr[i].type = metaffi_uint8_type;
-			arr[i].cdt_val.uint8_val = static_cast<metaffi_uint8>(data[i]);
-			arr[i].free_required = false;
-		}
-
-		return;
+		// For handle, fall through to handle serialization
 	}
 
-	// Handle list/tuple - need element type from target_type
+	// Handle list/tuple - treat as array unless explicitly requested as handle.
 	if(py_list::check(obj) || py_tuple::check(obj))
 	{
-		// Extract element type from target_type (if it's an array type)
-		metaffi_type element_type = metaffi_any_type;
-		if(target_type & metaffi_array_type)
+		if(target_type != metaffi_handle_type)
 		{
-			// Extract base type from array type
-			element_type = static_cast<metaffi_type>(target_type & ~metaffi_array_type);
-		}
-		else if(target_type == metaffi_any_type)
-		{
-			// For metaffi_any_type, detect element type from first element
-			Py_ssize_t len = py_list::check(obj) ? pPyList_Size(obj) : pPyTuple_Size(obj);
-			if(len > 0)
+			// Extract element type from target_type (if it's an array type)
+			metaffi_type element_type = metaffi_any_type;
+			if(target_type & metaffi_array_type)
 			{
-				PyObject* first_item = py_list::check(obj) ? pPyList_GetItem(obj, 0) : pPyTuple_GetItem(obj, 0);
-				element_type = py_object::get_metaffi_type(first_item);
-				
-				// Validate detected type
+				// Extract base type from array type
+				element_type = static_cast<metaffi_type>(target_type & ~metaffi_array_type);
 				if(element_type == 0 || element_type == metaffi_null_type)
 				{
-					std::ostringstream oss;
-					oss << "Failed to detect element type from first list element (got type: " << element_type << ")";
-					throw_py_err(oss.str());
+					element_type = metaffi_any_type;
 				}
 			}
-			// If empty list, keep element_type as metaffi_any_type (will be handled in pylist_to_cdt_array)
+			else if(target_type == metaffi_any_type)
+			{
+				// Let pylist_to_cdt_array determine common type (if any)
+				element_type = metaffi_any_type;
+			}
+			else
+			{
+				// target_type should indicate the element type directly
+				element_type = target_type;
+			}
+
+			pylist_to_cdt_array(obj, target, element_type);
+			return;
 		}
-		else
-		{
-			// target_type should indicate the element type directly
-			element_type = target_type;
-		}
-		
-		pylist_to_cdt_array(obj, target, element_type);
-		return;
+		// For handle, fall through to handle serialization
 	}
 
 	// Handle callable type - extract xcall from Python callable created by make_metaffi_callable
 	if(target_type == metaffi_callable_type)
 	{
-		// Check if this is a callable created by make_metaffi_callable
-		// It should have pxcall_and_context, params_metaffi_types, and retval_metaffi_types attributes
+		PyObject* callable_obj = obj;
+		PyObject* wrapped_callable = nullptr;
+
+		// If it's a regular Python callable, wrap it into a MetaFFI callable
 		if(!pPyObject_HasAttrString(obj, "pxcall_and_context"))
 		{
+			if(!pPyCallable_Check(obj))
+			{
+				std::ostringstream oss;
+				oss << "Python object is not callable (cannot convert to MetaFFI callable)";
+				throw_py_err(oss.str());
+			}
+
+			PyObject* metaffi_module = pPyImport_ImportModule("metaffi");
+			if(!metaffi_module || pPyErr_Occurred())
+			{
+				Py_XDECREF(metaffi_module);
+				std::string error_msg = check_python_error();
+				throw_py_err("Failed to import metaffi module: " + error_msg);
+			}
+
+			PyObject* make_callable_func = pPyObject_GetAttrString(metaffi_module, "make_metaffi_callable");
+			Py_DECREF(metaffi_module);
+			if(!make_callable_func || pPyErr_Occurred())
+			{
+				Py_XDECREF(make_callable_func);
+				std::string error_msg = check_python_error();
+				throw_py_err("Failed to get make_metaffi_callable: " + error_msg);
+			}
+
+			if(!pPyCallable_Check(make_callable_func))
+			{
+				Py_DECREF(make_callable_func);
+				throw_py_err("make_metaffi_callable is not callable");
+			}
+
+			wrapped_callable = pPyObject_CallFunctionObjArgs(make_callable_func, obj, nullptr);
+			Py_DECREF(make_callable_func);
+			if(!wrapped_callable || pPyErr_Occurred())
+			{
+				Py_XDECREF(wrapped_callable);
+				std::string error_msg = check_python_error();
+				throw_py_err("Failed to wrap Python callable using make_metaffi_callable: " + error_msg);
+			}
+
+			callable_obj = wrapped_callable;
+		}
+
+		// Check if this is a callable created by make_metaffi_callable
+		// It should have pxcall_and_context, params_metaffi_types, and retval_metaffi_types attributes
+		if(!pPyObject_HasAttrString(callable_obj, "pxcall_and_context"))
+		{
+			Py_XDECREF(wrapped_callable);
 			std::ostringstream oss;
 			oss << "Python object does not have pxcall_and_context attribute (not a MetaFFI callable)";
 			throw_py_err(oss.str());
 		}
 
 		// Get pxcall_and_context attribute
-		PyObject* pxcall_and_context_attr = pPyObject_GetAttrString(obj, "pxcall_and_context");
+		PyObject* pxcall_and_context_attr = pPyObject_GetAttrString(callable_obj, "pxcall_and_context");
 		if(!pxcall_and_context_attr || pPyErr_Occurred())
 		{
 			if(pxcall_and_context_attr)
 			{
 				Py_DECREF(pxcall_and_context_attr);
 			}
+			Py_XDECREF(wrapped_callable);
 			std::string error_msg = check_python_error();
 			throw_py_err("Failed to get pxcall_and_context attribute: " + error_msg);
 		}
 
 		// Get params_metaffi_types and retval_metaffi_types
-		PyObject* params_types_attr = pPyObject_GetAttrString(obj, "params_metaffi_types");
-		PyObject* retval_types_attr = pPyObject_GetAttrString(obj, "retval_metaffi_types");
+		PyObject* params_types_attr = pPyObject_GetAttrString(callable_obj, "params_metaffi_types");
+		PyObject* retval_types_attr = pPyObject_GetAttrString(callable_obj, "retval_metaffi_types");
 		
 		if(!params_types_attr || !retval_types_attr || pPyErr_Occurred())
 		{
 			Py_XDECREF(pxcall_and_context_attr);
 			Py_XDECREF(params_types_attr);
 			Py_XDECREF(retval_types_attr);
+			Py_XDECREF(wrapped_callable);
 			std::string error_msg = check_python_error();
 			throw_py_err("Failed to get params_metaffi_types or retval_metaffi_types: " + error_msg);
 		}
@@ -462,6 +513,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 				Py_DECREF(pxcall_and_context_attr);
 				Py_DECREF(params_types_attr);
 				Py_DECREF(retval_types_attr);
+				Py_XDECREF(wrapped_callable);
 				std::string error_msg = check_python_error();
 				throw_py_err("Failed to convert pxcall_and_context to pointer: " + error_msg);
 			}
@@ -473,6 +525,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 			Py_DECREF(pxcall_and_context_attr);
 			Py_DECREF(params_types_attr);
 			Py_DECREF(retval_types_attr);
+			Py_XDECREF(wrapped_callable);
 			throw_py_err("pxcall_and_context is not a valid pointer");
 		}
 
@@ -505,6 +558,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 				Py_DECREF(pxcall_and_context_attr);
 				Py_DECREF(params_types_attr);
 				Py_DECREF(retval_types_attr);
+				Py_XDECREF(wrapped_callable);
 				throw_py_err("Failed to allocate memory for callable parameter types");
 			}
 
@@ -532,6 +586,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 						Py_DECREF(pxcall_and_context_attr);
 						Py_DECREF(params_types_attr);
 						Py_DECREF(retval_types_attr);
+						Py_XDECREF(wrapped_callable);
 						throw_py_err("Failed to extract parameter type");
 					}
 				}
@@ -556,6 +611,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 				Py_DECREF(pxcall_and_context_attr);
 				Py_DECREF(params_types_attr);
 				Py_DECREF(retval_types_attr);
+				Py_XDECREF(wrapped_callable);
 				throw_py_err("Failed to allocate memory for callable return value types");
 			}
 
@@ -587,6 +643,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 						Py_DECREF(pxcall_and_context_attr);
 						Py_DECREF(params_types_attr);
 						Py_DECREF(retval_types_attr);
+						Py_XDECREF(wrapped_callable);
 						throw_py_err("Failed to extract return value type");
 					}
 				}
@@ -601,6 +658,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 		Py_DECREF(pxcall_and_context_attr);
 		Py_DECREF(params_types_attr);
 		Py_DECREF(retval_types_attr);
+		Py_XDECREF(wrapped_callable);
 
 		// Set target CDT
 		target.type = metaffi_callable_type;
@@ -610,6 +668,52 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 	}
 
 	// Handle everything else as handle - ignore target_type
+	// If this is a MetaFFI handle wrapper, unwrap it to CDT handle with original runtime_id.
+	if(py_metaffi_handle::check(obj))
+	{
+		PyObject* val = pPyObject_GetAttrString(obj, "handle");
+		PyObject* runtime_id = pPyObject_GetAttrString(obj, "runtime_id");
+		PyObject* releaser = pPyObject_GetAttrString(obj, "releaser");
+
+		if(val == nullptr || val == pPy_None ||
+		   runtime_id == nullptr || runtime_id == pPy_None ||
+		   releaser == nullptr || releaser == pPy_None)
+		{
+			Py_XDECREF(val);
+			Py_XDECREF(runtime_id);
+			Py_XDECREF(releaser);
+			throw_py_err("Failed to extract MetaFFIHandle attributes");
+		}
+
+		void* handle_ptr = pPyLong_AsVoidPtr(val);
+		metaffi_uint64 rt_id = pPyLong_AsUnsignedLongLong(runtime_id);
+		auto release = reinterpret_cast<releaser_fptr_t>(pPyLong_AsVoidPtr(releaser));
+
+		Py_DECREF(val);
+		Py_DECREF(runtime_id);
+		Py_DECREF(releaser);
+
+		if(pPyErr_Occurred())
+		{
+			std::string error_msg = check_python_error();
+			throw_py_err("Failed to convert MetaFFIHandle attributes: " + error_msg);
+		}
+
+		void* handle_mem = xllr_alloc_memory(sizeof(cdt_metaffi_handle));
+		if(!handle_mem)
+		{
+			throw_py_err("Failed to allocate memory for cdt_metaffi_handle");
+		}
+
+		target.type = metaffi_handle_type;
+		target.cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
+		target.cdt_val.handle_val->handle = handle_ptr;
+		target.cdt_val.handle_val->runtime_id = rt_id;
+		target.cdt_val.handle_val->release = release;
+		target.free_required = true;
+		return;
+	}
+
 	// Wrap the PyObject in a handle and increment refcount
 	Py_INCREF(obj);  // Keep object alive while in handle
 
@@ -622,7 +726,7 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 	}
 	target.cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
 	target.cdt_val.handle_val->handle = obj;
-	target.cdt_val.handle_val->runtime_id = 0;  // Python runtime ID (0 for now)
+	target.cdt_val.handle_val->runtime_id = PYTHON3_RUNTIME_ID;
 	target.cdt_val.handle_val->release = cpython3_runtime_manager::py_object_releaser;
 	target.free_required = true;
 }
@@ -1355,21 +1459,30 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 					return result;
 				}
 
+				metaffi_type element_type = static_cast<metaffi_type>(source.type & ~metaffi_array_type);
+				if(element_type == metaffi_uint8_type || element_type == metaffi_int8_type)
+				{
+					return cdt_array_to_pybytes(*source.cdt_val.array_val, element_type);
+				}
+
 				return cdt_array_to_pylist(*source.cdt_val.array_val);
 			}
 			else if(source.type == metaffi_handle_type)
 			{
-				// Extract PyObject from handle
-				if(!source.cdt_val.handle_val || !source.cdt_val.handle_val->handle)
+				if(!source.cdt_val.handle_val)
 				{
-					// Null handle
 					Py_INCREF(pPy_None);
 					return pPy_None;
 				}
 
-				PyObject* obj = static_cast<PyObject*>(source.cdt_val.handle_val->handle);
-				Py_INCREF(obj);  // Return new reference
-				return obj;
+				py_object obj = py_metaffi_handle::extract_pyobject_from_handle(m_runtime, *source.cdt_val.handle_val);
+				PyObject* raw = obj.detach();
+				if(!raw)
+				{
+					Py_INCREF(pPy_None);
+					return pPy_None;
+				}
+				return raw;
 			}
 			else if(source.type == metaffi_callable_type)
 			{
@@ -1579,32 +1692,57 @@ void cdts_python3_serializer::pylist_to_cdt_array(PyObject* list, cdt& target, m
 		return;
 	}
 
-	// If element_type is metaffi_any_type or invalid, detect from first element
-	if(element_type == metaffi_any_type || element_type == 0 || element_type == metaffi_null_type)
+	// Determine common type and fixed dimensions
+	bool is_1d_array = true;
+	bool is_fixed_dimension = true;
+	Py_ssize_t size = 0;
+	metaffi_type common_type = 0;
+
+	if(py_list::check(list))
 	{
-		PyObject* first_item = py_list::check(list) ? pPyList_GetItem(list, 0) : pPyTuple_GetItem(list, 0);
-		element_type = py_object::get_metaffi_type(first_item);
-		
-		if(element_type == 0 || element_type == metaffi_null_type)
-		{
-			std::ostringstream oss;
-			oss << "Failed to detect element type from first list element (got type: " << element_type << ")";
-			throw_py_err(oss.str());
-		}
+		py_list::get_metadata(list, is_1d_array, is_fixed_dimension, size, common_type);
+	}
+	else
+	{
+		py_tuple::get_metadata(list, is_1d_array, is_fixed_dimension, size, common_type);
 	}
 
-	// Detect array dimensions
-	Py_ssize_t dimensions = detect_dimensions(list);
+	// Resolve element type
+	metaffi_type resolved_type = element_type;
+	if(resolved_type == metaffi_any_type || resolved_type == 0 || resolved_type == metaffi_null_type)
+	{
+		resolved_type = common_type;
+	}
+
+	// If common type is unknown or nested arrays, treat as any
+	if(resolved_type == 0 || resolved_type == metaffi_null_type || (resolved_type & metaffi_array_type))
+	{
+		resolved_type = metaffi_any_type;
+	}
+
+	// Detect array dimensions (use MIXED_OR_UNKNOWN_DIMENSIONS for ragged/mixed)
+	metaffi_int64 dimensions = MIXED_OR_UNKNOWN_DIMENSIONS;
+	if(is_fixed_dimension)
+	{
+		dimensions = detect_dimensions(list);
+	}
 
 	// Allocate CDTS array
-	target.set_new_array(len, dimensions, static_cast<metaffi_types>(element_type));
+	target.set_new_array(len, dimensions, static_cast<metaffi_types>(resolved_type));
 	cdts& arr = static_cast<cdts&>(target);
 
 	// Fill array elements
 	for(Py_ssize_t i = 0; i < len; i++)
 	{
 		PyObject* item = py_list::check(list) ? pPyList_GetItem(list, i) : pPyTuple_GetItem(list, i);
-		pyobject_to_cdt(item, arr[i], element_type);
+		if(resolved_type == metaffi_any_type)
+		{
+			pyobject_to_cdt(item, arr[i], metaffi_any_type);
+		}
+		else
+		{
+			pyobject_to_cdt(item, arr[i], resolved_type);
+		}
 	}
 }
 
@@ -1633,6 +1771,64 @@ PyObject* cdts_python3_serializer::cdt_array_to_pylist(const cdts& arr)
 		Py_DECREF(list);
 		throw;
 	}
+}
+
+PyObject* cdts_python3_serializer::cdt_array_to_pybytes(const cdts& arr, metaffi_type element_type)
+{
+	// GIL assumed to be held
+	if(element_type != metaffi_uint8_type && element_type != metaffi_int8_type)
+	{
+		throw_py_err("cdt_array_to_pybytes: unsupported element type");
+	}
+
+	if(arr.length == 0)
+	{
+		PyObject* empty_bytes = pPyBytes_FromStringAndSize("", 0);
+		if(!empty_bytes || pPyErr_Occurred())
+		{
+			std::string error = check_python_error();
+			if(error.empty())
+			{
+				error = "Failed to create empty bytes";
+			}
+			throw_py_err(error);
+		}
+		return empty_bytes;
+	}
+
+	std::string buffer;
+	buffer.resize(arr.length);
+
+	for(metaffi_size i = 0; i < arr.length; i++)
+	{
+		const cdt& item = arr.arr[i];
+		if(item.type != metaffi_uint8_type && item.type != metaffi_int8_type)
+		{
+			throw_py_err("cdt_array_to_pybytes: array element is not int8/uint8");
+		}
+
+		if(item.type == metaffi_uint8_type)
+		{
+			buffer[i] = static_cast<char>(item.cdt_val.uint8_val);
+		}
+		else
+		{
+			buffer[i] = static_cast<char>(static_cast<uint8_t>(item.cdt_val.int8_val));
+		}
+	}
+
+	PyObject* bytes_obj = pPyBytes_FromStringAndSize(buffer.data(), static_cast<Py_ssize_t>(buffer.size()));
+	if(!bytes_obj || pPyErr_Occurred())
+	{
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create bytes from array";
+		}
+		throw_py_err(error);
+	}
+
+	return bytes_obj;
 }
 
 } // namespace metaffi::utils

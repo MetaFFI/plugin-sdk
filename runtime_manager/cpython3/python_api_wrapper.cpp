@@ -4,6 +4,7 @@
 #include <vector>
 #include <string.h>
 #include <algorithm>
+#include <utils/safe_func.h>
 #ifdef _WIN32
 #include <io.h>
 #include <process.h>
@@ -257,7 +258,7 @@ std::vector<std::string> get_python_search_paths()
 	search_paths.push_back("/usr/lib/x86_64-linux-gnu/");
 
 	// Add paths from environment variables
-	const char* ld_library_path = getenv("LD_LIBRARY_PATH");
+	char* ld_library_path = metaffi_getenv_alloc("LD_LIBRARY_PATH");
 	if(ld_library_path)
 	{
 		std::string paths(ld_library_path);
@@ -271,13 +272,15 @@ std::vector<std::string> get_python_search_paths()
 		{
 			search_paths.push_back(paths + "/");
 		}
+		metaffi_free_env(ld_library_path);
 	}
 
 	// Add Python-specific environment variables
-	const char* python_home = getenv("PYTHONHOME");
+	char* python_home = metaffi_getenv_alloc("PYTHONHOME");
 	if(python_home)
 	{
 		search_paths.push_back(std::string(python_home) + "/lib/");
+		metaffi_free_env(python_home);
 	}
 
 	// Try to get Python library path from python3-config if available
@@ -374,7 +377,7 @@ static std::string find_python3_dll()
 	}
 	
 	// Also check PATH environment variable
-	const char* path_env = getenv("PATH");
+	char* path_env = metaffi_getenv_alloc("PATH");
 	if(path_env)
 	{
 		std::string path_str(path_env);
@@ -402,9 +405,120 @@ static std::string find_python3_dll()
 			
 			start = end + 1;
 		}
+		metaffi_free_env(path_env);
 	}
 	
 	return "";
+}
+
+static std::string trim_path_entry(const std::string& entry)
+{
+	size_t start = 0;
+	size_t end = entry.size();
+	while(start < end && (entry[start] == ' ' || entry[start] == '"' || entry[start] == '\t'))
+	{
+		++start;
+	}
+	while(end > start && (entry[end - 1] == ' ' || entry[end - 1] == '"' || entry[end - 1] == '\t'))
+	{
+		--end;
+	}
+	return entry.substr(start, end - start);
+}
+
+static void append_env_paths(const char* env_name, std::vector<std::string>& out_paths)
+{
+	char* env_value = metaffi_getenv_alloc(env_name);
+	if(!env_value)
+	{
+		return;
+	}
+	std::string paths(env_value);
+	metaffi_free_env(env_value);
+
+	size_t start = 0;
+	while(start < paths.length())
+	{
+		size_t end = paths.find(';', start);
+		if(end == std::string::npos)
+		{
+			end = paths.length();
+		}
+		if(end > start)
+		{
+			std::string dir = trim_path_entry(paths.substr(start, end - start));
+			if(!dir.empty())
+			{
+				out_paths.push_back(dir);
+			}
+		}
+		start = end + 1;
+	}
+}
+
+static void append_known_python_dirs(const std::string& version_no_dot, std::vector<std::string>& out_paths)
+{
+	char* python_home = metaffi_getenv_alloc("PYTHONHOME");
+	if(python_home)
+	{
+		out_paths.push_back(std::string(python_home));
+		metaffi_free_env(python_home);
+	}
+
+	char* local_appdata = metaffi_getenv_alloc("LOCALAPPDATA");
+	if(local_appdata)
+	{
+		out_paths.push_back(std::string(local_appdata) + "\\Programs\\Python\\Python" + version_no_dot);
+		metaffi_free_env(local_appdata);
+	}
+
+	char* program_files = metaffi_getenv_alloc("PROGRAMFILES");
+	if(program_files)
+	{
+		out_paths.push_back(std::string(program_files) + "\\Python" + version_no_dot);
+		metaffi_free_env(program_files);
+	}
+
+	char* program_files_x86 = metaffi_getenv_alloc("PROGRAMFILES(X86)");
+	if(program_files_x86)
+	{
+		out_paths.push_back(std::string(program_files_x86) + "\\Python" + version_no_dot);
+		metaffi_free_env(program_files_x86);
+	}
+}
+
+static bool try_load_python_library_from_paths(const std::string& python_dll, const std::string& version_no_dot)
+{
+	std::vector<std::string> search_paths;
+	append_env_paths("PATH", search_paths);
+	append_known_python_dirs(version_no_dot, search_paths);
+
+	for(const auto& dir : search_paths)
+	{
+		if(dir.empty())
+		{
+			continue;
+		}
+		std::string full_path = dir;
+		char last = full_path.back();
+		if(last != '\\' && last != '/')
+		{
+			full_path += "\\";
+		}
+		full_path += python_dll;
+		if(GetFileAttributesA(full_path.c_str()) == INVALID_FILE_ATTRIBUTES)
+		{
+			continue;
+		}
+		python_lib_handle = LoadLibraryA(full_path.c_str());
+		if(python_lib_handle)
+		{
+			python_lib_path = full_path;
+			return true;
+		}
+	}
+
+	return false;
 }
 #endif
 
@@ -431,6 +545,11 @@ static bool try_load_python_library(const std::string& version)
 		{
 			python_lib_path = python_dll;  // Fallback to just the name
 		}
+		return true;
+	}
+
+	if(try_load_python_library_from_paths(python_dll, version_no_dot))
+	{
 		return true;
 	}
 	

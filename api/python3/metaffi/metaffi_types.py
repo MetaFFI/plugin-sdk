@@ -111,7 +111,7 @@ def get_callable_types(callable: Callable) -> Tuple[tuple[int], tuple[int]]:
 		else:
 			return_metaffi_types.append(pytype_to_metaffi_type(type_hints['return']))
 	else:
-		return_metaffi_types.append(pytype_to_metaffi_type(ctypes.py_object))
+		return_metaffi_types.append(MetaFFITypes.metaffi_any_type.value)
 	
 	params = inspect.signature(callable).parameters
 	for param in params:

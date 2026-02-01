@@ -2,6 +2,7 @@
 
 #include <doctest/doctest.h>
 #include "expand_env.h"
+#include <utils/safe_func.h>
 #include <filesystem>
 using namespace metaffi::utils;
 
@@ -11,7 +12,12 @@ struct setup
 {
 	setup()
 	{
-		original = std::string("Text ")+std::getenv("METAFFI_HOME")+std::string(" Text");
+		char* metaffi_home = metaffi_getenv_alloc("METAFFI_HOME");
+		if(metaffi_home)
+		{
+			original = std::string("Text ") + metaffi_home + std::string(" Text");
+			metaffi_free_env(metaffi_home);
+		}
 	}
 };
 static setup s;

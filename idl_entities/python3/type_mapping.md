@@ -37,6 +37,7 @@ This document serves as the ground truth for converting MetaFFI types to Python3
 
 When deserializing a `handle`, check the `runtime_id`:
 - If `runtime_id == PYTHON3_RUNTIME_ID`: Unwrap to original PyObject*
+  - PYTHON3_RUNTIME_ID defined in the python3 cdts serializer
 - Otherwise: Wrap in `MetaFFIHandle` Python class
 
 ## Implementation Reference

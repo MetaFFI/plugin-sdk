@@ -5,10 +5,8 @@
 #include "py_metaffi_handle.h"
 #include "py_utils.h"
 #include "runtime_manager.h"
+#include <cdts_serializer/cpython3/runtime_id.h>
 #include <sstream>
-
-// Python3 runtime ID (should match the value used in metaffi)
-constexpr uint64_t PYTHON3_RUNTIME_ID = 311;
 
 py_object py_metaffi_handle::extract_pyobject_from_handle(cpython3_runtime_manager& rt, const cdt_metaffi_handle& cdt_handle)
 {
