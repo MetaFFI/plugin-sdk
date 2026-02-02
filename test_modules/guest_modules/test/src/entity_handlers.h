@@ -102,4 +102,16 @@ void handler_return_two_values(cdts* data, char** out_err);
 void handler_return_three_values(cdts* data, char** out_err);
 void handler_swap_values(cdts* data, char** out_err);
 
+//----------------------------------------------------------------------
+// TestHandle class method handlers
+//----------------------------------------------------------------------
+void handler_get_handle_id(cdts* data, char** out_err);
+void handler_append_to_data(cdts* data, char** out_err);
+
+//----------------------------------------------------------------------
+// Global variable handlers
+//----------------------------------------------------------------------
+void handler_get_g_name(cdts* data, char** out_err);
+void handler_set_g_name(cdts* data, char** out_err);
+
 } // namespace test_plugin

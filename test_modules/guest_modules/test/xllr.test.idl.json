@@ -421,49 +421,6 @@
           ]
         },
         {
-          "name": "create_handle",
-          "comment": "Creates a new TestHandle",
-          "tags": {},
-          "entity_path": {"callable": "create_handle"},
-          "parameters": [],
-          "return_values": [
-            {"name": "result", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
-          ]
-        },
-        {
-          "name": "get_handle_data",
-          "comment": "Returns handle's data field",
-          "tags": {},
-          "entity_path": {"callable": "get_handle_data"},
-          "parameters": [
-            {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
-          ],
-          "return_values": [
-            {"name": "result", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
-          ]
-        },
-        {
-          "name": "set_handle_data",
-          "comment": "Sets handle's data field",
-          "tags": {},
-          "entity_path": {"callable": "set_handle_data"},
-          "parameters": [
-            {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0},
-            {"name": "data", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
-          ],
-          "return_values": []
-        },
-        {
-          "name": "release_handle",
-          "comment": "Logs release request",
-          "tags": {},
-          "entity_path": {"callable": "release_handle"},
-          "parameters": [
-            {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
-          ],
-          "return_values": []
-        },
-        {
           "name": "call_callback_add",
           "comment": "Calls callback with (3, 4), expects sum (7)",
           "tags": {},
@@ -575,8 +532,138 @@
           ]
         }
       ],
-      "classes": [],
-      "globals": [],
+      "classes": [
+        {
+          "name": "TestHandle",
+          "comment": "Test handle class with id and data fields",
+          "tags": {},
+          "entity_path": {"class": "TestHandle"},
+          "constructors": [
+            {
+              "name": "TestHandle",
+              "comment": "Creates a new TestHandle with auto-incremented id and data='test_data'",
+              "tags": {},
+              "entity_path": {"callable": "create_handle"},
+              "parameters": [],
+              "return_values": [
+                {"name": "result", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
+              ]
+            }
+          ],
+          "release": {
+            "name": "release",
+            "comment": "Logs release request (actual release via handle's release callback)",
+            "tags": {},
+            "entity_path": {"callable": "release_handle"},
+            "parameters": [
+              {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
+            ],
+            "return_values": [],
+            "instance_required": true
+          },
+          "methods": [
+            {
+              "name": "append_to_data",
+              "comment": "Appends string to the handle's data field",
+              "tags": {},
+              "entity_path": {"callable": "TestHandle.append_to_data"},
+              "parameters": [
+                {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0},
+                {"name": "text", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+              ],
+              "return_values": [],
+              "instance_required": true
+            }
+          ],
+          "fields": [
+            {
+              "name": "id",
+              "type": "int64",
+              "type_alias": "int64_t",
+              "comment": "Unique handle ID",
+              "tags": {},
+              "dimensions": 0,
+              "getter": {
+                "name": "get_id",
+                "comment": "Returns the id field of the handle",
+                "tags": {},
+                "entity_path": {"callable": "TestHandle.get_id"},
+                "parameters": [
+                  {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
+                ],
+                "return_values": [
+                  {"name": "result", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
+                ],
+                "instance_required": true
+              },
+              "setter": null
+            },
+            {
+              "name": "data",
+              "type": "string8",
+              "type_alias": "std::string",
+              "comment": "Handle data field",
+              "tags": {},
+              "dimensions": 0,
+              "getter": {
+                "name": "get_data",
+                "comment": "Returns the data field of the handle",
+                "tags": {},
+                "entity_path": {"callable": "get_handle_data"},
+                "parameters": [
+                  {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
+                ],
+                "return_values": [
+                  {"name": "result", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+                ],
+                "instance_required": true
+              },
+              "setter": {
+                "name": "set_data",
+                "comment": "Sets the data field of the handle",
+                "tags": {},
+                "entity_path": {"callable": "set_handle_data"},
+                "parameters": [
+                  {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0},
+                  {"name": "value", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+                ],
+                "return_values": [],
+                "instance_required": true
+              }
+            }
+          ]
+        }
+      ],
+      "globals": [
+        {
+          "name": "g_name",
+          "type": "string8",
+          "type_alias": "std::string",
+          "comment": "Global name variable for testing",
+          "tags": {},
+          "dimensions": 0,
+          "getter": {
+            "name": "get_g_name",
+            "comment": "Returns the global g_name variable",
+            "tags": {},
+            "entity_path": {"callable": "get_g_name"},
+            "parameters": [],
+            "return_values": [
+              {"name": "result", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+            ]
+          },
+          "setter": {
+            "name": "set_g_name",
+            "comment": "Sets the global g_name variable",
+            "tags": {},
+            "entity_path": {"callable": "set_g_name"},
+            "parameters": [
+              {"name": "value", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+            ],
+            "return_values": []
+          }
+        }
+      ],
       "external_resources": []
     }
   ]

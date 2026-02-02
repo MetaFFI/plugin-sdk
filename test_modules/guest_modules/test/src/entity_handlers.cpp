@@ -32,6 +32,9 @@ struct TestHandle
 // Global handle counter
 static int64_t g_next_handle_id = 1;
 
+// Global name variable for testing globals
+static std::string g_name = "default_name";
+
 // Test runtime ID for handles
 static const uint64_t TEST_RUNTIME_ID = 0xDEADBEEF;
 
@@ -847,6 +850,69 @@ void handler_swap_values(cdts* data, char** out_err)
 	log_entity("test::swap_values", "swapping (" + std::to_string(int_val) + ", \"" +
 	           std::string(str_val ? str_val : "") + "\") -> (\"" +
 	           std::string(str_val ? str_val : "") + "\", " + std::to_string(int_val) + ")");
+}
+
+//======================================================================
+// TestHandle class method handlers
+//======================================================================
+
+void handler_get_handle_id(cdts* data, char** out_err)
+{
+	// data[0] = params (handle), data[1] = returns (int64)
+	cdt_metaffi_handle* h = data[0].arr[0].cdt_val.handle_val;
+
+	if(!h || !h->handle)
+	{
+		log_error("test::TestHandle.get_id", "null handle");
+		set_error(out_err, "get_handle_id: null handle");
+		return;
+	}
+
+	auto* th = static_cast<TestHandle*>(h->handle);
+	data[1].arr[0] = th->id;
+	log_entity("test::TestHandle.get_id", "returning id=" + std::to_string(th->id) + " from handle");
+}
+
+void handler_append_to_data(cdts* data, char** out_err)
+{
+	// data[0] = params (handle, string8)
+	cdt_metaffi_handle* h = data[0].arr[0].cdt_val.handle_val;
+	const char* append_str = reinterpret_cast<const char*>(data[0].arr[1].cdt_val.string8_val);
+
+	if(!h || !h->handle)
+	{
+		log_error("test::TestHandle.append_to_data", "null handle");
+		set_error(out_err, "append_to_data: null handle");
+		return;
+	}
+
+	auto* th = static_cast<TestHandle*>(h->handle);
+	std::string old_data = th->data;
+	th->data += (append_str ? append_str : "");
+	log_entity("test::TestHandle.append_to_data",
+	           "appended \"" + std::string(append_str ? append_str : "") +
+	           "\" to handle id=" + std::to_string(th->id) +
+	           ", data: \"" + old_data + "\" -> \"" + th->data + "\"");
+}
+
+//======================================================================
+// Global variable handlers
+//======================================================================
+
+void handler_get_g_name(cdts* data, char** out_err)
+{
+	// data[0] = params (empty), data[1] = returns (string8)
+	data[1].arr[0].set_string(reinterpret_cast<const char8_t*>(g_name.c_str()), true);
+	log_entity("test::get_g_name", "returning g_name=\"" + g_name + "\"");
+}
+
+void handler_set_g_name(cdts* data, char** out_err)
+{
+	// data[0] = params (string8)
+	const char* new_name = reinterpret_cast<const char*>(data[0].arr[0].cdt_val.string8_val);
+	std::string old_name = g_name;
+	g_name = new_name ? new_name : "";
+	log_entity("test::set_g_name", "set g_name: \"" + old_name + "\" -> \"" + g_name + "\"");
 }
 
 } // namespace test_plugin

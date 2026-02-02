@@ -112,16 +112,51 @@ All entities are accessed via `test::<entity_name>` paths.
 
 ---
 
-## Handles (Opaque Objects)
+## TestHandle Class (Opaque Object)
 
 The test plugin manages `TestHandle` objects with `id` and `data` fields.
 
+### Constructor
+
 | Entity | Signature | Description |
 |--------|-----------|-------------|
-| `test::create_handle` | `() -> handle` | Creates a new TestHandle with auto-incremented id and data="test_data" |
-| `test::get_handle_data` | `(handle) -> string8` | Returns the `data` field of the handle |
-| `test::set_handle_data` | `(handle, string8) -> void` | Sets the `data` field of the handle |
-| `test::release_handle` | `(handle) -> void` | Logs release request (actual release via handle's release callback) |
+| `TestHandle()` | `() -> TestHandle` | Creates a new TestHandle with auto-incremented id and data="test_data" |
+
+### Destructor/Releaser
+
+| Entity | Signature | Description |
+|--------|-----------|-------------|
+| `release()` | `(handle) -> void` | Logs release request (actual release via handle's release callback) |
+
+### Fields
+
+| Field | Type | Access | Description |
+|-------|------|--------|-------------|
+| `id` | int64 | read-only | Unique auto-incremented handle ID |
+| `data` | string8 | read/write | Handle data field (default: "test_data") |
+
+**Field Access:**
+- `get_id()` - Returns the `id` field
+- `get_data()` - Returns the `data` field
+- `set_data(string8)` - Sets the `data` field
+
+### Methods
+
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `append_to_data` | `(string8) -> void` | Appends the given string to the handle's data field |
+
+---
+
+## Global Variables
+
+| Variable | Type | Access | Default Value | Description |
+|----------|------|--------|---------------|-------------|
+| `g_name` | string8 | read/write | "default_name" | Global name variable for testing globals |
+
+**Global Access:**
+- `get_g_name()` - Returns the `g_name` value
+- `set_g_name(string8)` - Sets the `g_name` value
 
 ---
 

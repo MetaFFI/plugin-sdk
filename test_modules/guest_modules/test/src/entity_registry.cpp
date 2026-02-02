@@ -571,6 +571,46 @@ void EntityRegistry::register_all_entities()
 		handler_swap_values
 	});
 
+	//------------------------------------------------------------------
+	// TestHandle class method entities
+	//------------------------------------------------------------------
+
+	register_entity({
+		"test::TestHandle.get_id",
+		{metaffi_type_info(metaffi_handle_type)},
+		{metaffi_type_info(metaffi_int64_type)},
+		XCallVariant::PARAMS_RET,
+		handler_get_handle_id
+	});
+
+	register_entity({
+		"test::TestHandle.append_to_data",
+		{metaffi_type_info(metaffi_handle_type), metaffi_type_info(metaffi_string8_type)},
+		{},
+		XCallVariant::PARAMS_NO_RET,
+		handler_append_to_data
+	});
+
+	//------------------------------------------------------------------
+	// Global variable entities
+	//------------------------------------------------------------------
+
+	register_entity({
+		"test::get_g_name",
+		{},
+		{metaffi_type_info(metaffi_string8_type)},
+		XCallVariant::NO_PARAMS_RET,
+		handler_get_g_name
+	});
+
+	register_entity({
+		"test::set_g_name",
+		{metaffi_type_info(metaffi_string8_type)},
+		{},
+		XCallVariant::PARAMS_NO_RET,
+		handler_set_g_name
+	});
+
 	std::cout << LOG_PREFIX << "Registered " << m_entities.size() << " test entities" << std::endl;
 }
 

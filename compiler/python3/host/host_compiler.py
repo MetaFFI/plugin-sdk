@@ -504,10 +504,25 @@ from typing import Any, Optional, List, Tuple
             lines.append(f"    Generated stub class for {cls.name}")
         
         lines.append(f'    """')
-        lines.append("    def __init__(self, handle: Any):")
-        lines.append("        self._handle = handle")
+
+        # Generate __init__ based on whether constructors exist
+        if cls.constructors:
+            # If there are constructors, handle defaults to None and we can create new instances
+            lines.append("    def __init__(self, handle: 'metaffi.MetaFFIEntity | None' = None):")
+            lines.append("        if handle is None:")
+            # Use the first constructor (most classes have just one)
+            first_ctor = cls.constructors[0]
+            ctor_caller = f"{cls.name}_{first_ctor.name}_caller"
+            lines.append(f"            result = {ctor_caller}()")
+            lines.append("            self._handle = result[0] if isinstance(result, tuple) and len(result) == 1 else result")
+            lines.append("        else:")
+            lines.append("            self._handle = handle")
+        else:
+            # No constructors - handle is required
+            lines.append("    def __init__(self, handle: 'metaffi.MetaFFIEntity'):")
+            lines.append("        self._handle = handle")
         lines.append("")
-        
+
         # Methods
         for method in cls.methods:
             method_code = self._generate_method_stub(cls.name, method, idl_definition)
