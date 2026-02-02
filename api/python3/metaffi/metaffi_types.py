@@ -1,8 +1,7 @@
 import ctypes.util
 import inspect
 from enum import IntFlag
-import platform
-from typing import Callable, Tuple, get_type_hints
+from typing import Callable, get_type_hints
 
 
 # This should be taken from metaffi_primitives.h
@@ -100,7 +99,7 @@ def pytype_to_metaffi_type(t: type):
 	return MetaFFITypes.metaffi_handle_type.value
 
 
-def get_callable_types(callable: Callable) -> Tuple[tuple[int], tuple[int]]:
+def get_callable_types(callable: Callable) -> tuple[tuple[int, ...], tuple[int, ...]]:
 	type_hints = get_type_hints(callable)
 	param_metaffi_types = []
 	return_metaffi_types = []

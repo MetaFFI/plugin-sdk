@@ -321,6 +321,249 @@ class TestHostCompiler(unittest.TestCase):
         finally:
             os.unlink(idl_path)
 
+    def test_type_mapping_primitives(self):
+        """Test MetaFFI → Python primitive type mapping."""
+        from sdk.idl_entities.python3 import type_mapper
+
+        # Integer types
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("int8", 0, ""), "int")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("int16", 0, ""), "int")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("int32", 0, ""), "int")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("int64", 0, ""), "int")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("uint8", 0, ""), "int")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("uint16", 0, ""), "int")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("uint32", 0, ""), "int")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("uint64", 0, ""), "int")
+
+        # Float types
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("float32", 0, ""), "float")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("float64", 0, ""), "float")
+
+        # String types
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("string8", 0, ""), "str")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("string16", 0, ""), "str")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("string32", 0, ""), "str")
+
+        # Character types
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("char8", 0, ""), "str")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("char16", 0, ""), "str")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("char32", 0, ""), "str")
+
+        # Other types
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("bool", 0, ""), "bool")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("null", 0, ""), "None")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("size", 0, ""), "int")
+
+    def test_type_mapping_arrays(self):
+        """Test MetaFFI → Python array type mapping."""
+        from sdk.idl_entities.python3 import type_mapper
+
+        # 1D arrays with dimensions parameter
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("int64", 1, ""), "List[int]")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("string8", 1, ""), "List[str]")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("float64", 1, ""), "List[float]")
+
+        # 1D arrays with _array suffix
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("int64_array", 0, ""), "List[int]")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("string8_array", 0, ""), "List[str]")
+
+        # 2D arrays
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("int64", 2, ""), "List[List[int]]")
+
+        # 3D arrays
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("int64", 3, ""), "List[List[List[int]]]")
+
+        # Special case: uint8_array should still map to List[int], not bytes
+        # (bytes is handled at runtime, not in type annotations)
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("uint8_array", 0, ""), "List[int]")
+
+    def test_type_mapping_special_types(self):
+        """Test MetaFFI → Python special type mapping."""
+        from sdk.idl_entities.python3 import type_mapper
+
+        # Handle types
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("handle", 0, ""), "Any")
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("handle", 0, "MyClass"), "MyClass")
+
+        # Handle arrays
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("handle_array", 0, ""), "List[Any]")
+
+        # Callable
+        # Note: callable might not be in the type_mapping dict, so it might return "Any"
+        result = type_mapper.metaffi_type_to_python_type_annotation("callable", 0, "")
+        self.assertTrue(result in ["Any", "callable"], f"Expected 'Any' or 'callable', got '{result}'")
+
+        # Any type
+        self.assertEqual(type_mapper.metaffi_type_to_python_type_annotation("any", 0, ""), "Any")
+
+    def test_arg_to_metaffi_type_info(self):
+        """Test ArgDefinition → metaffi_type_info conversion."""
+        from sdk.idl_entities.python3 import type_mapper
+
+        # Create test argument
+        arg = idl_entities_model.ArgDefinition(
+            name="test",
+            type="int64",
+            type_alias="int64_t",
+            comment="",
+            tags={},
+            dimensions=0,
+            is_optional=False
+        )
+
+        # Convert to type_info
+        type_info = type_mapper.arg_to_metaffi_type_info(arg, metaffi_types)
+
+        # Verify type
+        self.assertEqual(type_info.type, metaffi_types.MetaFFITypes.metaffi_int64_type)
+        self.assertEqual(type_info.fixed_dimensions, 0)
+
+    def test_metaffi_type_info_array(self):
+        """Test metaffi_type_info creation for array types."""
+        from sdk.idl_entities.python3 import type_mapper
+
+        # Create array argument
+        arg = idl_entities_model.ArgDefinition(
+            name="numbers",
+            type="int64_array",
+            type_alias="",
+            comment="",
+            tags={},
+            dimensions=1,
+            is_optional=False
+        )
+
+        # Convert to type_info
+        type_info = type_mapper.arg_to_metaffi_type_info(arg, metaffi_types)
+
+        # Verify it includes array flag
+        expected_type = metaffi_types.MetaFFITypes.metaffi_int64_type | metaffi_types.MetaFFITypes.metaffi_array_type
+        self.assertEqual(type_info.type, expected_type)
+        self.assertEqual(type_info.fixed_dimensions, 1)
+
+    def test_environment_variable_handling_in_generated_code(self):
+        """Test that generated code includes environment variable handling."""
+        header = self.compiler._generate_header("test.idl.json")
+
+        # Verify environment variable checks are present
+        self.assertIn("METAFFI_SOURCE_ROOT", header)
+        self.assertIn("METAFFI_HOME", header)
+        self.assertIn("raise RuntimeError", header)
+        self.assertIn("sdk_path", header)
+        self.assertIn("sys.path.insert", header)
+
+        # Verify it's checking SOURCE_ROOT first, then HOME
+        source_root_pos = header.find("METAFFI_SOURCE_ROOT")
+        home_pos = header.find("METAFFI_HOME")
+        self.assertLess(source_root_pos, home_pos, "Should check METAFFI_SOURCE_ROOT before METAFFI_HOME")
+
+    def test_validation_missing_guest_lib(self):
+        """Test fail-fast validation for missing metaffi_guest_lib."""
+        idl_data = {
+            "idl_source": "test",
+            "idl_extension": ".json",
+            "idl_filename_with_extension": "test.json",
+            "idl_full_path": "test.json",
+            "metaffi_guest_lib": "",  # Empty guest lib
+            "target_language": "python3",
+            "modules": []
+        }
+
+        IDLDefinition = test_context.idl_entities.IDLDefinition
+        definition = IDLDefinition.from_dict(idl_data)
+
+        with self.assertRaises(ValueError) as cm:
+            self.compiler.compile(definition, "/tmp", "test", {})
+
+        self.assertIn("metaffi_guest_lib", str(cm.exception))
+
+    def test_validation_missing_entity_path(self):
+        """Test fail-fast validation for missing entity_path in function."""
+        idl_data = {
+            "idl_source": "test",
+            "idl_extension": ".json",
+            "idl_filename_with_extension": "test.json",
+            "idl_full_path": "test.json",
+            "metaffi_guest_lib": "test_lib",
+            "target_language": "python3",
+            "modules": [
+                {
+                    "name": "test_module",
+                    "comment": "",
+                    "tags": {},
+                    "functions": [
+                        {
+                            "name": "bad_func",
+                            "comment": "",
+                            "tags": {},
+                            "entity_path": {},  # Empty entity path
+                            "parameters": [],
+                            "return_values": [],
+                            "overload_index": 0
+                        }
+                    ],
+                    "classes": [],
+                    "globals": [],
+                    "external_resources": []
+                }
+            ]
+        }
+
+        IDLDefinition = test_context.idl_entities.IDLDefinition
+        definition = IDLDefinition.from_dict(idl_data)
+
+        with self.assertRaises(ValueError) as cm:
+            self.compiler.compile(definition, "/tmp", "test", {})
+
+        self.assertIn("entity_path", str(cm.exception))
+
+    def test_multiple_return_values(self):
+        """Test function with multiple return values generates Tuple type annotation."""
+        idl_data = {
+            "idl_source": "test",
+            "idl_extension": ".json",
+            "idl_filename_with_extension": "test.json",
+            "idl_full_path": "test.json",
+            "metaffi_guest_lib": "test_lib",
+            "target_language": "python3",
+            "modules": [
+                {
+                    "name": "test_module",
+                    "comment": "",
+                    "tags": {},
+                    "functions": [
+                        {
+                            "name": "return_two",
+                            "comment": "",
+                            "tags": {},
+                            "entity_path": {"callable": "return_two"},
+                            "parameters": [],
+                            "return_values": [
+                                {"name": "a", "type": "int64", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0, "is_optional": False},
+                                {"name": "b", "type": "string8", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0, "is_optional": False}
+                            ],
+                            "overload_index": 0
+                        }
+                    ],
+                    "classes": [],
+                    "globals": [],
+                    "external_resources": []
+                }
+            ]
+        }
+
+        IDLDefinition = test_context.idl_entities.IDLDefinition
+        definition = IDLDefinition.from_dict(idl_data)
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.compiler.compile(definition, tmpdir, "test_output", {})
+
+            output_file = Path(tmpdir) / "test_module" / "test_output_MetaFFIHost.py"
+            content = output_file.read_text(encoding="utf-8")
+
+            # Should have Tuple return type
+            self.assertIn("Tuple[int, str]", content)
+
 
 if __name__ == "__main__":
     unittest.main()

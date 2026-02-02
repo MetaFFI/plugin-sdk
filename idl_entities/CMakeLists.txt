@@ -1,5 +1,6 @@
 add_subdirectory(python3)
 add_subdirectory(jvm)
+add_subdirectory(cpp)
 
 set(IDL_ENTITIES_OUT_DIR "$ENV{METAFFI_HOME}/sdk/idl_entities")
 
@@ -11,7 +12,7 @@ add_custom_target(idl_entities_specs
 )
 
 add_custom_target(idl_entities
-    DEPENDS idl_entities_specs python3_idl_entities jvm_idl_entities
+    DEPENDS idl_entities_specs python3_idl_entities jvm_idl_entities cpp_idl_entities cpp_idl_entities_test
 )
 
 set(idl_entities idl_entities PARENT_SCOPE)

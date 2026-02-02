@@ -16,6 +16,7 @@
 #include <sstream>
 #include <cstring>
 #include <iostream>
+#include <utils/safe_func.h>
 
 
 # define throw_py_err(err) \
@@ -747,6 +748,85 @@ PyObject* cdts_python3_serializer::extract_pyobject()
 // CALLABLE CONVERSION HELPERS
 // ============================================================================
 
+void cdts_python3_serializer::add_dev_python_api_to_sys_path()
+{
+	// GIL is assumed to be held by caller
+
+	// Get METAFFI_SOURCE_ROOT environment variable
+	const char* metaffi_source_root = metaffi_getenv_alloc("METAFFI_SOURCE_ROOT");
+	if(!metaffi_source_root)
+	{
+		return;  // Not a development machine
+	}
+
+	// Get sys.path
+	PyObject* sys_module = pPyImport_ImportModule("sys");
+	if(!sys_module || pPyErr_Occurred())
+	{
+		metaffi_free_env((void*)metaffi_source_root);
+		Py_XDECREF(sys_module);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to import sys module";
+		}
+		throw_py_err(error);
+	}
+
+	PyObject* sys_path = pPyObject_GetAttrString(sys_module, "path");
+	Py_DECREF(sys_module);
+	if(!sys_path || pPyErr_Occurred())
+	{
+		metaffi_free_env((void*)metaffi_source_root);
+		Py_XDECREF(sys_path);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to get sys.path";
+		}
+		throw_py_err(error);
+	}
+
+	// Build path: $METAFFI_SOURCE_ROOT/sdk/api/python3
+	std::string python3_api_path = std::string(metaffi_source_root) + "/sdk/api/python3";
+	metaffi_free_env((void*)metaffi_source_root);
+
+	PyObject* path_str = pPyUnicode_FromString(python3_api_path.c_str());
+	if(!path_str || pPyErr_Occurred())
+	{
+		Py_XDECREF(path_str);
+		Py_DECREF(sys_path);
+		std::string error = check_python_error();
+		if(error.empty())
+		{
+			error = "Failed to create path string";
+		}
+		throw_py_err(error);
+	}
+
+	// Check if path is already in sys.path
+	int contains = pPySequence_Contains(sys_path, path_str);
+	if(contains == 0)
+	{
+		// Path not in sys.path, add it
+		int append_result = pPyList_Append(sys_path, path_str);
+		if(append_result == -1 || pPyErr_Occurred())
+		{
+			Py_DECREF(path_str);
+			Py_DECREF(sys_path);
+			std::string error = check_python_error();
+			if(error.empty())
+			{
+				error = "Failed to append to sys.path";
+			}
+			throw_py_err(error);
+		}
+	}
+
+	Py_DECREF(path_str);
+	Py_DECREF(sys_path);
+}
+
 PyObject* cdts_python3_serializer::create_callable_params_types_tuple(const cdt_metaffi_callable* callable)
 {
 	// GIL is assumed to be held by caller
@@ -860,6 +940,11 @@ PyObject* cdts_python3_serializer::create_callable_retval_types_tuple(const cdt_
 PyObject* cdts_python3_serializer::create_callable_from_lambda(void* pxcall, void* context, PyObject* params_types, PyObject* retval_types)
 {
 	// GIL is assumed to be held by caller
+
+	// If this is a development machine (i.e. METAFFI_SOURCE_ROOT is set),
+	// then add to sys.path $METAFFI_SOURCE_ROOT/sdk/api/python3
+	add_dev_python_api_to_sys_path();
+
 	// Import metaffi module
 	PyObject* metaffi_module = pPyImport_ImportModule("metaffi");
 	if(!metaffi_module || pPyErr_Occurred())

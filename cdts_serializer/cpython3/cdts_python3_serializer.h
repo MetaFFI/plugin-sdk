@@ -233,11 +233,22 @@ private:
 	// ===== CALLABLE CONVERSION HELPERS =====
 
 	/**
+	 * @brief Add development Python3 API path to sys.path if METAFFI_SOURCE_ROOT is set
+	 * @throws std::runtime_error on error
+	 *
+	 * If METAFFI_SOURCE_ROOT environment variable is set, adds $METAFFI_SOURCE_ROOT/sdk/api/python3
+	 * to sys.path to enable importing metaffi module during development.
+	 *
+	 * Assumes GIL is held
+	 */
+	void add_dev_python_api_to_sys_path();
+
+	/**
 	 * @brief Create params_metaffi_types tuple from callable structure
 	 * @param callable Callable structure with parameter types
 	 * @return New Python tuple reference (caller must DECREF)
 	 * @throws std::runtime_error on error
-	 * 
+	 *
 	 * Assumes GIL is held
 	 */
 	PyObject* create_callable_params_types_tuple(const cdt_metaffi_callable* callable);

@@ -33,7 +33,7 @@ public class IdlGeneratorTest {
         // Parse and verify structure
         JsonObject root = JsonParser.parseString(json).getAsJsonObject();
         assertEquals("test", root.get("idl_source").getAsString());
-        assertEquals("jvm", root.get("target_language").getAsString());
+        assertEquals(root.get("target_language").getAsString(), "jvm");
         assertTrue(root.has("modules"));
     }
 

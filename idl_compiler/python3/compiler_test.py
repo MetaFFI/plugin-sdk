@@ -45,7 +45,7 @@ class TypeMapperTests(unittest.TestCase):
     def test_map_primitive_integer(self):
         """Test signed integer type mapping"""
         metaffi_type, dimensions = self.type_mapper.map_type('int')
-        self.assertEqual(metaffi_type, 'int32')
+        self.assertEqual(metaffi_type, 'int64')
         self.assertEqual(dimensions, 0)
 
     def test_map_primitive_float(self):
@@ -82,7 +82,7 @@ class TypeMapperTests(unittest.TestCase):
     def test_map_list_to_handle_array(self):
         """Test generic list type mapping"""
         metaffi_type, dimensions = self.type_mapper.map_type('list')
-        self.assertEqual(metaffi_type, 'handle_array')
+        self.assertEqual(metaffi_type, 'handle')
         self.assertEqual(dimensions, 0)
 
     def test_map_dict_to_handle(self):

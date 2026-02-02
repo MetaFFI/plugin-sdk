@@ -8,6 +8,8 @@
 #define metaffi_sprintf(dest, destsz, fmt, ...) sprintf_s((dest), (destsz), (fmt), __VA_ARGS__)
 #define metaffi_strncpy(dest, destsz, src, count) strncpy_s((dest), (destsz), (src), (count))
 #define metaffi_strcpy(dest, destsz, src) strcpy_s((dest), (destsz), (src))
+#define metaffi_strcat(dest, destsz, src) strcat_s((dest), (destsz), (src))
+#define metaffi_strdup(str) _strdup(str)
 
 static inline char* metaffi_getenv_alloc_impl(const char* name)
 {
@@ -26,6 +28,8 @@ static inline char* metaffi_getenv_alloc_impl(const char* name)
 #define metaffi_sprintf(dest, destsz, fmt, ...) snprintf((dest), (destsz), (fmt), __VA_ARGS__)
 #define metaffi_strncpy(dest, destsz, src, count) strncpy((dest), (src), (count))
 #define metaffi_strcpy(dest, destsz, src) strcpy((dest), (src))
+#define metaffi_strcat(dest, destsz, src) strcat((dest), (src))
+#define metaffi_strdup(str) strdup(str)
 #define metaffi_getenv_alloc(name) getenv(name)
 #define metaffi_free_env(ptr) ((void)0)
 #endif

@@ -1,0 +1,583 @@
+{
+  "idl_source": "xllr.test",
+  "idl_extension": ".idl.json",
+  "idl_filename_with_extension": "xllr.test.idl.json",
+  "idl_full_path": "",
+  "metaffi_guest_lib": "xllr_test_plugin",
+  "target_language": "cpp",
+  "modules": [
+    {
+      "name": "test",
+      "comment": "Test module for MetaFFI SDK API testing",
+      "tags": {},
+      "functions": [
+        {
+          "name": "no_op",
+          "comment": "Does nothing, just logs",
+          "tags": {},
+          "entity_path": {"callable": "no_op"},
+          "parameters": [],
+          "return_values": []
+        },
+        {
+          "name": "print_hello",
+          "comment": "Prints 'Hello from test plugin!' to STDOUT",
+          "tags": {},
+          "entity_path": {"callable": "print_hello"},
+          "parameters": [],
+          "return_values": []
+        },
+        {
+          "name": "return_int8",
+          "comment": "Returns int8 value 42",
+          "tags": {},
+          "entity_path": {"callable": "return_int8"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "int8", "type_alias": "int8_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_int16",
+          "comment": "Returns int16 value 1000",
+          "tags": {},
+          "entity_path": {"callable": "return_int16"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "int16", "type_alias": "int16_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_int32",
+          "comment": "Returns int32 value 100000",
+          "tags": {},
+          "entity_path": {"callable": "return_int32"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "int32", "type_alias": "int32_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_int64",
+          "comment": "Returns int64 max value",
+          "tags": {},
+          "entity_path": {"callable": "return_int64"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_uint8",
+          "comment": "Returns uint8 value 255",
+          "tags": {},
+          "entity_path": {"callable": "return_uint8"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "uint8", "type_alias": "uint8_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_uint16",
+          "comment": "Returns uint16 value 65535",
+          "tags": {},
+          "entity_path": {"callable": "return_uint16"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "uint16", "type_alias": "uint16_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_uint32",
+          "comment": "Returns uint32 max value",
+          "tags": {},
+          "entity_path": {"callable": "return_uint32"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "uint32", "type_alias": "uint32_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_uint64",
+          "comment": "Returns uint64 max value",
+          "tags": {},
+          "entity_path": {"callable": "return_uint64"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "uint64", "type_alias": "uint64_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_float32",
+          "comment": "Returns float32 value 3.14159",
+          "tags": {},
+          "entity_path": {"callable": "return_float32"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "float32", "type_alias": "float", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_float64",
+          "comment": "Returns float64 value 3.141592653589793",
+          "tags": {},
+          "entity_path": {"callable": "return_float64"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_bool_true",
+          "comment": "Returns true",
+          "tags": {},
+          "entity_path": {"callable": "return_bool_true"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "bool", "type_alias": "bool", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_bool_false",
+          "comment": "Returns false",
+          "tags": {},
+          "entity_path": {"callable": "return_bool_false"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "bool", "type_alias": "bool", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_string8",
+          "comment": "Returns 'Hello from test plugin'",
+          "tags": {},
+          "entity_path": {"callable": "return_string8"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_null",
+          "comment": "Returns null",
+          "tags": {},
+          "entity_path": {"callable": "return_null"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "null", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "accept_int8",
+          "comment": "Accepts int8 and logs it",
+          "tags": {},
+          "entity_path": {"callable": "accept_int8"},
+          "parameters": [
+            {"name": "value", "type": "int8", "type_alias": "int8_t", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "accept_int16",
+          "comment": "Accepts int16 and logs it",
+          "tags": {},
+          "entity_path": {"callable": "accept_int16"},
+          "parameters": [
+            {"name": "value", "type": "int16", "type_alias": "int16_t", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "accept_int32",
+          "comment": "Accepts int32 and logs it",
+          "tags": {},
+          "entity_path": {"callable": "accept_int32"},
+          "parameters": [
+            {"name": "value", "type": "int32", "type_alias": "int32_t", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "accept_int64",
+          "comment": "Accepts int64 and logs it",
+          "tags": {},
+          "entity_path": {"callable": "accept_int64"},
+          "parameters": [
+            {"name": "value", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "accept_float32",
+          "comment": "Accepts float32 and logs it",
+          "tags": {},
+          "entity_path": {"callable": "accept_float32"},
+          "parameters": [
+            {"name": "value", "type": "float32", "type_alias": "float", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "accept_float64",
+          "comment": "Accepts float64 and logs it",
+          "tags": {},
+          "entity_path": {"callable": "accept_float64"},
+          "parameters": [
+            {"name": "value", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "accept_bool",
+          "comment": "Accepts bool and logs it",
+          "tags": {},
+          "entity_path": {"callable": "accept_bool"},
+          "parameters": [
+            {"name": "value", "type": "bool", "type_alias": "bool", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "accept_string8",
+          "comment": "Accepts string8 and logs it",
+          "tags": {},
+          "entity_path": {"callable": "accept_string8"},
+          "parameters": [
+            {"name": "value", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "echo_int64",
+          "comment": "Returns input int64 unchanged",
+          "tags": {},
+          "entity_path": {"callable": "echo_int64"},
+          "parameters": [
+            {"name": "value", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "echo_float64",
+          "comment": "Returns input float64 unchanged",
+          "tags": {},
+          "entity_path": {"callable": "echo_float64"},
+          "parameters": [
+            {"name": "value", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "echo_string8",
+          "comment": "Returns input string8 unchanged",
+          "tags": {},
+          "entity_path": {"callable": "echo_string8"},
+          "parameters": [
+            {"name": "value", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "echo_bool",
+          "comment": "Returns input bool unchanged",
+          "tags": {},
+          "entity_path": {"callable": "echo_bool"},
+          "parameters": [
+            {"name": "value", "type": "bool", "type_alias": "bool", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "bool", "type_alias": "bool", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "add_int64",
+          "comment": "Returns a + b",
+          "tags": {},
+          "entity_path": {"callable": "add_int64"},
+          "parameters": [
+            {"name": "a", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0},
+            {"name": "b", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "add_float64",
+          "comment": "Returns a + b",
+          "tags": {},
+          "entity_path": {"callable": "add_float64"},
+          "parameters": [
+            {"name": "a", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0},
+            {"name": "b", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "concat_strings",
+          "comment": "Returns concatenation of two strings",
+          "tags": {},
+          "entity_path": {"callable": "concat_strings"},
+          "parameters": [
+            {"name": "a", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0},
+            {"name": "b", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_int64_array_1d",
+          "comment": "Returns [1, 2, 3]",
+          "tags": {},
+          "entity_path": {"callable": "return_int64_array_1d"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "int64_array", "type_alias": "std::vector<int64_t>", "comment": "", "tags": {}, "dimensions": 1}
+          ]
+        },
+        {
+          "name": "return_int64_array_2d",
+          "comment": "Returns [[1, 2], [3, 4]]",
+          "tags": {},
+          "entity_path": {"callable": "return_int64_array_2d"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "int64_array", "type_alias": "std::vector<std::vector<int64_t>>", "comment": "", "tags": {}, "dimensions": 2}
+          ]
+        },
+        {
+          "name": "return_int64_array_3d",
+          "comment": "Returns [[[1,2],[3,4]], [[5,6],[7,8]]]",
+          "tags": {},
+          "entity_path": {"callable": "return_int64_array_3d"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "int64_array", "type_alias": "", "comment": "", "tags": {}, "dimensions": 3}
+          ]
+        },
+        {
+          "name": "return_ragged_array",
+          "comment": "Returns [[1, 2, 3], [4], [5, 6]]",
+          "tags": {},
+          "entity_path": {"callable": "return_ragged_array"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "int64_array", "type_alias": "", "comment": "", "tags": {}, "dimensions": 2}
+          ]
+        },
+        {
+          "name": "return_string_array",
+          "comment": "Returns ['one', 'two', 'three']",
+          "tags": {},
+          "entity_path": {"callable": "return_string_array"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "string8_array", "type_alias": "std::vector<std::string>", "comment": "", "tags": {}, "dimensions": 1}
+          ]
+        },
+        {
+          "name": "sum_int64_array",
+          "comment": "Returns sum of array elements",
+          "tags": {},
+          "entity_path": {"callable": "sum_int64_array"},
+          "parameters": [
+            {"name": "arr", "type": "int64_array", "type_alias": "std::vector<int64_t>", "comment": "", "tags": {}, "dimensions": 1}
+          ],
+          "return_values": [
+            {"name": "result", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "echo_int64_array",
+          "comment": "Returns input array unchanged",
+          "tags": {},
+          "entity_path": {"callable": "echo_int64_array"},
+          "parameters": [
+            {"name": "arr", "type": "int64_array", "type_alias": "std::vector<int64_t>", "comment": "", "tags": {}, "dimensions": 1}
+          ],
+          "return_values": [
+            {"name": "result", "type": "int64_array", "type_alias": "std::vector<int64_t>", "comment": "", "tags": {}, "dimensions": 1}
+          ]
+        },
+        {
+          "name": "join_strings",
+          "comment": "Joins strings with comma separator",
+          "tags": {},
+          "entity_path": {"callable": "join_strings"},
+          "parameters": [
+            {"name": "arr", "type": "string8_array", "type_alias": "std::vector<std::string>", "comment": "", "tags": {}, "dimensions": 1}
+          ],
+          "return_values": [
+            {"name": "result", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "create_handle",
+          "comment": "Creates a new TestHandle",
+          "tags": {},
+          "entity_path": {"callable": "create_handle"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "get_handle_data",
+          "comment": "Returns handle's data field",
+          "tags": {},
+          "entity_path": {"callable": "get_handle_data"},
+          "parameters": [
+            {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "set_handle_data",
+          "comment": "Sets handle's data field",
+          "tags": {},
+          "entity_path": {"callable": "set_handle_data"},
+          "parameters": [
+            {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0},
+            {"name": "data", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "release_handle",
+          "comment": "Logs release request",
+          "tags": {},
+          "entity_path": {"callable": "release_handle"},
+          "parameters": [
+            {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "call_callback_add",
+          "comment": "Calls callback with (3, 4), expects sum (7)",
+          "tags": {},
+          "entity_path": {"callable": "call_callback_add"},
+          "parameters": [
+            {"name": "callback", "type": "callable", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "call_callback_string",
+          "comment": "Calls callback with 'test', returns result",
+          "tags": {},
+          "entity_path": {"callable": "call_callback_string"},
+          "parameters": [
+            {"name": "callback", "type": "callable", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_adder_callback",
+          "comment": "Returns a callback that adds two int64 values",
+          "tags": {},
+          "entity_path": {"callable": "return_adder_callback"},
+          "parameters": [],
+          "return_values": [
+            {"name": "result", "type": "callable", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "throw_error",
+          "comment": "Always returns error",
+          "tags": {},
+          "entity_path": {"callable": "throw_error"},
+          "parameters": [],
+          "return_values": []
+        },
+        {
+          "name": "throw_with_message",
+          "comment": "Returns error with provided message",
+          "tags": {},
+          "entity_path": {"callable": "throw_with_message"},
+          "parameters": [
+            {"name": "message", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "error_if_negative",
+          "comment": "Returns error if input < 0",
+          "tags": {},
+          "entity_path": {"callable": "error_if_negative"},
+          "parameters": [
+            {"name": "value", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": []
+        },
+        {
+          "name": "accept_any",
+          "comment": "Accepts any type, returns same type with different value",
+          "tags": {},
+          "entity_path": {"callable": "accept_any"},
+          "parameters": [
+            {"name": "value", "type": "any", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "any", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_two_values",
+          "comment": "Returns (42, 'answer')",
+          "tags": {},
+          "entity_path": {"callable": "return_two_values"},
+          "parameters": [],
+          "return_values": [
+            {"name": "num", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0},
+            {"name": "text", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "return_three_values",
+          "comment": "Returns (1, 2.5, true)",
+          "tags": {},
+          "entity_path": {"callable": "return_three_values"},
+          "parameters": [],
+          "return_values": [
+            {"name": "int_val", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0},
+            {"name": "float_val", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0},
+            {"name": "bool_val", "type": "bool", "type_alias": "bool", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        },
+        {
+          "name": "swap_values",
+          "comment": "Swaps two input values",
+          "tags": {},
+          "entity_path": {"callable": "swap_values"},
+          "parameters": [
+            {"name": "num", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0},
+            {"name": "text", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "swapped_text", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0},
+            {"name": "swapped_num", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        }
+      ],
+      "classes": [],
+      "globals": [],
+      "external_resources": []
+    }
+  ]
+}

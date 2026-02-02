@@ -655,13 +655,13 @@ static bool try_load_python_library(const std::string& version)
 #endif
 }
 
-// Detect installed Python 3 versions (3.8-3.13)
+// Detect installed Python 3 versions (3.10-3.13)
 std::vector<std::string> detect_installed_python3()
 {
 	std::vector<std::string> detected_versions;
 	
-	// Try versions from 3.8 to 3.13
-	for(int minor = 8; minor <= 13; minor++)
+	// Try versions from 3.10 to 3.13
+	for(int minor = 10; minor <= 13; minor++)
 	{
 		std::string version = "3." + std::to_string(minor);
 		if(try_load_python_library(version))
@@ -975,8 +975,8 @@ bool load_python3_api_from_loaded_library(std::string& out_detected_version)
 	HMODULE found_handle = nullptr;
 	std::string found_version;
 	
-	// Try version-specific DLLs first (3.8 to 3.13)
-	for(int minor = 8; minor <= 13; minor++)
+	// Try version-specific DLLs first (3.10 to 3.13)
+	for(int minor = 10; minor <= 13; minor++)
 	{
 		std::string dll_name = "python3" + std::to_string(minor) + ".dll";
 		HMODULE h = GetModuleHandleA(dll_name.c_str());

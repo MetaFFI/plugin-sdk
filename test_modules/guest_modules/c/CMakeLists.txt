@@ -4,11 +4,11 @@ set(C_GUEST_INCLUDE_DIR ${C_GUEST_SRC_DIR}/include)
 
 find_or_install_package(doctest)
 
-collect_c_cpp_files("${C_GUEST_SRC_DIR}/src;${C_GUEST_INCLUDE_DIR}" c_guest_module)
+collect_c_cpp_files("${C_GUEST_SRC_DIR}/src;${C_GUEST_INCLUDE_DIR};" c_guest_module)
 
 c_cpp_shared_lib(c_guest_module
 	"${c_guest_module_src}"
-	"${C_GUEST_INCLUDE_DIR}"
+	"${C_GUEST_INCLUDE_DIR};${metaffi_sdk_root}"
 	""
 	"${C_GUEST_OUT_DIR}"
 )
