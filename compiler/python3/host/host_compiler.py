@@ -409,9 +409,10 @@ from typing import Any, Optional, List, Tuple
             # metaffi_type_info has: type (ctypes.c_uint64), alias (ctypes.c_char_p), is_free_alias (ctypes.c_bool), fixed_dimensions (ctypes.c_int64)
             # Extract values and format as constructor call
             type_value = int(ti.type)
+            type_enum = self.metaffi_types_module.MetaFFITypes(type_value)
             alias_str = f'"{ti.alias.decode("utf-8")}"' if ti.alias and ti.alias else "None"
             dims = int(ti.fixed_dimensions)
-            parts.append(f"metaffi_types.metaffi_type_info(metaffi_types.MetaFFITypes({type_value}), {alias_str}, {dims})")
+            parts.append(f"metaffi_types.metaffi_type_info(metaffi_types.MetaFFITypes.{type_enum.name}, {alias_str}, {dims})")
 
         # Single-element tuples need trailing comma: (x,) not (x)
         if len(parts) == 1:
