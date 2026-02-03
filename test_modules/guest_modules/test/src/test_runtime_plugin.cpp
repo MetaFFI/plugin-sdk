@@ -62,30 +62,30 @@ static void dispatch_params_ret(void* context, cdts params_ret[2], char** out_er
 	}
 }
 
-static void dispatch_params_no_ret(void* context, cdts parameters[1], char** out_err)
+static void dispatch_params_no_ret(void* context, cdts data[2], char** out_err)
 {
 	auto* ctx = static_cast<EntityContext*>(context);
 	log_xcall("xcall_params_no_ret", ctx->entity_name);
 
-	// Log parameters
-	log_cdts("PARAMS", parameters[0]);
+	// Log parameters (data[0] = params, data[1] = unused)
+	log_cdts("PARAMS", data[0]);
 
 	// Call the handler
-	ctx->handler(parameters, out_err);
+	ctx->handler(data, out_err);
 }
 
-static void dispatch_no_params_ret(void* context, cdts return_values[1], char** out_err)
+static void dispatch_no_params_ret(void* context, cdts data[2], char** out_err)
 {
 	auto* ctx = static_cast<EntityContext*>(context);
 	log_xcall("xcall_no_params_ret", ctx->entity_name);
 
-	// Call the handler
-	ctx->handler(return_values, out_err);
+	// Call the handler (data[0] = unused, data[1] = returns)
+	ctx->handler(data, out_err);
 
 	// Log return values (only if no error)
 	if(!out_err || !*out_err)
 	{
-		log_cdts("RETURNS", return_values[0]);
+		log_cdts("RETURNS", data[1]);
 	}
 }
 
@@ -373,14 +373,14 @@ void xcall_params_ret(void* context, cdts params_ret[2], char** out_err)
 	dispatch_params_ret(context, params_ret, out_err);
 }
 
-void xcall_params_no_ret(void* context, cdts parameters[1], char** out_err)
+void xcall_params_no_ret(void* context, cdts data[2], char** out_err)
 {
-	dispatch_params_no_ret(context, parameters, out_err);
+	dispatch_params_no_ret(context, data, out_err);
 }
 
-void xcall_no_params_ret(void* context, cdts return_values[1], char** out_err)
+void xcall_no_params_ret(void* context, cdts data[2], char** out_err)
 {
-	dispatch_no_params_ret(context, return_values, out_err);
+	dispatch_no_params_ret(context, data, out_err);
 }
 
 void xcall_no_params_no_ret(void* context, char** out_err)

@@ -22,8 +22,8 @@ set(cpp_idl_entities cpp_idl_entities PARENT_SCOPE)
 
 # Build unit test executable using c_cpp_exe macro
 c_cpp_exe(cpp_idl_entities_test
-	"${CMAKE_CURRENT_LIST_DIR}/tests/idl_entities_test.cpp"
-	"${CPP_IDL_SRC_DIR}/include;${CMAKE_SOURCE_DIR}/sdk;${nlohmann_json_INCLUDE_DIRS};${doctest_INCLUDE_DIRS}"
+	"${CMAKE_CURRENT_LIST_DIR}/tests/idl_entities_test.cpp;${metaffi_sdk_root}/utils/env_utils.cpp"
+	"${CPP_IDL_SRC_DIR}/include;${CMAKE_SOURCE_DIR}/sdk;${nlohmann_json_INCLUDE_DIRS};${doctest_INCLUDE_DIRS};${sdk_include_dir}"
 	"doctest::doctest"
 	"${CPP_IDL_OUT_DIR}/tests")
 

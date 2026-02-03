@@ -78,3 +78,4 @@ go.work
 go.work.sum
 
 api/python3/dist/*
+test_modules/guest_modules/java/test_bin/guest_java.jar

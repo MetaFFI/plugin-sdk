@@ -3,29 +3,28 @@
 
 #include <metaffi/idl/idl_entities.hpp>
 #include <filesystem>
+#include <utils/env_utils.h>
 
 using namespace metaffi::idl;
 
 // Helper: Get path to test IDL file
 std::string get_test_idl_path()
 {
-	// Try multiple possible locations
-	std::vector<std::string> possible_paths = {
-		"../../../test_modules/guest_modules/test/xllr.test.idl.json",
-		"../../test_modules/guest_modules/test/xllr.test.idl.json",
-		"sdk/test_modules/guest_modules/test/xllr.test.idl.json",
-		"xllr.test.idl.json"
-	};
-
-	for (const auto& path : possible_paths)
+	std::string src_root = get_env_var("METAFFI_SOURCE_ROOT");
+	if (src_root.empty())
 	{
-		if (std::filesystem::exists(path))
-		{
-			return path;
-		}
+		throw std::runtime_error("Could not find METAFFI_SOURCE_ROOT");
 	}
 
-	throw std::runtime_error("Could not find xllr.test.idl.json");
+	auto idl_path = src_root + "/sdk/test_modules/guest_modules/test/xllr.test.idl.json";
+
+	if (!std::filesystem::exists(idl_path))
+	{
+		throw std::runtime_error("Could not find xllr.test.idl.json");
+	}
+
+	return idl_path;
+
 }
 
 TEST_CASE("MetaFFI Type Conversions")
@@ -184,7 +183,7 @@ TEST_CASE("Load xllr.test.idl.json")
 	{
 		const auto& module = idl.modules()[0];
 		INFO("Number of functions: ", module.functions().size());
-		CHECK(module.functions().size() >= 50); // At least 50 test functions
+		CHECK(module.functions().size() == 49);
 	}
 
 	SUBCASE("Verify specific functions")

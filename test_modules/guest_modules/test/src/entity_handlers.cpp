@@ -59,86 +59,86 @@ void handler_print_hello(cdts* data, char** out_err)
 
 void handler_return_int8(cdts* data, char** out_err)
 {
-	// data[0] is the return values cdts - use type-specific assignment
-	data[0].arr[0] = static_cast<metaffi_int8>(42);
+	// data[1] is the return values cdts - use type-specific assignment
+	data[1].arr[0] = static_cast<metaffi_int8>(42);
 	log_entity("test::return_int8", "returning 42");
 }
 
 void handler_return_int16(cdts* data, char** out_err)
 {
-	data[0].arr[0] = static_cast<metaffi_int16>(1000);
+	data[1].arr[0] = static_cast<metaffi_int16>(1000);
 	log_entity("test::return_int16", "returning 1000");
 }
 
 void handler_return_int32(cdts* data, char** out_err)
 {
-	data[0].arr[0] = static_cast<metaffi_int32>(100000);
+	data[1].arr[0] = static_cast<metaffi_int32>(100000);
 	log_entity("test::return_int32", "returning 100000");
 }
 
 void handler_return_int64(cdts* data, char** out_err)
 {
-	data[0].arr[0] = static_cast<metaffi_int64>(9223372036854775807LL);
+	data[1].arr[0] = static_cast<metaffi_int64>(9223372036854775807LL);
 	log_entity("test::return_int64", "returning 9223372036854775807");
 }
 
 void handler_return_uint8(cdts* data, char** out_err)
 {
-	data[0].arr[0] = static_cast<metaffi_uint8>(255);
+	data[1].arr[0] = static_cast<metaffi_uint8>(255);
 	log_entity("test::return_uint8", "returning 255");
 }
 
 void handler_return_uint16(cdts* data, char** out_err)
 {
-	data[0].arr[0] = static_cast<metaffi_uint16>(65535);
+	data[1].arr[0] = static_cast<metaffi_uint16>(65535);
 	log_entity("test::return_uint16", "returning 65535");
 }
 
 void handler_return_uint32(cdts* data, char** out_err)
 {
-	data[0].arr[0] = static_cast<metaffi_uint32>(4294967295U);
+	data[1].arr[0] = static_cast<metaffi_uint32>(4294967295U);
 	log_entity("test::return_uint32", "returning 4294967295");
 }
 
 void handler_return_uint64(cdts* data, char** out_err)
 {
-	data[0].arr[0] = static_cast<metaffi_uint64>(18446744073709551615ULL);
+	data[1].arr[0] = static_cast<metaffi_uint64>(18446744073709551615ULL);
 	log_entity("test::return_uint64", "returning 18446744073709551615");
 }
 
 void handler_return_float32(cdts* data, char** out_err)
 {
-	data[0].arr[0] = static_cast<metaffi_float32>(3.14159f);
+	data[1].arr[0] = static_cast<metaffi_float32>(3.14159f);
 	log_entity("test::return_float32", "returning 3.14159");
 }
 
 void handler_return_float64(cdts* data, char** out_err)
 {
-	data[0].arr[0] = static_cast<metaffi_float64>(3.141592653589793);
+	data[1].arr[0] = static_cast<metaffi_float64>(3.141592653589793);
 	log_entity("test::return_float64", "returning 3.141592653589793");
 }
 
 void handler_return_bool_true(cdts* data, char** out_err)
 {
-	data[0].arr[0] = true;
+	data[1].arr[0] = true;
 	log_entity("test::return_bool_true", "returning true");
 }
 
 void handler_return_bool_false(cdts* data, char** out_err)
 {
-	data[0].arr[0] = false;
+	data[1].arr[0] = false;
 	log_entity("test::return_bool_false", "returning false");
 }
 
 void handler_return_string8(cdts* data, char** out_err)
 {
-	data[0].arr[0].set_string(reinterpret_cast<const char8_t*>("Hello from test plugin"), true);
+	data[1].arr[0].set_string(reinterpret_cast<const char8_t*>("Hello from test plugin"), true);
 	log_entity("test::return_string8", "returning \"Hello from test plugin\"");
 }
 
 void handler_return_null(cdts* data, char** out_err)
 {
-	data[0].arr[0].type = metaffi_null_type;
+	data[1].arr[0].type = metaffi_null_type;
 	log_entity("test::return_null", "returning null");
 }
 
@@ -340,8 +340,8 @@ void handler_concat_strings(cdts* data, char** out_err)
 void handler_return_int64_array_1d(cdts* data, char** out_err)
 {
 	// Create array [1, 2, 3]
-	data[0].arr[0].set_new_array(3, 1, metaffi_int64_type);
-	cdts& arr = *data[0].arr[0].cdt_val.array_val;
+	data[1].arr[0].set_new_array(3, 1, metaffi_int64_type);
+	cdts& arr = *data[1].arr[0].cdt_val.array_val;
 	arr[0] = static_cast<metaffi_int64>(1);
 	arr[1] = static_cast<metaffi_int64>(2);
 	arr[2] = static_cast<metaffi_int64>(3);
@@ -351,8 +351,8 @@ void handler_return_int64_array_1d(cdts* data, char** out_err)
 void handler_return_int64_array_2d(cdts* data, char** out_err)
 {
 	// Create 2D array [[1, 2], [3, 4]]
-	data[0].arr[0].set_new_array(2, 2, metaffi_int64_type);
-	cdts& outer = *data[0].arr[0].cdt_val.array_val;
+	data[1].arr[0].set_new_array(2, 2, metaffi_int64_type);
+	cdts& outer = *data[1].arr[0].cdt_val.array_val;
 
 	// First row [1, 2]
 	outer[0].set_new_array(2, 1, metaffi_int64_type);
@@ -370,8 +370,8 @@ void handler_return_int64_array_2d(cdts* data, char** out_err)
 void handler_return_int64_array_3d(cdts* data, char** out_err)
 {
 	// Create 3D array [[[1,2],[3,4]], [[5,6],[7,8]]]
-	data[0].arr[0].set_new_array(2, 3, metaffi_int64_type);
-	cdts& d1 = *data[0].arr[0].cdt_val.array_val;
+	data[1].arr[0].set_new_array(2, 3, metaffi_int64_type);
+	cdts& d1 = *data[1].arr[0].cdt_val.array_val;
 
 	// First 2D block [[1,2],[3,4]]
 	d1[0].set_new_array(2, 2, metaffi_int64_type);
@@ -399,8 +399,8 @@ void handler_return_int64_array_3d(cdts* data, char** out_err)
 void handler_return_ragged_array(cdts* data, char** out_err)
 {
 	// Create ragged array [[1,2,3], [4], [5,6]]
-	data[0].arr[0].set_new_array(3, 2, metaffi_int64_type);
-	cdts& outer = *data[0].arr[0].cdt_val.array_val;
+	data[1].arr[0].set_new_array(3, 2, metaffi_int64_type);
+	cdts& outer = *data[1].arr[0].cdt_val.array_val;
 
 	// Row 0: [1, 2, 3]
 	outer[0].set_new_array(3, 1, metaffi_int64_type);
@@ -423,8 +423,8 @@ void handler_return_ragged_array(cdts* data, char** out_err)
 void handler_return_string_array(cdts* data, char** out_err)
 {
 	// Create array ["one", "two", "three"]
-	data[0].arr[0].set_new_array(3, 1, metaffi_string8_type);
-	cdts& arr = *data[0].arr[0].cdt_val.array_val;
+	data[1].arr[0].set_new_array(3, 1, metaffi_string8_type);
+	cdts& arr = *data[1].arr[0].cdt_val.array_val;
 	arr[0].set_string(reinterpret_cast<const char8_t*>("one"), true);
 	arr[1].set_string(reinterpret_cast<const char8_t*>("two"), true);
 	arr[2].set_string(reinterpret_cast<const char8_t*>("three"), true);
@@ -533,7 +533,7 @@ void handler_create_handle(cdts* data, char** out_err)
 		release_test_handle
 	);
 
-	data[0].arr[0].set_handle(cdt_handle);
+	data[1].arr[0].set_handle(cdt_handle);
 	log_entity("test::create_handle", "created handle id=" + std::to_string(handle->id));
 }
 
@@ -703,9 +703,9 @@ void handler_return_adder_callback(cdts* data, char** out_err)
 	// Note: We don't allocate parameter_types/retval_types arrays since they're optional
 
 	// Set the CDT type and value directly
-	data[0].arr[0].type = metaffi_callable_type;
-	data[0].arr[0].cdt_val.callable_val = callable;
-	data[0].arr[0].free_required = true;
+	data[1].arr[0].type = metaffi_callable_type;
+	data[1].arr[0].cdt_val.callable_val = callable;
+	data[1].arr[0].free_required = true;
 	log_entity("test::return_adder_callback", "returning adder callback");
 }
 
@@ -823,18 +823,18 @@ void handler_accept_any(cdts* data, char** out_err)
 
 void handler_return_two_values(cdts* data, char** out_err)
 {
-	// data[0] = returns (int64, string8)
-	data[0].arr[0] = static_cast<metaffi_int64>(42);
-	data[0].arr[1].set_string(reinterpret_cast<const char8_t*>("answer"), true);
+	// data[1] = returns (int64, string8)
+	data[1].arr[0] = static_cast<metaffi_int64>(42);
+	data[1].arr[1].set_string(reinterpret_cast<const char8_t*>("answer"), true);
 	log_entity("test::return_two_values", "returning (42, \"answer\")");
 }
 
 void handler_return_three_values(cdts* data, char** out_err)
 {
-	// data[0] = returns (int64, float64, bool)
-	data[0].arr[0] = static_cast<metaffi_int64>(1);
-	data[0].arr[1] = static_cast<metaffi_float64>(2.5);
-	data[0].arr[2] = true;
+	// data[1] = returns (int64, float64, bool)
+	data[1].arr[0] = static_cast<metaffi_int64>(1);
+	data[1].arr[1] = static_cast<metaffi_float64>(2.5);
+	data[1].arr[2] = true;
 	log_entity("test::return_three_values", "returning (1, 2.5, true)");
 }
 

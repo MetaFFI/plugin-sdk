@@ -2,7 +2,7 @@
 
 __version__ = "0.0.72"
 
-__all__ = ['metaffi', 'metaffi_types', 'metaffi_runtime', 'metaffi_module', 'MetaFFIHandle', 'metaffi_types', 'xllr_wrapper', 'pycdts_converter', 'metaffi_type_info', 'MetaFFITypes', 'MetaFFIEntity', 'create_lambda', 'make_metaffi_callable']
+__all__ = ['metaffi', 'metaffi_types', 'metaffi_runtime', 'metaffi_module', 'MetaFFIHandle', 'metaffi_types', 'xllr_wrapper', 'pycdts_converter', 'metaffi_type_info', 'MetaFFITypes', 'MetaFFIEntity', 'MetaFFIModule', 'MetaFFIRuntime', 'create_lambda', 'make_metaffi_callable']
 
 
 # TODO: replace pxcall and context to a single parameter
@@ -67,7 +67,9 @@ from . import pycdts_converter
 from .metaffi_types import metaffi_type_info
 from .metaffi_types import MetaFFITypes
 from .metaffi_module import MetaFFIEntity
+from .metaffi_module import MetaFFIModule
 from .metaffi_module import make_metaffi_callable
+from .metaffi_runtime import MetaFFIRuntime
 
 
 import platform

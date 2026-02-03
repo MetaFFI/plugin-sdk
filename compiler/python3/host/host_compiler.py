@@ -165,16 +165,16 @@ class HostCompiler:
             code_sections.append(self._generate_global_accessors(global_def, definition))
             code_sections.append("")
         
-        # Classes
+        # Classes (class definition first, then constructor functions)
         for cls in module.classes:
-            # Constructor functions (module-level)
+            # Class definition must come before constructor functions that reference it
+            code_sections.append(self._generate_class_definition(cls, definition))
+            code_sections.append("")
+
+            # Constructor functions (module-level factory functions)
             for ctor in cls.constructors:
                 code_sections.append(self._generate_constructor_function(cls, ctor, definition))
                 code_sections.append("")
-            
-            # Class definition
-            code_sections.append(self._generate_class_definition(cls, definition))
-            code_sections.append("")
         
         # Write to file
         full_code = "\n".join(code_sections)
@@ -238,54 +238,65 @@ from typing import Any, Optional, List, Tuple
             "# Cached entity callers (MetaFFIEntity instances loaded via _module.load_entity())"
         ]
         
-        # Collect all entity variable declarations
+        # Collect all entity variable declarations and names
         entity_vars = []
-        
+        entity_var_names = []
+
         # Functions
         for func in module.functions:
             var_name = f"{func.name}_caller"
             entity_vars.append(f"{var_name}: Optional[metaffi.MetaFFIEntity] = None")
-        
+            entity_var_names.append(var_name)
+
         # Globals
         for global_def in module.globals:
             if global_def.getter:
                 var_name = f"{global_def.name}_getter_caller"
                 entity_vars.append(f"{var_name}: Optional[metaffi.MetaFFIEntity] = None")
+                entity_var_names.append(var_name)
             if global_def.setter:
                 var_name = f"{global_def.name}_setter_caller"
                 entity_vars.append(f"{var_name}: Optional[metaffi.MetaFFIEntity] = None")
-        
+                entity_var_names.append(var_name)
+
         # Classes
         for cls in module.classes:
             # Constructors
             for ctor in cls.constructors:
                 var_name = f"{cls.name}_{ctor.name}_caller"
                 entity_vars.append(f"{var_name}: Optional[metaffi.MetaFFIEntity] = None")
-            
+                entity_var_names.append(var_name)
+
             # Release
             if cls.release:
                 var_name = f"{cls.name}_release_caller"
                 entity_vars.append(f"{var_name}: Optional[metaffi.MetaFFIEntity] = None")
-            
+                entity_var_names.append(var_name)
+
             # Methods
             for method in cls.methods:
                 var_name = f"{cls.name}_{method.name}_caller"
                 entity_vars.append(f"{var_name}: Optional[metaffi.MetaFFIEntity] = None")
-            
+                entity_var_names.append(var_name)
+
             # Fields
             for field in cls.fields:
                 if field.getter:
                     var_name = f"{cls.name}_{field.name}_getter_caller"
                     entity_vars.append(f"{var_name}: Optional[metaffi.MetaFFIEntity] = None")
+                    entity_var_names.append(var_name)
                 if field.setter:
                     var_name = f"{cls.name}_{field.name}_setter_caller"
                     entity_vars.append(f"{var_name}: Optional[metaffi.MetaFFIEntity] = None")
-        
+                    entity_var_names.append(var_name)
+
         lines.extend(entity_vars)
         lines.append("")
-        lines.append("def bind_module_to_code(module_path: str) -> None:")
-        lines.append("    global _runtime, _module")
-        lines.append(f"    _runtime = metaffi.MetaFFIRuntime('{idl_definition.target_language}')")
+        lines.append("def bind_module_to_code(module_path: str, runtime_plugin: str) -> None:")
+        # All entity callers must be declared global so assignments update module-level vars
+        global_names = ["_runtime", "_module"] + entity_var_names
+        lines.append(f"    global {', '.join(global_names)}")
+        lines.append("    _runtime = metaffi.MetaFFIRuntime(runtime_plugin)")
         lines.append("    _runtime.load_runtime_plugin()")
         lines.append("    _module = _runtime.load_module(module_path)")
         lines.append("    ")
@@ -401,7 +412,10 @@ from typing import Any, Optional, List, Tuple
             alias_str = f'"{ti.alias.decode("utf-8")}"' if ti.alias and ti.alias else "None"
             dims = int(ti.fixed_dimensions)
             parts.append(f"metaffi_types.metaffi_type_info(metaffi_types.MetaFFITypes({type_value}), {alias_str}, {dims})")
-        
+
+        # Single-element tuples need trailing comma: (x,) not (x)
+        if len(parts) == 1:
+            return f"({parts[0]},)"
         return f"({', '.join(parts)})"
     
     def _generate_function_stub(self, func: Any, idl_definition: Any) -> str:

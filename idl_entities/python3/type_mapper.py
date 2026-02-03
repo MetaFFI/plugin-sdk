@@ -56,6 +56,8 @@ def metaffi_type_to_python_type_annotation(metaffi_type: str, dimensions: int = 
         "bool": "bool",
         # Handle
         "handle": type_alias if type_alias else "Any",
+        # Callable
+        "callable": "Any",  # Python callable type
         # Other
         "any": "Any",
         "null": "None",
@@ -150,6 +152,7 @@ def _base_type_to_enum(metaffi_type: str, metaffi_types_module: Any):
         "string16": MetaFFITypes.metaffi_string16_type,
         "string32": MetaFFITypes.metaffi_string32_type,
         "handle": MetaFFITypes.metaffi_handle_type,
+        "callable": MetaFFITypes.metaffi_callable_type,
         "any": MetaFFITypes.metaffi_any_type,
         "null": MetaFFITypes.metaffi_null_type,
         "size": MetaFFITypes.metaffi_size_type,

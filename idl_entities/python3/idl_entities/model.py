@@ -109,21 +109,31 @@ class FunctionDefinition:
 
     def entity_path_as_string(self, idl_definition: "IDLDefinition") -> str:
         """
-        Convert entity_path dict to comma-separated string format.
-        Similar to Go's EntityPathAsString().
-        
+        Convert entity_path dict to string format.
+
+        If entity_path contains "entity_path" key, returns its value directly
+        (for runtimes that use raw string entity paths like "test::no_op").
+
+        Otherwise, converts to comma-separated key=value format and appends
+        metaffi_guest_lib.
+
         Args:
             idl_definition: The IDLDefinition containing metaffi_guest_lib
-            
+
         Returns:
-            String in format "key1=value1,key2=value2"
+            String entity path
         """
+        # If entity_path has "entity_path" key, use it as the raw entity path string
+        if "entity_path" in self.entity_path:
+            return self.entity_path["entity_path"]
+
+        # Otherwise, build key=value format
         keys = set(self.entity_path.keys())
         keys.add("metaffi_guest_lib")
-        
+
         sorted_keys = sorted(keys)
         parts = []
-        
+
         for k in sorted_keys:
             v = self.entity_path.get(k)
             if v is None:
@@ -131,9 +141,9 @@ class FunctionDefinition:
                     v = idl_definition.metaffi_guest_lib
                 else:
                     raise ValueError(f"Unexpected key {k}")
-            
+
             parts.append(f"{k}={v}")
-        
+
         return ",".join(parts)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -166,21 +176,28 @@ class MethodDefinition(FunctionDefinition):
 
     def entity_path_as_string(self, idl_definition: "IDLDefinition", parent_entity_path: Optional[Dict[str, str]] = None) -> str:
         """
-        Convert entity_path dict to comma-separated string format.
+        Convert entity_path dict to string format.
         Also checks parent class entity_path if provided.
-        
+
+        If entity_path contains "entity_path" key, returns its value directly.
+        Otherwise, converts to comma-separated key=value format.
+
         Args:
             idl_definition: The IDLDefinition containing metaffi_guest_lib
             parent_entity_path: Optional parent class entity_path to merge
         """
+        # If entity_path has "entity_path" key, use it as the raw entity path string
+        if "entity_path" in self.entity_path:
+            return self.entity_path["entity_path"]
+
         keys = set(self.entity_path.keys())
         if parent_entity_path:
             keys.update(parent_entity_path.keys())
         keys.add("metaffi_guest_lib")
-        
+
         sorted_keys = sorted(keys)
         parts = []
-        
+
         for k in sorted_keys:
             v = self.entity_path.get(k)
             if v is None:
@@ -192,7 +209,7 @@ class MethodDefinition(FunctionDefinition):
                         v = idl_definition.metaffi_guest_lib
                     else:
                         raise ValueError(f"Unexpected key {k}")
-            
+
             parts.append(f"{k}={v}")
         
         return ",".join(parts)

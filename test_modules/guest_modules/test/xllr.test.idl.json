@@ -15,7 +15,7 @@
           "name": "no_op",
           "comment": "Does nothing, just logs",
           "tags": {},
-          "entity_path": {"callable": "no_op"},
+          "entity_path": {"entity_path": "test::no_op"},
           "parameters": [],
           "return_values": []
         },
@@ -23,7 +23,7 @@
           "name": "print_hello",
           "comment": "Prints 'Hello from test plugin!' to STDOUT",
           "tags": {},
-          "entity_path": {"callable": "print_hello"},
+          "entity_path": {"entity_path": "test::print_hello"},
           "parameters": [],
           "return_values": []
         },
@@ -31,7 +31,7 @@
           "name": "return_int8",
           "comment": "Returns int8 value 42",
           "tags": {},
-          "entity_path": {"callable": "return_int8"},
+          "entity_path": {"entity_path": "test::return_int8"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "int8", "type_alias": "int8_t", "comment": "", "tags": {}, "dimensions": 0}
@@ -41,7 +41,7 @@
           "name": "return_int16",
           "comment": "Returns int16 value 1000",
           "tags": {},
-          "entity_path": {"callable": "return_int16"},
+          "entity_path": {"entity_path": "test::return_int16"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "int16", "type_alias": "int16_t", "comment": "", "tags": {}, "dimensions": 0}
@@ -51,7 +51,7 @@
           "name": "return_int32",
           "comment": "Returns int32 value 100000",
           "tags": {},
-          "entity_path": {"callable": "return_int32"},
+          "entity_path": {"entity_path": "test::return_int32"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "int32", "type_alias": "int32_t", "comment": "", "tags": {}, "dimensions": 0}
@@ -61,7 +61,7 @@
           "name": "return_int64",
           "comment": "Returns int64 max value",
           "tags": {},
-          "entity_path": {"callable": "return_int64"},
+          "entity_path": {"entity_path": "test::return_int64"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
@@ -71,7 +71,7 @@
           "name": "return_uint8",
           "comment": "Returns uint8 value 255",
           "tags": {},
-          "entity_path": {"callable": "return_uint8"},
+          "entity_path": {"entity_path": "test::return_uint8"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "uint8", "type_alias": "uint8_t", "comment": "", "tags": {}, "dimensions": 0}
@@ -81,7 +81,7 @@
           "name": "return_uint16",
           "comment": "Returns uint16 value 65535",
           "tags": {},
-          "entity_path": {"callable": "return_uint16"},
+          "entity_path": {"entity_path": "test::return_uint16"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "uint16", "type_alias": "uint16_t", "comment": "", "tags": {}, "dimensions": 0}
@@ -91,7 +91,7 @@
           "name": "return_uint32",
           "comment": "Returns uint32 max value",
           "tags": {},
-          "entity_path": {"callable": "return_uint32"},
+          "entity_path": {"entity_path": "test::return_uint32"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "uint32", "type_alias": "uint32_t", "comment": "", "tags": {}, "dimensions": 0}
@@ -101,7 +101,7 @@
           "name": "return_uint64",
           "comment": "Returns uint64 max value",
           "tags": {},
-          "entity_path": {"callable": "return_uint64"},
+          "entity_path": {"entity_path": "test::return_uint64"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "uint64", "type_alias": "uint64_t", "comment": "", "tags": {}, "dimensions": 0}
@@ -111,7 +111,7 @@
           "name": "return_float32",
           "comment": "Returns float32 value 3.14159",
           "tags": {},
-          "entity_path": {"callable": "return_float32"},
+          "entity_path": {"entity_path": "test::return_float32"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "float32", "type_alias": "float", "comment": "", "tags": {}, "dimensions": 0}
@@ -121,7 +121,7 @@
           "name": "return_float64",
           "comment": "Returns float64 value 3.141592653589793",
           "tags": {},
-          "entity_path": {"callable": "return_float64"},
+          "entity_path": {"entity_path": "test::return_float64"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0}
@@ -131,7 +131,7 @@
           "name": "return_bool_true",
           "comment": "Returns true",
           "tags": {},
-          "entity_path": {"callable": "return_bool_true"},
+          "entity_path": {"entity_path": "test::return_bool_true"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "bool", "type_alias": "bool", "comment": "", "tags": {}, "dimensions": 0}
@@ -141,7 +141,7 @@
           "name": "return_bool_false",
           "comment": "Returns false",
           "tags": {},
-          "entity_path": {"callable": "return_bool_false"},
+          "entity_path": {"entity_path": "test::return_bool_false"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "bool", "type_alias": "bool", "comment": "", "tags": {}, "dimensions": 0}
@@ -151,7 +151,7 @@
           "name": "return_string8",
           "comment": "Returns 'Hello from test plugin'",
           "tags": {},
-          "entity_path": {"callable": "return_string8"},
+          "entity_path": {"entity_path": "test::return_string8"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
@@ -161,7 +161,7 @@
           "name": "return_null",
           "comment": "Returns null",
           "tags": {},
-          "entity_path": {"callable": "return_null"},
+          "entity_path": {"entity_path": "test::return_null"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "null", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
@@ -171,7 +171,7 @@
           "name": "accept_int8",
           "comment": "Accepts int8 and logs it",
           "tags": {},
-          "entity_path": {"callable": "accept_int8"},
+          "entity_path": {"entity_path": "test::accept_int8"},
           "parameters": [
             {"name": "value", "type": "int8", "type_alias": "int8_t", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -181,7 +181,7 @@
           "name": "accept_int16",
           "comment": "Accepts int16 and logs it",
           "tags": {},
-          "entity_path": {"callable": "accept_int16"},
+          "entity_path": {"entity_path": "test::accept_int16"},
           "parameters": [
             {"name": "value", "type": "int16", "type_alias": "int16_t", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -191,7 +191,7 @@
           "name": "accept_int32",
           "comment": "Accepts int32 and logs it",
           "tags": {},
-          "entity_path": {"callable": "accept_int32"},
+          "entity_path": {"entity_path": "test::accept_int32"},
           "parameters": [
             {"name": "value", "type": "int32", "type_alias": "int32_t", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -201,7 +201,7 @@
           "name": "accept_int64",
           "comment": "Accepts int64 and logs it",
           "tags": {},
-          "entity_path": {"callable": "accept_int64"},
+          "entity_path": {"entity_path": "test::accept_int64"},
           "parameters": [
             {"name": "value", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -211,7 +211,7 @@
           "name": "accept_float32",
           "comment": "Accepts float32 and logs it",
           "tags": {},
-          "entity_path": {"callable": "accept_float32"},
+          "entity_path": {"entity_path": "test::accept_float32"},
           "parameters": [
             {"name": "value", "type": "float32", "type_alias": "float", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -221,7 +221,7 @@
           "name": "accept_float64",
           "comment": "Accepts float64 and logs it",
           "tags": {},
-          "entity_path": {"callable": "accept_float64"},
+          "entity_path": {"entity_path": "test::accept_float64"},
           "parameters": [
             {"name": "value", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -231,7 +231,7 @@
           "name": "accept_bool",
           "comment": "Accepts bool and logs it",
           "tags": {},
-          "entity_path": {"callable": "accept_bool"},
+          "entity_path": {"entity_path": "test::accept_bool"},
           "parameters": [
             {"name": "value", "type": "bool", "type_alias": "bool", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -241,7 +241,7 @@
           "name": "accept_string8",
           "comment": "Accepts string8 and logs it",
           "tags": {},
-          "entity_path": {"callable": "accept_string8"},
+          "entity_path": {"entity_path": "test::accept_string8"},
           "parameters": [
             {"name": "value", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -251,7 +251,7 @@
           "name": "echo_int64",
           "comment": "Returns input int64 unchanged",
           "tags": {},
-          "entity_path": {"callable": "echo_int64"},
+          "entity_path": {"entity_path": "test::echo_int64"},
           "parameters": [
             {"name": "value", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -263,7 +263,7 @@
           "name": "echo_float64",
           "comment": "Returns input float64 unchanged",
           "tags": {},
-          "entity_path": {"callable": "echo_float64"},
+          "entity_path": {"entity_path": "test::echo_float64"},
           "parameters": [
             {"name": "value", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -275,7 +275,7 @@
           "name": "echo_string8",
           "comment": "Returns input string8 unchanged",
           "tags": {},
-          "entity_path": {"callable": "echo_string8"},
+          "entity_path": {"entity_path": "test::echo_string8"},
           "parameters": [
             {"name": "value", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -287,7 +287,7 @@
           "name": "echo_bool",
           "comment": "Returns input bool unchanged",
           "tags": {},
-          "entity_path": {"callable": "echo_bool"},
+          "entity_path": {"entity_path": "test::echo_bool"},
           "parameters": [
             {"name": "value", "type": "bool", "type_alias": "bool", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -299,7 +299,7 @@
           "name": "add_int64",
           "comment": "Returns a + b",
           "tags": {},
-          "entity_path": {"callable": "add_int64"},
+          "entity_path": {"entity_path": "test::add_int64"},
           "parameters": [
             {"name": "a", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0},
             {"name": "b", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
@@ -312,7 +312,7 @@
           "name": "add_float64",
           "comment": "Returns a + b",
           "tags": {},
-          "entity_path": {"callable": "add_float64"},
+          "entity_path": {"entity_path": "test::add_float64"},
           "parameters": [
             {"name": "a", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0},
             {"name": "b", "type": "float64", "type_alias": "double", "comment": "", "tags": {}, "dimensions": 0}
@@ -325,7 +325,7 @@
           "name": "concat_strings",
           "comment": "Returns concatenation of two strings",
           "tags": {},
-          "entity_path": {"callable": "concat_strings"},
+          "entity_path": {"entity_path": "test::concat_strings"},
           "parameters": [
             {"name": "a", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0},
             {"name": "b", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
@@ -338,7 +338,7 @@
           "name": "return_int64_array_1d",
           "comment": "Returns [1, 2, 3]",
           "tags": {},
-          "entity_path": {"callable": "return_int64_array_1d"},
+          "entity_path": {"entity_path": "test::return_int64_array_1d"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "int64_array", "type_alias": "std::vector<int64_t>", "comment": "", "tags": {}, "dimensions": 1}
@@ -348,7 +348,7 @@
           "name": "return_int64_array_2d",
           "comment": "Returns [[1, 2], [3, 4]]",
           "tags": {},
-          "entity_path": {"callable": "return_int64_array_2d"},
+          "entity_path": {"entity_path": "test::return_int64_array_2d"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "int64_array", "type_alias": "std::vector<std::vector<int64_t>>", "comment": "", "tags": {}, "dimensions": 2}
@@ -358,7 +358,7 @@
           "name": "return_int64_array_3d",
           "comment": "Returns [[[1,2],[3,4]], [[5,6],[7,8]]]",
           "tags": {},
-          "entity_path": {"callable": "return_int64_array_3d"},
+          "entity_path": {"entity_path": "test::return_int64_array_3d"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "int64_array", "type_alias": "", "comment": "", "tags": {}, "dimensions": 3}
@@ -368,7 +368,7 @@
           "name": "return_ragged_array",
           "comment": "Returns [[1, 2, 3], [4], [5, 6]]",
           "tags": {},
-          "entity_path": {"callable": "return_ragged_array"},
+          "entity_path": {"entity_path": "test::return_ragged_array"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "int64_array", "type_alias": "", "comment": "", "tags": {}, "dimensions": 2}
@@ -378,7 +378,7 @@
           "name": "return_string_array",
           "comment": "Returns ['one', 'two', 'three']",
           "tags": {},
-          "entity_path": {"callable": "return_string_array"},
+          "entity_path": {"entity_path": "test::return_string_array"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "string8_array", "type_alias": "std::vector<std::string>", "comment": "", "tags": {}, "dimensions": 1}
@@ -388,7 +388,7 @@
           "name": "sum_int64_array",
           "comment": "Returns sum of array elements",
           "tags": {},
-          "entity_path": {"callable": "sum_int64_array"},
+          "entity_path": {"entity_path": "test::sum_int64_array"},
           "parameters": [
             {"name": "arr", "type": "int64_array", "type_alias": "std::vector<int64_t>", "comment": "", "tags": {}, "dimensions": 1}
           ],
@@ -400,7 +400,7 @@
           "name": "echo_int64_array",
           "comment": "Returns input array unchanged",
           "tags": {},
-          "entity_path": {"callable": "echo_int64_array"},
+          "entity_path": {"entity_path": "test::echo_int64_array"},
           "parameters": [
             {"name": "arr", "type": "int64_array", "type_alias": "std::vector<int64_t>", "comment": "", "tags": {}, "dimensions": 1}
           ],
@@ -412,7 +412,7 @@
           "name": "join_strings",
           "comment": "Joins strings with comma separator",
           "tags": {},
-          "entity_path": {"callable": "join_strings"},
+          "entity_path": {"entity_path": "test::join_strings"},
           "parameters": [
             {"name": "arr", "type": "string8_array", "type_alias": "std::vector<std::string>", "comment": "", "tags": {}, "dimensions": 1}
           ],
@@ -424,7 +424,7 @@
           "name": "call_callback_add",
           "comment": "Calls callback with (3, 4), expects sum (7)",
           "tags": {},
-          "entity_path": {"callable": "call_callback_add"},
+          "entity_path": {"entity_path": "test::call_callback_add"},
           "parameters": [
             {"name": "callback", "type": "callable", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -436,7 +436,7 @@
           "name": "call_callback_string",
           "comment": "Calls callback with 'test', returns result",
           "tags": {},
-          "entity_path": {"callable": "call_callback_string"},
+          "entity_path": {"entity_path": "test::call_callback_string"},
           "parameters": [
             {"name": "callback", "type": "callable", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -448,7 +448,7 @@
           "name": "return_adder_callback",
           "comment": "Returns a callback that adds two int64 values",
           "tags": {},
-          "entity_path": {"callable": "return_adder_callback"},
+          "entity_path": {"entity_path": "test::return_adder_callback"},
           "parameters": [],
           "return_values": [
             {"name": "result", "type": "callable", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
@@ -458,7 +458,7 @@
           "name": "throw_error",
           "comment": "Always returns error",
           "tags": {},
-          "entity_path": {"callable": "throw_error"},
+          "entity_path": {"entity_path": "test::throw_error"},
           "parameters": [],
           "return_values": []
         },
@@ -466,7 +466,7 @@
           "name": "throw_with_message",
           "comment": "Returns error with provided message",
           "tags": {},
-          "entity_path": {"callable": "throw_with_message"},
+          "entity_path": {"entity_path": "test::throw_with_message"},
           "parameters": [
             {"name": "message", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -476,7 +476,7 @@
           "name": "error_if_negative",
           "comment": "Returns error if input < 0",
           "tags": {},
-          "entity_path": {"callable": "error_if_negative"},
+          "entity_path": {"entity_path": "test::error_if_negative"},
           "parameters": [
             {"name": "value", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -486,7 +486,7 @@
           "name": "accept_any",
           "comment": "Accepts any type, returns same type with different value",
           "tags": {},
-          "entity_path": {"callable": "accept_any"},
+          "entity_path": {"entity_path": "test::accept_any"},
           "parameters": [
             {"name": "value", "type": "any", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
           ],
@@ -498,7 +498,7 @@
           "name": "return_two_values",
           "comment": "Returns (42, 'answer')",
           "tags": {},
-          "entity_path": {"callable": "return_two_values"},
+          "entity_path": {"entity_path": "test::return_two_values"},
           "parameters": [],
           "return_values": [
             {"name": "num", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0},
@@ -509,7 +509,7 @@
           "name": "return_three_values",
           "comment": "Returns (1, 2.5, true)",
           "tags": {},
-          "entity_path": {"callable": "return_three_values"},
+          "entity_path": {"entity_path": "test::return_three_values"},
           "parameters": [],
           "return_values": [
             {"name": "int_val", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0},
@@ -521,7 +521,7 @@
           "name": "swap_values",
           "comment": "Swaps two input values",
           "tags": {},
-          "entity_path": {"callable": "swap_values"},
+          "entity_path": {"entity_path": "test::swap_values"},
           "parameters": [
             {"name": "num", "type": "int64", "type_alias": "int64_t", "comment": "", "tags": {}, "dimensions": 0},
             {"name": "text", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
@@ -537,13 +537,13 @@
           "name": "TestHandle",
           "comment": "Test handle class with id and data fields",
           "tags": {},
-          "entity_path": {"class": "TestHandle"},
+          "entity_path": {"entity_path": "test::TestHandle"},
           "constructors": [
             {
               "name": "TestHandle",
               "comment": "Creates a new TestHandle with auto-incremented id and data='test_data'",
               "tags": {},
-              "entity_path": {"callable": "create_handle"},
+              "entity_path": {"entity_path": "test::create_handle"},
               "parameters": [],
               "return_values": [
                 {"name": "result", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
@@ -554,7 +554,7 @@
             "name": "release",
             "comment": "Logs release request (actual release via handle's release callback)",
             "tags": {},
-            "entity_path": {"callable": "release_handle"},
+            "entity_path": {"entity_path": "test::release_handle"},
             "parameters": [
               {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
             ],
@@ -566,7 +566,7 @@
               "name": "append_to_data",
               "comment": "Appends string to the handle's data field",
               "tags": {},
-              "entity_path": {"callable": "TestHandle.append_to_data"},
+              "entity_path": {"entity_path": "test::TestHandle.append_to_data"},
               "parameters": [
                 {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0},
                 {"name": "text", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
@@ -587,7 +587,7 @@
                 "name": "get_id",
                 "comment": "Returns the id field of the handle",
                 "tags": {},
-                "entity_path": {"callable": "TestHandle.get_id"},
+                "entity_path": {"entity_path": "test::TestHandle.get_id"},
                 "parameters": [
                   {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
                 ],
@@ -609,7 +609,7 @@
                 "name": "get_data",
                 "comment": "Returns the data field of the handle",
                 "tags": {},
-                "entity_path": {"callable": "get_handle_data"},
+                "entity_path": {"entity_path": "test::get_handle_data"},
                 "parameters": [
                   {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0}
                 ],
@@ -622,7 +622,7 @@
                 "name": "set_data",
                 "comment": "Sets the data field of the handle",
                 "tags": {},
-                "entity_path": {"callable": "set_handle_data"},
+                "entity_path": {"entity_path": "test::set_handle_data"},
                 "parameters": [
                   {"name": "h", "type": "handle", "type_alias": "TestHandle*", "comment": "", "tags": {}, "dimensions": 0},
                   {"name": "value", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
@@ -646,7 +646,7 @@
             "name": "get_g_name",
             "comment": "Returns the global g_name variable",
             "tags": {},
-            "entity_path": {"callable": "get_g_name"},
+            "entity_path": {"entity_path": "test::get_g_name"},
             "parameters": [],
             "return_values": [
               {"name": "result", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
@@ -656,7 +656,7 @@
             "name": "set_g_name",
             "comment": "Sets the global g_name variable",
             "tags": {},
-            "entity_path": {"callable": "set_g_name"},
+            "entity_path": {"entity_path": "test::set_g_name"},
             "parameters": [
               {"name": "value", "type": "string8", "type_alias": "std::string", "comment": "", "tags": {}, "dimensions": 0}
             ],
