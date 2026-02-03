@@ -1,13 +1,14 @@
 #include "metaffi/api/metaffi_api.h"
 
-#include <cstdio>
 #include <sstream>
+#include <utils/logger.hpp>
 
 namespace metaffi::api
 {
 
 namespace
 {
+static auto LOG = metaffi::get_logger("cpp.api");
 constexpr const char* kRuntimePluginPrefix = "xllr.";
 
 std::string normalize_runtime_plugin(std::string runtime_plugin)
@@ -306,7 +307,7 @@ MetaFFIEntity& MetaFFIEntity::operator=(MetaFFIEntity&& other) noexcept
 			xllr_free_xcall(_runtime_plugin.c_str(), _pxcall, &err);
 			if(err)
 			{
-				std::fprintf(stderr, "Failed to free xcall in move assignment: %s\n", err);
+				METAFFI_ERROR(LOG, "Failed to free xcall in move assignment: {}", err);
 				xllr_free_string(err);
 			}
 		}
@@ -331,7 +332,7 @@ MetaFFIEntity::~MetaFFIEntity()
 		xllr_free_xcall(_runtime_plugin.c_str(), _pxcall, &err);
 		if(err)
 		{
-			std::fprintf(stderr, "Failed to free xcall: %s\n", err);
+			METAFFI_ERROR(LOG, "Failed to free xcall: {}", err);
 			xllr_free_string(err);
 		}
 		_pxcall = nullptr;

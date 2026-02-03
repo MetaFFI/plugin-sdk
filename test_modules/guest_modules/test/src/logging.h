@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iostream>
+#include <utils/logger.hpp>
 #include <sstream>
 #include <iomanip>
 #include <cstring>
@@ -15,11 +15,7 @@
 namespace test_plugin
 {
 
-// Log prefix for normal output (stdout)
-#define LOG_PREFIX "[xllr.test] "
-
-// Log prefix for errors (stderr)
-#define LOG_ERROR_PREFIX "[xllr.test] ERROR: "
+static auto LOG = metaffi::get_logger("xllr.test");
 
 // Helper to get type name string
 inline const char* get_type_name(metaffi_type t)
@@ -152,51 +148,50 @@ inline void log_cdt_value(std::ostream& os, const cdt& c, int indent_level = 0)
 // Log a cdts structure to stdout
 inline void log_cdts(const char* label, const cdts& c)
 {
-	std::cout << LOG_PREFIX << label << ": length=" << c.length
-	          << " fixed_dims=" << c.fixed_dimensions << std::endl;
-
+	std::ostringstream oss;
+	oss << label << ": length=" << c.length << " fixed_dims=" << c.fixed_dimensions;
 	for(metaffi_size i = 0; i < c.length; ++i)
 	{
-		std::cout << LOG_PREFIX << "  [" << i << "] ";
-		log_cdt_value(std::cout, c.arr[i], 1);
-		std::cout << std::endl;
+		oss << "\n  [" << i << "] ";
+		log_cdt_value(oss, c.arr[i], 1);
 	}
+	METAFFI_DEBUG(LOG, "{}", oss.str());
 }
 
 // Log API function entry
 inline void log_api_call(const char* func_name)
 {
-	std::cout << LOG_PREFIX << func_name << " called" << std::endl;
+	METAFFI_DEBUG(LOG, "{} called", func_name);
 }
 
 // Log API function success
 inline void log_api_success(const char* func_name)
 {
-	std::cout << LOG_PREFIX << func_name << " completed successfully" << std::endl;
+	METAFFI_DEBUG(LOG, "{} completed successfully", func_name);
 }
 
 // Log xcall invocation
 inline void log_xcall(const char* variant, const std::string& entity_name)
 {
-	std::cout << LOG_PREFIX << variant << " - " << entity_name << std::endl;
+	METAFFI_INFO(LOG, "{} - {}", variant, entity_name);
 }
 
 // Log entity-specific message
 inline void log_entity(const std::string& entity_name, const std::string& message)
 {
-	std::cout << LOG_PREFIX << entity_name << ": " << message << std::endl;
+	METAFFI_INFO(LOG, "{}: {}", entity_name, message);
 }
 
 // Log error to stderr
 inline void log_error(const std::string& message)
 {
-	std::cerr << LOG_ERROR_PREFIX << message << std::endl;
+	METAFFI_ERROR(LOG, "{}", message);
 }
 
 // Log error with function context to stderr
 inline void log_error(const char* func_name, const std::string& message)
 {
-	std::cerr << LOG_ERROR_PREFIX << func_name << ": " << message << std::endl;
+	METAFFI_ERROR(LOG, "{}: {}", func_name, message);
 }
 
 // Format an int32 array for logging

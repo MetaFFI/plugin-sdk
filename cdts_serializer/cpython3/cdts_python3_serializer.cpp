@@ -15,16 +15,18 @@
 #include <cdts_serializer/cpython3/runtime_id.h>
 #include <sstream>
 #include <cstring>
-#include <iostream>
+#include <utils/logger.hpp>
 #include <utils/safe_func.h>
 
 
 # define throw_py_err(err) \
-	std::cerr << __FILE__ << ":" << __LINE__ << " - " << err << std::endl; \
+	METAFFI_ERROR(LOG, "{}", err); \
 	throw std::runtime_error(err)
 
 namespace metaffi::utils
 {
+
+static auto LOG = metaffi::get_logger("cpython3.serializer");
 
 // ============================================================================
 // CORE INFRASTRUCTURE
@@ -1263,8 +1265,7 @@ void cdts_python3_serializer::set_callable_attributes(PyObject* callable_obj, vo
 PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 {
 	// GIL is assumed to be held by caller
-	std::cerr << "[DEBUG] cdt_to_pyobject: type=" << source.type << std::endl;
-	std::cerr.flush();
+	METAFFI_DEBUG(LOG, "cdt_to_pyobject: type={}", source.type);
 
 	try
 	{
@@ -1571,7 +1572,7 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 			}
 			else if(source.type == metaffi_callable_type)
 			{
-				std::cerr << "[DEBUG] cdt_to_pyobject: entering metaffi_callable_type case, callable_val=" << source.cdt_val.callable_val << std::endl;
+				METAFFI_DEBUG(LOG, "cdt_to_pyobject: entering metaffi_callable_type case, callable_val={}", source.cdt_val.callable_val);
 				// For callable, create a Python callable object that wraps the xcall
 				if(!source.cdt_val.callable_val)
 				{
@@ -1581,24 +1582,20 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 
 				cdt_metaffi_callable* callable = source.cdt_val.callable_val;
 				
-				std::cerr << "[DEBUG] cdt_to_pyobject callable: callable=" << (void*)callable << std::endl;
-				std::cerr.flush();
+				METAFFI_DEBUG(LOG, "cdt_to_pyobject callable: callable={}", static_cast<void*>(callable));
 				
 				if(!callable)
 				{
-					std::cerr << "[DEBUG] cdt_to_pyobject callable: callable is NULL!" << std::endl;
-					std::cerr.flush();
+					METAFFI_DEBUG(LOG, "cdt_to_pyobject callable: callable is NULL!");
 					Py_INCREF(pPy_None);
 					return pPy_None;
 				}
 				
-				std::cerr << "[DEBUG] cdt_to_pyobject callable: callable->val=" << callable->val << std::endl;
-				std::cerr.flush();
+				METAFFI_DEBUG(LOG, "cdt_to_pyobject callable: callable->val={}", callable->val);
 				
 				if(!callable->val)
 				{
-					std::cerr << "[DEBUG] cdt_to_pyobject callable: callable->val is NULL!" << std::endl;
-					std::cerr.flush();
+					METAFFI_DEBUG(LOG, "cdt_to_pyobject callable: callable->val is NULL!");
 					Py_INCREF(pPy_None);
 					return pPy_None;
 				}
@@ -1608,8 +1605,7 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 				void** pxcall_and_context_array = static_cast<void**>(callable->val);
 				if(!pxcall_and_context_array)
 				{
-					std::cerr << "[DEBUG] cdt_to_pyobject callable: pxcall_and_context_array is NULL!" << std::endl;
-					std::cerr.flush();
+					METAFFI_DEBUG(LOG, "cdt_to_pyobject callable: pxcall_and_context_array is NULL!");
 					Py_INCREF(pPy_None);
 					return pPy_None;
 				}
@@ -1619,14 +1615,14 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 				void* context = pxcall_and_context_array[1];
 				
 				// Debug output
-				std::cerr << "[DEBUG] cdt_to_pyobject callable: pxcall=" << pxcall << ", context=" << context << std::endl;
-				std::cerr << "[DEBUG] cdt_to_pyobject callable: params_count=" << static_cast<int>(callable->params_types_length) << ", retval_count=" << static_cast<int>(callable->retval_types_length) << std::endl;
-				std::cerr.flush();
+				METAFFI_DEBUG(LOG, "cdt_to_pyobject callable: pxcall={}, context={}", pxcall, context);
+				METAFFI_DEBUG(LOG, "cdt_to_pyobject callable: params_count={}, retval_count={}",
+					static_cast<int>(callable->params_types_length),
+					static_cast<int>(callable->retval_types_length));
 				
 				if(!pxcall)
 				{
-					std::cerr << "[DEBUG] cdt_to_pyobject callable: pxcall is NULL!" << std::endl;
-					std::cerr.flush();
+					METAFFI_DEBUG(LOG, "cdt_to_pyobject callable: pxcall is NULL!");
 					Py_INCREF(pPy_None);
 					return pPy_None;
 				}
@@ -1667,9 +1663,9 @@ PyObject* cdts_python3_serializer::extract_as_tuple()
 	auto gil = m_runtime.acquire_gil();
 
 	metaffi_size remaining = data.length - current_index;
-	std::cerr << "[DEBUG] extract_as_tuple: remaining=" << remaining << ", current_index=" << current_index << ", data.length=" << data.length << std::endl;
-	std::cerr << "[DEBUG] extract_as_tuple: data.arr=" << (void*)data.arr << std::endl;
-	std::cerr.flush();
+	METAFFI_DEBUG(LOG, "extract_as_tuple: remaining={}, current_index={}, data.length={}",
+		remaining, current_index, data.length);
+	METAFFI_DEBUG(LOG, "extract_as_tuple: data.arr={}", static_cast<void*>(data.arr));
 	PyObject* tuple = pPyTuple_New(remaining);
 
 	if(!tuple)
@@ -1681,15 +1677,12 @@ PyObject* cdts_python3_serializer::extract_as_tuple()
 	{
 		for(metaffi_size i = 0; i < remaining; i++)
 		{
-			std::cerr << "[DEBUG] extract_as_tuple: processing index " << i << ", current_index=" << current_index << std::endl;
-			std::cerr.flush();
-			std::cerr << "[DEBUG] extract_as_tuple: data[" << (current_index + i) << "].type=" << data[current_index + i].type << std::endl;
-			std::cerr.flush();
+			METAFFI_DEBUG(LOG, "extract_as_tuple: processing index {}, current_index={}", i, current_index);
+			METAFFI_DEBUG(LOG, "extract_as_tuple: data[{}].type={}", (current_index + i), data[current_index + i].type);
 			try
 			{
 				PyObject* item = cdt_to_pyobject(data[current_index + i]);
-				std::cerr << "[DEBUG] extract_as_tuple: cdt_to_pyobject returned " << (void*)item << std::endl;
-				std::cerr.flush();
+				METAFFI_DEBUG(LOG, "extract_as_tuple: cdt_to_pyobject returned {}", static_cast<void*>(item));
 				int set_result = pPyTuple_SetItem(tuple, i, item);  // Steals reference to item
 				if(set_result == -1 || pPyErr_Occurred())
 				{
@@ -1703,14 +1696,12 @@ PyObject* cdts_python3_serializer::extract_as_tuple()
 			}
 			catch(const std::exception& e)
 			{
-				std::cerr << "[DEBUG] extract_as_tuple: EXCEPTION at index " << i << ": " << e.what() << std::endl;
-				std::cerr.flush();
+				METAFFI_DEBUG(LOG, "extract_as_tuple: EXCEPTION at index {}: {}", i, e.what());
 				throw;
 			}
 			catch(...)
 			{
-				std::cerr << "[DEBUG] extract_as_tuple: UNKNOWN EXCEPTION at index " << i << std::endl;
-				std::cerr.flush();
+				METAFFI_DEBUG(LOG, "extract_as_tuple: UNKNOWN EXCEPTION at index {}", i);
 				throw;
 			}
 		}

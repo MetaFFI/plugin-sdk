@@ -1,5 +1,5 @@
 #pragma once
-#include <iostream>
+#include "logger.hpp"
 
 namespace metaffi{ namespace utils
 {
@@ -20,7 +20,8 @@ public:
 		}
 		catch(...)
 		{
-			std::cerr << "Error caught during scope_guard destructor! Exceptions must not be thrown outside scope_guard function!" << std::endl;
+			auto logger = metaffi::get_logger("sdk.utils");
+			METAFFI_ERROR(logger, "Error caught during scope_guard destructor! Exceptions must not be thrown outside scope_guard function!");
 		}
 	}
 };

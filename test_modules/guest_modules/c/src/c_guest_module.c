@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <utils/logger_c.h>
 #include <utils/safe_func.h>
 
 const int64_t C_GUEST_CONST_FIVE_SECONDS = 5;
@@ -28,7 +29,7 @@ int64_t c_guest_inc_counter(int64_t delta)
 void c_guest_hello_world(void)
 {
 	++c_guest_counter;
-	printf("Hello World, from C\n");
+	metaffi_logf("sdk.test_modules.guest_modules.c", METAFFI_LOG_LEVEL_INFO, "Hello World, from C");
 }
 
 int c_guest_returns_an_error(void)

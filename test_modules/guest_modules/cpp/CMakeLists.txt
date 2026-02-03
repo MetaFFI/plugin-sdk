@@ -8,7 +8,7 @@ collect_c_cpp_files("${CPP_GUEST_SRC_DIR}/src;${CPP_GUEST_INCLUDE_DIR}" cpp_gues
 
 c_cpp_shared_lib(cpp_guest_module
 	"${cpp_guest_module_src}"
-	"${CPP_GUEST_INCLUDE_DIR}"
+	"${CPP_GUEST_INCLUDE_DIR};${metaffi_sdk_root}"
 	""
 	"${CPP_GUEST_OUT_DIR}"
 )
@@ -27,7 +27,7 @@ add_custom_command(TARGET cpp_guest_module POST_BUILD
 
 c_cpp_exe(cpp_guest_module_tests
 	"${CPP_GUEST_SRC_DIR}/tests/cpp_guest_module_test.cpp"
-	"${CPP_GUEST_INCLUDE_DIR};${doctest_INCLUDE_DIRS}"
+	"${CPP_GUEST_INCLUDE_DIR};${metaffi_sdk_root};${doctest_INCLUDE_DIRS}"
 	"doctest::doctest;cpp_guest_module"
 	"${CMAKE_CURRENT_BINARY_DIR}"
 	SKIP_DEPS

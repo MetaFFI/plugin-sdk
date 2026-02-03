@@ -49,7 +49,7 @@ void handler_no_op(cdts* data, char** out_err)
 
 void handler_print_hello(cdts* data, char** out_err)
 {
-	std::cout << "Hello from test plugin!" << std::endl;
+	METAFFI_INFO(LOG, "Hello from test plugin!");
 	log_entity("test::print_hello", "printed hello message");
 }
 

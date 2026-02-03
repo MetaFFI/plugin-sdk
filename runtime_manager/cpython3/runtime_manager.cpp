@@ -3,19 +3,20 @@
 #include "python_api_wrapper.h"
 #include <runtime/cdt.h>
 #include <utils/entity_path_parser.h>
+#include <utils/logger.hpp>
 #include <filesystem>
 #include <mutex>
-#include <iostream>
 #include <stdexcept>
 #include <boost/filesystem.hpp>
 
 namespace
 {
 std::mutex g_python_runtime_mutex;
+static auto LOG = metaffi::get_logger("cpython3.runtime_manager");
 
 #ifndef NDEBUG
 #define RUNTIME_LOG(msg) \
-	do { std::cerr << __FILE__ << ":" << __LINE__ << " - " << msg << std::endl; } while(0)
+	do { METAFFI_DEBUG(LOG, "{}", msg); } while(0)
 #else
 #define RUNTIME_LOG(msg) do { } while(0)
 #endif

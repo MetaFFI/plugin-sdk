@@ -1,4 +1,5 @@
 #include "xllr_capi_loader.h"
+#include <utils/logger_c.h>
 #include <utils/safe_func.h>
 
 #include <stdlib.h>
@@ -10,9 +11,6 @@
 
 #ifdef _MSC_VER
 #include <corecrt.h>
-#define SECURE_FPRINTF fprintf_s
-#else
-#define SECURE_FPRINTF fprintf
 #endif
 
 // === Handlers ===
@@ -38,7 +36,7 @@ int64_t get_cache_size(){ return cdt_cache_size; }
 			if(err) \
 			{ \
 				\
-				SECURE_FPRINTF(stderr, "Failed to load xllr: %s\n", err); \
+				metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load xllr: %s", err); \
 				return retval; \
 			} \
 		} \
@@ -47,7 +45,7 @@ int64_t get_cache_size(){ return cdt_cache_size; }
 			const char* err = load_xllr_capi(); \
 			if(err) \
 			{ \
-				SECURE_FPRINTF(stderr, "Failed to load xllr_capi: %s\n", err); \
+				metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load xllr_capi: %s", err); \
 				return retval; \
 			} \
 		}\
@@ -298,7 +296,7 @@ void* load_library(const char* name, char** out_err)
 	if(!handle)
 	{
 		get_last_error_string(GetLastError(), out_err);
-		printf("Failed to load %s. Error: %s\n", name, *out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load %s. Error: %s", name, *out_err);
 	}
 
 	return handle;
@@ -370,7 +368,7 @@ void* load_symbol(void* handle, const char* name, char** out_err)
 	if(!res)
 	{
 		*out_err = dlerror();
-		printf("Failed to load symbol from handle. %s. %s\n", name, *out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load symbol from handle. %s. %s", name, *out_err);
 		return NULL;
 	}
 	
@@ -386,175 +384,175 @@ const char* load_xllr_capi()
 	pxllr_xcall_params_ret = (void (*)(struct xcall*, struct cdts[2], char**)) load_symbol(cdt_helper_xllr_handle, "xcall_params_ret", &out_err);
 	if(!pxllr_xcall_params_ret)
 	{
-		printf("Failed to load xllr_xcall_params_ret: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load xllr_xcall_params_ret: %s", out_err);
 		return out_err;
 	}
 
 	pxllr_xcall_no_params_ret = (void (*)(struct xcall*, struct cdts[1], char**)) load_symbol(cdt_helper_xllr_handle, "xcall_no_params_ret", &out_err);
 	if(!pxllr_xcall_no_params_ret)
 	{
-		printf("Failed to load xllr_xcall_no_params_ret: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load xllr_xcall_no_params_ret: %s", out_err);
 		return out_err;
 	}
 
 	pxllr_xcall_params_no_ret = (void (*)(struct xcall*, struct cdts[1], char**)) load_symbol(cdt_helper_xllr_handle, "xcall_params_no_ret", &out_err);
 	if(!pxllr_xcall_params_no_ret)
 	{
-		printf("Failed to load xllr_xcall_params_no_ret: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load xllr_xcall_params_no_ret: %s", out_err);
 		return out_err;
 	}
 
 	pxllr_xcall_no_params_no_ret = (void (*)(struct xcall*, char**)) load_symbol(cdt_helper_xllr_handle, "xcall_no_params_no_ret", &out_err);
 	if(!pxllr_xcall_no_params_no_ret)
 	{
-		printf("Failed to load xllr_xcall_no_params_no_ret: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load xllr_xcall_no_params_no_ret: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_load_entity = (struct xcall* (*)(const char*, const char*, const char*, struct metaffi_type_info*, int8_t, struct metaffi_type_info*, int8_t, char**))load_symbol(cdt_helper_xllr_handle, "load_entity", &out_err);
 	if(!pxllr_load_entity)
 	{
-		printf("Failed to load load_function: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load load_function: %s", out_err);
 		return out_err;
 	}
 
 	pxllr_free_xcall = (void (*)(const char*, void*, char**))load_symbol(cdt_helper_xllr_handle, "free_xcall", &out_err);
 	if(!pxllr_free_xcall)
 	{
-		printf("Failed to load free_and_remove_xcall: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load free_and_remove_xcall: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_alloc_cdt_array = (struct cdt* (*)(uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_cdt_array", &out_err);
 	if(!pxllr_alloc_cdt_array)
 	{
-		printf("Failed to load alloc_cdt_array: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load alloc_cdt_array: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_free_cdt_array = (void (*)(struct cdt*))load_symbol(cdt_helper_xllr_handle, "free_cdt_array", &out_err);
 	if(!pxllr_free_cdt_array)
 	{
-		printf("Failed to load free_cdt_array: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load free_cdt_array: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_alloc_memory = (void* (*)(uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_memory", &out_err);
 	if(!pxllr_alloc_memory)
 	{
-		printf("Failed to load alloc_memory: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load alloc_memory: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_free_memory = (void (*)(void*))load_symbol(cdt_helper_xllr_handle, "free_memory", &out_err);
 	if(!pxllr_free_memory)
 	{
-		printf("Failed to load free_memory: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load free_memory: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_free_string = (void (*)(char*))load_symbol(cdt_helper_xllr_handle, "free_string", &out_err);
 	if(!pxllr_free_string)
 	{
-		printf("Failed to load free_string: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load free_string: %s", out_err);
 		return out_err;
 	}
 	
 	palloc_string = (char* (*)(const char*, uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_string", &out_err);
 	if(!palloc_string)
 	{
-		printf("Failed to load alloc_string: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load alloc_string: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_alloc_string8 = (char8_t* (*)(const char8_t*, uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_string8", &out_err);
 	if(!pxllr_alloc_string8)
 	{
-		printf("Failed to load alloc_string8: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load alloc_string8: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_alloc_string16 = (char16_t* (*)(const char16_t*, uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_string16", &out_err);
 	if(!pxllr_alloc_string16)
 	{
-		printf("Failed to load alloc_string16: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load alloc_string16: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_alloc_string32 = (char32_t* (*)(const char32_t*, uint64_t))load_symbol(cdt_helper_xllr_handle, "alloc_string32", &out_err);
 	if(!pxllr_alloc_string32)
 	{
-		printf("Failed to load alloc_string32: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load alloc_string32: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_load_runtime_plugin = (void (*)(const char*, char**))load_symbol(cdt_helper_xllr_handle, "load_runtime_plugin", &out_err);
 	if(!pxllr_load_runtime_plugin)
 	{
-		printf("Failed to load load_runtime_plugin: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load load_runtime_plugin: %s", out_err);
 		return out_err;
 	}
 
 	pxllr_free_runtime_plugin = (void (*)(const char*, char**))load_symbol(cdt_helper_xllr_handle, "free_runtime_plugin", &out_err);
 	if(!pxllr_free_runtime_plugin)
 	{
-		printf("Failed to load free_runtime_plugin: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load free_runtime_plugin: %s", out_err);
 		return out_err;
 	}
 
 	pxllr_is_runtime_flag_set = (int (*)(const char*))load_symbol(cdt_helper_xllr_handle, "is_runtime_flag_set", &out_err);
 	if(!pxllr_is_runtime_flag_set)
 	{
-		printf("Failed to load is_runtime_flag_set: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load is_runtime_flag_set: %s", out_err);
 		return out_err;
 	}
 
 	pxllr_set_runtime_flag = (void (*)(const char*))load_symbol(cdt_helper_xllr_handle, "set_runtime_flag", &out_err);
 	if(!pxllr_set_runtime_flag)
 	{
-		printf("Failed to load set_runtime_flag: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load set_runtime_flag: %s", out_err);
 		return out_err;
 	}
 
 	palloc_cdts_buffer = (struct cdts* (*)(metaffi_size, metaffi_size))load_symbol(cdt_helper_xllr_handle, "alloc_cdts_buffer", &out_err);
 	if(!palloc_cdts_buffer)
 	{
-		printf("Failed to load alloc_cdts_buffer: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load alloc_cdts_buffer: %s", out_err);
 		return out_err;
 	}
 	
 	pfree_cdts_buffer = (void (*)(struct cdts*))load_symbol(cdt_helper_xllr_handle, "free_cdts_buffer", &out_err);
 	if(!pfree_cdts_buffer)
 	{
-		printf("Failed to load free_cdts_buffer: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load free_cdts_buffer: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_construct_cdts = (void (*)(struct cdts*, struct construct_cdts_callbacks*, char** out_nul_term_err))load_symbol(cdt_helper_xllr_handle, "construct_cdts", &out_err);
 	if(!pxllr_construct_cdts)
 	{
-		printf("Failed to load construct_cdts: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load construct_cdts: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_construct_cdt = (void (*)(struct cdt*, struct construct_cdts_callbacks*, char** out_nul_term_err))load_symbol(cdt_helper_xllr_handle, "construct_cdt", &out_err);
 	if(!pxllr_construct_cdt)
 	{
-		printf("Failed to load construct_cdt: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load construct_cdt: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_traverse_cdts = (void (*)(struct cdts*, struct traverse_cdts_callbacks*, char** out_nul_term_err))load_symbol(cdt_helper_xllr_handle, "traverse_cdts", &out_err);
 	if(!pxllr_traverse_cdts)
 	{
-		printf("Failed to load traverse_cdts: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load traverse_cdts: %s", out_err);
 		return out_err;
 	}
 	
 	pxllr_traverse_cdt = (void (*)(struct cdt*, struct traverse_cdts_callbacks*, char** out_nul_term_err))load_symbol(cdt_helper_xllr_handle, "traverse_cdt", &out_err);
 	if(!pxllr_traverse_cdt)
 	{
-		printf("Failed to load traverse_cdt: %s\n", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load traverse_cdt: %s", out_err);
 		return out_err;
 	}
 
@@ -612,7 +610,7 @@ const char* load_xllr()
 	{
 		// error has occurred
 		//char* err_buf = calloc(1, (23+out_err_size+1)*sizeof(char));
-		printf("Failed to load XLLR: %s", out_err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to load XLLR: %s", out_err);
 #ifdef _WIN32
 		LocalFree(out_err);
 #else
@@ -638,7 +636,7 @@ const char* free_xllr()
 
 	if(err)
 	{
-		printf("Failed to free XLLR: %s", err);
+		metaffi_logf("sdk.runtime", METAFFI_LOG_LEVEL_ERROR, "Failed to free XLLR: %s", err);
 		return "Failed to free XLLR: %s";
 	}
 

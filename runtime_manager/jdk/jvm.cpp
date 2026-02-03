@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <cctype>
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <filesystem>
@@ -12,7 +11,6 @@
 #include <stdexcept>
 #include <unordered_set>
 #include <vector>
-#include <iostream>
 #include <mutex>
 #ifdef _WIN32
 #include <windows.h>
@@ -21,6 +19,7 @@
 #endif
 #include <utils/scope_guard.hpp>
 #include <utils/env_utils.h>
+#include <utils/logger.hpp>
 
 
 using namespace metaffi::utils;
@@ -29,6 +28,7 @@ namespace
 {
 	std::mutex s_jvm_mutex;
 	JavaVM* s_shared_jvm = nullptr;
+	static auto LOG = metaffi::get_logger("jdk.runtime_manager");
 
 	void set_env_var(const char* key, const std::string& value)
 	{
@@ -589,7 +589,7 @@ void jvm::load_or_create_with_info(const std::string& classpath_option)
 #endif
 
 	m_jni_api = std::make_shared<jni_api_wrapper>(m_info.libjvm_path);
-	std::cerr << "[jvm] Verifying loaded JVM" << std::endl;
+	METAFFI_DEBUG(LOG, "Verifying loaded JVM");
 	verify_loaded_jvm(m_info, m_jni_api->get_loaded_path());
 
 	{
@@ -598,7 +598,7 @@ void jvm::load_or_create_with_info(const std::string& classpath_option)
 		{
 			m_jvm = s_shared_jvm;
 			m_is_destroy = false;
-			std::cerr << "[jvm] Reusing existing JVM instance" << std::endl;
+			METAFFI_DEBUG(LOG, "Reusing existing JVM instance");
 			return;
 		}
 
@@ -610,7 +610,7 @@ void jvm::load_or_create_with_info(const std::string& classpath_option)
 			s_shared_jvm = existing_vms[0];
 			m_jvm = s_shared_jvm;
 			m_is_destroy = false;
-			std::cerr << "[jvm] Found existing JVM instance via JNI_GetCreatedJavaVMs" << std::endl;
+			METAFFI_DEBUG(LOG, "Found existing JVM instance via JNI_GetCreatedJavaVMs");
 			return;
 		}
 	}
@@ -679,9 +679,9 @@ void jvm::load_or_create_with_info(const std::string& classpath_option)
 	auto try_create_vm = [&](JavaVMInitArgs& args)
 	{
 		JNIEnv* env = nullptr;
-		std::cerr << "[jvm] Creating JVM (JNI_CreateJavaVM)" << std::endl;
+		METAFFI_DEBUG(LOG, "Creating JVM (JNI_CreateJavaVM)");
 		jint create_res = m_jni_api->create_java_vm(&m_jvm, reinterpret_cast<void**>(&env), &args);
-		std::cerr << "[jvm] JNI_CreateJavaVM result: " << create_res << std::endl;
+		METAFFI_DEBUG(LOG, "JNI_CreateJavaVM result: {}", create_res);
 		return create_res;
 	};
 
@@ -703,7 +703,7 @@ void jvm::load_or_create_with_info(const std::string& classpath_option)
 	jint create_res = try_create_vm(args_to_use);
 	if(create_res == JNI_EINVAL && default_args_res == JNI_OK)
 	{
-		std::cerr << "[jvm] Retrying JVM creation with manual init args" << std::endl;
+		METAFFI_DEBUG(LOG, "Retrying JVM creation with manual init args");
 		args_to_use.version = JNI_VERSION_1_8;
 		args_to_use.nOptions = static_cast<jint>(manual_options.size());
 		args_to_use.options = manual_options.empty() ? nullptr : manual_options.data();
@@ -755,7 +755,7 @@ void jvm::fini()
 		jint res = m_jvm->DestroyJavaVM();
 		if(res != JNI_OK)
 		{
-			printf("Failed to destroy JVM: %ld\n", res);
+			METAFFI_ERROR(LOG, "Failed to destroy JVM: {}", res);
 		}
 		m_jvm = nullptr;
 	}

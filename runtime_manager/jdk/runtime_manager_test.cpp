@@ -6,6 +6,7 @@
 #include "module.h"
 #include "entity.h"
 #include "jni_helpers.h"
+#include <utils/logger.hpp>
 #include <filesystem>
 #include <thread>
 #include <vector>
@@ -13,6 +14,8 @@
 #include <mutex>
 #include <string>
 #include <functional>
+
+static auto LOG = metaffi::get_logger("jdk.runtime_manager");
 
 template<typename Func>
 bool expect_no_throw(Func&& func)
@@ -148,13 +151,10 @@ static jvm_installed_info get_test_jvm_info()
 		throw std::runtime_error("No installed JVMs detected");
 	}
 
-	std::cerr << "[jdk_runtime_manager_test] Detected JVMs:" << std::endl;
+	METAFFI_DEBUG(LOG, "jdk_runtime_manager_test: Detected JVMs:");
 	for(const auto& info : jvms)
 	{
-		std::cerr << "  home=" << info.home
-		          << " version=" << info.version
-		          << " libjvm=" << info.libjvm_path
-		          << std::endl;
+		METAFFI_DEBUG(LOG, "  home={} version={} libjvm={}", info.home, info.version, info.libjvm_path);
 	}
 
 	auto has_version_prefix = [](const std::string& version, const std::string& prefix)
@@ -169,13 +169,13 @@ static jvm_installed_info get_test_jvm_info()
 		{
 			if(has_version_prefix(info.version, preferred))
 			{
-				std::cerr << "[jdk_runtime_manager_test] Selected JVM: " << info.home << std::endl;
+				METAFFI_DEBUG(LOG, "jdk_runtime_manager_test: Selected JVM: {}", info.home);
 				return info;
 			}
 		}
 	}
 
-	std::cerr << "[jdk_runtime_manager_test] Selected JVM: " << jvms.front().home << std::endl;
+	METAFFI_DEBUG(LOG, "jdk_runtime_manager_test: Selected JVM: {}", jvms.front().home);
 	return jvms.front();
 }
 

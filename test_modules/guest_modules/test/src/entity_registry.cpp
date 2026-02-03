@@ -611,7 +611,7 @@ void EntityRegistry::register_all_entities()
 		handler_set_g_name
 	});
 
-	std::cout << LOG_PREFIX << "Registered " << m_entities.size() << " test entities" << std::endl;
+	METAFFI_INFO(LOG, "Registered {} test entities", m_entities.size());
 }
 
 } // namespace test_plugin

@@ -1,13 +1,14 @@
 #include "cpp_guest_module.h"
 
 #include <cstdarg>
-#include <iostream>
 #include <stdexcept>
+#include <utils/logger.hpp>
 
 namespace guest {
 
 const int64_t CONST_FIVE_SECONDS = 5;
 int64_t g_counter = 0;
+static auto LOG = metaffi::get_logger("cpp.guest");
 
 int64_t get_counter() {
 	return g_counter;
@@ -24,7 +25,7 @@ int64_t inc_counter(int64_t delta) {
 
 void hello_world() {
 	++g_counter;
-	std::cout << "Hello World, from C++" << std::endl;
+	METAFFI_INFO(LOG, "Hello World, from C++");
 }
 
 void returns_an_error() {

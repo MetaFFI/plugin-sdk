@@ -1,9 +1,11 @@
 #include "jni_api_wrapper.h"
 
 #include <filesystem>
-#include <iostream>
+#include <utils/logger.hpp>
 #include <stdexcept>
 #include <vector>
+
+static auto LOG = metaffi::get_logger("jdk.runtime_manager");
 
 #ifdef _WIN32
 HMODULE jni_api_wrapper::s_libjvm = nullptr;
@@ -71,7 +73,7 @@ jni_api_wrapper::jni_api_wrapper(const std::string& libjvm_path)
 #ifdef _WIN32
 	if(!s_libjvm)
 	{
-		std::cerr << "[jni_api_wrapper] loading libjvm: " << libjvm_path << std::endl;
+		METAFFI_DEBUG(LOG, "jni_api_wrapper: loading libjvm: {}", libjvm_path);
 		s_libjvm = load_jvm_with_search_paths(std::filesystem::path(libjvm_path));
 	}
 
@@ -85,7 +87,7 @@ jni_api_wrapper::jni_api_wrapper(const std::string& libjvm_path)
 #else
 		auto load_mode = boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global;
 #endif
-		std::cerr << "[jni_api_wrapper] loading libjvm: " << libjvm_path << std::endl;
+		METAFFI_DEBUG(LOG, "jni_api_wrapper: loading libjvm: {}", libjvm_path);
 		s_libjvm->load(libjvm_path, load_mode);
 	}
 
@@ -131,7 +133,7 @@ jni_api_wrapper::jni_api_wrapper(const std::string& libjvm_path)
 	get_default_java_vm_init_args = m_libjvm->get<JNI_GetDefaultJavaVMInitArgs_t>("JNI_GetDefaultJavaVMInitArgs");
 	get_created_java_vms = m_libjvm->get<JNI_GetCreatedJavaVMs_t>("JNI_GetCreatedJavaVMs");
 #endif
-	std::cerr << "[jni_api_wrapper] JNI symbols loaded" << std::endl;
+	METAFFI_DEBUG(LOG, "jni_api_wrapper: JNI symbols loaded");
 }
 
 std::string jni_api_wrapper::get_loaded_path() const

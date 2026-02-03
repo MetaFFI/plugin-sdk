@@ -2,14 +2,17 @@
 #include <doctest/doctest.h>
 #include "cdts_c_serializer.h"
 #include <runtime/xllr_capi_loader.h>
+#include <utils/logger.hpp>
 #include <string.h>
 #include <math.h>
+
+static auto LOG = metaffi::get_logger("sdk.cdts_serializer.c");
 
 // Initialize xllr before running tests
 static void init_xllr() {
     const char* err = load_xllr();
     if (err) {
-        fprintf(stderr, "FATAL ERROR! Failed to load XLLR C-API. Error: %s\n", err);
+        METAFFI_CRITICAL(LOG, "FATAL ERROR! Failed to load XLLR C-API. Error: {}", err);
         exit(1);
     }
 }

@@ -641,7 +641,7 @@ jstring cdts_jvm_serializer::string16_to_jstring(metaffi_string16 str)
 	metaffi_size len = 0;
 	while (str[len] != 0) len++;
 
-	jstring result = env->NewString((const jchar*)str, len);
+	jstring result = env->NewString((const jchar*)str, static_cast<jsize>(len));
 	if (!result) {
 		check_jni_exception("NewString");
 		throw std::runtime_error("Failed to create jstring from UTF-16");
@@ -676,7 +676,7 @@ jstring cdts_jvm_serializer::string32_to_jstring(metaffi_string32 str)
 		}
 	}
 
-	jstring result = env->NewString(utf16.data(), utf16.size());
+	jstring result = env->NewString(utf16.data(), static_cast<jsize>(utf16.size()));
 	if (!result) {
 		check_jni_exception("NewString");
 		throw std::runtime_error("Failed to create jstring from UTF-32");
@@ -1279,75 +1279,83 @@ jarray cdts_jvm_serializer::create_primitive_array(cdts& arr_cdts, metaffi_type 
 
 	switch(element_type) {
 		case metaffi_int8_type: {
-			jbyteArray result = env->NewByteArray(length);
+			jsize jni_length = static_cast<jsize>(length);
+			jbyteArray result = env->NewByteArray(jni_length);
 			std::vector<jbyte> elements(length);
 			for (metaffi_size i = 0; i < length; i++) {
 				elements[i] = arr_cdts[i].cdt_val.int8_val;
 			}
-			env->SetByteArrayRegion(result, 0, length, elements.data());
+			env->SetByteArrayRegion(result, 0, jni_length, elements.data());
 			return result;
 		}
 		case metaffi_int16_type: {
-			jshortArray result = env->NewShortArray(length);
+			jsize jni_length = static_cast<jsize>(length);
+			jshortArray result = env->NewShortArray(jni_length);
 			std::vector<jshort> elements(length);
 			for (metaffi_size i = 0; i < length; i++) {
 				elements[i] = arr_cdts[i].cdt_val.int16_val;
 			}
-			env->SetShortArrayRegion(result, 0, length, elements.data());
+			env->SetShortArrayRegion(result, 0, jni_length, elements.data());
 			return result;
 		}
 		case metaffi_int32_type: {
-			jintArray result = env->NewIntArray(length);
+			jsize jni_length = static_cast<jsize>(length);
+			jintArray result = env->NewIntArray(jni_length);
 			std::vector<jint> elements(length);
 			for (metaffi_size i = 0; i < length; i++) {
 				elements[i] = arr_cdts[i].cdt_val.int32_val;
 			}
-			env->SetIntArrayRegion(result, 0, length, elements.data());
+			env->SetIntArrayRegion(result, 0, jni_length, elements.data());
 			return result;
 		}
 		case metaffi_int64_type: {
-			jlongArray result = env->NewLongArray(length);
+			jsize jni_length = static_cast<jsize>(length);
+			jlongArray result = env->NewLongArray(jni_length);
 			std::vector<jlong> elements(length);
 			for (metaffi_size i = 0; i < length; i++) {
 				elements[i] = arr_cdts[i].cdt_val.int64_val;
 			}
-			env->SetLongArrayRegion(result, 0, length, elements.data());
+			env->SetLongArrayRegion(result, 0, jni_length, elements.data());
 			return result;
 		}
 		case metaffi_float32_type: {
-			jfloatArray result = env->NewFloatArray(length);
+			jsize jni_length = static_cast<jsize>(length);
+			jfloatArray result = env->NewFloatArray(jni_length);
 			std::vector<jfloat> elements(length);
 			for (metaffi_size i = 0; i < length; i++) {
 				elements[i] = arr_cdts[i].cdt_val.float32_val;
 			}
-			env->SetFloatArrayRegion(result, 0, length, elements.data());
+			env->SetFloatArrayRegion(result, 0, jni_length, elements.data());
 			return result;
 		}
 		case metaffi_float64_type: {
-			jdoubleArray result = env->NewDoubleArray(length);
+			jsize jni_length = static_cast<jsize>(length);
+			jdoubleArray result = env->NewDoubleArray(jni_length);
 			std::vector<jdouble> elements(length);
 			for (metaffi_size i = 0; i < length; i++) {
 				elements[i] = arr_cdts[i].cdt_val.float64_val;
 			}
-			env->SetDoubleArrayRegion(result, 0, length, elements.data());
+			env->SetDoubleArrayRegion(result, 0, jni_length, elements.data());
 			return result;
 		}
 		case metaffi_bool_type: {
-			jbooleanArray result = env->NewBooleanArray(length);
+			jsize jni_length = static_cast<jsize>(length);
+			jbooleanArray result = env->NewBooleanArray(jni_length);
 			std::vector<jboolean> elements(length);
 			for (metaffi_size i = 0; i < length; i++) {
 				elements[i] = arr_cdts[i].cdt_val.bool_val ? JNI_TRUE : JNI_FALSE;
 			}
-			env->SetBooleanArrayRegion(result, 0, length, elements.data());
+			env->SetBooleanArrayRegion(result, 0, jni_length, elements.data());
 			return result;
 		}
 		case metaffi_char16_type: {
-			jcharArray result = env->NewCharArray(length);
+			jsize jni_length = static_cast<jsize>(length);
+			jcharArray result = env->NewCharArray(jni_length);
 			std::vector<jchar> elements(length);
 			for (metaffi_size i = 0; i < length; i++) {
 				elements[i] = static_cast<jchar>(arr_cdts[i].cdt_val.char16_val.c[0]);
 			}
-			env->SetCharArrayRegion(result, 0, length, elements.data());
+			env->SetCharArrayRegion(result, 0, jni_length, elements.data());
 			return result;
 		}
 		default:
@@ -1381,7 +1389,7 @@ jobjectArray cdts_jvm_serializer::create_object_array(cdts& arr_cdts, metaffi_ty
 	}
 	local_ref_guard guard(env, elementClass);
 
-	jobjectArray result = env->NewObjectArray(length, elementClass, nullptr);
+	jobjectArray result = env->NewObjectArray(static_cast<jsize>(length), elementClass, nullptr);
 	if (!result) {
 		check_jni_exception("NewObjectArray");
 		throw std::runtime_error("Failed to create object array");
@@ -1424,7 +1432,7 @@ jobjectArray cdts_jvm_serializer::create_object_array(cdts& arr_cdts, metaffi_ty
 			}
 		}
 
-		env->SetObjectArrayElement(result, i, element);
+		env->SetObjectArrayElement(result, static_cast<jsize>(i), element);
 		if (element) env->DeleteLocalRef(element);
 	}
 

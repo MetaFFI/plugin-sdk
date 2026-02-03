@@ -18,13 +18,14 @@
 #include "runtime_id.h"
 #include "utils/defines.h"
 #include <algorithm>
-#include <iostream>
 #include <runtime/cdts_traverse_construct.h>
 #include <utility>
 #include <utils/defines.h>
+#include <utils/logger.hpp>
 
 
 extern std::shared_ptr<jvm> pjvm;
+static auto LOG = metaffi::get_logger("jvm.api");
 
 //--------------------------------------------------------------------
 
@@ -2210,13 +2211,13 @@ void jni_releaser(cdt_metaffi_handle* ptr)
 	
 	if(!env)
 	{
-		std::cerr << "Failed to get JNIEnv in jni_releaser\n";
+		METAFFI_ERROR(LOG, "Failed to get JNIEnv in jni_releaser");
 		return;
 	}
 	
 	if(!is_valid_jobject(env, (jobject)ptr->handle))
 	{
-		std::cerr << "jni_releaser received an invalid jobject\n";
+		METAFFI_ERROR(LOG, "jni_releaser received an invalid jobject");
 		return;
 	}
 	
@@ -2849,4 +2850,3 @@ cdts_java_wrapper::operator cdts*() const
 	return this->pcdts;
 }
 //--------------------------------------------------------------------
-

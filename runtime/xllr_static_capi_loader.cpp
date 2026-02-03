@@ -1,5 +1,7 @@
 #include "xllr_capi_loader.h"
-#include <iostream>
+#include <utils/logger.hpp>
+
+static auto LOG = metaffi::get_logger("sdk.runtime");
 
 bool xllr_capi_loaded = false;
 struct xllr_capi_loader
@@ -11,7 +13,7 @@ struct xllr_capi_loader
 			const char* loader_err = load_xllr();
 			if(loader_err)
 			{
-				std::cerr << "FATAL ERROR! Failed to load XLLR C-API. Error: " << loader_err << std::endl;
+				METAFFI_CRITICAL(LOG, "Failed to load XLLR C-API. Error: {}", loader_err);
 				exit(1);
 			}
 			

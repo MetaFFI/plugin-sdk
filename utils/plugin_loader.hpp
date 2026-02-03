@@ -5,9 +5,9 @@
 #include <string>
 #include <sstream>
 #include <filesystem>
-#include <iostream>
 #include <vector>
 #include <utils/env_utils.h>
+#include <utils/logger.hpp>
 
 namespace fs = std::filesystem;
 
@@ -18,7 +18,8 @@ inline std::vector<std::string> find_files_recursively(const fs::path& root, con
     std::vector<std::string> matching_files;
 
     if (!fs::exists(root) || !fs::is_directory(root)) {
-        std::cerr << "Path is not a directory or does not exist.\n";
+        auto logger = metaffi::get_logger("sdk.utils");
+        METAFFI_ERROR(logger, "Path is not a directory or does not exist.");
         return matching_files;
     }
 
@@ -39,7 +40,8 @@ inline std::vector<std::string> find_files_recursively(const fs::path& root, con
 //--------------------------------------------------------------------
 inline std::shared_ptr<boost::dll::shared_library> load_plugin(const std::string& plugin_filename_without_extension)
 {
-	std::cout << "Loading plugin: " << plugin_filename_without_extension << std::endl;
+	auto logger = metaffi::get_logger("sdk.utils");
+	METAFFI_INFO(logger, "Loading plugin: {}", plugin_filename_without_extension);
 
 	std::string metaffi_home = get_env_var("METAFFI_HOME");
 	if(metaffi_home.empty()){

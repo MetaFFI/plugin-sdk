@@ -8,6 +8,7 @@
 #include <cdts_serializer/cpython3/runtime_id.h>
 #include <cstdlib>
 #include <utils/safe_func.h>
+#include <utils/logger.hpp>
 
 using namespace metaffi::utils;
 
@@ -15,8 +16,10 @@ using namespace metaffi::utils;
 static std::shared_ptr<cpython3_runtime_manager> g_runtime;
 static std::unique_ptr<cpython3_runtime_manager::scoped_gil> g_gil;
 
+static auto LOG = metaffi::get_logger("cpython3.serializer");
+
 #define TEST_LOG(msg) \
-	do { std::cerr << __FILE__ << ":" << __LINE__ << " - " << msg << std::endl; } while(0)
+	do { METAFFI_DEBUG(LOG, "{}", msg); } while(0)
 
 static void dummy_xcall(void*, cdts*, char**)
 {
@@ -29,7 +32,7 @@ int main(int argc, char** argv)
 	auto versions = cpython3_runtime_manager::detect_installed_python3();
 	if(versions.empty())
 	{
-		std::cerr << "No Python 3 installation found" << std::endl;
+		METAFFI_ERROR(LOG, "No Python 3 installation found");
 		return 1;
 	}
 	

@@ -1,7 +1,10 @@
 #include "xllr_api_wrapper.h"
 #include "env_utils.h"
+#include "logger.hpp"
 #include <filesystem>
 #include "function_loader.hpp"
+
+static auto LOG = metaffi::get_logger("sdk.utils");
 
 namespace metaffi{ namespace utils
 {
@@ -33,9 +36,9 @@ xllr_api_wrapper::xllr_api_wrapper()
 		this->pset_runtime_flag = load_func<void(const char*)>(*this->xllr_mod, "set_runtime_flag");
 		this->pis_runtime_flag_set = load_func<int(const char*)>(*this->xllr_mod, "is_runtime_flag_set");
 	}
-	catch(std::exception& e)
+	catch(const std::exception& e)
 	{
-		printf("Error loading XLLR API wrapper: %s\n", e.what());
+		METAFFI_CRITICAL_EX(LOG, "Error loading XLLR API wrapper", e);
 		std::exit(1);
 	}
 }

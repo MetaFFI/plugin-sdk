@@ -27,16 +27,17 @@ static void log_type_info(const metaffi_type_info* types, int8_t count, const ch
 	{
 		const char* type_str;
 		metaffi_type_to_str(types[i].type, type_str);
-
-		std::cout << LOG_PREFIX << "  " << label << "[" << static_cast<int>(i) << "]: type="
-		          << type_str << " (0x" << std::hex << types[i].type << std::dec << ")";
-
+		const auto type_value = static_cast<uint64_t>(types[i].type);
 		if(types[i].alias)
 		{
-			std::cout << " alias=\"" << types[i].alias << "\"";
+			METAFFI_DEBUG(LOG, "  {}[{}]: type={} (0x{:x}) alias=\"{}\" fixed_dims={}",
+				label, static_cast<int>(i), type_str, type_value, types[i].alias, types[i].fixed_dimensions);
 		}
-
-		std::cout << " fixed_dims=" << types[i].fixed_dimensions << std::endl;
+		else
+		{
+			METAFFI_DEBUG(LOG, "  {}[{}]: type={} (0x{:x}) fixed_dims={}",
+				label, static_cast<int>(i), type_str, type_value, types[i].fixed_dimensions);
+		}
 	}
 }
 
@@ -149,10 +150,10 @@ xcall* load_entity(
 	log_api_call("load_entity");
 
 	// Log all input parameters
-	std::cout << LOG_PREFIX << "  module_path: " << (module_path ? module_path : "null") << std::endl;
-	std::cout << LOG_PREFIX << "  entity_path: " << (entity_path ? entity_path : "null") << std::endl;
-	std::cout << LOG_PREFIX << "  params_count: " << static_cast<int>(params_count) << std::endl;
-	std::cout << LOG_PREFIX << "  retval_count: " << static_cast<int>(retval_count) << std::endl;
+	METAFFI_DEBUG(LOG, "  module_path: {}", (module_path ? module_path : "null"));
+	METAFFI_DEBUG(LOG, "  entity_path: {}", (entity_path ? entity_path : "null"));
+	METAFFI_DEBUG(LOG, "  params_count: {}", static_cast<int>(params_count));
+	METAFFI_DEBUG(LOG, "  retval_count: {}", static_cast<int>(retval_count));
 
 	// Log parameter types
 	if(params_count > 0 && params_types)
@@ -227,7 +228,7 @@ xcall* load_entity(
 	}
 	pxcall->pxcall_and_context[1] = ctx;
 
-	std::cout << LOG_PREFIX << "load_entity successful: " << entity_path << std::endl;
+	METAFFI_INFO(LOG, "load_entity successful: {}", entity_path ? entity_path : "null");
 	return pxcall;
 }
 
@@ -241,9 +242,9 @@ xcall* make_callable(
 {
 	log_api_call("make_callable");
 
-	std::cout << LOG_PREFIX << "  context: " << make_callable_context << std::endl;
-	std::cout << LOG_PREFIX << "  params_count: " << static_cast<int>(params_count) << std::endl;
-	std::cout << LOG_PREFIX << "  retval_count: " << static_cast<int>(retval_count) << std::endl;
+	METAFFI_DEBUG(LOG, "  context: {}", make_callable_context);
+	METAFFI_DEBUG(LOG, "  params_count: {}", static_cast<int>(params_count));
+	METAFFI_DEBUG(LOG, "  retval_count: {}", static_cast<int>(retval_count));
 
 	// Log parameter types
 	if(params_count > 0 && params_types)
@@ -352,7 +353,7 @@ void free_xcall(xcall* pff, char** err)
 	auto* ctx = static_cast<EntityContext*>(pff->pxcall_and_context[1]);
 	if(ctx)
 	{
-		std::cout << LOG_PREFIX << "  freeing xcall for: " << ctx->entity_name << std::endl;
+		METAFFI_DEBUG(LOG, "  freeing xcall for: {}", ctx->entity_name);
 		ctx->~EntityContext();
 		xllr_free_memory(ctx);
 	}
