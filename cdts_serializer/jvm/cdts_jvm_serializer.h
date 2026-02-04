@@ -52,6 +52,22 @@ private:
 	cdts& data;                    // Reference to CDTS
 	metaffi_size current_index;    // Current position in CDTS
 
+	/**
+	 * @brief Helper to serialize array directly into a cdt element (for recursive multi-dim arrays)
+	 * @param arr Java array to serialize
+	 * @param target Target cdt element to serialize into
+	 * @param dimensions Number of remaining dimensions
+	 * @param element_type MetaFFI type of base elements
+	 */
+	void serialize_array_into(jarray arr, cdt& target, int dimensions, metaffi_type element_type);
+
+	/**
+	 * @brief Helper to extract multi-dimensional array recursively
+	 * @param arr_cdts CDTS array containing sub-arrays
+	 * @return jobjectArray containing extracted sub-arrays
+	 */
+	jobjectArray extract_multidim_array(cdts& arr_cdts);
+
 	// ===== RAII Helper Classes =====
 
 	/**

@@ -92,6 +92,7 @@ JNIEXPORT void JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_free_1runtime_1
 jclass MetaFFITypeInfoClass = nullptr;
 jfieldID typeFieldID = nullptr;
 jfieldID aliasFieldID = nullptr;
+jfieldID dimensionsFieldID = nullptr;
 metaffi_type_info* convert_MetaFFITypeInfo_array_to_metaffi_type_with_info(JNIEnv* env, jobjectArray inputArray)
 {
 	// Get the length of the input array
@@ -120,6 +121,12 @@ metaffi_type_info* convert_MetaFFITypeInfo_array_to_metaffi_type_with_info(JNIEn
 		check_and_throw_jvm_exception(env, true);
 	}
 
+	if(!dimensionsFieldID)
+	{
+		dimensionsFieldID = env->GetFieldID(MetaFFITypeInfoClass, "dimensions", "I"); // int
+		check_and_throw_jvm_exception(env, true);
+	}
+
 	// Iterate over the input array
 	for (jsize i = 0; i < length; i++)
 	{
@@ -131,6 +138,8 @@ metaffi_type_info* convert_MetaFFITypeInfo_array_to_metaffi_type_with_info(JNIEn
 		jlong type = env->GetLongField(MetaFFITypeInfoObject, typeFieldID);
 		check_and_throw_jvm_exception(env, true);
 		jstring aliasJString = (jstring)env->GetObjectField(MetaFFITypeInfoObject, aliasFieldID);
+		check_and_throw_jvm_exception(env, true);
+		jint dimensions = env->GetIntField(MetaFFITypeInfoObject, dimensionsFieldID);
 		check_and_throw_jvm_exception(env, true);
 
 		if(aliasJString)
@@ -153,6 +162,7 @@ metaffi_type_info* convert_MetaFFITypeInfo_array_to_metaffi_type_with_info(JNIEn
 
 		// Set the output array values
 		outputArray[i].type = type;
+		outputArray[i].fixed_dimensions = dimensions > 0 ? dimensions : MIXED_OR_UNKNOWN_DIMENSIONS;
 	}
 
 	// Return the output array as a jlong (this is actually a pointer)
@@ -332,6 +342,7 @@ JNIEXPORT jlong JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_load_1function
 
 		// release runtime_plugin
 		env->ReleaseStringUTFChars(runtime_plugin, str_runtime_plugin);
+		env->ReleaseStringUTFChars(module_path, str_module_path);
 		env->ReleaseStringUTFChars(entity_path, str_entity_path);
 
 		if(params_count > 0)
@@ -516,7 +527,7 @@ JNIEXPORT jlong JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_get_1pcdt(JNIE
 //--------------------------------------------------------------------
 JNIEXPORT jobject JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_get_1object(JNIEnv* env, jclass, jlong phandle)
 {
-	if(jvm_objects_table::instance().contains((jobject)phandle)){
+	if(!jvm_objects_table::instance().contains((jobject)phandle)){
 		throwMetaFFIException(env, "Object is not found in Objects Table");
 	}
 	

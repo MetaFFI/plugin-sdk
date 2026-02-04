@@ -2362,6 +2362,26 @@ void cdts_java_wrapper::switch_to_object(JNIEnv* env, int i) const
 
 	switch(c.type)
 	{
+		case metaffi_uint32_type: {
+			jvalue v = this->to_jvalue(env, i);
+			this->set_object(env, i, static_cast<metaffi_int32>(v.i));
+		}
+		break;
+		case metaffi_uint64_type: {
+			jvalue v = this->to_jvalue(env, i);
+			this->set_object(env, i, static_cast<metaffi_int64>(v.j));
+		}
+		break;
+		case metaffi_uint16_type: {
+			jvalue v = this->to_jvalue(env, i);
+			this->set_object(env, i, static_cast<metaffi_int16>(v.s));
+		}
+		break;
+		case metaffi_uint8_type: {
+			jvalue v = this->to_jvalue(env, i);
+			this->set_object(env, i, static_cast<metaffi_int8>(v.b));
+		}
+		break;
 		case metaffi_int32_type: {
 			jvalue v = this->to_jvalue(env, i);
 			this->set_object(env, i, (metaffi_int32) v.i);

@@ -19,6 +19,7 @@ public enum MetaFFIType {
     STRING16("string16"),
     STRING32("string32"),
     HANDLE("handle"),
+    CALLABLE("callable"),
     ARRAY("array"),
     ANY("any"),
     SIZE("size"),
@@ -41,6 +42,7 @@ public enum MetaFFIType {
     STRING16_ARRAY("string16_array"),
     STRING32_ARRAY("string32_array"),
     HANDLE_ARRAY("handle_array"),
+    CALLABLE_ARRAY("callable_array"),
     ANY_ARRAY("any_array"),
     SIZE_ARRAY("size_array");
 

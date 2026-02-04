@@ -1,5 +1,5 @@
 #pragma once
-#include <runtime_manager/jdk/jvm.h>
+#include <runtime_manager/jvm/jvm.h>
 
 #define check_and_throw_jvm_exception(env, var) \
 if(env->ExceptionCheck() == JNI_TRUE)\

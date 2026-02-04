@@ -19,22 +19,12 @@ public class MetaFFIModule
 
 	public Caller load(String entityPath, MetaFFITypeInfo[] parametersTypes, MetaFFITypeInfo[] retvalsTypes)
 	{
-
 		var xcallAndContext = MetaFFIAccessor.load_function(
 															"xllr."+this.runtime.runtimePlugin,
 															this.modulePath,
 															entityPath,
 															parametersTypes,
 															retvalsTypes);
-
-		// Return a Caller object that wraps a lambda that calls the foreign object
-		byte paramsCount = parametersTypes != null ? (byte)parametersTypes.length : 0;
-		byte retvalsCount = retvalsTypes != null ? (byte)retvalsTypes.length : 0;
-
-
-		// parametersArray - Object[] with parameters
-		// return value is an Object of the expected type
-		// or null if calling function is void.
-		return Caller.createCaller(xcallAndContext, parametersTypes, (retvalsTypes != null && retvalsTypes.length > 0) ? retvalsTypes[0] : null);
+		return Caller.createCaller(xcallAndContext, parametersTypes, retvalsTypes);
 	}
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <runtime_manager/jdk/jvm.h>
+#include <runtime_manager/jvm/jvm.h>
 
 
 bool is_caller_class(JNIEnv* env, jobject obj);

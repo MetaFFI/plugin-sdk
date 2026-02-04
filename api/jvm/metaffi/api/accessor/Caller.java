@@ -20,11 +20,17 @@ public class Caller
 		return this.f.apply(parameters);
 	}
 
+	public static Caller createCaller(long xcallAndContext, MetaFFITypeInfo[] params, MetaFFITypeInfo[] retvals)
+	{
+		long[] parametersTypesArray = (params != null && params.length > 0) ? convertToLongArray(params) : new long[]{};
+		long[] retvalTypeArray = (retvals != null && retvals.length > 0) ? convertToLongArray(retvals) : new long[]{};
+		return createCaller(xcallAndContext, parametersTypesArray, retvalTypeArray);
+	}
+
 	public static Caller createCaller(long xcallAndContext, MetaFFITypeInfo[] params, MetaFFITypeInfo retval)
 	{
-    	long[] parametersTypesArray = (params != null && params.length > 0) ? convertToLongArray(params) : new long[]{};
-    	long[] retvalTypeArray = (retval != null) ? convertToLongArray(new MetaFFITypeInfo[]{retval}) : new long[]{};
-		return createCaller(xcallAndContext, parametersTypesArray, retvalTypeArray);
+		MetaFFITypeInfo[] retvals = (retval != null) ? new MetaFFITypeInfo[]{retval} : new MetaFFITypeInfo[]{};
+		return createCaller(xcallAndContext, params, retvals);
 	}
 
 	public static Caller createCaller(long xcallAndContext, long[] parametersTypesArray, long[] retvalsTypesArray)

@@ -1,5 +1,5 @@
 #pragma once
-#include <runtime_manager/jdk/jvm.h>
+#include <runtime_manager/jvm/jvm.h>
 
 #include "argument_definition.h"
 #include <vector>

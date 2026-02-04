@@ -1,4 +1,5 @@
 #include "cdts_jvm_serializer.h"
+#include "runtime_id.h"
 #include <runtime/xllr_capi_loader.h>
 #include <cstring>
 
@@ -1093,6 +1094,158 @@ jstring cdts_jvm_serializer::extract_string()
 // Phase 6: Array Handling
 //--------------------------------------------------------------------
 
+void cdts_jvm_serializer::serialize_array_into(jarray arr, cdt& target, int dimensions, metaffi_type element_type)
+{
+	// Helper function to serialize an array directly into a cdt element
+	// Used for recursive multi-dimensional array serialization
+
+	if (!arr) {
+		target.type = metaffi_null_type;
+		target.free_required = false;
+		return;
+	}
+
+	jsize length = env->GetArrayLength(arr);
+	check_jni_exception("GetArrayLength");
+
+	if (dimensions == 1) {
+		// Base case: 1D array
+		target.set_new_array(length, 1, static_cast<metaffi_types>(element_type));
+		cdts& arr_cdts = *target.cdt_val.array_val;
+
+		// Copy elements based on type
+		switch(element_type) {
+			case metaffi_int8_type: {
+				jbyteArray byteArr = (jbyteArray)arr;
+				jbyte* elements = env->GetByteArrayElements(byteArr, nullptr);
+				for (jsize i = 0; i < length; i++) {
+					arr_cdts[i].cdt_val.int8_val = elements[i];
+					arr_cdts[i].type = metaffi_int8_type;
+				}
+				env->ReleaseByteArrayElements(byteArr, elements, JNI_ABORT);
+				break;
+			}
+			case metaffi_int16_type: {
+				jshortArray shortArr = (jshortArray)arr;
+				jshort* elements = env->GetShortArrayElements(shortArr, nullptr);
+				for (jsize i = 0; i < length; i++) {
+					arr_cdts[i].cdt_val.int16_val = elements[i];
+					arr_cdts[i].type = metaffi_int16_type;
+				}
+				env->ReleaseShortArrayElements(shortArr, elements, JNI_ABORT);
+				break;
+			}
+			case metaffi_int32_type: {
+				jintArray intArr = (jintArray)arr;
+				jint* elements = env->GetIntArrayElements(intArr, nullptr);
+				for (jsize i = 0; i < length; i++) {
+					arr_cdts[i].cdt_val.int32_val = elements[i];
+					arr_cdts[i].type = metaffi_int32_type;
+				}
+				env->ReleaseIntArrayElements(intArr, elements, JNI_ABORT);
+				break;
+			}
+			case metaffi_int64_type: {
+				jlongArray longArr = (jlongArray)arr;
+				jlong* elements = env->GetLongArrayElements(longArr, nullptr);
+				for (jsize i = 0; i < length; i++) {
+					arr_cdts[i].cdt_val.int64_val = elements[i];
+					arr_cdts[i].type = metaffi_int64_type;
+				}
+				env->ReleaseLongArrayElements(longArr, elements, JNI_ABORT);
+				break;
+			}
+			case metaffi_float32_type: {
+				jfloatArray floatArr = (jfloatArray)arr;
+				jfloat* elements = env->GetFloatArrayElements(floatArr, nullptr);
+				for (jsize i = 0; i < length; i++) {
+					arr_cdts[i].cdt_val.float32_val = elements[i];
+					arr_cdts[i].type = metaffi_float32_type;
+				}
+				env->ReleaseFloatArrayElements(floatArr, elements, JNI_ABORT);
+				break;
+			}
+			case metaffi_float64_type: {
+				jdoubleArray doubleArr = (jdoubleArray)arr;
+				jdouble* elements = env->GetDoubleArrayElements(doubleArr, nullptr);
+				for (jsize i = 0; i < length; i++) {
+					arr_cdts[i].cdt_val.float64_val = elements[i];
+					arr_cdts[i].type = metaffi_float64_type;
+				}
+				env->ReleaseDoubleArrayElements(doubleArr, elements, JNI_ABORT);
+				break;
+			}
+			case metaffi_bool_type: {
+				jbooleanArray boolArr = (jbooleanArray)arr;
+				jboolean* elements = env->GetBooleanArrayElements(boolArr, nullptr);
+				for (jsize i = 0; i < length; i++) {
+					arr_cdts[i].cdt_val.bool_val = (elements[i] == JNI_TRUE);
+					arr_cdts[i].type = metaffi_bool_type;
+				}
+				env->ReleaseBooleanArrayElements(boolArr, elements, JNI_ABORT);
+				break;
+			}
+			case metaffi_char16_type: {
+				jcharArray charArr = (jcharArray)arr;
+				jchar* elements = env->GetCharArrayElements(charArr, nullptr);
+				for (jsize i = 0; i < length; i++) {
+					char16_t utf16_char[2] = {static_cast<char16_t>(elements[i]), u'\0'};
+					arr_cdts[i].cdt_val.char16_val = metaffi_char16(utf16_char);
+					arr_cdts[i].type = metaffi_char16_type;
+				}
+				env->ReleaseCharArrayElements(charArr, elements, JNI_ABORT);
+				break;
+			}
+			case metaffi_string8_type: {
+				jobjectArray objArr = (jobjectArray)arr;
+				for (jsize i = 0; i < length; i++) {
+					jstring jstr = (jstring)env->GetObjectArrayElement(objArr, i);
+					if (jstr) {
+						arr_cdts[i].cdt_val.string8_val = jstring_to_string8(jstr);
+						arr_cdts[i].type = metaffi_string8_type;
+						arr_cdts[i].free_required = true;
+						env->DeleteLocalRef(jstr);
+					} else {
+						arr_cdts[i].type = metaffi_null_type;
+					}
+				}
+				break;
+			}
+			case metaffi_handle_type:
+			default: {
+				jobjectArray objArr = (jobjectArray)arr;
+				for (jsize i = 0; i < length; i++) {
+					jobject obj = env->GetObjectArrayElement(objArr, i);
+					if (obj) {
+						arr_cdts[i].cdt_val.handle_val = new cdt_metaffi_handle();
+						arr_cdts[i].cdt_val.handle_val->handle = env->NewGlobalRef(obj);
+						arr_cdts[i].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
+						arr_cdts[i].type = metaffi_handle_type;
+						arr_cdts[i].free_required = true;
+						env->DeleteLocalRef(obj);
+					} else {
+						arr_cdts[i].type = metaffi_null_type;
+					}
+				}
+				break;
+			}
+		}
+	} else {
+		// Recursive case: multi-dimensional array
+		target.set_new_array(length, dimensions, static_cast<metaffi_types>(element_type));
+		cdts& arr_cdts = *target.cdt_val.array_val;
+
+		jobjectArray objArr = (jobjectArray)arr;
+		for (jsize i = 0; i < length; i++) {
+			jarray subArr = (jarray)env->GetObjectArrayElement(objArr, i);
+			serialize_array_into(subArr, arr_cdts[i], dimensions - 1, element_type);
+			if (subArr) {
+				env->DeleteLocalRef(subArr);
+			}
+		}
+	}
+}
+
 void cdts_jvm_serializer::serialize_array(jarray arr, int dimensions, metaffi_type element_type)
 {
 	check_bounds(current_index);
@@ -1252,7 +1405,7 @@ void cdts_jvm_serializer::serialize_array(jarray arr, int dimensions, metaffi_ty
 								// Store as handle
 								arr_cdts[i].cdt_val.handle_val = new cdt_metaffi_handle();
 								arr_cdts[i].cdt_val.handle_val->handle = env->NewGlobalRef(obj);
-								arr_cdts[i].cdt_val.handle_val->runtime_id = 3; // JVM runtime ID
+								arr_cdts[i].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
 								arr_cdts[i].free_required = true;
 								break;
 						}
@@ -1269,7 +1422,28 @@ void cdts_jvm_serializer::serialize_array(jarray arr, int dimensions, metaffi_ty
 		current_index++;
 	} else {
 		// Multi-dimensional array - recursive
-		throw std::runtime_error("Multi-dimensional arrays not yet implemented");
+		// Treat as object array where each element is a sub-array
+		jobjectArray objArr = (jobjectArray)arr;
+
+		// Allocate CDTS array - each element will be an array type
+		metaffi_type array_element_type = static_cast<metaffi_type>(metaffi_array_type | element_type);
+		data[current_index].set_new_array(length, dimensions, static_cast<metaffi_types>(element_type));
+		cdts& arr_cdts = *data[current_index].cdt_val.array_val;
+
+		// Recursively serialize each sub-array
+		for (jsize i = 0; i < length; i++) {
+			jarray subArr = (jarray)env->GetObjectArrayElement(objArr, i);
+			if (subArr) {
+				// Recursively serialize this sub-array into arr_cdts[i]
+				serialize_array_into(subArr, arr_cdts[i], dimensions - 1, element_type);
+				env->DeleteLocalRef(subArr);
+			} else {
+				arr_cdts[i].type = metaffi_null_type;
+				arr_cdts[i].free_required = false;
+			}
+		}
+
+		current_index++;
 	}
 }
 
@@ -1439,6 +1613,123 @@ jobjectArray cdts_jvm_serializer::create_object_array(cdts& arr_cdts, metaffi_ty
 	return result;
 }
 
+jobjectArray cdts_jvm_serializer::extract_multidim_array(cdts& arr_cdts)
+{
+	// Helper function to extract multi-dimensional arrays recursively
+	metaffi_size length = arr_cdts.length;
+	if (length == 0) {
+		return nullptr;
+	}
+
+	// Determine the element class based on the first element's sub-array type
+	// For int[][], we need [I (int[]) as element class, not [Ljava/lang/Object;
+	jclass elementClass = nullptr;
+
+	// Look at first non-null element to determine type
+	for (metaffi_size i = 0; i < length && !elementClass; i++) {
+		cdt& first_elem = arr_cdts[i];
+		if (first_elem.type == metaffi_null_type) {
+			continue;
+		}
+
+		if (first_elem.type & metaffi_array_type) {
+			cdts* sub_arr = first_elem.cdt_val.array_val;
+			if (sub_arr && sub_arr->length > 0) {
+				metaffi_type sub_elem_type = (*sub_arr)[0].type;
+
+				if (sub_elem_type & metaffi_array_type) {
+					// Deeper nesting - use Object[] as element class
+					elementClass = env->FindClass("[Ljava/lang/Object;");
+				} else {
+					// Base level - use appropriate primitive/object array class
+					switch(sub_elem_type) {
+						case metaffi_int8_type: elementClass = env->FindClass("[B"); break;
+						case metaffi_int16_type: elementClass = env->FindClass("[S"); break;
+						case metaffi_int32_type: elementClass = env->FindClass("[I"); break;
+						case metaffi_int64_type: elementClass = env->FindClass("[J"); break;
+						case metaffi_float32_type: elementClass = env->FindClass("[F"); break;
+						case metaffi_float64_type: elementClass = env->FindClass("[D"); break;
+						case metaffi_bool_type: elementClass = env->FindClass("[Z"); break;
+						case metaffi_char16_type: elementClass = env->FindClass("[C"); break;
+						case metaffi_string8_type: elementClass = env->FindClass("[Ljava/lang/String;"); break;
+						default: elementClass = env->FindClass("[Ljava/lang/Object;"); break;
+					}
+				}
+			}
+		}
+	}
+
+	// Fallback to Object[] if we couldn't determine type
+	if (!elementClass) {
+		elementClass = env->FindClass("[Ljava/lang/Object;");
+	}
+	check_jni_exception("FindClass for array element");
+
+	jobjectArray result = env->NewObjectArray(static_cast<jsize>(length), elementClass, nullptr);
+	if (!result) {
+		check_jni_exception("NewObjectArray");
+		throw std::runtime_error("Failed to create multi-dimensional array");
+	}
+
+	for (metaffi_size i = 0; i < length; i++) {
+		cdt& elem = arr_cdts[i];
+
+		if (elem.type == metaffi_null_type) {
+			env->SetObjectArrayElement(result, static_cast<jsize>(i), nullptr);
+			continue;
+		}
+
+		if (elem.type & metaffi_array_type) {
+			// Sub-array - recursively extract
+			cdts* sub_arr_cdts = elem.cdt_val.array_val;
+			if (sub_arr_cdts && sub_arr_cdts->length > 0) {
+				metaffi_type sub_element_type = (*sub_arr_cdts)[0].type;
+
+				jarray sub_array;
+				if (sub_element_type & metaffi_array_type) {
+					// Even deeper nesting
+					sub_array = extract_multidim_array(*sub_arr_cdts);
+				} else {
+					// Base level - extract as 1D array
+					bool is_primitive = false;
+					switch(sub_element_type) {
+						case metaffi_int8_type:
+						case metaffi_int16_type:
+						case metaffi_int32_type:
+						case metaffi_int64_type:
+						case metaffi_float32_type:
+						case metaffi_float64_type:
+						case metaffi_bool_type:
+						case metaffi_char16_type:
+							is_primitive = true;
+							break;
+					}
+
+					if (is_primitive) {
+						sub_array = create_primitive_array(*sub_arr_cdts, sub_element_type);
+					} else {
+						sub_array = (jarray)create_object_array(*sub_arr_cdts, sub_element_type);
+					}
+				}
+
+				env->SetObjectArrayElement(result, static_cast<jsize>(i), sub_array);
+				if (sub_array) {
+					env->DeleteLocalRef(sub_array);
+				}
+			} else {
+				env->SetObjectArrayElement(result, static_cast<jsize>(i), nullptr);
+			}
+		} else {
+			// Unexpected: element is not an array in multi-dim context
+			// This shouldn't happen in well-formed data, fail fast
+			throw std::runtime_error("Expected array element in multi-dimensional array, got non-array type");
+		}
+	}
+
+	env->DeleteLocalRef(elementClass);
+	return result;
+}
+
 jarray cdts_jvm_serializer::extract_array()
 {
 	check_bounds(current_index);
@@ -1458,26 +1749,35 @@ jarray cdts_jvm_serializer::extract_array()
 	// Determine element type from first element
 	metaffi_type element_type = (*arr_cdts)[0].type;
 
-	// Check if primitive array
-	bool is_primitive = false;
-	switch(element_type) {
-		case metaffi_int8_type:
-		case metaffi_int16_type:
-		case metaffi_int32_type:
-		case metaffi_int64_type:
-		case metaffi_float32_type:
-		case metaffi_float64_type:
-		case metaffi_bool_type:
-		case metaffi_char16_type:
-			is_primitive = true;
-			break;
-	}
+	// Check if elements are themselves arrays (multi-dimensional)
+	bool is_multi_dimensional = (element_type & metaffi_array_type) != 0;
 
 	jarray result;
-	if (is_primitive) {
-		result = create_primitive_array(*arr_cdts, element_type);
+	if (is_multi_dimensional) {
+		// Multi-dimensional array - recursively extract sub-arrays
+		result = extract_multidim_array(*arr_cdts);
 	} else {
-		result = (jarray)create_object_array(*arr_cdts, element_type);
+		// 1D array
+		// Check if primitive array
+		bool is_primitive = false;
+		switch(element_type) {
+			case metaffi_int8_type:
+			case metaffi_int16_type:
+			case metaffi_int32_type:
+			case metaffi_int64_type:
+			case metaffi_float32_type:
+			case metaffi_float64_type:
+			case metaffi_bool_type:
+			case metaffi_char16_type:
+				is_primitive = true;
+				break;
+		}
+
+		if (is_primitive) {
+			result = create_primitive_array(*arr_cdts, element_type);
+		} else {
+			result = (jarray)create_object_array(*arr_cdts, element_type);
+		}
 	}
 
 	current_index++;
@@ -1607,7 +1907,7 @@ cdts_jvm_serializer& cdts_jvm_serializer::operator<<(jobject val)
 			data[current_index].type = metaffi_handle_type;
 			data[current_index].cdt_val.handle_val = new cdt_metaffi_handle();
 			data[current_index].cdt_val.handle_val->handle = env->NewGlobalRef(val);
-			data[current_index].cdt_val.handle_val->runtime_id = 3; // JVM runtime ID
+			data[current_index].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
 			data[current_index].cdt_val.handle_val->release = nullptr;
 			data[current_index].free_required = true;
 			break;

@@ -86,7 +86,7 @@ public class MetaFFITypeInfo
     {
         this.type = metaffiType;
         this.value = metaffiType.value;
-        this.alias = null;
+        this.alias = alias;
         this.dimensions = dims;
     }
 

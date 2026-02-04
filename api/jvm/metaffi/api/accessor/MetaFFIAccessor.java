@@ -35,24 +35,23 @@ public class MetaFFIAccessor
 	public static long getMetaFFIType(Object o)
 	{
 		// TODO: get numbers directly from C++, and not hard-coded
-
-		if(o instanceof Float) return 1;
-		if(o instanceof Float[]) return 1 | 65536;
-		else if(o instanceof Double) return 2;
-		else if(o instanceof Double[]) return 2 | 65536;
-		else if(o instanceof Byte) return 4;
-		else if(o instanceof Byte[]) return 4 | 65536;
-		else if(o instanceof Short) return 8;
-		else if(o instanceof Short[]) return 8 | 65536;
-		else if(o instanceof Integer) return 16;
-        else if(o instanceof Integer[]) return 16 | 65536;
-		else if(o instanceof Long) return 32;
-		else if(o instanceof Long[]) return 32 | 65536;
-		else if(o instanceof Boolean) return 1024;
-		else if(o instanceof Boolean[]) return 1024 | 65536;
-		else if(o instanceof String) return 4096;
-		else if(o instanceof String[]) return 4096 | 65536;
-		else return 32768;
+		if(o instanceof Double) return 1;
+		if(o instanceof double[] || o instanceof Double[]) return 1 | 65536;
+		if(o instanceof Float) return 2;
+		if(o instanceof float[] || o instanceof Float[]) return 2 | 65536;
+		if(o instanceof Byte) return 4;
+		if(o instanceof byte[] || o instanceof Byte[]) return 4 | 65536;
+		if(o instanceof Short) return 8;
+		if(o instanceof short[] || o instanceof Short[]) return 8 | 65536;
+		if(o instanceof Integer) return 16;
+		if(o instanceof int[] || o instanceof Integer[]) return 16 | 65536;
+		if(o instanceof Long) return 32;
+		if(o instanceof long[] || o instanceof Long[]) return 32 | 65536;
+		if(o instanceof Boolean) return 1024;
+		if(o instanceof boolean[] || o instanceof Boolean[]) return 1024 | 65536;
+		if(o instanceof String) return 4096;
+		if(o instanceof String[]) return 4096 | 65536;
+		return 32768;
 	}
 	//--------------------------------------------------------------------
 }

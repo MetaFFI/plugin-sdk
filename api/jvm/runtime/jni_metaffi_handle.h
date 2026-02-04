@@ -1,4 +1,4 @@
-#include <runtime_manager/jdk/jvm.h>
+#include <runtime_manager/jvm/jvm.h>
 #include <memory>
 
 class jni_metaffi_handle

@@ -40,3 +40,5 @@ add_custom_command(TARGET cpp_guest_module_tests POST_BUILD
 )
 
 add_test(NAME cpp_guest_module_tests COMMAND $<TARGET_FILE:cpp_guest_module_tests>)
+
+set(cpp_guest_module_tests ${cpp_guest_module_tests} PARENT_SCOPE)

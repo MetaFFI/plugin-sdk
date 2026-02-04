@@ -48,7 +48,7 @@ public class MetaFFIRuntime
 		var retvals = outRetvals.toArray(new MetaFFITypeInfo[]{});
 		long xcall_and_context = MetaFFIAccessor.load_callable("xllr.jvm", m, jniSignature, params, retvals);
 
-		return Caller.createCaller(xcall_and_context, params, retvals.length > 0 ? retvals[0] : null);
+		return Caller.createCaller(xcall_and_context, params, retvals);
 	}
 
 	private static String getJNISignature(Method method, List<MetaFFITypeInfo> outParameters, List<MetaFFITypeInfo> outRetvals) throws NoSuchMethodException
