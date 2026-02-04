@@ -799,15 +799,22 @@ DLL_PRIVATE void on_traverse_callable(const metaffi_size* index, metaffi_size in
 		                                                 "(J[J[J)Lmetaffi/api/accessor/Caller;");
 		check_and_throw_jvm_exception(env, true);
 
+		const jsize params_len = (val.parameters_types && val.params_types_length > 0) ? val.params_types_length : 0;
+		const jsize retvals_len = (val.retval_types && val.retval_types_length > 0) ? val.retval_types_length : 0;
+
 		// Convert parameters_types to Java long[]
-		jlongArray jParametersTypesArray = env->NewLongArray(val.params_types_length);
-		env->SetLongArrayRegion(jParametersTypesArray, 0, val.params_types_length,
-		                        (const jlong*) val.parameters_types);
+		jlongArray jParametersTypesArray = env->NewLongArray(params_len);
+		if(params_len > 0)
+		{
+			env->SetLongArrayRegion(jParametersTypesArray, 0, params_len, (const jlong*) val.parameters_types);
+		}
 
 		// Convert retval_types to Java long[]
-		jlongArray jRetvalsTypesArray = env->NewLongArray(val.retval_types_length);
-		env->SetLongArrayRegion(jRetvalsTypesArray, 0, val.retval_types_length,
-		                        (const jlong*) val.retval_types);
+		jlongArray jRetvalsTypesArray = env->NewLongArray(retvals_len);
+		if(retvals_len > 0)
+		{
+			env->SetLongArrayRegion(jRetvalsTypesArray, 0, retvals_len, (const jlong*) val.retval_types);
+		}
 
 
 		jobject o = env->CallStaticObjectMethod(load_callable_cls, create_caller,
@@ -1034,7 +1041,9 @@ DLL_PRIVATE metaffi_type_info on_get_type_info(const metaffi_size* index, metaff
 				case 'F':
 					return {metaffi_float32_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
 				case 'B':
-					if(root_type_info.type & metaffi_uint8_type)
+					if(root_type_info.type == metaffi_any_type)
+						return {metaffi_int8_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
+					else if(root_type_info.type & metaffi_uint8_type)
 						return {metaffi_uint8_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
 					else if(root_type_info.type & metaffi_int8_type)
 						return {metaffi_int8_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
@@ -1045,7 +1054,9 @@ DLL_PRIVATE metaffi_type_info on_get_type_info(const metaffi_size* index, metaff
 						throw std::invalid_argument(ss.str());
 					}
 				case 'S':
-					if(root_type_info.type & metaffi_uint16_type)
+					if(root_type_info.type == metaffi_any_type)
+						return {metaffi_int16_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
+					else if(root_type_info.type & metaffi_uint16_type)
 						return {metaffi_uint16_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
 					else if(root_type_info.type & metaffi_int16_type)
 						return {metaffi_int16_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
@@ -1056,7 +1067,9 @@ DLL_PRIVATE metaffi_type_info on_get_type_info(const metaffi_size* index, metaff
 						throw std::invalid_argument(ss.str());
 					}
 				case 'I':
-					if(root_type_info.type & metaffi_uint32_type)
+					if(root_type_info.type == metaffi_any_type)
+						return {metaffi_int32_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
+					else if(root_type_info.type & metaffi_uint32_type)
 						return {metaffi_uint32_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
 					else if(root_type_info.type & metaffi_int32_type)
 						return {metaffi_int32_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
@@ -1067,7 +1080,9 @@ DLL_PRIVATE metaffi_type_info on_get_type_info(const metaffi_size* index, metaff
 						throw std::invalid_argument(ss.str());
 					}
 				case 'J':
-					if(root_type_info.type & metaffi_uint64_type)
+					if(root_type_info.type == metaffi_any_type)
+						return {metaffi_int64_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
+					else if(root_type_info.type & metaffi_uint64_type)
 						return {metaffi_uint64_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
 					else if(root_type_info.type & metaffi_int64_type)
 						return {metaffi_int64_type, nullptr, false, MIXED_OR_UNKNOWN_DIMENSIONS};
@@ -2431,6 +2446,15 @@ void cdts_java_wrapper::switch_to_primitive(JNIEnv* env, int i, metaffi_type t /
 
 	if(jni_sig == 'L')
 	{
+		if((this->pcdts->at(i).type & metaffi_array_type) != 0)
+		{
+			// Array/object-array values are already represented in CDT after from_jvalue.
+			if(t == metaffi_any_type || (t & metaffi_array_type))
+			{
+				return;
+			}
+		}
+
 		if(t & metaffi_array_type)
 		{
 			return;

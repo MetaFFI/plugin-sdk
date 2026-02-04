@@ -80,35 +80,25 @@ compile_java(jvm_api_test_classes
 		"Compiling JVM API JUnit tests"
 )
 
-if(WIN32)
-	string(JOIN ";" JVM_API_TEST_CLASSPATH
-		${JVM_API_JAR_PATH}
-		${JVM_API_JUNIT_JAR}
-		${JVM_API_HAMCREST_JAR}
-		${JVM_API_TEST_OUTPUT_DIR})
-else()
-	string(JOIN ":" JVM_API_TEST_CLASSPATH
-		${JVM_API_JAR_PATH}
-		${JVM_API_JUNIT_JAR}
-		${JVM_API_HAMCREST_JAR}
-		${JVM_API_TEST_OUTPUT_DIR})
-endif()
-
-add_custom_target(jvm_api_test
-	COMMAND ${Java_JAVA_EXECUTABLE}
-		-Djava.library.path=$ENV{METAFFI_HOME}
-		-cp "${JVM_API_TEST_CLASSPATH}"
-		org.junit.runner.JUnitCore
+add_junit_test(jvm_api_test
+	TEST_CLASSES
 		TestJVMAPI
-	WORKING_DIRECTORY ${JVM_API_TEST_DIR}
-	DEPENDS jvm_api_test_classes api_jvm xllr.test
+	CLASSPATH
+		${JVM_API_JAR_PATH}
+		${JVM_API_JUNIT_JAR}
+		${JVM_API_HAMCREST_JAR}
+		${JVM_API_TEST_OUTPUT_DIR}
+	OUTPUT_DIR
+		${JVM_API_TEST_OUTPUT_DIR}
+	DEPENDS
+		jvm_api_test_classes
+		api_jvm
+		xllr.test
+	COMMENT
+		"Running JVM API JUnit tests"
 )
 
-add_test(NAME jvm_api_test
-	COMMAND ${Java_JAVA_EXECUTABLE}
-		-Djava.library.path=$ENV{METAFFI_HOME}
-		-cp "${JVM_API_TEST_CLASSPATH}"
-		org.junit.runner.JUnitCore
-		TestJVMAPI
-	WORKING_DIRECTORY ${JVM_API_TEST_DIR}
+# Keep legacy build target name for compatibility with existing scripts.
+add_custom_target(jvm_api_test
+	DEPENDS jvm_api_test_build
 )

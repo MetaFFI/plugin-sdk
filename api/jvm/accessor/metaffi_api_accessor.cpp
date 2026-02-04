@@ -151,6 +151,7 @@ metaffi_type_info* convert_MetaFFITypeInfo_array_to_metaffi_type_with_info(JNIEn
 			outputArray[i].alias = new char[len + 1];
 			std::copy_n(aliasCString, len, outputArray[i].alias);
 			outputArray[i].alias[len] = u8'\0';
+			outputArray[i].is_free_alias = true;
 			
 			env->ReleaseStringUTFChars(aliasJString, aliasCString);
 			check_and_throw_jvm_exception(env, true);
@@ -158,6 +159,7 @@ metaffi_type_info* convert_MetaFFITypeInfo_array_to_metaffi_type_with_info(JNIEn
 		else
 		{
 			outputArray[i].alias = nullptr;
+			outputArray[i].is_free_alias = false;
 		}
 
 		// Set the output array values
@@ -311,8 +313,9 @@ JNIEXPORT jlong JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_load_1function
 		const char* str_module_path = env->GetStringUTFChars(module_path, nullptr);
 		check_and_throw_jvm_exception(env, str_module_path);
 
-		jsize str_module_path_len = env->GetStringLength(module_path);
-		check_and_throw_jvm_exception(env, str_module_path_len);
+		// Empty module path is valid for runtimes like xllr.test.
+		env->GetStringLength(module_path);
+		check_and_throw_jvm_exception(env, true);
 
 		const char* str_entity_path = env->GetStringUTFChars(entity_path, nullptr);
 		check_and_throw_jvm_exception(env, str_entity_path);

@@ -8,9 +8,9 @@ public class MetaFFIAccessor
 	public static native long load_callable(String runtime_plugin, Object method, String jni_signature, MetaFFITypeInfo[] params_types, MetaFFITypeInfo[] retval_types);
 	public static native void free_function(String runtime_plugin, long function_id);
 	public static native void xcall_params_ret(long pxcallAndContext, long xcall_params);
-	public static native long xcall_no_params_ret(long pxcallAndContext, long xcall_params);
-	public static native long xcall_params_no_ret(long pxcallAndContext, long xcall_params);
-	public static native long xcall_no_params_no_ret(long pxcallAndContext);
+	public static native void xcall_no_params_ret(long pxcallAndContext, long xcall_params);
+	public static native void xcall_params_no_ret(long pxcallAndContext, long xcall_params);
+	public static native void xcall_no_params_no_ret(long pxcallAndContext);
 	public static native long java_to_cdts(long pcdt, Object[] params, long[] parameterTypes);
 	public static native Object[] cdts_to_java(long pcdt, long length);
 	public static native long alloc_cdts(byte params_count, byte retval_count);

@@ -700,7 +700,34 @@ void handler_return_adder_callback(cdts* data, char** out_err)
 	callable->val = adder_xcall;
 	callable->params_types_length = 2;
 	callable->retval_types_length = 1;
-	// Note: We don't allocate parameter_types/retval_types arrays since they're optional
+
+	void* params_types_mem = xllr_alloc_memory(sizeof(metaffi_type) * callable->params_types_length);
+	if(!params_types_mem)
+	{
+		callable->~cdt_metaffi_callable();
+		xllr_free_memory(callable_mem);
+		adder_xcall->~xcall();
+		xllr_free_memory(adder_xcall_mem);
+		set_error(out_err, "Failed to allocate memory for callable parameter types");
+		return;
+	}
+	callable->parameters_types = static_cast<metaffi_type*>(params_types_mem);
+	callable->parameters_types[0] = metaffi_int64_type;
+	callable->parameters_types[1] = metaffi_int64_type;
+
+	void* retval_types_mem = xllr_alloc_memory(sizeof(metaffi_type) * callable->retval_types_length);
+	if(!retval_types_mem)
+	{
+		xllr_free_memory(callable->parameters_types);
+		callable->~cdt_metaffi_callable();
+		xllr_free_memory(callable_mem);
+		adder_xcall->~xcall();
+		xllr_free_memory(adder_xcall_mem);
+		set_error(out_err, "Failed to allocate memory for callable return types");
+		return;
+	}
+	callable->retval_types = static_cast<metaffi_type*>(retval_types_mem);
+	callable->retval_types[0] = metaffi_int64_type;
 
 	// Set the CDT type and value directly
 	data[1].arr[0].type = metaffi_callable_type;

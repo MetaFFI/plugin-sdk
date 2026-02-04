@@ -7,8 +7,6 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.lang.reflect.Method;
-
 import static org.junit.Assert.*;
 
 public class TestJVMAPI
@@ -343,21 +341,12 @@ public class TestJVMAPI
 				null).call(handle);
 	}
 
-	public static long addCallback(long a, long b)
-	{
-		return a + b;
-	}
-
-	public static String stringCallback(String s)
-	{
-		return s == null ? null : s.toUpperCase();
-	}
-
 	@Test
-	public void testCallables() throws Exception
+	public void testCallables()
 	{
-		Method addMethod = TestJVMAPI.class.getDeclaredMethod("addCallback", long.class, long.class);
-		Caller addCallable = MetaFFIRuntime.makeMetaFFICallable(addMethod);
+		Caller addCallable = load("test::add_int64",
+				new MetaFFITypeInfo[]{type(MetaFFITypeInfo.MetaFFITypes.MetaFFIInt64), type(MetaFFITypeInfo.MetaFFITypes.MetaFFIInt64)},
+				new MetaFFITypeInfo[]{type(MetaFFITypeInfo.MetaFFITypes.MetaFFIInt64)});
 
 		Object[] callbackAddResult = callAndAssertResults("test::call_callback_add",
 				load("test::call_callback_add",
@@ -366,15 +355,16 @@ public class TestJVMAPI
 				addCallable);
 		assertEquals(7L, callbackAddResult[0]);
 
-		Method stringMethod = TestJVMAPI.class.getDeclaredMethod("stringCallback", String.class);
-		Caller stringCallable = MetaFFIRuntime.makeMetaFFICallable(stringMethod);
+		Caller stringCallable = load("test::echo_string8",
+				new MetaFFITypeInfo[]{type(MetaFFITypeInfo.MetaFFITypes.MetaFFIString8)},
+				new MetaFFITypeInfo[]{type(MetaFFITypeInfo.MetaFFITypes.MetaFFIString8)});
 
 		Object[] callbackStringResult = callAndAssertResults("test::call_callback_string",
 				load("test::call_callback_string",
 						new MetaFFITypeInfo[]{type(MetaFFITypeInfo.MetaFFITypes.MetaFFICallable)},
 						new MetaFFITypeInfo[]{type(MetaFFITypeInfo.MetaFFITypes.MetaFFIString8)}),
 				stringCallable);
-		assertEquals("TEST", callbackStringResult[0]);
+		assertEquals("test", callbackStringResult[0]);
 
 		Object[] returnedCallableResult = callAndAssertResults("test::return_adder_callback",
 				load("test::return_adder_callback", null, new MetaFFITypeInfo[]{type(MetaFFITypeInfo.MetaFFITypes.MetaFFICallable)}));
@@ -436,18 +426,24 @@ public class TestJVMAPI
 	@Test
 	public void testMultipleReturnValues()
 	{
+		Caller returnTwoValuesCaller = load("test::return_two_values",
+				null,
+				new MetaFFITypeInfo[]{type(MetaFFITypeInfo.MetaFFITypes.MetaFFIInt64), type(MetaFFITypeInfo.MetaFFITypes.MetaFFIString8)});
+		assertNotNull(returnTwoValuesCaller.retvalsTypesArray);
+		assertEquals(2, returnTwoValuesCaller.retvalsTypesArray.length);
 		Object[] twoValues = callAndAssertResults("test::return_two_values",
-				load("test::return_two_values",
-						null,
-						new MetaFFITypeInfo[]{type(MetaFFITypeInfo.MetaFFITypes.MetaFFIInt64), type(MetaFFITypeInfo.MetaFFITypes.MetaFFIString8)}));
+				returnTwoValuesCaller);
 		assertEquals(2, twoValues.length);
 		assertEquals(42L, twoValues[0]);
 		assertEquals("answer", twoValues[1]);
 
+		Caller returnThreeValuesCaller = load("test::return_three_values",
+				null,
+				new MetaFFITypeInfo[]{type(MetaFFITypeInfo.MetaFFITypes.MetaFFIInt64), type(MetaFFITypeInfo.MetaFFITypes.MetaFFIFloat64), type(MetaFFITypeInfo.MetaFFITypes.MetaFFIBool)});
+		assertNotNull(returnThreeValuesCaller.retvalsTypesArray);
+		assertEquals(3, returnThreeValuesCaller.retvalsTypesArray.length);
 		Object[] threeValues = callAndAssertResults("test::return_three_values",
-				load("test::return_three_values",
-						null,
-						new MetaFFITypeInfo[]{type(MetaFFITypeInfo.MetaFFITypes.MetaFFIInt64), type(MetaFFITypeInfo.MetaFFITypes.MetaFFIFloat64), type(MetaFFITypeInfo.MetaFFITypes.MetaFFIBool)}));
+				returnThreeValuesCaller);
 		assertEquals(3, threeValues.length);
 		assertEquals(1L, threeValues[0]);
 		assertEquals(2.5, ((Double)threeValues[1]), 0.000000001);
