@@ -44,14 +44,15 @@ endif()
 
 set(JAVA_TEST_CLASSPATH "${JAVA_CLASSES_DIR}${JAVA_CP_SEP}${JAVA_TEST_CLASSES_DIR}")
 
-add_custom_target(java_guest_module_tests
-	COMMAND ${Java_JAVA_EXECUTABLE} -cp "${JAVA_TEST_CLASSPATH}" guest.tests.TestEntities
-		DEPENDS java_guest_tests_classes java_guest_module
+add_java_main_test(java_guest_module_tests
+	TEST_CLASS guest.tests.TestEntities
+	CLASSPATH "${JAVA_TEST_CLASSPATH}"
+	OUTPUT_DIR "${JAVA_GUEST_OUT_DIR}"
+	DEPENDS java_guest_tests_classes java_guest_module
 	WORKING_DIRECTORY ${JAVA_GUEST_SRC_DIR}
+	COMMENT "Running Java guest module tests"
 )
 
-add_test(
-	NAME java_guest_module_tests
-	COMMAND ${Java_JAVA_EXECUTABLE} -cp "${JAVA_TEST_CLASSPATH}" guest.tests.TestEntities
-	WORKING_DIRECTORY ${JAVA_GUEST_SRC_DIR}
+add_custom_target(java_guest_module_tests
+	DEPENDS java_guest_module_tests_build
 )
