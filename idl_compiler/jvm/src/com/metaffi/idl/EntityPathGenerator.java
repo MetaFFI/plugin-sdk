@@ -1,18 +1,17 @@
 package com.metaffi.idl;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import com.google.gson.JsonObject;
 
 /**
- * Generates entity_path strings for JVM runtime.
- * Entity paths are comma-separated key=value pairs matching sdk/idl_entities/entity_path_specs.json.
- * 
+ * Generates entity_path JSON objects for JVM runtime.
+ * Entity paths are JSON objects matching sdk/idl_entities/entity_path_specs.json schema.
+ *
  * Format examples:
- * - Method: "class=com.example.MyClass,callable=myMethod,instance_required"
- * - Static method: "class=com.example.MyClass,callable=staticMethod"
- * - Constructor: "class=com.example.MyClass,callable=<init>"
- * - Field getter: "class=com.example.MyClass,field=myField,getter,instance_required"
- * - Field setter: "class=com.example.MyClass,field=myField,setter,instance_required"
+ * - Method: {"class": "com.example.MyClass", "callable": "myMethod", "instance_required": "true"}
+ * - Static method: {"class": "com.example.MyClass", "callable": "staticMethod"}
+ * - Constructor: {"class": "com.example.MyClass", "callable": "<init>"}
+ * - Field getter: {"class": "com.example.MyClass", "field": "myField", "getter": "true", "instance_required": "true"}
+ * - Field setter: {"class": "com.example.MyClass", "field": "myField", "setter": "true", "instance_required": "true"}
  */
 public class EntityPathGenerator {
 
@@ -22,31 +21,31 @@ public class EntityPathGenerator {
      * @param className Fully qualified class name (e.g., "com.example.MyClass")
      * @param methodName Method name
      * @param instanceRequired true for instance methods, false for static methods
-     * @return Comma-separated entity_path string
+     * @return JsonObject representing entity_path
      */
-    public static String createMethodPath(String className, String methodName, boolean instanceRequired) {
-        Map<String, String> path = new LinkedHashMap<>();
-        path.put("class", className);
-        path.put("callable", methodName);
+    public static JsonObject createMethodPath(String className, String methodName, boolean instanceRequired) {
+        JsonObject path = new JsonObject();
+        path.addProperty("class", className);
+        path.addProperty("callable", methodName);
 
         if (instanceRequired) {
-            path.put("instance_required", "");  // Flag with empty value
+            path.addProperty("instance_required", "true");
         }
 
-        return pathToString(path);
+        return path;
     }
 
     /**
      * Generate entity_path for a constructor.
      *
      * @param className Fully qualified class name
-     * @return Comma-separated entity_path string
+     * @return JsonObject representing entity_path
      */
-    public static String createConstructorPath(String className) {
-        Map<String, String> path = new LinkedHashMap<>();
-        path.put("class", className);
-        path.put("callable", "<init>");
-        return pathToString(path);
+    public static JsonObject createConstructorPath(String className) {
+        JsonObject path = new JsonObject();
+        path.addProperty("class", className);
+        path.addProperty("callable", "<init>");
+        return path;
     }
 
     /**
@@ -55,19 +54,19 @@ public class EntityPathGenerator {
      * @param className Fully qualified class name
      * @param fieldName Field name
      * @param instanceRequired true for instance fields, false for static fields
-     * @return Comma-separated entity_path string
+     * @return JsonObject representing entity_path
      */
-    public static String createFieldGetterPath(String className, String fieldName, boolean instanceRequired) {
-        Map<String, String> path = new LinkedHashMap<>();
-        path.put("class", className);
-        path.put("field", fieldName);
-        path.put("getter", "");  // Flag
+    public static JsonObject createFieldGetterPath(String className, String fieldName, boolean instanceRequired) {
+        JsonObject path = new JsonObject();
+        path.addProperty("class", className);
+        path.addProperty("field", fieldName);
+        path.addProperty("getter", "true");
 
         if (instanceRequired) {
-            path.put("instance_required", "");  // Flag
+            path.addProperty("instance_required", "true");
         }
 
-        return pathToString(path);
+        return path;
     }
 
     /**
@@ -76,55 +75,18 @@ public class EntityPathGenerator {
      * @param className Fully qualified class name
      * @param fieldName Field name
      * @param instanceRequired true for instance fields, false for static fields
-     * @return Comma-separated entity_path string
+     * @return JsonObject representing entity_path
      */
-    public static String createFieldSetterPath(String className, String fieldName, boolean instanceRequired) {
-        Map<String, String> path = new LinkedHashMap<>();
-        path.put("class", className);
-        path.put("field", fieldName);
-        path.put("setter", "");  // Flag
+    public static JsonObject createFieldSetterPath(String className, String fieldName, boolean instanceRequired) {
+        JsonObject path = new JsonObject();
+        path.addProperty("class", className);
+        path.addProperty("field", fieldName);
+        path.addProperty("setter", "true");
 
         if (instanceRequired) {
-            path.put("instance_required", "");  // Flag
+            path.addProperty("instance_required", "true");
         }
 
-        return pathToString(path);
-    }
-
-    /**
-     * Convert entity_path map to comma-separated string.
-     * Format: key1=value1,key2=value2,flag1,flag2
-     * Flags (empty values) are appended without = sign.
-     *
-     * @param path Map of key-value pairs
-     * @return Comma-separated string
-     */
-    public static String pathToString(Map<String, String> path) {
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-
-        // First, add key=value pairs
-        for (Map.Entry<String, String> entry : path.entrySet()) {
-            if (!entry.getValue().isEmpty()) {
-                if (!first) {
-                    sb.append(',');
-                }
-                sb.append(entry.getKey()).append('=').append(entry.getValue());
-                first = false;
-            }
-        }
-
-        // Then, add flags (empty values) without = sign
-        for (Map.Entry<String, String> entry : path.entrySet()) {
-            if (entry.getValue().isEmpty()) {
-                if (!first) {
-                    sb.append(',');
-                }
-                sb.append(entry.getKey());
-                first = false;
-            }
-        }
-
-        return sb.toString();
+        return path;
     }
 }

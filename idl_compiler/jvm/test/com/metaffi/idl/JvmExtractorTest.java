@@ -36,19 +36,19 @@ public class JvmExtractorTest {
 
     @Test
     public void testExternalResourcesTracking() throws IOException {
-        // Verify that all source paths are added to external_resources
+        // Verify that each module has its own source path in external_resources
         String[] paths = {"app.jar", "lib.jar"};
         JvmExtractor extractor = new JvmExtractor(paths);
-        
+
         try {
             List<ModuleInfo> modules = extractor.extractAll();
-            
-            // Each module should have all paths in external_resources
-            for (ModuleInfo module : modules) {
-                assertEquals(paths.length, module.getExternalResources().size());
-                for (String path : paths) {
-                    assertTrue(module.getExternalResources().contains(path));
-                }
+
+            // Each module should have exactly one external_resource (its own source path)
+            assertEquals(paths.length, modules.size());
+            for (int i = 0; i < modules.size(); i++) {
+                ModuleInfo module = modules.get(i);
+                assertEquals(1, module.getExternalResources().size());
+                assertTrue(module.getExternalResources().contains(paths[i]));
             }
         } catch (IOException e) {
             // Expected if test JARs don't exist

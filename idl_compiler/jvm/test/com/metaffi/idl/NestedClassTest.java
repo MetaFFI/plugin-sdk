@@ -1,5 +1,6 @@
 package com.metaffi.idl;
 
+import com.google.gson.JsonObject;
 import com.metaffi.idl.model.ClassInfo;
 import com.metaffi.idl.model.MethodInfo;
 import com.metaffi.idl.model.ModuleInfo;
@@ -81,11 +82,12 @@ public class NestedClassTest {
             // Verify entity_path generation works with $ in class name
             if (!innerClass.getMethods().isEmpty()) {
                 MethodInfo method = innerClass.getMethods().get(0);
-                String entityPath = EntityPathGenerator.createMethodPath(
+                JsonObject entityPath = EntityPathGenerator.createMethodPath(
                     className, method.getName(), !method.isStatic());
-                
-                assertTrue(entityPath.contains("$"));
-                assertTrue(entityPath.startsWith("class=" + className));
+
+                // Verify the class field in entity_path contains $
+                assertTrue(entityPath.get("class").getAsString().contains("$"));
+                assertEquals(className, entityPath.get("class").getAsString());
             }
         }
     }
@@ -146,10 +148,10 @@ public class NestedClassTest {
             
             // Verify method entity_path includes $ in class name
             for (MethodInfo method : innerClass.getMethods()) {
-                String entityPath = EntityPathGenerator.createMethodPath(
+                JsonObject entityPath = EntityPathGenerator.createMethodPath(
                     innerClass.getClassName(), method.getName(), !method.isStatic());
-                
-                assertTrue(entityPath.contains("$"));
+
+                assertTrue(entityPath.get("class").getAsString().contains("$"));
             }
         }
     }
@@ -176,10 +178,10 @@ public class NestedClassTest {
             
             // Verify field entity_path includes $ in class name
             for (com.metaffi.idl.model.FieldInfo field : innerClass.getFields()) {
-                String getterPath = EntityPathGenerator.createFieldGetterPath(
+                JsonObject getterPath = EntityPathGenerator.createFieldGetterPath(
                     innerClass.getClassName(), field.getName(), !field.isStatic());
-                
-                assertTrue(getterPath.contains("$"));
+
+                assertTrue(getterPath.get("class").getAsString().contains("$"));
             }
         }
     }

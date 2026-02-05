@@ -1,151 +1,175 @@
 package com.metaffi.idl;
 
+import com.google.gson.JsonObject;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
  * Tests for EntityPathGenerator - verifies correct entity_path generation
  * matching sdk/idl_entities/entity_path_specs.json for JVM.
+ * Entity paths are now JsonObjects per the IDL schema.
  */
 public class EntityPathGeneratorTest {
 
     @Test
     public void testMethodPathInstance() {
-        String path = EntityPathGenerator.createMethodPath(
+        JsonObject path = EntityPathGenerator.createMethodPath(
             "com.example.MyClass", "myMethod", true);
-        
-        assertEquals("class=com.example.MyClass,callable=myMethod,instance_required", path);
+
+        assertEquals("com.example.MyClass", path.get("class").getAsString());
+        assertEquals("myMethod", path.get("callable").getAsString());
+        assertEquals("true", path.get("instance_required").getAsString());
     }
 
     @Test
     public void testMethodPathStatic() {
-        String path = EntityPathGenerator.createMethodPath(
+        JsonObject path = EntityPathGenerator.createMethodPath(
             "com.example.MyClass", "staticMethod", false);
-        
-        assertEquals("class=com.example.MyClass,callable=staticMethod", path);
+
+        assertEquals("com.example.MyClass", path.get("class").getAsString());
+        assertEquals("staticMethod", path.get("callable").getAsString());
+        assertNull(path.get("instance_required"));
     }
 
     @Test
     public void testConstructorPath() {
-        String path = EntityPathGenerator.createConstructorPath("com.example.MyClass");
-        
-        assertEquals("class=com.example.MyClass,callable=<init>", path);
+        JsonObject path = EntityPathGenerator.createConstructorPath("com.example.MyClass");
+
+        assertEquals("com.example.MyClass", path.get("class").getAsString());
+        assertEquals("<init>", path.get("callable").getAsString());
     }
 
     @Test
     public void testFieldGetterPathInstance() {
-        String path = EntityPathGenerator.createFieldGetterPath(
+        JsonObject path = EntityPathGenerator.createFieldGetterPath(
             "com.example.MyClass", "myField", true);
-        
-        assertEquals("class=com.example.MyClass,field=myField,getter,instance_required", path);
+
+        assertEquals("com.example.MyClass", path.get("class").getAsString());
+        assertEquals("myField", path.get("field").getAsString());
+        assertEquals("true", path.get("getter").getAsString());
+        assertEquals("true", path.get("instance_required").getAsString());
     }
 
     @Test
     public void testFieldGetterPathStatic() {
-        String path = EntityPathGenerator.createFieldGetterPath(
+        JsonObject path = EntityPathGenerator.createFieldGetterPath(
             "com.example.MyClass", "STATIC_FIELD", false);
-        
-        assertEquals("class=com.example.MyClass,field=STATIC_FIELD,getter", path);
+
+        assertEquals("com.example.MyClass", path.get("class").getAsString());
+        assertEquals("STATIC_FIELD", path.get("field").getAsString());
+        assertEquals("true", path.get("getter").getAsString());
+        assertNull(path.get("instance_required"));
     }
 
     @Test
     public void testFieldSetterPathInstance() {
-        String path = EntityPathGenerator.createFieldSetterPath(
+        JsonObject path = EntityPathGenerator.createFieldSetterPath(
             "com.example.MyClass", "myField", true);
-        
-        assertEquals("class=com.example.MyClass,field=myField,setter,instance_required", path);
+
+        assertEquals("com.example.MyClass", path.get("class").getAsString());
+        assertEquals("myField", path.get("field").getAsString());
+        assertEquals("true", path.get("setter").getAsString());
+        assertEquals("true", path.get("instance_required").getAsString());
     }
 
     @Test
     public void testFieldSetterPathStatic() {
-        String path = EntityPathGenerator.createFieldSetterPath(
+        JsonObject path = EntityPathGenerator.createFieldSetterPath(
             "com.example.MyClass", "STATIC_FIELD", false);
-        
-        assertEquals("class=com.example.MyClass,field=STATIC_FIELD,setter", path);
+
+        assertEquals("com.example.MyClass", path.get("class").getAsString());
+        assertEquals("STATIC_FIELD", path.get("field").getAsString());
+        assertEquals("true", path.get("setter").getAsString());
+        assertNull(path.get("instance_required"));
     }
 
     @Test
     public void testInnerClassPath() {
         // Inner classes use $ in names
-        String path = EntityPathGenerator.createMethodPath(
+        JsonObject path = EntityPathGenerator.createMethodPath(
             "com.example.Outer$Inner", "method", true);
-        
-        assertEquals("class=com.example.Outer$Inner,callable=method,instance_required", path);
-    }
 
-    @Test
-    public void testFlagOrdering() {
-        // Verify flags come after key=value pairs
-        String path = EntityPathGenerator.createFieldGetterPath(
-            "com.example.MyClass", "myField", true);
-        
-        // Should be: class=...,field=...,getter,instance_required
-        // Not: class=...,getter,field=...,instance_required
-        assertTrue(path.startsWith("class=com.example.MyClass,field=myField"));
-        assertTrue(path.contains("getter"));
-        assertTrue(path.contains("instance_required"));
-        
-        // Verify getter and instance_required are flags (no = sign)
-        String[] parts = path.split(",");
-        for (String part : parts) {
-            if (part.equals("getter") || part.equals("instance_required")) {
-                assertFalse("Flag should not have = sign: " + part, part.contains("="));
-            }
-        }
+        assertEquals("com.example.Outer$Inner", path.get("class").getAsString());
+        assertEquals("method", path.get("callable").getAsString());
+        assertEquals("true", path.get("instance_required").getAsString());
     }
 
     @Test
     public void testConstructorPathFormat() {
         // Constructor should use <init>
-        String path = EntityPathGenerator.createConstructorPath("com.example.MyClass");
-        assertEquals("class=com.example.MyClass,callable=<init>", path);
+        JsonObject path = EntityPathGenerator.createConstructorPath("com.example.MyClass");
+
+        assertEquals("com.example.MyClass", path.get("class").getAsString());
+        assertEquals("<init>", path.get("callable").getAsString());
     }
 
     @Test
     public void testStaticFieldPaths() {
         // Static field getter - no instance_required
-        String getterPath = EntityPathGenerator.createFieldGetterPath(
+        JsonObject getterPath = EntityPathGenerator.createFieldGetterPath(
             "com.example.MyClass", "STATIC_FIELD", false);
-        assertFalse(getterPath.contains("instance_required"));
-        assertTrue(getterPath.contains("getter"));
-        
+        assertNull(getterPath.get("instance_required"));
+        assertEquals("true", getterPath.get("getter").getAsString());
+
         // Static field setter - no instance_required
-        String setterPath = EntityPathGenerator.createFieldSetterPath(
+        JsonObject setterPath = EntityPathGenerator.createFieldSetterPath(
             "com.example.MyClass", "STATIC_FIELD", false);
-        assertFalse(setterPath.contains("instance_required"));
-        assertTrue(setterPath.contains("setter"));
+        assertNull(setterPath.get("instance_required"));
+        assertEquals("true", setterPath.get("setter").getAsString());
     }
 
     @Test
     public void testInstanceFieldPaths() {
         // Instance field getter - has instance_required
-        String getterPath = EntityPathGenerator.createFieldGetterPath(
+        JsonObject getterPath = EntityPathGenerator.createFieldGetterPath(
             "com.example.MyClass", "instanceField", true);
-        assertTrue(getterPath.contains("instance_required"));
-        assertTrue(getterPath.contains("getter"));
-        
+        assertEquals("true", getterPath.get("instance_required").getAsString());
+        assertEquals("true", getterPath.get("getter").getAsString());
+
         // Instance field setter - has instance_required
-        String setterPath = EntityPathGenerator.createFieldSetterPath(
+        JsonObject setterPath = EntityPathGenerator.createFieldSetterPath(
             "com.example.MyClass", "instanceField", true);
-        assertTrue(setterPath.contains("instance_required"));
-        assertTrue(setterPath.contains("setter"));
+        assertEquals("true", setterPath.get("instance_required").getAsString());
+        assertEquals("true", setterPath.get("setter").getAsString());
     }
 
     @Test
     public void testMethodPathWithoutInstanceRequired() {
         // Static method - no instance_required flag
-        String path = EntityPathGenerator.createMethodPath(
+        JsonObject path = EntityPathGenerator.createMethodPath(
             "com.example.MyClass", "staticMethod", false);
-        assertFalse(path.contains("instance_required"));
-        assertEquals("class=com.example.MyClass,callable=staticMethod", path);
+        assertNull(path.get("instance_required"));
+        assertEquals("com.example.MyClass", path.get("class").getAsString());
+        assertEquals("staticMethod", path.get("callable").getAsString());
     }
 
     @Test
     public void testMethodPathWithInstanceRequired() {
         // Instance method - has instance_required flag
-        String path = EntityPathGenerator.createMethodPath(
+        JsonObject path = EntityPathGenerator.createMethodPath(
             "com.example.MyClass", "instanceMethod", true);
-        assertTrue(path.contains("instance_required"));
-        assertTrue(path.startsWith("class=com.example.MyClass,callable=instanceMethod"));
+        assertEquals("true", path.get("instance_required").getAsString());
+        assertEquals("com.example.MyClass", path.get("class").getAsString());
+        assertEquals("instanceMethod", path.get("callable").getAsString());
+    }
+
+    @Test
+    public void testEntityPathIsJsonObject() {
+        // Verify that all methods return JsonObject instances
+        JsonObject methodPath = EntityPathGenerator.createMethodPath("Test", "method", true);
+        JsonObject ctorPath = EntityPathGenerator.createConstructorPath("Test");
+        JsonObject getterPath = EntityPathGenerator.createFieldGetterPath("Test", "field", true);
+        JsonObject setterPath = EntityPathGenerator.createFieldSetterPath("Test", "field", true);
+
+        assertNotNull(methodPath);
+        assertNotNull(ctorPath);
+        assertNotNull(getterPath);
+        assertNotNull(setterPath);
+
+        // All should have "class" property
+        assertTrue(methodPath.has("class"));
+        assertTrue(ctorPath.has("class"));
+        assertTrue(getterPath.has("class"));
+        assertTrue(setterPath.has("class"));
     }
 }

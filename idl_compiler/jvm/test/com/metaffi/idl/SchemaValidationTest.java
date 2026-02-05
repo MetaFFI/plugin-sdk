@@ -206,15 +206,20 @@ public class SchemaValidationTest {
         JsonArray methodsArray = classObj.getAsJsonArray("methods");
         JsonObject methodObj = methodsArray.get(0).getAsJsonObject();
         
-        // Verify entity_path is a string (comma-separated)
+        // Verify entity_path is a JsonObject (per schema definition)
         assertTrue(methodObj.has("entity_path"));
-        assertTrue(methodObj.get("entity_path").isJsonPrimitive());
-        String entityPath = methodObj.get("entity_path").getAsString();
-        
-        // Verify entity_path format: class=...,callable=...,instance_required
-        assertTrue(entityPath.contains("class="));
-        assertTrue(entityPath.contains("callable="));
-        assertTrue(entityPath.contains("instance_required"));
+        assertTrue(methodObj.get("entity_path").isJsonObject());
+        JsonObject entityPath = methodObj.get("entity_path").getAsJsonObject();
+
+        // Verify entity_path contains required keys for JVM
+        assertTrue(entityPath.has("class"));
+        assertTrue(entityPath.has("callable"));
+        assertTrue(entityPath.has("instance_required"));
+
+        // Verify values
+        assertEquals("com.example.Test", entityPath.get("class").getAsString());
+        assertEquals("testMethod", entityPath.get("callable").getAsString());
+        assertEquals("true", entityPath.get("instance_required").getAsString());
     }
 
     @Test

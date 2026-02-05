@@ -60,13 +60,12 @@ public class JvmExtractor {
             }
 
             ModuleInfo module = extractor.extract();
-            modules.add(module);
-        }
 
-        // Add all source paths to external_resources of each module
-        // This allows runtime to load all dependencies
-        for (ModuleInfo module : modules) {
-            module.getExternalResources().addAll(sourcePaths);
+            // Add this module's source path to its external_resources
+            // This allows runtime to load the module's dependencies
+            module.getExternalResources().add(path);
+
+            modules.add(module);
         }
 
         return modules;

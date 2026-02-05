@@ -12,7 +12,9 @@ import com.metaffi.idl.model.MethodInfo;
 import com.metaffi.idl.model.ModuleInfo;
 import com.metaffi.idl.model.ParameterInfo;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Generates MetaFFI IDL JSON from extracted module information.
@@ -40,7 +42,7 @@ public class IdlGenerator {
 
         // Determine idl_source from first module or use default
         String idlSource = modules.isEmpty() ? "jvm" : modules.get(0).getModuleName();
-        
+
         // Top-level metadata
         root.addProperty("idl_source", idlSource);
         root.addProperty("idl_extension", ".jar");  // Default for JARs
@@ -102,13 +104,21 @@ public class IdlGenerator {
         classObj.addProperty("comment", classInfo.getComment() != null ? classInfo.getComment() : "");
         classObj.add("tags", new JsonObject());
 
-        // Class-level entity_path (empty for Java - routing happens at method/field level)
-        classObj.addProperty("entity_path", "");
+        // Class-level entity_path (empty object for Java - routing happens at method/field level)
+        classObj.add("entity_path", new JsonObject());
+
+        // Track overload indices for constructors
+        Map<String, Integer> constructorOverloadCount = new HashMap<>();
 
         // Generate constructors
         JsonArray constructorsArray = new JsonArray();
         for (MethodInfo constructor : classInfo.getConstructors()) {
-            JsonObject ctorObj = generateConstructor(constructor, classInfo);
+            // Generate signature key for overload detection
+            String signatureKey = generateSignatureKey(constructor);
+            int overloadIndex = constructorOverloadCount.getOrDefault(signatureKey, 0);
+            constructorOverloadCount.put(signatureKey, overloadIndex + 1);
+
+            JsonObject ctorObj = generateConstructor(constructor, classInfo, overloadIndex);
             constructorsArray.add(ctorObj);
         }
         classObj.add("constructors", constructorsArray);
@@ -116,10 +126,18 @@ public class IdlGenerator {
         // Generate release method (destructor wrapper) - Java uses GC, so null
         classObj.add("release", JsonNull.INSTANCE);
 
+        // Track overload indices for methods
+        Map<String, Integer> methodOverloadCount = new HashMap<>();
+
         // Generate methods
         JsonArray methodsArray = new JsonArray();
         for (MethodInfo method : classInfo.getMethods()) {
-            JsonObject methodObj = generateMethod(method, classInfo);
+            // Use method name as key for overload detection
+            String methodName = method.getName();
+            int overloadIndex = methodOverloadCount.getOrDefault(methodName, 0);
+            methodOverloadCount.put(methodName, overloadIndex + 1);
+
+            JsonObject methodObj = generateMethod(method, classInfo, overloadIndex);
             methodsArray.add(methodObj);
         }
         classObj.add("methods", methodsArray);
@@ -136,17 +154,28 @@ public class IdlGenerator {
     }
 
     /**
+     * Generate a signature key for overload detection.
+     * For constructors, we use parameter count since all have same name.
+     */
+    private String generateSignatureKey(MethodInfo method) {
+        // Use "<init>" for constructors + parameter count
+        return "<init>_" + method.getParameters().size();
+    }
+
+    /**
      * Generate constructor definition.
      */
-    private JsonObject generateConstructor(MethodInfo constructor, ClassInfo classInfo) {
+    private JsonObject generateConstructor(MethodInfo constructor, ClassInfo classInfo, int overloadIndex) {
         JsonObject ctorObj = new JsonObject();
 
+        // Add name field (required by schema)
+        ctorObj.addProperty("name", classInfo.getSimpleName());
         ctorObj.addProperty("comment", constructor.getComment() != null ? constructor.getComment() : "");
         ctorObj.add("tags", new JsonObject());
 
-        // Entity path
-        String entityPath = EntityPathGenerator.createConstructorPath(classInfo.getClassName());
-        ctorObj.addProperty("entity_path", entityPath);
+        // Entity path (now a JsonObject)
+        JsonObject entityPath = EntityPathGenerator.createConstructorPath(classInfo.getClassName());
+        ctorObj.add("entity_path", entityPath);
 
         // Parameters
         JsonArray paramsArray = new JsonArray();
@@ -168,7 +197,7 @@ public class IdlGenerator {
         returnsArray.add(returnObj);
         ctorObj.add("return_values", returnsArray);
 
-        ctorObj.addProperty("overload_index", 0);  // TODO: Handle overloading
+        ctorObj.addProperty("overload_index", overloadIndex);
 
         return ctorObj;
     }
@@ -176,17 +205,17 @@ public class IdlGenerator {
     /**
      * Generate method definition.
      */
-    private JsonObject generateMethod(MethodInfo method, ClassInfo classInfo) {
+    private JsonObject generateMethod(MethodInfo method, ClassInfo classInfo, int overloadIndex) {
         JsonObject methodObj = new JsonObject();
 
         methodObj.addProperty("name", method.getName());
         methodObj.addProperty("comment", method.getComment() != null ? method.getComment() : "");
         methodObj.add("tags", new JsonObject());
 
-        // Entity path
-        String entityPath = EntityPathGenerator.createMethodPath(
+        // Entity path (now a JsonObject)
+        JsonObject entityPath = EntityPathGenerator.createMethodPath(
             classInfo.getClassName(), method.getName(), !method.isStatic());
-        methodObj.addProperty("entity_path", entityPath);
+        methodObj.add("entity_path", entityPath);
 
         // Parameters
         JsonArray paramsArray = new JsonArray();
@@ -210,7 +239,10 @@ public class IdlGenerator {
         }
         methodObj.add("return_values", returnsArray);
 
-        methodObj.addProperty("overload_index", 0);  // TODO: Handle overloading
+        methodObj.addProperty("overload_index", overloadIndex);
+
+        // Add instance_required field (required by method_definition schema)
+        methodObj.addProperty("instance_required", !method.isStatic());
 
         return methodObj;
     }
@@ -250,10 +282,10 @@ public class IdlGenerator {
         getterObj.addProperty("comment", "");
         getterObj.add("tags", new JsonObject());
 
-        // Entity path
-        String entityPath = EntityPathGenerator.createFieldGetterPath(
+        // Entity path (now a JsonObject)
+        JsonObject entityPath = EntityPathGenerator.createFieldGetterPath(
             classInfo.getClassName(), field.getName(), !field.isStatic());
-        getterObj.addProperty("entity_path", entityPath);
+        getterObj.add("entity_path", entityPath);
 
         // Parameters (empty for getters)
         getterObj.add("parameters", new JsonArray());
@@ -286,10 +318,10 @@ public class IdlGenerator {
         setterObj.addProperty("comment", "");
         setterObj.add("tags", new JsonObject());
 
-        // Entity path
-        String entityPath = EntityPathGenerator.createFieldSetterPath(
+        // Entity path (now a JsonObject)
+        JsonObject entityPath = EntityPathGenerator.createFieldSetterPath(
             classInfo.getClassName(), field.getName(), !field.isStatic());
-        setterObj.addProperty("entity_path", entityPath);
+        setterObj.add("entity_path", entityPath);
 
         // Parameters (value parameter)
         JsonArray paramsArray = new JsonArray();
