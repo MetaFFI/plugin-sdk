@@ -12,16 +12,19 @@
 #include <cstdlib>
 #include <utils/env_utils.h>
 #ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 #endif
 
 namespace
 {
-	#ifdef _WIN32
+#ifdef _WIN32
 	constexpr char classpath_separator = ';';
-	#else
+#else
 	constexpr char classpath_separator = ':';
-	#endif
+#endif
 
 	std::string read_release_value(const std::filesystem::path& java_home, const std::string& key)
 	{
@@ -71,10 +74,15 @@ namespace
 		std::string metaffi_home = get_env_var("METAFFI_HOME");
 		if(!metaffi_home.empty())
 		{
-			std::filesystem::path bridge = std::filesystem::path(metaffi_home) / "jvm" / "xllr.jvm.bridge.jar";
-			if(std::filesystem::exists(bridge))
+			std::filesystem::path api_jar = std::filesystem::path(metaffi_home) / "jvm" / "metaffi.api.jar";
+			if(!std::filesystem::exists(api_jar))
 			{
-				ss << classpath_separator << bridge.generic_string();
+				api_jar = std::filesystem::path(metaffi_home) / "sdk" / "api" / "jvm" / "metaffi.api.jar";
+			}
+
+			if(std::filesystem::exists(api_jar))
+			{
+				ss << classpath_separator << api_jar.generic_string();
 			}
 		}
 
@@ -85,6 +93,61 @@ namespace
 		}
 
 		return ss.str();
+	}
+
+	std::vector<int> parse_version_components(const std::string& version)
+	{
+		std::vector<int> parts;
+		int current = -1;
+		for(char ch : version)
+		{
+			if(std::isdigit(static_cast<unsigned char>(ch)))
+			{
+				int digit = ch - '0';
+				if(current < 0)
+				{
+					current = digit;
+				}
+				else
+				{
+					current = current * 10 + digit;
+				}
+			}
+			else if(current >= 0)
+			{
+				parts.push_back(current);
+				current = -1;
+			}
+		}
+		if(current >= 0)
+		{
+			parts.push_back(current);
+		}
+
+		return parts;
+	}
+
+	int compare_versions(const std::string& left, const std::string& right)
+	{
+		auto left_parts = parse_version_components(left);
+		auto right_parts = parse_version_components(right);
+		size_t max_parts = std::max(left_parts.size(), right_parts.size());
+		left_parts.resize(max_parts, 0);
+		right_parts.resize(max_parts, 0);
+
+		for(size_t i = 0; i < max_parts; ++i)
+		{
+			if(left_parts[i] < right_parts[i])
+			{
+				return -1;
+			}
+			if(left_parts[i] > right_parts[i])
+			{
+				return 1;
+			}
+		}
+
+		return 0;
 	}
 
 	std::string find_libjvm_in_home(const std::filesystem::path& java_home)
@@ -327,6 +390,11 @@ jvm_runtime_manager::jvm_runtime_manager(const jvm_installed_info& info)
 {
 }
 
+jvm_runtime_manager::jvm_runtime_manager(const jvm_installed_info& info, const std::string& classpath_option)
+	: m_info(info), m_classpath_option(classpath_option)
+{
+}
+
 jvm_runtime_manager::~jvm_runtime_manager()
 {
 	if(m_isRuntimeLoaded)
@@ -382,6 +450,31 @@ std::vector<jvm_installed_info> jvm_runtime_manager::detect_installed_jvms()
 	return result;
 }
 
+jvm_installed_info jvm_runtime_manager::select_highest_installed_jvm()
+{
+	auto jvms = detect_installed_jvms();
+	if(jvms.empty())
+	{
+		throw std::runtime_error("No installed JVMs detected");
+	}
+
+	auto best_it = jvms.begin();
+	for(auto it = jvms.begin() + 1; it != jvms.end(); ++it)
+	{
+		if(compare_versions(it->version, best_it->version) > 0)
+		{
+			best_it = it;
+		}
+	}
+
+	return *best_it;
+}
+
+std::shared_ptr<jvm_runtime_manager> jvm_runtime_manager::create(const jvm_installed_info& info, const std::string& classpath_option)
+{
+	return std::make_shared<jvm_runtime_manager>(info, classpath_option);
+}
+
 void jvm_runtime_manager::load_runtime()
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
@@ -424,6 +517,17 @@ std::shared_ptr<Module> jvm_runtime_manager::load_module(const std::string& modu
 	return std::make_shared<Module>(this, module_path);
 }
 
+std::shared_ptr<Module> jvm_runtime_manager::load_module(const std::string& module_path, const std::string& classpath)
+{
+	if(!m_isRuntimeLoaded)
+	{
+		load_runtime();
+	}
+
+	std::lock_guard<std::mutex> lock(m_mutex);
+	return std::make_shared<Module>(this, module_path, classpath);
+}
+
 bool jvm_runtime_manager::is_runtime_loaded() const
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
@@ -457,7 +561,7 @@ void jvm_runtime_manager::ensure_jvm_loaded()
 		return;
 	}
 
-	std::string classpath_option = build_classpath_option();
+	std::string classpath_option = m_classpath_option.empty() ? build_classpath_option() : m_classpath_option;
 	m_jvm = std::make_shared<jvm>(m_info, classpath_option);
 }
 

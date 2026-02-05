@@ -20,6 +20,7 @@ class Module
 {
 public:
 	Module(jvm_runtime_manager* runtime_manager, const std::string& module_path);
+	Module(jvm_runtime_manager* runtime_manager, const std::string& module_path, const std::string& classpath);
 	~Module();
 
 	Module(const Module& other);
@@ -28,6 +29,7 @@ public:
 	Module& operator=(Module&& other) noexcept;
 
 	const std::string& get_module_path() const;
+	jclass load_class(const std::string& class_name);
 
 	std::shared_ptr<Entity> load_entity(
 		const std::string& entity_path,
@@ -40,6 +42,7 @@ public:
 private:
 	jvm_runtime_manager* m_runtimeManager = nullptr;
 	std::string m_modulePath;
+	std::string m_classpath;
 	jobject m_classLoader = nullptr;
 	mutable std::mutex m_mutex;
 

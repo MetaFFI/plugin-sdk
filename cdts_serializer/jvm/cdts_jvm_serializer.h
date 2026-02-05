@@ -173,6 +173,12 @@ private:
 	metaffi_string16 jstring_to_string16(jstring str);
 
 	/**
+	 * @brief Convert jstring to metaffi_string32 (UTF-32)
+	 * Allocates memory with xllr_alloc_string32
+	 */
+	metaffi_string32 jstring_to_string32(jstring str);
+
+	/**
 	 * @brief Convert metaffi_string8 to jstring
 	 */
 	jstring string8_to_jstring(metaffi_string8 str);
@@ -315,6 +321,26 @@ public:
 	 *   ser.add((jchar)'中', metaffi_char16_type);  // OK
 	 */
 	cdts_jvm_serializer& add(jchar val, metaffi_type target_type);
+
+	/**
+	 * @brief Add a jstring to CDTS with explicit target type (string8/16/32)
+	 */
+	cdts_jvm_serializer& add(jstring val, metaffi_type target_type);
+
+	/**
+	 * @brief Add a handle object to CDTS (stores global reference)
+	 */
+	cdts_jvm_serializer& add_handle(jobject val);
+
+	/**
+	 * @brief Add a callable (Caller) object to CDTS
+	 */
+	cdts_jvm_serializer& add_callable(jobject val);
+
+	/**
+	 * @brief Add an array to CDTS with explicit element type and dimensions
+	 */
+	cdts_jvm_serializer& add_array(jarray arr, int dimensions, metaffi_type element_type);
 
 	// Wrapper objects and other objects - auto-detect type
 

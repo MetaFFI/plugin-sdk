@@ -460,6 +460,12 @@ Module::Module(jvm_runtime_manager* runtime_manager, const std::string& module_p
 	ensure_class_loader();
 }
 
+Module::Module(jvm_runtime_manager* runtime_manager, const std::string& module_path, const std::string& classpath)
+	: m_runtimeManager(runtime_manager), m_modulePath(module_path), m_classpath(classpath)
+{
+	ensure_class_loader();
+}
+
 Module::~Module()
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
@@ -474,7 +480,7 @@ Module::~Module()
 }
 
 Module::Module(const Module& other)
-	: m_runtimeManager(other.m_runtimeManager), m_modulePath(other.m_modulePath)
+	: m_runtimeManager(other.m_runtimeManager), m_modulePath(other.m_modulePath), m_classpath(other.m_classpath)
 {
 	std::lock_guard<std::mutex> lock(other.m_mutex);
 	m_classLoader = other.m_classLoader;
@@ -488,7 +494,10 @@ Module::Module(const Module& other)
 }
 
 Module::Module(Module&& other) noexcept
-	: m_runtimeManager(other.m_runtimeManager), m_modulePath(std::move(other.m_modulePath)), m_classLoader(other.m_classLoader)
+	: m_runtimeManager(other.m_runtimeManager),
+	  m_modulePath(std::move(other.m_modulePath)),
+	  m_classpath(std::move(other.m_classpath)),
+	  m_classLoader(other.m_classLoader)
 {
 	other.m_classLoader = nullptr;
 }
@@ -503,6 +512,7 @@ Module& Module::operator=(const Module& other)
 
 		m_runtimeManager = other.m_runtimeManager;
 		m_modulePath = other.m_modulePath;
+		m_classpath = other.m_classpath;
 		m_classLoader = other.m_classLoader;
 		if(m_classLoader && m_runtimeManager)
 		{
@@ -522,6 +532,7 @@ Module& Module::operator=(Module&& other) noexcept
 		std::lock_guard<std::mutex> lock(m_mutex);
 		m_runtimeManager = other.m_runtimeManager;
 		m_modulePath = std::move(other.m_modulePath);
+		m_classpath = std::move(other.m_classpath);
 		m_classLoader = other.m_classLoader;
 		other.m_classLoader = nullptr;
 	}
@@ -531,6 +542,46 @@ Module& Module::operator=(Module&& other) noexcept
 const std::string& Module::get_module_path() const
 {
 	return m_modulePath;
+}
+
+jclass Module::load_class(const std::string& class_name)
+{
+	ensure_class_loader();
+
+	if(!m_runtimeManager)
+	{
+		throw std::runtime_error("Runtime manager is null");
+	}
+
+	JNIEnv* env = nullptr;
+	auto release_env = m_runtimeManager->get_env(&env);
+
+	jclass local_class = nullptr;
+	try
+	{
+		local_class = load_class(env, class_name);
+	}
+	catch(...)
+	{
+		release_env();
+		throw;
+	}
+
+	if(!local_class)
+	{
+		release_env();
+		throw std::runtime_error("Failed to load Java class");
+	}
+
+	jclass global_class = (jclass)env->NewGlobalRef(local_class);
+	env->DeleteLocalRef(local_class);
+	release_env();
+	if(!global_class)
+	{
+		throw std::runtime_error("Failed to create global reference for Java class");
+	}
+
+	return global_class;
 }
 
 std::shared_ptr<Entity> Module::load_entity(
@@ -840,13 +891,23 @@ void Module::ensure_class_loader()
 	}
 
 	std::vector<std::string> entries = split_classpath(m_modulePath);
+	if(!m_classpath.empty())
+	{
+		auto extra_entries = split_classpath(m_classpath);
+		entries.insert(entries.end(), extra_entries.begin(), extra_entries.end());
+	}
 	std::string metaffi_home = get_env_var("METAFFI_HOME");
 	if(!metaffi_home.empty())
 	{
-		std::filesystem::path bridge = std::filesystem::path(metaffi_home) / "jvm" / "xllr.jvm.bridge.jar";
-		if(std::filesystem::exists(bridge))
+		std::filesystem::path api_jar = std::filesystem::path(metaffi_home) / "jvm" / "metaffi.api.jar";
+		if(!std::filesystem::exists(api_jar))
 		{
-			entries.push_back(bridge.string());
+			api_jar = std::filesystem::path(metaffi_home) / "sdk" / "api" / "jvm" / "metaffi.api.jar";
+		}
+
+		if(std::filesystem::exists(api_jar))
+		{
+			entries.push_back(api_jar.string());
 		}
 	}
 

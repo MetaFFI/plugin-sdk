@@ -2,6 +2,7 @@
 #include <utils/scope_guard.hpp>
 #include "exception_macro.h"
 #include <cstring>
+#include <runtime/xllr_capi_loader.h>
 
 jclass callercls = nullptr;
 
@@ -47,8 +48,20 @@ void fill_callable_cdt(JNIEnv* env, jobject caller_obj, metaffi_callable& out_xc
         env->ReleaseLongArrayElements(parametersTypesArray, parametersArrayElements, 0);
     });
 
-    out_parameters_types_array = (metaffi_type*)new jlong[out_parameters_types_array_length];
-    std::memcpy(out_parameters_types_array, parametersArrayElements, out_parameters_types_array_length * sizeof(jlong));
+    if(out_parameters_types_array_length > 0)
+    {
+        void* mem = xllr_alloc_memory(sizeof(metaffi_type) * out_parameters_types_array_length);
+        if(!mem)
+        {
+            throw std::runtime_error("Failed to allocate parameters_types array");
+        }
+        out_parameters_types_array = static_cast<metaffi_type*>(mem);
+        std::memcpy(out_parameters_types_array, parametersArrayElements, out_parameters_types_array_length * sizeof(metaffi_type));
+    }
+    else
+    {
+        out_parameters_types_array = nullptr;
+    }
 
 
     jlongArray retvalsTypesArray = (jlongArray)env->GetObjectField(caller_obj, retvalsTypesArrayField);
@@ -62,8 +75,20 @@ void fill_callable_cdt(JNIEnv* env, jobject caller_obj, metaffi_callable& out_xc
         env->ReleaseLongArrayElements(retvalsTypesArray, retvalsArrayElements, 0);
     });
 
-    out_retval_types_array = (metaffi_type*)new jlong[out_retval_types_array_length];
-    std::memcpy(out_retval_types_array, retvalsArrayElements, out_retval_types_array_length * sizeof(jlong));
+    if(out_retval_types_array_length > 0)
+    {
+        void* mem = xllr_alloc_memory(sizeof(metaffi_type) * out_retval_types_array_length);
+        if(!mem)
+        {
+            throw std::runtime_error("Failed to allocate retval_types array");
+        }
+        out_retval_types_array = static_cast<metaffi_type*>(mem);
+        std::memcpy(out_retval_types_array, retvalsArrayElements, out_retval_types_array_length * sizeof(metaffi_type));
+    }
+    else
+    {
+        out_retval_types_array = nullptr;
+    }
 }
 //--------------------------------------------------------------------
 jobject new_caller(JNIEnv* env, metaffi_callable xcall_and_context, const metaffi_type* parameters_types_array, int8_t parameters_types_array_length, const metaffi_type* retvals_types_array, int8_t retvals_types_array_length)

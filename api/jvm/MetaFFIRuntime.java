@@ -70,7 +70,10 @@ public class MetaFFIRuntime
 		signature.append(")");
 
 		String jniSig = getJNISignature(returnType);
-		outRetvals.add(new MetaFFITypeInfo(jniSig));
+		if(!"V".equals(jniSig))
+		{
+			outRetvals.add(new MetaFFITypeInfo(jniSig));
+		}
 		signature.append(jniSig);
 
 		return signature.toString();
@@ -89,6 +92,7 @@ public class MetaFFIRuntime
 
 		switch (typeName)
 		{
+			case "void": signature.append("V"); break;
 			case "boolean": signature.append("Z"); break;
 			case "byte": signature.append("B"); break;
 			case "char": signature.append("C"); break;

@@ -9,6 +9,9 @@ collect_c_cpp_files(${CMAKE_CURRENT_LIST_DIR} jvm_runtime_manager)
 collect_c_cpp_files("${metaffi_sdk_root}/utils" sdk_utils)
 list(APPEND sdk_utils_src "${metaffi_sdk_root}/utils/env_utils.cpp")
 
+# Runtime sources required by cdts_java_wrapper (cdts, traversal, allocators, primitives)
+collect_c_cpp_files("${metaffi_sdk_root}/runtime" sdk_runtime)
+
 build_jar(jvm_runtime_manager_test_jar
 	SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/tests/java/com/metaffi/jvm/*.java"
 	OUTPUT_DIR "sdk/runtime_manager/jvm/tests"
@@ -21,8 +24,8 @@ string(REPLACE "\\" "/" JDK_TEST_JAR_PATH "${JDK_TEST_JAR_PATH}")
 set(jvm_runtime_manager_test_libs "doctest::doctest;Boost::filesystem;Boost::system")
 
 c_cpp_exe(jvm_runtime_manager_test
-	"${jvm_runtime_manager_src};${sdk_utils_src};runtime_manager_test.cpp"
-	"${jvm_runtime_manager_include_dir};${sdk_utils_include_dir};${CMAKE_SOURCE_DIR}/sdk;${doctest_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${JNI_INCLUDE_DIRS}"
+	"${jvm_runtime_manager_src};${sdk_utils_src};${sdk_runtime_src};runtime_manager_test.cpp"
+	"${jvm_runtime_manager_include_dir};${sdk_utils_include_dir};${CMAKE_SOURCE_DIR}/sdk;${metaffi_sdk_root}/runtime;${doctest_INCLUDE_DIRS};${Boost_INCLUDE_DIRS};${JNI_INCLUDE_DIRS}"
 	"${jvm_runtime_manager_test_libs}"
 	"$ENV{METAFFI_HOME}/sdk/runtime_manager/jvm")
 

@@ -554,8 +554,18 @@ jvm::jvm()
 		throw std::runtime_error("METAFFI_HOME environment variable is not set");
 	}
 
+	std::filesystem::path api_jar = std::filesystem::path(metaffi_home) / "jvm" / "metaffi.api.jar";
+	if(!std::filesystem::exists(api_jar))
+	{
+		api_jar = std::filesystem::path(metaffi_home) / "sdk" / "api" / "jvm" / "metaffi.api.jar";
+	}
+
 	std::stringstream ss;
-	ss << "-Djava.class.path=." << SEPARATOR << ".." << SEPARATOR << metaffi_home << "/sdk/api/jvm/metaffi.api.jar";
+	ss << "-Djava.class.path=." << SEPARATOR << "..";
+	if(std::filesystem::exists(api_jar))
+	{
+		ss << SEPARATOR << api_jar.generic_string();
+	}
 	std::string classpath = get_env_var("CLASSPATH");
 	if(!classpath.empty())
 	{

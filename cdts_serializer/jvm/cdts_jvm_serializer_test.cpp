@@ -1,8 +1,11 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 #include "cdts_jvm_serializer.h"
+#include "runtime_id.h"
 #include <runtime/xllr_capi_loader.h>
+#include <utils/env_utils.h>
 #include <jni.h>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -19,9 +22,27 @@ struct JVMFixture
 	{
 		if (g_jvm == nullptr)
 		{
+			std::string metaffi_home = get_env_var("METAFFI_HOME");
+			if(metaffi_home.empty())
+			{
+				throw std::runtime_error("METAFFI_HOME environment variable is not set");
+			}
+
+			std::filesystem::path api_jar = std::filesystem::path(metaffi_home) / "jvm" / "api" / "metaffi.api.jar";
+			if(!std::filesystem::exists(api_jar))
+			{
+				throw std::runtime_error("Missing metaffi.api.jar at " + api_jar.string());
+			}
+
+			char sep = ';';
+#ifndef _WIN32
+			sep = ':';
+#endif
+			std::string classpath = std::string("-Djava.class.path=.") + sep + api_jar.generic_string();
+
 			JavaVMInitArgs vm_args;
 			JavaVMOption options[1];
-			options[0].optionString = (char*)"-Djava.class.path=.";
+			options[0].optionString = const_cast<char*>(classpath.c_str());
 
 			vm_args.version = JNI_VERSION_1_8;
 			vm_args.nOptions = 1;
@@ -790,7 +811,7 @@ TEST_SUITE("CDTS JVM Serializer")
 		data[0].type = metaffi_handle_type;
 		data[0].cdt_val.handle_val = new cdt_metaffi_handle();
 		data[0].cdt_val.handle_val->handle = g_env->NewGlobalRef(original);
-		data[0].cdt_val.handle_val->runtime_id = 3; // JVM runtime ID
+		data[0].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
 		data[0].free_required = true;
 
 		ser.reset();
@@ -1321,7 +1342,7 @@ TEST_SUITE("CDTS JVM Serializer")
 		jmethodID constructor = g_env->GetMethodID(integerClass, "<init>", "(I)V");
 		jobject obj = g_env->NewObject(integerClass, constructor, (jint)99);
 		data[0].cdt_val.handle_val->handle = g_env->NewGlobalRef(obj);
-		data[0].cdt_val.handle_val->runtime_id = 123;
+		data[0].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
 		data[0].free_required = true;
 
 		// Deserialize

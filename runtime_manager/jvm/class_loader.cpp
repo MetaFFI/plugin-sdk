@@ -28,8 +28,10 @@ std::unordered_map<std::string,jclass> jni_class_loader::loaded_classes;
 
 #ifdef _WIN32
 std::string file_protocol("file:///");
+constexpr char classpath_separator = ';';
 #else
 std::string file_protocol("file://");
+constexpr char classpath_separator = ':';
 #endif
 
 
@@ -166,6 +168,28 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 	{
 		return jni_class(env, it->second);
 	}
+
+	auto resolve_metaffi_api_jar = [&]() -> std::string
+	{
+		std::string metaffi_home = get_env_var("METAFFI_HOME");
+		if(metaffi_home.empty())
+		{
+			return "";
+		}
+
+		std::filesystem::path api_jar = std::filesystem::path(metaffi_home) / "jvm" / "metaffi.api.jar";
+		if(!std::filesystem::exists(api_jar))
+		{
+			api_jar = std::filesystem::path(metaffi_home) / "sdk" / "api" / "jvm" / "metaffi.api.jar";
+		}
+
+		if(!std::filesystem::exists(api_jar))
+		{
+			return "";
+		}
+
+		return api_jar.generic_string();
+	};
 	
 	// get class loader
 	if(!class_loader_class)
@@ -203,8 +227,10 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 	if(!classLoaderInstance)
 	{
 		// classLoaderInstance = ClassLoader.getSystemClassLoader()
-		classLoaderInstance = env->CallStaticObjectMethod(class_loader_class, get_system_class_loader_method);
-		check_and_throw_jvm_exception(env, classLoaderInstance,);
+		jobject local_loader = env->CallStaticObjectMethod(class_loader_class, get_system_class_loader_method);
+		check_and_throw_jvm_exception(env, local_loader,);
+		classLoaderInstance = env->NewGlobalRef(local_loader);
+		env->DeleteLocalRef(local_loader);
 	}
 	
 	if(!url_class)
@@ -241,25 +267,33 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 	{
 		// URLClassLoader childURLClassLoader = new URLClassLoader( jarURLArray, classLoaderInstance ) ;
 		
-		// initialize with "$METAFFI_HOME/sdk/api/jvm/metaffi.api.jar"
-		std::string metaffi_home = get_env_var("METAFFI_HOME");
-		std::string jvm_bridge_url = (std::string("file://") + metaffi_home) + "/sdk/api/jvm/metaffi.api.jar";
+		// initialize with "$METAFFI_HOME/jvm/metaffi.api.jar" (fallback to sdk/api/jvm)
+		std::string api_jar_path = resolve_metaffi_api_jar();
+		if(api_jar_path.empty())
+		{
+			throw std::runtime_error("Failed to locate metaffi.api.jar");
+		}
+		std::string jvm_bridge_url = file_protocol + api_jar_path;
 		
 		jobjectArray jarURLArray = env->NewObjectArray(1, url_class, nullptr); // URL[]{}
 		check_and_throw_jvm_exception(env, jarURLArray,);
 		env->SetObjectArrayElement(jarURLArray, 0, env->NewObject(url_class, url_class_constructor, env->NewStringUTF(jvm_bridge_url.c_str())));
 		check_and_throw_jvm_exception(env, true,);
 		
-		childURLClassLoader = env->NewObject(url_class_loader, url_class_loader_constructor, jarURLArray, classLoaderInstance);
-		check_and_throw_jvm_exception(env, childURLClassLoader,);
+		jobject local_child = env->NewObject(url_class_loader, url_class_loader_constructor, jarURLArray, classLoaderInstance);
+		check_and_throw_jvm_exception(env, local_child,);
+		childURLClassLoader = env->NewGlobalRef(local_child);
+		env->DeleteLocalRef(local_child);
 	}
 	
 	if(!is_bridge_added)
 	{
-		std::string metaffi_home = get_env_var("METAFFI_HOME");
-		std::string jvm_bridge = file_protocol + metaffi_home;
-		jvm_bridge += "/sdk/api/jvm/";
-		jvm_bridge += "metaffi.api.jar";
+		std::string api_jar_path = resolve_metaffi_api_jar();
+		if(api_jar_path.empty())
+		{
+			throw std::runtime_error("Failed to locate metaffi.api.jar");
+		}
+		std::string jvm_bridge = file_protocol + api_jar_path;
 
 #ifdef _WIN32
 		boost::replace_all(jvm_bridge, "\\", "/");
@@ -289,7 +323,7 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 	std::string tmp;
 	std::stringstream ss(class_path);
 	std::vector<std::string> classpath_vec;
-	while(std::getline(ss, tmp, ';'))
+	while(std::getline(ss, tmp, classpath_separator))
 	{
 		classpath_vec.push_back(std::filesystem::absolute(tmp).generic_string());
 	}
@@ -325,9 +359,11 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 	jobject targetClass = env->CallStaticObjectMethod(class_class, for_name_method, env->NewStringUTF(class_name.c_str()), JNI_TRUE, childURLClassLoader);
 	
 	check_and_throw_jvm_exception(env, targetClass,);
-	loaded_classes[class_name] = (jclass)targetClass;
+	jclass global_class = (jclass)env->NewGlobalRef(targetClass);
+	env->DeleteLocalRef(targetClass);
+	loaded_classes[class_name] = global_class;
 	
-	return {env, (jclass)targetClass};
+	return {env, global_class};
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif

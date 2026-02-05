@@ -50,14 +50,18 @@ class jvm_runtime_manager
 {
 public:
 	explicit jvm_runtime_manager(const jvm_installed_info& info);
+	explicit jvm_runtime_manager(const jvm_installed_info& info, const std::string& classpath_option);
 	~jvm_runtime_manager();
 
 	static std::vector<jvm_installed_info> detect_installed_jvms();
+	static jvm_installed_info select_highest_installed_jvm();
+	static std::shared_ptr<jvm_runtime_manager> create(const jvm_installed_info& info, const std::string& classpath_option = "");
 
 	void load_runtime();
 	void release_runtime();
 
 	std::shared_ptr<Module> load_module(const std::string& module_path);
+	std::shared_ptr<Module> load_module(const std::string& module_path, const std::string& classpath);
 
 	bool is_runtime_loaded() const;
 	const jvm_installed_info& get_jvm_info() const;
@@ -69,6 +73,7 @@ private:
 	std::shared_ptr<jvm> m_jvm;
 	bool m_isRuntimeLoaded = false;
 	mutable std::mutex m_mutex;
+	std::string m_classpath_option;
 
 	void ensure_jvm_loaded();
 	static std::string normalize_vendor(const std::string& vendor);

@@ -6,6 +6,32 @@
 #include "exception_macro.h"
 #include "runtime_id.h"
 #include "utils/env_utils.h"
+#include <filesystem>
+
+namespace
+{
+	std::string resolve_metaffi_api_jar_path()
+	{
+		std::string metaffi_home = get_env_var("METAFFI_HOME");
+		if(metaffi_home.empty())
+		{
+			return "";
+		}
+
+		std::filesystem::path api_jar = std::filesystem::path(metaffi_home) / "jvm" / "metaffi.api.jar";
+		if(!std::filesystem::exists(api_jar))
+		{
+			api_jar = std::filesystem::path(metaffi_home) / "sdk" / "api" / "jvm" / "metaffi.api.jar";
+		}
+
+		if(!std::filesystem::exists(api_jar))
+		{
+			return "";
+		}
+
+		return api_jar.generic_string();
+	}
+}
 
 
 jclass jni_metaffi_handle::metaffi_handle_class = nullptr;
@@ -21,8 +47,12 @@ jni_metaffi_handle::jni_metaffi_handle(JNIEnv* env)
 {
 	if(!metaffi_handle_class)
 	{
-		std::string metaffi_home = get_env_var("METAFFI_HOME");
-		std::string jvm_bridge_url = (std::string("file://") + metaffi_home) + "/sdk/api/jvm/metaffi.api.jar";
+		std::string api_jar = resolve_metaffi_api_jar_path();
+		if(api_jar.empty())
+		{
+			throw std::runtime_error("Failed to locate metaffi.api.jar");
+		}
+		std::string jvm_bridge_url = std::string("file://") + api_jar;
 		jni_class_loader clsloader(env, jvm_bridge_url);
 		auto tmp = (jclass)clsloader.load_class("metaffi/api/accessor/MetaFFIHandle");
 		metaffi_handle_class = (jclass)env->NewGlobalRef(tmp); // make global so GC doesn't delete
@@ -85,7 +115,9 @@ bool jni_metaffi_handle::is_metaffi_handle_wrapper_object(JNIEnv* env, jobject o
 {
 	if(!metaffi_handle_class)
 	{
-		jni_class_loader clsloader(env, "");
+		std::string api_jar = resolve_metaffi_api_jar_path();
+		std::string jvm_bridge_url = api_jar.empty() ? "" : (std::string("file://") + api_jar);
+		jni_class_loader clsloader(env, jvm_bridge_url);
 		metaffi_handle_class = (jclass)clsloader.load_class("metaffi/api/accessor/MetaFFIHandle");
 		metaffi_handle_class = (jclass)env->NewGlobalRef(metaffi_handle_class);
 	}

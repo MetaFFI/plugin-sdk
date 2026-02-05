@@ -27,16 +27,18 @@ endif()
 
 # build metaffi.api.accessor native library
 file(GLOB API_ACCESSOR_SRC ${CMAKE_CURRENT_LIST_DIR}/accessor/*.cpp)
-file(GLOB API_RUNTIME_SRC ${CMAKE_CURRENT_LIST_DIR}/runtime/*.cpp)
+
+# Use JVM runtime_manager sources (includes JNI wrappers and CDTS helpers)
+collect_c_cpp_files("${metaffi_sdk_root}/runtime_manager/jvm" sdk_jvm_runtime)
+
 set(API_JVM_SRC
-	${metaffi_sdk_root}/runtime_manager/jvm/jvm.cpp
-	${metaffi_sdk_root}/runtime_manager/jvm/jni_api_wrapper.cpp
+	${sdk_jvm_runtime_src}
 	${metaffi_sdk_root}/utils/env_utils.cpp
 )
 
 c_cpp_shared_lib(metaffi.api.accessor
-		"${API_ACCESSOR_SRC};${API_RUNTIME_SRC};${API_JVM_SRC};${sdk_src}"
-		"${sdk_include_dir};${CMAKE_CURRENT_LIST_DIR};${CMAKE_CURRENT_LIST_DIR}/accessor;${CMAKE_CURRENT_LIST_DIR}/runtime;${Boost_INCLUDE_DIRS};${JNI_INCLUDE_DIRS};"
+		"${API_ACCESSOR_SRC};${API_JVM_SRC};${sdk_src}"
+		"${sdk_include_dir};${metaffi_sdk_root};${CMAKE_CURRENT_LIST_DIR};${CMAKE_CURRENT_LIST_DIR}/accessor;${Boost_INCLUDE_DIRS};${JNI_INCLUDE_DIRS};"
 		"Boost::filesystem"
 		"sdk/api/jvm")
 

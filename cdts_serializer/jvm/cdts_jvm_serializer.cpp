@@ -5,6 +5,384 @@
 
 namespace metaffi::utils
 {
+namespace
+{
+	struct metaffi_handle_cache
+	{
+		jclass cls = nullptr;
+		jmethodID ctor = nullptr;
+		jmethodID get_handle = nullptr;
+		jmethodID get_runtime_id = nullptr;
+		jmethodID get_releaser = nullptr;
+	};
+
+	struct caller_cache
+	{
+		jclass cls = nullptr;
+		jmethodID create_caller = nullptr;
+		jfieldID xcall_field = nullptr;
+		jfieldID params_field = nullptr;
+		jfieldID retvals_field = nullptr;
+	};
+
+	struct big_integer_cache
+	{
+		jclass cls = nullptr;
+		jmethodID ctor = nullptr;
+		jmethodID bit_length = nullptr;
+		jmethodID long_value = nullptr;
+		jfieldID zero_field = nullptr;
+	};
+
+	metaffi_handle_cache& get_handle_cache(JNIEnv* env)
+	{
+		static metaffi_handle_cache cache;
+		if(!cache.cls)
+		{
+			jclass tmp = env->FindClass("metaffi/api/accessor/MetaFFIHandle");
+			if(!tmp)
+			{
+				throw std::runtime_error("Failed to find MetaFFIHandle class");
+			}
+			cache.cls = (jclass)env->NewGlobalRef(tmp);
+			env->DeleteLocalRef(tmp);
+		}
+		if(!cache.get_handle)
+		{
+			cache.get_handle = env->GetMethodID(cache.cls, "Handle", "()J");
+			if(!cache.get_handle)
+			{
+				throw std::runtime_error("Failed to get MetaFFIHandle.Handle()");
+			}
+		}
+		if(!cache.get_runtime_id)
+		{
+			cache.get_runtime_id = env->GetMethodID(cache.cls, "RuntimeID", "()J");
+			if(!cache.get_runtime_id)
+			{
+				throw std::runtime_error("Failed to get MetaFFIHandle.RuntimeID()");
+			}
+		}
+		if(!cache.get_releaser)
+		{
+			cache.get_releaser = env->GetMethodID(cache.cls, "Releaser", "()J");
+			if(!cache.get_releaser)
+			{
+				throw std::runtime_error("Failed to get MetaFFIHandle.Releaser()");
+			}
+		}
+		if(!cache.ctor)
+		{
+			cache.ctor = env->GetMethodID(cache.cls, "<init>", "(JJJ)V");
+			if(!cache.ctor)
+			{
+				throw std::runtime_error("Failed to get MetaFFIHandle constructor");
+			}
+		}
+		return cache;
+	}
+
+	bool is_metaffi_handle(JNIEnv* env, jobject obj)
+	{
+		if(!obj)
+		{
+			return false;
+		}
+		auto& cache = get_handle_cache(env);
+		return env->IsInstanceOf(obj, cache.cls) == JNI_TRUE;
+	}
+
+	cdt_metaffi_handle extract_metaffi_handle(JNIEnv* env, jobject obj)
+	{
+		auto& cache = get_handle_cache(env);
+		cdt_metaffi_handle out{};
+		out.handle = (void*)env->CallLongMethod(obj, cache.get_handle);
+		out.runtime_id = (uint64_t)env->CallLongMethod(obj, cache.get_runtime_id);
+		out.release = (releaser_fptr_t)env->CallLongMethod(obj, cache.get_releaser);
+		return out;
+	}
+
+	jobject create_metaffi_handle_object(JNIEnv* env, const cdt_metaffi_handle& handle)
+	{
+		auto& cache = get_handle_cache(env);
+		jobject obj = env->NewObject(cache.cls, cache.ctor,
+		                             (jlong)handle.handle,
+		                             (jlong)handle.runtime_id,
+		                             (jlong)handle.release);
+		if(!obj)
+		{
+			throw std::runtime_error("Failed to create MetaFFIHandle object");
+		}
+		return obj;
+	}
+
+	caller_cache& get_caller_cache(JNIEnv* env)
+	{
+		static caller_cache cache;
+		if(!cache.cls)
+		{
+			jclass tmp = env->FindClass("metaffi/api/accessor/Caller");
+			if(!tmp)
+			{
+				throw std::runtime_error("Failed to find Caller class");
+			}
+			cache.cls = (jclass)env->NewGlobalRef(tmp);
+			env->DeleteLocalRef(tmp);
+		}
+		if(!cache.create_caller)
+		{
+			cache.create_caller = env->GetStaticMethodID(cache.cls, "createCaller", "(J[J[J)Lmetaffi/api/accessor/Caller;");
+			if(!cache.create_caller)
+			{
+				throw std::runtime_error("Failed to get Caller.createCaller");
+			}
+		}
+		if(!cache.xcall_field)
+		{
+			cache.xcall_field = env->GetFieldID(cache.cls, "xcallAndContext", "J");
+			if(!cache.xcall_field)
+			{
+				throw std::runtime_error("Failed to get Caller.xcallAndContext field");
+			}
+		}
+		if(!cache.params_field)
+		{
+			cache.params_field = env->GetFieldID(cache.cls, "parametersTypesArray", "[J");
+			if(!cache.params_field)
+			{
+				throw std::runtime_error("Failed to get Caller.parametersTypesArray field");
+			}
+		}
+		if(!cache.retvals_field)
+		{
+			cache.retvals_field = env->GetFieldID(cache.cls, "retvalsTypesArray", "[J");
+			if(!cache.retvals_field)
+			{
+				throw std::runtime_error("Failed to get Caller.retvalsTypesArray field");
+			}
+		}
+		return cache;
+	}
+
+	bool is_caller(JNIEnv* env, jobject obj)
+	{
+		if(!obj)
+		{
+			return false;
+		}
+		auto& cache = get_caller_cache(env);
+		return env->IsInstanceOf(obj, cache.cls) == JNI_TRUE;
+	}
+
+	cdt_metaffi_callable* extract_caller(JNIEnv* env, jobject caller_obj)
+	{
+		auto& cache = get_caller_cache(env);
+
+		jlong xcall_and_context = env->GetLongField(caller_obj, cache.xcall_field);
+		jlongArray params_array = (jlongArray)env->GetObjectField(caller_obj, cache.params_field);
+		jlongArray retvals_array = (jlongArray)env->GetObjectField(caller_obj, cache.retvals_field);
+
+		jsize params_len = params_array ? env->GetArrayLength(params_array) : 0;
+		jsize retvals_len = retvals_array ? env->GetArrayLength(retvals_array) : 0;
+
+		metaffi_type* params_types = nullptr;
+		metaffi_type* retvals_types = nullptr;
+
+		if(params_len > 0)
+		{
+			void* mem = xllr_alloc_memory(sizeof(metaffi_type) * params_len);
+			if(!mem)
+			{
+				throw std::runtime_error("Failed to allocate parameters_types array");
+			}
+			params_types = static_cast<metaffi_type*>(mem);
+
+			jlong* elements = env->GetLongArrayElements(params_array, nullptr);
+			if(!elements)
+			{
+				throw std::runtime_error("Failed to get parametersTypesArray elements");
+			}
+			std::memcpy(params_types, elements, sizeof(metaffi_type) * params_len);
+			env->ReleaseLongArrayElements(params_array, elements, 0);
+		}
+
+		if(retvals_len > 0)
+		{
+			void* mem = xllr_alloc_memory(sizeof(metaffi_type) * retvals_len);
+			if(!mem)
+			{
+				throw std::runtime_error("Failed to allocate retvals_types array");
+			}
+			retvals_types = static_cast<metaffi_type*>(mem);
+
+			jlong* elements = env->GetLongArrayElements(retvals_array, nullptr);
+			if(!elements)
+			{
+				throw std::runtime_error("Failed to get retvalsTypesArray elements");
+			}
+			std::memcpy(retvals_types, elements, sizeof(metaffi_type) * retvals_len);
+			env->ReleaseLongArrayElements(retvals_array, elements, 0);
+		}
+
+		void* callable_mem = xllr_alloc_memory(sizeof(cdt_metaffi_callable));
+		if(!callable_mem)
+		{
+			throw std::runtime_error("Failed to allocate cdt_metaffi_callable");
+		}
+
+		auto* callable = new (callable_mem) cdt_metaffi_callable();
+		callable->val = (metaffi_callable)xcall_and_context;
+		callable->parameters_types = params_types;
+		callable->params_types_length = static_cast<metaffi_int8>(params_len);
+		callable->retval_types = retvals_types;
+		callable->retval_types_length = static_cast<metaffi_int8>(retvals_len);
+
+		return callable;
+	}
+
+	jobject create_caller_object(JNIEnv* env, const cdt_metaffi_callable& callable)
+	{
+		auto& cache = get_caller_cache(env);
+
+		jsize params_len = callable.params_types_length > 0 ? callable.params_types_length : 0;
+		jsize retvals_len = callable.retval_types_length > 0 ? callable.retval_types_length : 0;
+
+		jlongArray params_array = env->NewLongArray(params_len);
+		if(params_len > 0 && callable.parameters_types)
+		{
+			env->SetLongArrayRegion(params_array, 0, params_len, (const jlong*)callable.parameters_types);
+		}
+
+		jlongArray retvals_array = env->NewLongArray(retvals_len);
+		if(retvals_len > 0 && callable.retval_types)
+		{
+			env->SetLongArrayRegion(retvals_array, 0, retvals_len, (const jlong*)callable.retval_types);
+		}
+
+		jobject obj = env->CallStaticObjectMethod(cache.cls, cache.create_caller,
+		                                          (jlong)callable.val,
+		                                          params_array,
+		                                          retvals_array);
+		if(params_array)
+		{
+			env->DeleteLocalRef(params_array);
+		}
+		if(retvals_array)
+		{
+			env->DeleteLocalRef(retvals_array);
+		}
+		if(!obj)
+		{
+			throw std::runtime_error("Failed to create Caller object");
+		}
+		return obj;
+	}
+
+	big_integer_cache& get_big_integer_cache(JNIEnv* env)
+	{
+		static big_integer_cache cache;
+		if(!cache.cls)
+		{
+			jclass tmp = env->FindClass("java/math/BigInteger");
+			if(!tmp)
+			{
+				throw std::runtime_error("Failed to find BigInteger class");
+			}
+			cache.cls = (jclass)env->NewGlobalRef(tmp);
+			env->DeleteLocalRef(tmp);
+		}
+		if(!cache.ctor)
+		{
+			cache.ctor = env->GetMethodID(cache.cls, "<init>", "(I[B)V");
+			if(!cache.ctor)
+			{
+				throw std::runtime_error("Failed to get BigInteger constructor");
+			}
+		}
+		if(!cache.bit_length)
+		{
+			cache.bit_length = env->GetMethodID(cache.cls, "bitLength", "()I");
+			if(!cache.bit_length)
+			{
+				throw std::runtime_error("Failed to get BigInteger.bitLength");
+			}
+		}
+		if(!cache.long_value)
+		{
+			cache.long_value = env->GetMethodID(cache.cls, "longValue", "()J");
+			if(!cache.long_value)
+			{
+				throw std::runtime_error("Failed to get BigInteger.longValue");
+			}
+		}
+		if(!cache.zero_field)
+		{
+			cache.zero_field = env->GetStaticFieldID(cache.cls, "ZERO", "Ljava/math/BigInteger;");
+			if(!cache.zero_field)
+			{
+				throw std::runtime_error("Failed to get BigInteger.ZERO");
+			}
+		}
+		return cache;
+	}
+
+	bool is_big_integer(JNIEnv* env, jobject obj)
+	{
+		if(!obj)
+		{
+			return false;
+		}
+		auto& cache = get_big_integer_cache(env);
+		return env->IsInstanceOf(obj, cache.cls) == JNI_TRUE;
+	}
+
+	uint64_t big_integer_to_uint64(JNIEnv* env, jobject obj)
+	{
+		auto& cache = get_big_integer_cache(env);
+		jint bit_len = env->CallIntMethod(obj, cache.bit_length);
+		if(bit_len > 64)
+		{
+			throw std::runtime_error("BigInteger value exceeds 64 bits");
+		}
+		jlong val = env->CallLongMethod(obj, cache.long_value);
+		return static_cast<uint64_t>(val);
+	}
+
+	jobject uint64_to_big_integer(JNIEnv* env, uint64_t value)
+	{
+		auto& cache = get_big_integer_cache(env);
+		if(value == 0)
+		{
+			jobject zero = env->GetStaticObjectField(cache.cls, cache.zero_field);
+			if(!zero)
+			{
+				throw std::runtime_error("Failed to get BigInteger.ZERO");
+			}
+			return zero;
+		}
+
+		jbyteArray bytes = env->NewByteArray(8);
+		if(!bytes)
+		{
+			throw std::runtime_error("Failed to allocate BigInteger byte array");
+		}
+
+		jbyte buf[8];
+		for(int i = 0; i < 8; i++)
+		{
+			buf[7 - i] = static_cast<jbyte>((value >> (i * 8)) & 0xFF);
+		}
+
+		env->SetByteArrayRegion(bytes, 0, 8, buf);
+		jobject big = env->NewObject(cache.cls, cache.ctor, 1, bytes);
+		env->DeleteLocalRef(bytes);
+		if(!big)
+		{
+			throw std::runtime_error("Failed to create BigInteger object");
+		}
+		return big;
+	}
+}
 
 // ===== Phase 1: Core Infrastructure =====
 
@@ -333,6 +711,8 @@ std::pair<int, metaffi_type> cdts_jvm_serializer::detect_array_info(jarray obj)
 				element_type = metaffi_int32_type;
 			} else if (std::strstr(elementSignature, "Ljava/lang/Long;")) {
 				element_type = metaffi_int64_type;
+			} else if (std::strstr(elementSignature, "Ljava/math/BigInteger;")) {
+				element_type = metaffi_uint64_type;
 			} else if (std::strstr(elementSignature, "Ljava/lang/Short;")) {
 				element_type = metaffi_int16_type;
 			} else if (std::strstr(elementSignature, "Ljava/lang/Byte;")) {
@@ -347,6 +727,10 @@ std::pair<int, metaffi_type> cdts_jvm_serializer::detect_array_info(jarray obj)
 				element_type = metaffi_char16_type;
 			} else if (std::strstr(elementSignature, "Ljava/lang/String;")) {
 				element_type = metaffi_string8_type;
+			} else if (std::strstr(elementSignature, "Lmetaffi/api/accessor/MetaFFIHandle;")) {
+				element_type = metaffi_handle_type;
+			} else if (std::strstr(elementSignature, "Lmetaffi/api/accessor/Caller;")) {
+				element_type = metaffi_callable_type;
 			} else {
 				// Generic object - treat as handle
 				element_type = metaffi_handle_type;
@@ -363,6 +747,16 @@ metaffi_type cdts_jvm_serializer::detect_type(jobject obj)
 {
 	if (!obj) {
 		return metaffi_null_type;
+	}
+
+	if (is_metaffi_handle(env, obj)) {
+		return metaffi_handle_type;
+	}
+	if (is_caller(env, obj)) {
+		return metaffi_callable_type;
+	}
+	if (is_big_integer(env, obj)) {
+		return metaffi_uint64_type;
 	}
 
 	// Check for wrapper types (in order of likelihood)
@@ -617,6 +1011,64 @@ metaffi_string16 cdts_jvm_serializer::jstring_to_string16(jstring str)
 	return result;
 }
 
+metaffi_string32 cdts_jvm_serializer::jstring_to_string32(jstring str)
+{
+	if (!str) {
+		return nullptr;
+	}
+
+	const jchar* utf16 = env->GetStringChars(str, nullptr);
+	if (!utf16) {
+		check_jni_exception("GetStringChars");
+		throw std::runtime_error("Failed to get UTF-16 characters from jstring");
+	}
+
+	jsize len = env->GetStringLength(str);
+
+	std::vector<char32_t> utf32;
+	utf32.reserve(len);
+
+	for (jsize i = 0; i < len; i++) {
+		char16_t ch = static_cast<char16_t>(utf16[i]);
+		if (ch >= 0xD800 && ch <= 0xDBFF) {
+			// High surrogate - expect low surrogate next
+			if (i + 1 >= len) {
+				env->ReleaseStringChars(str, utf16);
+				throw std::runtime_error("Invalid UTF-16 surrogate pair (missing low surrogate)");
+			}
+
+			char16_t low = static_cast<char16_t>(utf16[i + 1]);
+			if (low < 0xDC00 || low > 0xDFFF) {
+				env->ReleaseStringChars(str, utf16);
+				throw std::runtime_error("Invalid UTF-16 surrogate pair (invalid low surrogate)");
+			}
+
+			char32_t codepoint = 0x10000;
+			codepoint += (static_cast<char32_t>(ch) - 0xD800) << 10;
+			codepoint += static_cast<char32_t>(low) - 0xDC00;
+			utf32.push_back(codepoint);
+			i++; // consumed low surrogate
+			continue;
+		}
+
+		if (ch >= 0xDC00 && ch <= 0xDFFF) {
+			env->ReleaseStringChars(str, utf16);
+			throw std::runtime_error("Invalid UTF-16 surrogate pair (unexpected low surrogate)");
+		}
+
+		utf32.push_back(static_cast<char32_t>(ch));
+	}
+
+	env->ReleaseStringChars(str, utf16);
+
+	metaffi_string32 result = xllr_alloc_string32(utf32.data(), static_cast<metaffi_size>(utf32.size()));
+	if (!result) {
+		throw std::runtime_error("Failed to allocate UTF-32 string");
+	}
+
+	return result;
+}
+
 jstring cdts_jvm_serializer::string8_to_jstring(metaffi_string8 str)
 {
 	if (!str) {
@@ -801,6 +1253,9 @@ cdts_jvm_serializer& cdts_jvm_serializer::add(jlong val, metaffi_type target_typ
 		case metaffi_uint64_type:
 			data[current_index].cdt_val.uint64_val = static_cast<metaffi_uint64>(static_cast<uint64_t>(val));
 			break;
+		case metaffi_size_type:
+			data[current_index].cdt_val.uint64_val = static_cast<metaffi_uint64>(static_cast<uint64_t>(val));
+			break;
 		default:
 			throw std::runtime_error("Invalid target type for jlong");
 	}
@@ -894,6 +1349,104 @@ cdts_jvm_serializer& cdts_jvm_serializer::add(jchar val, metaffi_type target_typ
 	return *this;
 }
 
+cdts_jvm_serializer& cdts_jvm_serializer::add(jstring val, metaffi_type target_type)
+{
+	check_bounds(current_index);
+
+	if (!val) {
+		return null();
+	}
+
+	switch(target_type) {
+		case metaffi_string8_type:
+			data[current_index].cdt_val.string8_val = jstring_to_string8(val);
+			data[current_index].type = metaffi_string8_type;
+			data[current_index].free_required = true;
+			break;
+		case metaffi_string16_type:
+			data[current_index].cdt_val.string16_val = jstring_to_string16(val);
+			data[current_index].type = metaffi_string16_type;
+			data[current_index].free_required = true;
+			break;
+		case metaffi_string32_type:
+			data[current_index].cdt_val.string32_val = jstring_to_string32(val);
+			data[current_index].type = metaffi_string32_type;
+			data[current_index].free_required = true;
+			break;
+		default:
+			throw std::runtime_error("Invalid target type for jstring");
+	}
+
+	current_index++;
+	return *this;
+}
+
+cdts_jvm_serializer& cdts_jvm_serializer::add_handle(jobject val)
+{
+	check_bounds(current_index);
+
+	if (!val) {
+		return null();
+	}
+
+	void* handle_mem = xllr_alloc_memory(sizeof(cdt_metaffi_handle));
+	if (!handle_mem) {
+		throw std::runtime_error("Failed to allocate cdt_metaffi_handle");
+	}
+
+	data[current_index].type = metaffi_handle_type;
+	data[current_index].cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
+	if (is_metaffi_handle(env, val)) {
+		cdt_metaffi_handle h = extract_metaffi_handle(env, val);
+		data[current_index].cdt_val.handle_val->handle = h.handle;
+		data[current_index].cdt_val.handle_val->runtime_id = h.runtime_id;
+		data[current_index].cdt_val.handle_val->release = h.release;
+	} else {
+		data[current_index].cdt_val.handle_val->handle = env->NewGlobalRef(val);
+		data[current_index].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
+		data[current_index].cdt_val.handle_val->release = nullptr;
+	}
+	data[current_index].free_required = true;
+
+	current_index++;
+	return *this;
+}
+
+cdts_jvm_serializer& cdts_jvm_serializer::add_callable(jobject val)
+{
+	check_bounds(current_index);
+
+	if (!val) {
+		return null();
+	}
+	if (!is_caller(env, val)) {
+		throw std::runtime_error("Expected Caller object for callable");
+	}
+
+	data[current_index].type = metaffi_callable_type;
+	data[current_index].cdt_val.callable_val = extract_caller(env, val);
+	data[current_index].free_required = true;
+	current_index++;
+	return *this;
+}
+
+cdts_jvm_serializer& cdts_jvm_serializer::add_array(jarray arr, int dimensions, metaffi_type element_type)
+{
+	check_bounds(current_index);
+
+	if (!arr) {
+		return null();
+	}
+
+	if (dimensions <= 0) {
+		throw std::runtime_error("Array dimensions must be positive");
+	}
+
+	metaffi_type base_type = (element_type & metaffi_array_type) ? (element_type & ~metaffi_array_type) : element_type;
+	serialize_array(arr, dimensions, base_type);
+	return *this;
+}
+
 // Extraction methods
 
 jbyte cdts_jvm_serializer::extract_byte()
@@ -982,6 +1535,9 @@ jlong cdts_jvm_serializer::extract_long()
 			result = static_cast<jlong>(current.cdt_val.int64_val);
 			break;
 		case metaffi_uint64_type:
+			result = static_cast<jlong>(current.cdt_val.uint64_val);
+			break;
+		case metaffi_size_type:
 			result = static_cast<jlong>(current.cdt_val.uint64_val);
 			break;
 		default:
@@ -1155,6 +1711,39 @@ void cdts_jvm_serializer::serialize_array_into(jarray arr, cdt& target, int dime
 				env->ReleaseLongArrayElements(longArr, elements, JNI_ABORT);
 				break;
 			}
+			case metaffi_uint64_type:
+			case metaffi_size_type: {
+				if(env->IsInstanceOf(arr, env->FindClass("[J"))) {
+					jlongArray longArr = (jlongArray)arr;
+					jlong* elements = env->GetLongArrayElements(longArr, nullptr);
+					for (jsize i = 0; i < length; i++) {
+						arr_cdts[i].cdt_val.uint64_val = static_cast<metaffi_uint64>(elements[i]);
+						arr_cdts[i].type = element_type;
+					}
+					env->ReleaseLongArrayElements(longArr, elements, JNI_ABORT);
+				} else {
+					jobjectArray objArr = (jobjectArray)arr;
+					for (jsize i = 0; i < length; i++) {
+						jobject obj = env->GetObjectArrayElement(objArr, i);
+						if (obj) {
+							if(is_big_integer(env, obj)) {
+								arr_cdts[i].cdt_val.uint64_val = big_integer_to_uint64(env, obj);
+								arr_cdts[i].type = element_type;
+							} else if (is_instance_of(obj, "java/lang/Long")) {
+								arr_cdts[i].cdt_val.uint64_val = static_cast<metaffi_uint64>(extract_long_from_wrapper(obj));
+								arr_cdts[i].type = element_type;
+							} else {
+								env->DeleteLocalRef(obj);
+								throw std::runtime_error("Expected BigInteger or Long for uint64 array");
+							}
+							env->DeleteLocalRef(obj);
+						} else {
+							arr_cdts[i].type = metaffi_null_type;
+						}
+					}
+				}
+				break;
+			}
 			case metaffi_float32_type: {
 				jfloatArray floatArr = (jfloatArray)arr;
 				jfloat* elements = env->GetFloatArrayElements(floatArr, nullptr);
@@ -1217,9 +1806,15 @@ void cdts_jvm_serializer::serialize_array_into(jarray arr, cdt& target, int dime
 				for (jsize i = 0; i < length; i++) {
 					jobject obj = env->GetObjectArrayElement(objArr, i);
 					if (obj) {
-						arr_cdts[i].cdt_val.handle_val = new cdt_metaffi_handle();
+						void* handle_mem = xllr_alloc_memory(sizeof(cdt_metaffi_handle));
+						if (!handle_mem) {
+							env->DeleteLocalRef(obj);
+							throw std::runtime_error("Failed to allocate cdt_metaffi_handle");
+						}
+						arr_cdts[i].cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
 						arr_cdts[i].cdt_val.handle_val->handle = env->NewGlobalRef(obj);
 						arr_cdts[i].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
+						arr_cdts[i].cdt_val.handle_val->release = nullptr;
 						arr_cdts[i].type = metaffi_handle_type;
 						arr_cdts[i].free_required = true;
 						env->DeleteLocalRef(obj);
@@ -1366,6 +1961,51 @@ void cdts_jvm_serializer::serialize_array(jarray arr, int dimensions, metaffi_ty
 				}
 				break;
 			}
+			case metaffi_handle_type: {
+				jobjectArray objArr = (jobjectArray)arr;
+				for (jsize i = 0; i < length; i++) {
+					jobject obj = env->GetObjectArrayElement(objArr, i);
+					if (obj) {
+						void* handle_mem = xllr_alloc_memory(sizeof(cdt_metaffi_handle));
+						if (!handle_mem) {
+							env->DeleteLocalRef(obj);
+							throw std::runtime_error("Failed to allocate cdt_metaffi_handle");
+						}
+						arr_cdts[i].cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
+						if (is_metaffi_handle(env, obj)) {
+							cdt_metaffi_handle h = extract_metaffi_handle(env, obj);
+							arr_cdts[i].cdt_val.handle_val->handle = h.handle;
+							arr_cdts[i].cdt_val.handle_val->runtime_id = h.runtime_id;
+							arr_cdts[i].cdt_val.handle_val->release = h.release;
+						} else {
+							arr_cdts[i].cdt_val.handle_val->handle = env->NewGlobalRef(obj);
+							arr_cdts[i].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
+							arr_cdts[i].cdt_val.handle_val->release = nullptr;
+						}
+						arr_cdts[i].free_required = true;
+						arr_cdts[i].type = metaffi_handle_type;
+						env->DeleteLocalRef(obj);
+					} else {
+						arr_cdts[i].type = metaffi_null_type;
+					}
+				}
+				break;
+			}
+			case metaffi_callable_type: {
+				jobjectArray objArr = (jobjectArray)arr;
+				for (jsize i = 0; i < length; i++) {
+					jobject obj = env->GetObjectArrayElement(objArr, i);
+					if (obj) {
+						arr_cdts[i].cdt_val.callable_val = extract_caller(env, obj);
+						arr_cdts[i].type = metaffi_callable_type;
+						arr_cdts[i].free_required = true;
+						env->DeleteLocalRef(obj);
+					} else {
+						arr_cdts[i].type = metaffi_null_type;
+					}
+				}
+				break;
+			}
 			default:
 				// For wrapper types or other objects - extract from object array
 				jobjectArray objArr = (jobjectArray)arr;
@@ -1403,9 +2043,17 @@ void cdts_jvm_serializer::serialize_array(jarray arr, int dimensions, metaffi_ty
 							}
 							default:
 								// Store as handle
-								arr_cdts[i].cdt_val.handle_val = new cdt_metaffi_handle();
-								arr_cdts[i].cdt_val.handle_val->handle = env->NewGlobalRef(obj);
-								arr_cdts[i].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
+								{
+									void* handle_mem = xllr_alloc_memory(sizeof(cdt_metaffi_handle));
+									if (!handle_mem) {
+										env->DeleteLocalRef(obj);
+										throw std::runtime_error("Failed to allocate cdt_metaffi_handle");
+									}
+									arr_cdts[i].cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
+									arr_cdts[i].cdt_val.handle_val->handle = env->NewGlobalRef(obj);
+									arr_cdts[i].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
+									arr_cdts[i].cdt_val.handle_val->release = nullptr;
+								}
 								arr_cdts[i].free_required = true;
 								break;
 						}
@@ -1548,11 +2196,15 @@ jobjectArray cdts_jvm_serializer::create_object_array(cdts& arr_cdts, metaffi_ty
 		case metaffi_int16_type: className = "java/lang/Short"; break;
 		case metaffi_int32_type: className = "java/lang/Integer"; break;
 		case metaffi_int64_type: className = "java/lang/Long"; break;
+		case metaffi_size_type: className = "java/lang/Long"; break;
+		case metaffi_uint64_type: className = "java/math/BigInteger"; break;
 		case metaffi_float32_type: className = "java/lang/Float"; break;
 		case metaffi_float64_type: className = "java/lang/Double"; break;
 		case metaffi_bool_type: className = "java/lang/Boolean"; break;
 		case metaffi_char16_type: className = "java/lang/Character"; break;
 		case metaffi_string8_type: className = "java/lang/String"; break;
+		case metaffi_handle_type:
+		case metaffi_callable_type:
 		default: className = "java/lang/Object"; break;
 	}
 
@@ -1582,11 +2234,19 @@ jobjectArray cdts_jvm_serializer::create_object_array(cdts& arr_cdts, metaffi_ty
 					env->DeleteLocalRef(cls);
 					break;
 				}
-				case metaffi_int64_type: {
+				case metaffi_int64_type:
+				case metaffi_size_type: {
 					jclass cls = env->FindClass("java/lang/Long");
 					jmethodID constructor = env->GetMethodID(cls, "<init>", "(J)V");
-					element = env->NewObject(cls, constructor, arr_cdts[i].cdt_val.int64_val);
+					jlong val = element_type == metaffi_size_type
+						? static_cast<jlong>(arr_cdts[i].cdt_val.uint64_val)
+						: static_cast<jlong>(arr_cdts[i].cdt_val.int64_val);
+					element = env->NewObject(cls, constructor, val);
 					env->DeleteLocalRef(cls);
+					break;
+				}
+				case metaffi_uint64_type: {
+					element = uint64_to_big_integer(env, arr_cdts[i].cdt_val.uint64_val);
 					break;
 				}
 				case metaffi_float64_type: {
@@ -1600,6 +2260,23 @@ jobjectArray cdts_jvm_serializer::create_object_array(cdts& arr_cdts, metaffi_ty
 					element = string8_to_jstring(arr_cdts[i].cdt_val.string8_val);
 					break;
 				}
+				case metaffi_handle_type: {
+					if(arr_cdts[i].cdt_val.handle_val) {
+						const cdt_metaffi_handle& h = *arr_cdts[i].cdt_val.handle_val;
+						if(h.runtime_id == JVM_RUNTIME_ID) {
+							element = (jobject)h.handle;
+						} else {
+							element = create_metaffi_handle_object(env, h);
+						}
+					}
+					break;
+				}
+				case metaffi_callable_type: {
+					if(arr_cdts[i].cdt_val.callable_val) {
+						element = create_caller_object(env, *arr_cdts[i].cdt_val.callable_val);
+					}
+					break;
+				}
 				// Add more types as needed
 				default:
 					break;
@@ -1607,7 +2284,9 @@ jobjectArray cdts_jvm_serializer::create_object_array(cdts& arr_cdts, metaffi_ty
 		}
 
 		env->SetObjectArrayElement(result, static_cast<jsize>(i), element);
-		if (element) env->DeleteLocalRef(element);
+		if (element && env->GetObjectRefType(element) == JNILocalRefType) {
+			env->DeleteLocalRef(element);
+		}
 	}
 
 	return result;
@@ -1802,11 +2481,16 @@ jobject cdts_jvm_serializer::extract_handle()
 
 	if (current.type == metaffi_handle_type) {
 		if (current.cdt_val.handle_val && current.cdt_val.handle_val->handle) {
-			result = (jobject)current.cdt_val.handle_val->handle;
+			const cdt_metaffi_handle& h = *current.cdt_val.handle_val;
+			if (h.runtime_id == JVM_RUNTIME_ID) {
+				result = (jobject)h.handle;
+			} else {
+				result = create_metaffi_handle_object(env, h);
+			}
 		}
 	} else if (current.type == metaffi_callable_type) {
 		if (current.cdt_val.callable_val && current.cdt_val.callable_val->val) {
-			result = (jobject)current.cdt_val.callable_val->val;
+			result = create_caller_object(env, *current.cdt_val.callable_val);
 		}
 	}
 
@@ -1859,6 +2543,20 @@ cdts_jvm_serializer& cdts_jvm_serializer::operator<<(jobject val)
 			data[current_index].free_required = false;
 			break;
 		}
+		case metaffi_uint64_type: {
+			uint64_t value = 0;
+			if (is_big_integer(env, val)) {
+				value = big_integer_to_uint64(env, val);
+			} else if (is_instance_of(val, "java/lang/Long")) {
+				value = static_cast<uint64_t>(extract_long_from_wrapper(val));
+			} else {
+				throw std::runtime_error("Type mismatch: expected BigInteger for uint64");
+			}
+			data[current_index].type = metaffi_uint64_type;
+			data[current_index].cdt_val.uint64_val = value;
+			data[current_index].free_required = false;
+			break;
+		}
 		case metaffi_float32_type: {
 			jfloat value = extract_float_from_wrapper(val);
 			data[current_index].type = metaffi_float32_type;
@@ -1901,14 +2599,31 @@ cdts_jvm_serializer& cdts_jvm_serializer::operator<<(jobject val)
 			serialize_array((jarray)val, dimensions, element_type);
 			return *this; // serialize_array already increments index
 		}
+		case metaffi_callable_type: {
+			data[current_index].type = metaffi_callable_type;
+			data[current_index].cdt_val.callable_val = extract_caller(env, val);
+			data[current_index].free_required = true;
+			break;
+		}
 		case metaffi_handle_type:
 		default: {
-			// Store as handle with global reference
+			// Store as handle with global reference or extract MetaFFIHandle
 			data[current_index].type = metaffi_handle_type;
-			data[current_index].cdt_val.handle_val = new cdt_metaffi_handle();
-			data[current_index].cdt_val.handle_val->handle = env->NewGlobalRef(val);
-			data[current_index].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
-			data[current_index].cdt_val.handle_val->release = nullptr;
+			void* handle_mem = xllr_alloc_memory(sizeof(cdt_metaffi_handle));
+			if (!handle_mem) {
+				throw std::runtime_error("Failed to allocate cdt_metaffi_handle");
+			}
+			data[current_index].cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
+			if (is_metaffi_handle(env, val)) {
+				cdt_metaffi_handle h = extract_metaffi_handle(env, val);
+				data[current_index].cdt_val.handle_val->handle = h.handle;
+				data[current_index].cdt_val.handle_val->runtime_id = h.runtime_id;
+				data[current_index].cdt_val.handle_val->release = h.release;
+			} else {
+				data[current_index].cdt_val.handle_val->handle = env->NewGlobalRef(val);
+				data[current_index].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
+				data[current_index].cdt_val.handle_val->release = nullptr;
+			}
 			data[current_index].free_required = true;
 			break;
 		}

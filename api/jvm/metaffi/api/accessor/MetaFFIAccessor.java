@@ -24,7 +24,15 @@ public class MetaFFIAccessor
 		libExtension = libExtension.substring(libExtension.lastIndexOf("."));
 		String metaffiHome = System.getenv("METAFFI_HOME");
 
-		System.load(metaffiHome+"/sdk/api/jvm/metaffi.api.accessor"+libExtension);
+		String primary = metaffiHome + "/jvm/metaffi.api.accessor" + libExtension;
+		String fallback = metaffiHome + "/sdk/api/jvm/metaffi.api.accessor" + libExtension;
+
+		java.io.File primaryFile = new java.io.File(primary);
+		if (primaryFile.exists()) {
+			System.load(primary);
+		} else {
+			System.load(fallback);
+		}
 
 
 	}
