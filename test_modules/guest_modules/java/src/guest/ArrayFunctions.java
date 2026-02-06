@@ -33,6 +33,10 @@ public class ArrayFunctions {
 		}
 	}
 
+	public static void expectThreeSomeClassesFromFactory() {
+		expectThreeSomeClasses(getSomeClasses());
+	}
+
 	public static int[][] make2dArray() {
 		return new int[][]{{1, 2}, {3, 4}};
 	}
@@ -55,6 +59,10 @@ public class ArrayFunctions {
 			}
 		}
 		return sum;
+	}
+
+	public static int sum3dArrayFromFactory() {
+		return sum3dArray(make3dArray());
 	}
 
 	public static int sumRaggedArray(int[][] arr) {

@@ -2220,7 +2220,12 @@ void jni_releaser(cdt_metaffi_handle* ptr)
 	if(!ptr){
 		return;
 	}
-	
+
+	if(!pjvm)
+	{
+		pjvm = std::make_shared<jvm>();
+	}
+
     JNIEnv* env = nullptr;
 	auto release_env = pjvm->get_environment(&env);
 	
