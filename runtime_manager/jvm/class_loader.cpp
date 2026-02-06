@@ -369,6 +369,11 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 #endif
 }
 
+jobject jni_class_loader::get_child_class_loader()
+{
+	return childURLClassLoader;
+}
+
 
 
 

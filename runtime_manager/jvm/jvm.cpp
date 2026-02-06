@@ -30,6 +30,7 @@ namespace
 	JavaVM* s_shared_jvm = nullptr;
 	static auto LOG = metaffi::get_logger("jvm_runtime_manager");
 
+
 	void set_env_var(const char* key, const std::string& value)
 	{
 #ifdef _WIN32
@@ -639,8 +640,6 @@ void jvm::load_or_create_with_info(const std::string& classpath_option)
 		}
 	}
 
-	std::vector<JavaVMOption> default_options;
-	std::vector<std::unique_ptr<char[]>> default_option_buffers;
 	auto append_option = [](std::vector<JavaVMOption>& options,
 	                        std::vector<std::unique_ptr<char[]>>& buffers,
 	                        const char* option_string,
@@ -659,6 +658,9 @@ void jvm::load_or_create_with_info(const std::string& classpath_option)
 		options.push_back(option);
 		buffers.push_back(std::move(buffer));
 	};
+
+	std::vector<JavaVMOption> default_options;
+	std::vector<std::unique_ptr<char[]>> default_option_buffers;
 
 	JavaVMInitArgs default_args{};
 	default_args.version = JNI_VERSION_1_8;

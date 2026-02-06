@@ -1,6 +1,7 @@
 #include "cdts_jvm_serializer.h"
 #include "runtime_id.h"
 #include <runtime/xllr_capi_loader.h>
+#include <algorithm>
 #include <cstring>
 
 namespace metaffi::utils
@@ -33,6 +34,35 @@ namespace
 		jmethodID long_value = nullptr;
 		jfieldID zero_field = nullptr;
 	};
+
+	struct alias_array_info
+	{
+		std::string base;
+		int dims = 0;
+	};
+
+	alias_array_info parse_alias_array(const char* alias)
+	{
+		alias_array_info info;
+		if(!alias || !*alias)
+		{
+			return info;
+		}
+		info.base = alias;
+		size_t pos = std::string::npos;
+		while((pos = info.base.find("[]")) != std::string::npos)
+		{
+			info.base.erase(pos, 2);
+			info.dims++;
+		}
+		return info;
+	}
+
+	std::string to_internal_name(std::string name)
+	{
+		std::replace(name.begin(), name.end(), '.', '/');
+		return name;
+	}
 
 	metaffi_handle_cache& get_handle_cache(JNIEnv* env)
 	{
@@ -390,8 +420,8 @@ namespace
 // Constructor
 //--------------------------------------------------------------------
 
-cdts_jvm_serializer::cdts_jvm_serializer(JNIEnv* env, cdts& pcdts)
-	: env(env), data(pcdts), current_index(0)
+cdts_jvm_serializer::cdts_jvm_serializer(JNIEnv* env, cdts& pcdts, jobject class_loader)
+	: env(env), class_loader(class_loader), data(pcdts), current_index(0)
 {
 	if (!env) {
 		throw std::invalid_argument("JNIEnv pointer cannot be null");
@@ -2187,31 +2217,82 @@ jarray cdts_jvm_serializer::create_primitive_array(cdts& arr_cdts, metaffi_type 
 
 jobjectArray cdts_jvm_serializer::create_object_array(cdts& arr_cdts, metaffi_type element_type)
 {
+	return create_object_array(arr_cdts, element_type, "");
+}
+
+jobjectArray cdts_jvm_serializer::create_object_array(cdts& arr_cdts, metaffi_type element_type, const std::string& element_class_override)
+{
 	metaffi_size length = arr_cdts.length;
 
 	// Determine element class
 	const char* className = nullptr;
-	switch(element_type) {
-		case metaffi_int8_type: className = "java/lang/Byte"; break;
-		case metaffi_int16_type: className = "java/lang/Short"; break;
-		case metaffi_int32_type: className = "java/lang/Integer"; break;
-		case metaffi_int64_type: className = "java/lang/Long"; break;
-		case metaffi_size_type: className = "java/lang/Long"; break;
-		case metaffi_uint64_type: className = "java/math/BigInteger"; break;
-		case metaffi_float32_type: className = "java/lang/Float"; break;
-		case metaffi_float64_type: className = "java/lang/Double"; break;
-		case metaffi_bool_type: className = "java/lang/Boolean"; break;
-		case metaffi_char16_type: className = "java/lang/Character"; break;
-		case metaffi_string8_type: className = "java/lang/String"; break;
-		case metaffi_handle_type:
-		case metaffi_callable_type:
-		default: className = "java/lang/Object"; break;
+	if(!element_class_override.empty())
+	{
+		className = element_class_override.c_str();
+	}
+	else
+	{
+		switch(element_type) {
+			case metaffi_int8_type: className = "java/lang/Byte"; break;
+			case metaffi_int16_type: className = "java/lang/Short"; break;
+			case metaffi_int32_type: className = "java/lang/Integer"; break;
+			case metaffi_int64_type: className = "java/lang/Long"; break;
+			case metaffi_size_type: className = "java/lang/Long"; break;
+			case metaffi_uint64_type: className = "java/math/BigInteger"; break;
+			case metaffi_float32_type: className = "java/lang/Float"; break;
+			case metaffi_float64_type: className = "java/lang/Double"; break;
+			case metaffi_bool_type: className = "java/lang/Boolean"; break;
+			case metaffi_char16_type: className = "java/lang/Character"; break;
+			case metaffi_string8_type: className = "java/lang/String"; break;
+			case metaffi_handle_type:
+			case metaffi_callable_type:
+			default: className = "java/lang/Object"; break;
+		}
 	}
 
-	jclass elementClass = env->FindClass(className);
-	if (!elementClass) {
-		check_jni_exception("FindClass");
-		throw std::runtime_error("Failed to find element class");
+	jclass elementClass = nullptr;
+	if(!element_class_override.empty() && class_loader)
+	{
+		jclass class_cls = env->FindClass("java/lang/Class");
+		if(!class_cls)
+		{
+			check_jni_exception("FindClass java/lang/Class");
+			throw std::runtime_error("Failed to find java/lang/Class");
+		}
+		local_ref_guard class_guard(env, class_cls);
+
+		jmethodID for_name = env->GetStaticMethodID(class_cls, "forName", "(Ljava/lang/String;ZLjava/lang/ClassLoader;)Ljava/lang/Class;");
+		if(!for_name)
+		{
+			check_jni_exception("GetStaticMethodID Class.forName");
+			throw std::runtime_error("Failed to get Class.forName");
+		}
+
+		std::string binary_name = element_class_override;
+		std::replace(binary_name.begin(), binary_name.end(), '/', '.');
+		jstring name_obj = env->NewStringUTF(binary_name.c_str());
+		if(!name_obj)
+		{
+			check_jni_exception("NewStringUTF");
+			throw std::runtime_error("Failed to allocate class name string");
+		}
+		local_ref_guard name_guard(env, name_obj);
+
+		jobject cls_obj = env->CallStaticObjectMethod(class_cls, for_name, name_obj, JNI_FALSE, class_loader);
+		if(env->ExceptionCheck() || !cls_obj)
+		{
+			check_jni_exception("Class.forName");
+			throw std::runtime_error("Failed to resolve element class: " + binary_name);
+		}
+		elementClass = (jclass)cls_obj;
+	}
+	else
+	{
+		elementClass = env->FindClass(className);
+		if (!elementClass) {
+			check_jni_exception("FindClass");
+			throw std::runtime_error("Failed to find element class");
+		}
 	}
 	local_ref_guard guard(env, elementClass);
 
@@ -2491,6 +2572,90 @@ jobject cdts_jvm_serializer::extract_handle()
 	} else if (current.type == metaffi_callable_type) {
 		if (current.cdt_val.callable_val && current.cdt_val.callable_val->val) {
 			result = create_caller_object(env, *current.cdt_val.callable_val);
+		}
+	}
+
+	current_index++;
+	return result;
+}
+
+jarray cdts_jvm_serializer::extract_array(const metaffi_type_info& type_info)
+{
+	check_bounds(current_index);
+
+	cdt& current = data[current_index];
+
+	if (!(current.type & metaffi_array_type)) {
+		throw std::runtime_error("Type mismatch: expected array");
+	}
+
+	cdts* arr_cdts = current.cdt_val.array_val;
+	if (!arr_cdts || arr_cdts->length == 0) {
+		current_index++;
+		return nullptr;
+	}
+
+	// Determine element type from first element
+	metaffi_type element_type = (*arr_cdts)[0].type;
+
+	// Check if elements are themselves arrays (multi-dimensional)
+	bool is_multi_dimensional = (element_type & metaffi_array_type) != 0;
+
+	std::string override_class;
+	if(!is_multi_dimensional)
+	{
+		metaffi_type expected_base = (type_info.type & metaffi_array_type) ? (type_info.type & ~metaffi_array_type) : type_info.type;
+		if(expected_base == metaffi_handle_type && type_info.alias && *type_info.alias)
+		{
+			auto parsed = parse_alias_array(type_info.alias);
+			if(!parsed.base.empty())
+			{
+				int dims = type_info.fixed_dimensions > 0 ? static_cast<int>(type_info.fixed_dimensions) : parsed.dims;
+				if(dims > 1)
+				{
+					override_class.assign(static_cast<size_t>(dims - 1), '[');
+					override_class += "L" + to_internal_name(parsed.base) + ";";
+				}
+				else
+				{
+					override_class = to_internal_name(parsed.base);
+				}
+			}
+		}
+	}
+
+	jarray result;
+	if (is_multi_dimensional) {
+		// Multi-dimensional array - recursively extract sub-arrays
+		result = extract_multidim_array(*arr_cdts);
+	} else {
+		// 1D array
+		// Check if primitive array
+		bool is_primitive = false;
+		switch(element_type) {
+			case metaffi_int8_type:
+			case metaffi_int16_type:
+			case metaffi_int32_type:
+			case metaffi_int64_type:
+			case metaffi_float32_type:
+			case metaffi_float64_type:
+			case metaffi_bool_type:
+			case metaffi_char16_type:
+				is_primitive = true;
+				break;
+		}
+
+		if (is_primitive) {
+			result = create_primitive_array(*arr_cdts, element_type);
+		} else {
+			if(!override_class.empty())
+			{
+				result = (jarray)create_object_array(*arr_cdts, element_type, override_class);
+			}
+			else
+			{
+				result = (jarray)create_object_array(*arr_cdts, element_type);
+			}
 		}
 	}
 

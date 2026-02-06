@@ -103,66 +103,83 @@ public class MetaFFITypeInfo
 	public MetaFFITypeInfo(String jniCharType, String alias, int dims)
     {
         this.alias = alias;
-        this.dimensions = dims;
+        int computedDims = dims;
+        String sig = jniCharType;
+        while (sig.startsWith("[")) {
+            computedDims++;
+            sig = sig.substring(1);
+        }
+        this.dimensions = computedDims;
 
-		switch(jniCharType.toUpperCase())
+		MetaFFITypes baseType;
+		switch(sig)
 		{
 			case "Z":
-				this.type = MetaFFITypes.MetaFFIBool;
+				baseType = MetaFFITypes.MetaFFIBool;
 				break;
             case "B":
-                this.type = MetaFFITypes.MetaFFIInt8;
+                baseType = MetaFFITypes.MetaFFIInt8;
                 break;
             case "C":
-                this.type = MetaFFITypes.MetaFFIUInt16;
+                baseType = MetaFFITypes.MetaFFIUInt16;
                 break;
             case "S":
-                this.type = MetaFFITypes.MetaFFIInt16;
+                baseType = MetaFFITypes.MetaFFIInt16;
                 break;
             case "I":
-                this.type = MetaFFITypes.MetaFFIInt32;
+                baseType = MetaFFITypes.MetaFFIInt32;
                 break;
             case "J":
-                this.type = MetaFFITypes.MetaFFIInt64;
+                baseType = MetaFFITypes.MetaFFIInt64;
                 break;
             case "F":
-                this.type = MetaFFITypes.MetaFFIFloat32;
+                baseType = MetaFFITypes.MetaFFIFloat32;
                 break;
             case "D":
-                this.type = MetaFFITypes.MetaFFIFloat64;
+                baseType = MetaFFITypes.MetaFFIFloat64;
                 break;
-            case "[Z":
-                this.type = MetaFFITypes.MetaFFIBoolArray;
+            case "Ljava/lang/String;":
+                baseType = MetaFFITypes.MetaFFIString8;
                 break;
-            case "[B":
-                this.type = MetaFFITypes.MetaFFIInt8Array;
-                break;
-            case "[C":
-                this.type = MetaFFITypes.MetaFFIUInt16Array;
-                break;
-            case "[S":
-                this.type = MetaFFITypes.MetaFFIInt16Array;
-                break;
-            case "[I":
-                this.type = MetaFFITypes.MetaFFIInt32Array;
-                break;
-            case "[J":
-                this.type = MetaFFITypes.MetaFFIInt64Array;
-                break;
-            case "[F":
-                this.type = MetaFFITypes.MetaFFIFloat32Array;
-                break;
-            case "[D":
-                this.type = MetaFFITypes.MetaFFIFloat64Array;
+            case "Lmetaffi/api/accessor/Caller;":
+                baseType = MetaFFITypes.MetaFFICallable;
                 break;
             default:
-                if(jniCharType.contains("java/lang/Object"))
-                    this.type = MetaFFITypes.MetaFFIAny;
+                if(sig.contains("java/lang/Object"))
+                    baseType = MetaFFITypes.MetaFFIAny;
                 else
-                    this.type = MetaFFITypes.MetaFFIHandle;
+                    baseType = MetaFFITypes.MetaFFIHandle;
 		}
 
+        if (computedDims > 0) {
+            baseType = toArrayType(baseType);
+        }
+
+        this.type = baseType;
         this.value = this.type.value;
+    }
+
+    private static MetaFFITypes toArrayType(MetaFFITypes baseType)
+    {
+        switch(baseType)
+        {
+            case MetaFFIBool: return MetaFFITypes.MetaFFIBoolArray;
+            case MetaFFIInt8: return MetaFFITypes.MetaFFIInt8Array;
+            case MetaFFIInt16: return MetaFFITypes.MetaFFIInt16Array;
+            case MetaFFIInt32: return MetaFFITypes.MetaFFIInt32Array;
+            case MetaFFIInt64: return MetaFFITypes.MetaFFIInt64Array;
+            case MetaFFIUInt8: return MetaFFITypes.MetaFFIUInt8Array;
+            case MetaFFIUInt16: return MetaFFITypes.MetaFFIUInt16Array;
+            case MetaFFIUInt32: return MetaFFITypes.MetaFFIUInt32Array;
+            case MetaFFIUInt64: return MetaFFITypes.MetaFFIUInt64Array;
+            case MetaFFIFloat32: return MetaFFITypes.MetaFFIFloat32Array;
+            case MetaFFIFloat64: return MetaFFITypes.MetaFFIFloat64Array;
+            case MetaFFIString8: return MetaFFITypes.MetaFFIString8Array;
+            case MetaFFIAny: return MetaFFITypes.MetaFFIAnyArray;
+            case MetaFFIHandle: return MetaFFITypes.MetaFFIHandleArray;
+            case MetaFFISize: return MetaFFITypes.MetaFFISizeArray;
+            default: return MetaFFITypes.MetaFFIHandleArray;
+        }
     }
 }
 

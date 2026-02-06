@@ -29,6 +29,67 @@ static auto LOG = metaffi::get_logger("jvm.api");
 
 //--------------------------------------------------------------------
 
+namespace
+{
+	struct big_integer_cache
+	{
+		jclass cls = nullptr;
+		jmethodID ctor = nullptr;
+		jfieldID zero_field = nullptr;
+	};
+
+	big_integer_cache& get_big_integer_cache(JNIEnv* env)
+	{
+		static big_integer_cache cache;
+		if(!cache.cls)
+		{
+			jclass tmp = env->FindClass("java/math/BigInteger");
+			check_and_throw_jvm_exception(env, tmp);
+			cache.cls = (jclass)env->NewGlobalRef(tmp);
+			env->DeleteLocalRef(tmp);
+		}
+		if(!cache.ctor)
+		{
+			cache.ctor = env->GetMethodID(cache.cls, "<init>", "(I[B)V");
+			check_and_throw_jvm_exception(env, cache.ctor);
+		}
+		if(!cache.zero_field)
+		{
+			cache.zero_field = env->GetStaticFieldID(cache.cls, "ZERO", "Ljava/math/BigInteger;");
+			check_and_throw_jvm_exception(env, cache.zero_field);
+		}
+		return cache;
+	}
+
+	jobject uint64_to_big_integer(JNIEnv* env, uint64_t value)
+	{
+		auto& cache = get_big_integer_cache(env);
+		if(value == 0)
+		{
+			jobject zero = env->GetStaticObjectField(cache.cls, cache.zero_field);
+			check_and_throw_jvm_exception(env, zero);
+			return zero;
+		}
+
+		jbyteArray bytes = env->NewByteArray(8);
+		check_and_throw_jvm_exception(env, bytes);
+
+		jbyte buf[8];
+		for(int i = 0; i < 8; i++)
+		{
+			buf[7 - i] = static_cast<jbyte>((value >> (i * 8)) & 0xFF);
+		}
+
+		env->SetByteArrayRegion(bytes, 0, 8, buf);
+		check_and_throw_jvm_exception(env, true);
+
+		jobject big = env->NewObject(cache.cls, cache.ctor, 1, bytes);
+		env->DeleteLocalRef(bytes);
+		check_and_throw_jvm_exception(env, big);
+		return big;
+	}
+}
+
 DLL_PRIVATE void on_traverse_float64(const metaffi_size* index, metaffi_size index_size, metaffi_float64 val, void* context)
 {
 	if(index_size == 0)
@@ -2389,7 +2450,10 @@ void cdts_java_wrapper::switch_to_object(JNIEnv* env, int i) const
 		break;
 		case metaffi_uint64_type: {
 			jvalue v = this->to_jvalue(env, i);
-			this->set_object(env, i, static_cast<metaffi_int64>(v.j));
+			uint64_t u = static_cast<uint64_t>(v.j);
+			jobject big = uint64_to_big_integer(env, u);
+			cdt& c = this->pcdts->at(i);
+			c.set_handle(new cdt_metaffi_handle{big, JVM_RUNTIME_ID, jni_releaser});
 		}
 		break;
 		case metaffi_uint16_type: {

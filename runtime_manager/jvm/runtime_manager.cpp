@@ -506,6 +506,7 @@ void jvm_runtime_manager::release_runtime()
 	// Don't clear m_jvm - other managers might still reference it
 }
 
+
 std::shared_ptr<Module> jvm_runtime_manager::load_module(const std::string& module_path)
 {
 	if(!m_isRuntimeLoaded)

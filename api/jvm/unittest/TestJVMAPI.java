@@ -6,6 +6,7 @@ import metaffi.api.accessor.MetaFFITypeInfo;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import java.math.BigInteger;
 
 import static org.junit.Assert.*;
 
@@ -70,6 +71,10 @@ public class TestJVMAPI
 
 	private static String asUnsignedString(Object value)
 	{
+		if(value instanceof BigInteger)
+		{
+			return ((BigInteger)value).toString();
+		}
 		if(value instanceof Byte)
 		{
 			return Integer.toString(Byte.toUnsignedInt((Byte)value));

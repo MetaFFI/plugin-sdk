@@ -1,4 +1,4 @@
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_IMPLEMENT
 #include <doctest/doctest.h>
 #include "cdts_jvm_serializer.h"
 #include "runtime_id.h"
@@ -6,6 +6,7 @@
 #include <utils/env_utils.h>
 #include <jni.h>
 #include <filesystem>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -63,7 +64,31 @@ struct JVMFixture
 	}
 };
 
-static JVMFixture jvm_fixture;
+int main(int argc, char** argv)
+{
+	try
+	{
+		JVMFixture jvm_fixture;
+		doctest::Context context;
+		context.applyCommandLine(argc, argv);
+		int res = context.run();
+		if(context.shouldExit())
+		{
+			return res;
+		}
+		return res;
+	}
+	catch(const std::exception& ex)
+	{
+		std::cerr << ex.what() << std::endl;
+		return 1;
+	}
+	catch(...)
+	{
+		std::cerr << "Unknown error during JVM fixture initialization" << std::endl;
+		return 1;
+	}
+}
 
 TEST_SUITE("CDTS JVM Serializer")
 {

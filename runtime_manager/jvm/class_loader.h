@@ -49,4 +49,5 @@ public:
 	~jni_class_loader() = default;
 	
 	jni_class load_class(const std::string& class_name);
+	static jobject get_child_class_loader();
 };

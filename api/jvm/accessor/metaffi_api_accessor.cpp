@@ -263,25 +263,11 @@ JNIEXPORT jlong JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_load_1callable
 
 		if(params_count > 0)
 		{
-			for(int i=0 ; i<params_count ; i++)
-			{
-				if(pparams_types[i].is_free_alias && pparams_types[i].alias)
-				{
-					free(pparams_types[i].alias);
-				}
-			}
 			delete[] pparams_types;
 		}
 
 		if(retval_count > 0)
 		{
-			for(int i=0 ; i<retval_count ; i++)
-			{
-				if(pretval_types[i].is_free_alias && pretval_types[i].alias)
-				{
-					free(pretval_types[i].alias);
-				}
-			}
 			delete[] pretval_types;
 		}
 
@@ -351,25 +337,11 @@ JNIEXPORT jlong JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_load_1function
 
 		if(params_count > 0)
 		{
-			for(int i=0 ; i<params_count ; i++)
-			{
-				if(pparams_types[i].is_free_alias && pparams_types[i].alias)
-				{
-					free(pparams_types[i].alias);
-				}
-			}
 			delete[] pparams_types;
 		}
 
 		if(retval_count > 0)
 		{
-			for(int i=0 ; i<retval_count ; i++)
-			{
-				if(pretval_types[i].is_free_alias && pretval_types[i].alias)
-				{
-					free(pretval_types[i].alias);
-				}
-			}
 			delete[] pretval_types;
 		}
 

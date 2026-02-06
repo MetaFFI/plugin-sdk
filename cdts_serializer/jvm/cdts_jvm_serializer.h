@@ -49,6 +49,7 @@ class cdts_jvm_serializer
 {
 private:
 	JNIEnv* env;                   // JNI environment pointer (must remain valid)
+	jobject class_loader;           // Optional class loader for resolving user types
 	cdts& data;                    // Reference to CDTS
 	metaffi_size current_index;    // Current position in CDTS
 
@@ -225,6 +226,7 @@ private:
 	 * @return jobjectArray
 	 */
 	jobjectArray create_object_array(cdts& cdt, metaffi_type element_type);
+	jobjectArray create_object_array(cdts& cdt, metaffi_type element_type, const std::string& element_class_override);
 
 	// ===== Validation =====
 
@@ -246,7 +248,7 @@ public:
 	 * @param env JNI environment pointer (must remain valid)
 	 * @param pcdts Reference to CDTS
 	 */
-	explicit cdts_jvm_serializer(JNIEnv* env, cdts& pcdts);
+	explicit cdts_jvm_serializer(JNIEnv* env, cdts& pcdts, jobject class_loader = nullptr);
 
 	// ===== SERIALIZATION (Java → CDTS) =====
 
@@ -430,6 +432,7 @@ public:
 	 * @return jarray (local reference)
 	 */
 	jarray extract_array();
+	jarray extract_array(const metaffi_type_info& type_info);
 
 	/**
 	 * @brief Extract value as jobject (from handle type)

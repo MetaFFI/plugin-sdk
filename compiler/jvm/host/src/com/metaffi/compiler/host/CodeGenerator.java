@@ -157,7 +157,7 @@ public class CodeGenerator {
         appendLine(sb, 0, "");
 
         appendLine(sb, 1, "public static void bindModuleToCode(String modulePath, String runtimePlugin) {");
-        appendLine(sb, 2, "if (modulePath == null || modulePath.isEmpty()) {");
+        appendLine(sb, 2, "if (modulePath == null) {");
         appendLine(sb, 3, "throw new IllegalArgumentException(\"modulePath is required\");");
         appendLine(sb, 2, "}");
         appendLine(sb, 2, "if (runtimePlugin == null || runtimePlugin.isEmpty()) {");
@@ -432,15 +432,15 @@ public class CodeGenerator {
             case "int8":
                 return "((Number)" + expr + ").byteValue()";
             case "uint8":
-                return "((Number)" + expr + ").shortValue()";
+                return "(short)(((Number)" + expr + ").intValue() & 0xFF)";
             case "int16":
                 return "((Number)" + expr + ").shortValue()";
             case "uint16":
-                return "((Number)" + expr + ").intValue()";
+                return "((Number)" + expr + ").intValue() & 0xFFFF";
             case "int32":
                 return "((Number)" + expr + ").intValue()";
             case "uint32":
-                return "((Number)" + expr + ").longValue()";
+                return "((Number)" + expr + ").longValue() & 0xFFFFFFFFL";
             case "int64":
                 return "((Number)" + expr + ").longValue()";
             case "uint64":
@@ -553,10 +553,39 @@ public class CodeGenerator {
         }
         if (params != null) {
             for (int i = startIndex; i < params.size(); i++) {
-                args.add(params.get(i).getName());
+                ArgDefinition p = params.get(i);
+                String name = p.getName();
+                if (isVarargsSensitiveArray(p)) {
+                    args.add("(Object)" + name);
+                } else {
+                    args.add(name);
+                }
             }
         }
         return String.join(", ", args);
+    }
+
+    private boolean isVarargsSensitiveArray(ArgDefinition param) {
+        int dims = normalizeDimensions(param.getType(), param.getDimensions());
+        if (dims <= 0) {
+            return false;
+        }
+        if (dims >= 2) {
+            return true;
+        }
+        String baseType = normalizeBaseType(param.getType());
+        switch (baseType) {
+            case "string8":
+            case "string16":
+            case "string32":
+            case "handle":
+            case "any":
+            case "callable":
+            case "null":
+                return true;
+            default:
+                return false;
+        }
     }
     private void appendOptionalOverloads(StringBuilder sb, String methodName, List<ArgDefinition> params, int startIndex,
                                          String returnType, String outerClassName, boolean isStatic) {

@@ -20,9 +20,9 @@ namespace metaffi {
 // get_logger — returns (or creates) a named component logger.
 // The first call creates a shared stderr_sink_mt with the standard pattern.
 // Subsequent calls for the same name return the cached logger.
-// Thread-safe.
+// Thread-safe. Returned pointer is non-owning (registry owns the logger).
 // ---------------------------------------------------------------------------
-inline std::shared_ptr<spdlog::logger> get_logger(const std::string& name)
+inline spdlog::logger* get_logger(const std::string& name)
 {
     // Shared sink: stderr, no color, standard pattern, flush on error+
     static auto shared_sink = []() {
@@ -33,7 +33,7 @@ inline std::shared_ptr<spdlog::logger> get_logger(const std::string& name)
 
     // Fast path: logger already registered
     auto existing = spdlog::get(name);
-    if (existing) return existing;
+    if (existing) return existing.get();
 
     // Slow path: create and register (thread-safe via try/catch on duplicate)
     try
@@ -41,12 +41,13 @@ inline std::shared_ptr<spdlog::logger> get_logger(const std::string& name)
         auto logger = std::make_shared<spdlog::logger>(name, shared_sink);
         logger->flush_on(spdlog::level::err);
         spdlog::register_logger(logger);
-        return logger;
+        return logger.get();
     }
     catch(...)
     {
         // Another thread registered it first — just return it
-        return spdlog::get(name);
+        auto logger = spdlog::get(name);
+        return logger ? logger.get() : nullptr;
     }
 }
 

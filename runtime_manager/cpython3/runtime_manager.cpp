@@ -12,7 +12,7 @@
 namespace
 {
 std::mutex g_python_runtime_mutex;
-static auto LOG = metaffi::get_logger("cpython3.runtime_manager");
+static spdlog::logger* LOG = metaffi::get_logger("cpython3.runtime_manager");
 
 #ifndef NDEBUG
 #define RUNTIME_LOG(msg) \
