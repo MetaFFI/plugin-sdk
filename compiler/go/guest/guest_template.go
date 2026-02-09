@@ -13,7 +13,7 @@ import "unsafe"
 import "reflect"
 import "runtime"
 import "github.com/MetaFFI/sdk/idl_entities/go/IDL"
-import . "github.com/MetaFFI/lang-plugin-go/go-runtime"
+import . "github.com/MetaFFI/sdk/api/go/metaffi"
 {{range $mindex, $i := .Imports}}
 import . "{{$i}}"{{end}}
 
@@ -32,6 +32,31 @@ package main
 
 
 #include <include/cdt.h>
+
+// Provide C stub for metaffi_logf/metaffi_logfv/metaffi_log.
+// These are declared in utils/logger_c.h (included by xllr_capi_loader.c)
+// but implemented in C++. The guest DLL is built with CGo which cannot link C++,
+// so we provide simple stderr-based stubs here.
+#include <stdio.h>
+#include <stdarg.h>
+
+void metaffi_logfv(const char* component, int level, const char* fmt, va_list args) {
+	fprintf(stderr, "[%s] ", component);
+	vfprintf(stderr, fmt, args);
+	fprintf(stderr, "\n");
+}
+
+void metaffi_logf(const char* component, int level, const char* fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	metaffi_logfv(component, level, fmt, args);
+	va_end(args);
+}
+
+void metaffi_log(const char* component, int level, const char* message) {
+	fprintf(stderr, "[%s] %s\n", component, message);
+}
+
 #include <include/xllr_capi_loader.c>
 
 {{/* TODO: Do this without item CGo https://stackoverflow.com/questions/53238602/accessing-c-array-in-golang*/}}
@@ -170,7 +195,7 @@ func EntryPoint_{{GenerateCodeEntryPointSignature "" $f.Getter.Name $f.Getter.Pa
 
 	{{ $paramsLength := len $f.Getter.Parameters }}{{ $returnLength := len $f.Getter.ReturnValues }}
 
-	retvals_CDTS := C.get_cdt_element(xcall_params, 1)
+	retvals_CDTS := C.get_cdt_element(xcall_params, {{GetCDTReturnValueIndex $f.Getter.Parameters $f.Getter.ReturnValues}})
 	t0 := IDL.MetaFFITypeInfo{ {{$t := index $f.Getter.ReturnValues 0}}
 	    StringType: "{{$t.Type}}",
 	    Alias:"{{$t.TypeAlias}}",
@@ -194,8 +219,9 @@ func EntryPoint_{{GenerateCodeEntryPointSignature "" $f.Setter.Name $f.Setter.Pa
 
 	parameters_CDTS := C.get_cdt_element(xcall_params, 0)
 	{{$elem := index $f.Setter.Parameters 0}}
-	{{ConvertEmptyInterfaceFromCDTSToCorrectType $elem $m true}}
-	
+	_globalSetValAsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), 0, {{GetTypeForCDTToGo $elem $m}})
+	{{$f.Name}} = {{ConvertGlobalSetterExpression $elem $m}}
+}
 {{end}} {{/* end $f.Set */}}
 
 {{end}} {{/* end range globals */}}
@@ -215,7 +241,7 @@ func EntryPoint_{{GenerateCodeEntryPointSignature "" $f.Name $f.Parameters $f.Re
 	parameters_CDTS := C.get_cdt_element(xcall_params, 0)
 	{{end}}
 	{{ if gt $returnLength 0 }}
-	retvals_CDTS := C.get_cdt_element(xcall_params, 1)
+	retvals_CDTS := C.get_cdt_element(xcall_params, {{GetCDTReturnValueIndex $f.Parameters $f.ReturnValues}})
 	{{end}}
 
 	// parameters from C to Go
@@ -225,7 +251,15 @@ func EntryPoint_{{GenerateCodeEntryPointSignature "" $f.Name $f.Parameters $f.Re
 	{{end}} {{/* end range params */}}
 	
 	// call original function
-	{{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}{{$elem.Name}}{{end}}{{if $f.ReturnValues}} := {{end}}{{$f.Name}}({{CallParameters $f 0}})
+	{{$hasErrorReturn := index $f.Tags "has_error_return"}}
+	{{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}{{$elem.Name}}{{end}}{{if and (not $f.ReturnValues) (eq $hasErrorReturn "true")}}errReturn_{{else if eq $hasErrorReturn "true"}},errReturn_{{end}}{{if or $f.ReturnValues (eq $hasErrorReturn "true")}} := {{end}}{{$f.Name}}({{CallParameters $f 0}})
+
+	{{if eq $hasErrorReturn "true"}}
+	if errReturn_ != nil {
+		errToOutError(out_err, "Error returned: ", errReturn_)
+		return
+	}
+	{{end}}
 	
 	// return values
 	{{range $index, $elem := $f.ReturnValues}}
@@ -250,12 +284,15 @@ func EntryPoint_{{GenerateCodeEntryPointSignature "" $f.Name $f.Parameters $f.Re
 // class {{$c.Name}}
 {{$className := $c.Name}}
 
+{{$isInterface := index $c.Tags "interface"}}
+{{if ne $isInterface "true"}}
 // return empty struct
 //export EntryPoint_{{$c.Name}}_EmptyStruct_MetaFFI
 func EntryPoint_{{GenerateCodeEntryPointEmptyStructSignature $c.Name}}{
 	instance := &{{$c.Name}}{}
-	FromGoToCDT(instance, unsafe.Pointer(C.get_cdt_element(xcall_params, 1)), IDL.MetaFFITypeInfo{ StringType: IDL.HANDLE, Dimensions: 0, Type: {{GetMetaFFINumericType "handle"}} }, 0)
+	FromGoToCDT(instance, unsafe.Pointer(C.get_cdt_element(xcall_params, 0)), IDL.MetaFFITypeInfo{ StringType: IDL.HANDLE, Dimensions: 0, Type: {{GetMetaFFINumericType "handle"}} }, 0)
 }
+{{end}}
 
 // constructors
 {{range $i, $f := $c.Constructors}}
@@ -271,7 +308,7 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Name $f.Parameters 
 	parameters_CDTS := C.get_cdt_element(xcall_params, 0)
 	{{end}}
 	{{ if gt $returnLength 0 }}
-	retvals_CDTS := C.get_cdt_element(xcall_params, 1)
+	retvals_CDTS := C.get_cdt_element(xcall_params, {{GetCDTReturnValueIndex $f.Parameters $f.ReturnValues}})
 	{{end}}
 
 	// parameters from C to Go
@@ -281,7 +318,15 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Name $f.Parameters 
 	{{end}} {{/* end range params */}}
 	
 	// call original function
-	{{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}{{$elem.Name}}{{end}}{{if $f.ReturnValues}} := {{end}}{{$f.Name}}({{CallParameters $f.FunctionDefinition 0}})
+	{{$hasErrorReturn := index $f.Tags "has_error_return"}}
+	{{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}{{$elem.Name}}{{end}}{{if and (not $f.ReturnValues) (eq $hasErrorReturn "true")}}errReturn_{{else if eq $hasErrorReturn "true"}},errReturn_{{end}}{{if or $f.ReturnValues (eq $hasErrorReturn "true")}} := {{end}}{{$f.Name}}({{CallParameters $f.FunctionDefinition 0}})
+
+	{{if eq $hasErrorReturn "true"}}
+	if errReturn_ != nil {
+		errToOutError(out_err, "Error returned: ", errReturn_)
+		return
+	}
+	{{end}}
 	
 	// return values
 	{{range $index, $elem := $f.ReturnValues}}
@@ -315,7 +360,7 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Name $f.Parameters 
 	parameters_CDTS := C.get_cdt_element(xcall_params, 0)
 	{{end}}
 	{{ if gt $returnLength 0 }}
-	retvals_CDTS := C.get_cdt_element(xcall_params, 1)
+	retvals_CDTS := C.get_cdt_element(xcall_params, {{GetCDTReturnValueIndex $f.Parameters $f.ReturnValues}})
 	{{end}}
 
 	// parameters from C to Go
@@ -324,9 +369,22 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Name $f.Parameters 
 	{{ConvertEmptyInterfaceFromCDTSToCorrectType $elem $m false}}
 	{{end}} {{/* end range params */}}
 	
-	// call original function
+	// call original function (method receiver must be first parameter; IDL adds this_instance for methods)
 	{{ $receiver_pointer := index $f.Tags "receiver_pointer"}}
-	{{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}{{$elem.Name}}{{end}}{{if $f.ReturnValues}} := {{end}}({{(index $f.Parameters 0).Name }}.({{if eq $receiver_pointer "true"}}*{{end}}{{$className}})).{{$f.Name}}({{ CallParameters $f.FunctionDefinition 1}})
+	{{$hasErrorReturn := index $f.Tags "has_error_return"}}
+	{{if $f.Parameters}}
+	{{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}{{$elem.Name}}{{end}}{{if and (not $f.ReturnValues) (eq $hasErrorReturn "true")}}errReturn_{{else if eq $hasErrorReturn "true"}},errReturn_{{end}}{{if or $f.ReturnValues (eq $hasErrorReturn "true")}} := {{end}}({{(index $f.Parameters 0).Name }}.({{if eq $receiver_pointer "true"}}*{{end}}{{$className}})).{{$f.Name}}({{ CallParameters $f.FunctionDefinition 1}})
+	{{else}}
+	panic("MetaFFI: method {{$c.Name}}.{{$f.Name}} has no receiver (IDL must set instance_required for methods; rebuild go_idl_compiler)")
+	return
+	{{end}}
+
+	{{if eq $hasErrorReturn "true"}}
+	if errReturn_ != nil {
+		errToOutError(out_err, "Error returned: ", errReturn_)
+		return
+	}
+	{{end}}
 
 	// return values
 	{{range $index, $elem := $f.ReturnValues}}
@@ -361,13 +419,13 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Getter.Name $f.Gett
 	parameters_CDTS := C.get_cdt_element(xcall_params, 0)
 	{{end}}
 	{{ if gt $returnLength 0 }}
-	retvals_CDTS := C.get_cdt_element(xcall_params, 1)
+	retvals_CDTS := C.get_cdt_element(xcall_params, {{GetCDTReturnValueIndex $f.Getter.Parameters $f.Getter.ReturnValues}})
 	{{end}}
 
 	// get object
 	{{ $elem := index $f.Getter.Parameters 0 }}
 	objAsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), 0, {{GetTypeForCDTToGo $elem $m}})
-	obj := {{if not $elem.IsAny}}{{if $elem.IsTypeAlias}}{{$elem.GetTypeOrAlias}}{{else}}{{ConvertToGoType $elem $m}}{{end}}({{end}}objAsInterface{{if not $elem.IsAny}}.({{ConvertToGoType $elem $m}})){{end}}
+	obj := {{if not $elem.IsAny}}{{SafeTypeForAssertion $elem $m}}({{end}}objAsInterface{{if not $elem.IsAny}}.({{SafeTypeForAssertion $elem $m}})){{end}}
 
 	{{ $receiver_pointer := index $f.Getter.Tags "receiver_pointer"}}
 	{{$f.Name}}_res := obj.({{if eq $receiver_pointer "true"}}*{{end}}{{$className}}).{{$f.Name}}
@@ -398,22 +456,21 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Setter.Name $f.Sett
 	parameters_CDTS := C.get_cdt_element(xcall_params, 0)
 	{{end}}
 	{{ if gt $returnLength 0 }}
-	retvals_CDTS := C.get_cdt_element(xcall_params, 1)
+	retvals_CDTS := C.get_cdt_element(xcall_params, {{GetCDTReturnValueIndex $f.Setter.Parameters $f.Setter.ReturnValues}})
 	{{end}}
 
 	// get object
 	{{ $elem := index $f.Setter.Parameters 0 }}
 	thisAsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), 0, {{GetTypeForCDTToGo $elem $m}})
-	this := {{if not $elem.IsAny}}{{if $elem.IsTypeAlias}}{{$elem.GetTypeOrAlias}}{{else}}{{ConvertToGoType $elem $m}}{{end}}({{end}}thisAsInterface{{if not $elem.IsAny}}.({{ConvertToGoType $elem $m}})){{end}}
+	this := {{if not $elem.IsAny}}{{SafeTypeForAssertion $elem $m}}({{end}}thisAsInterface{{if not $elem.IsAny}}.({{SafeTypeForAssertion $elem $m}})){{end}}
 
 	// get val
 	{{ $elem = index $f.Setter.Parameters 1 }}
 	{{$elem.Name}}AsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), 1, {{GetTypeForCDTToGo $elem $m}})
 	{{ConvertEmptyInterfaceFromCDTSToCorrectType $elem $m false}}
 	
-	// set new data
-	{{ $receiver_pointer := index $f.Setter.Tags "receiver_pointer"}}
-	this.({{if eq $receiver_pointer "true"}}*{{end}}{{$className}}).{{$f.Name}} = {{$elem.Name}}
+	// set new data (always use pointer assertion for setters - value assertions are non-addressable in Go)
+	this.(*{{$className}}).{{$f.Name}} = {{$elem.Name}}
 	
 }
 {{end}}{{/* end $f.Setter */}}

@@ -32,7 +32,7 @@ Output:
 func main() {
 	// Check arguments
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, usage)
+		fmt.Fprint(os.Stderr, usage)
 		os.Exit(1)
 	}
 
@@ -40,7 +40,7 @@ func main() {
 
 	// Check for help flag
 	if sourcePath == "-h" || sourcePath == "--help" || sourcePath == "help" {
-		fmt.Println(usage)
+		fmt.Print(usage)
 		os.Exit(0)
 	}
 

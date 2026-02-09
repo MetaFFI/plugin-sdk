@@ -59,15 +59,11 @@ private:
     std::string executable_path_;
 
     /**
-     * @brief Execute a command and capture output
+     * @brief Run a command, inheriting the parent's stdout/stderr.
      * @param command Command to execute
-     * @param stdout_output Output string for STDOUT
-     * @param stderr_output Output string for STDERR
      * @return int Exit code
      */
-    int execute_command(const std::string& command,
-                       std::string& stdout_output,
-                       std::string& stderr_output);
+    int run_command(const std::string& command);
 
     /**
      * @brief Quote a string for shell command

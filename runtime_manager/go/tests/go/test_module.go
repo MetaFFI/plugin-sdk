@@ -2,31 +2,33 @@ package main
 
 import "C"
 
+// EntryPoint_* names match MetaFFI Go guest compiler convention (runtime manager maps callable=X to symbol EntryPoint_X).
+
 // Add adds two integers and returns the result
 //
-//export Add
-func Add(a, b C.int) C.int {
+//export EntryPoint_Add
+func EntryPoint_Add(a, b C.int) C.int {
 	return a + b
 }
 
 // Subtract subtracts b from a and returns the result
 //
-//export Subtract
-func Subtract(a, b C.int) C.int {
+//export EntryPoint_Subtract
+func EntryPoint_Subtract(a, b C.int) C.int {
 	return a - b
 }
 
 // Multiply multiplies two integers and returns the result
 //
-//export Multiply
-func Multiply(a, b C.int) C.int {
+//export EntryPoint_Multiply
+func EntryPoint_Multiply(a, b C.int) C.int {
 	return a * b
 }
 
 // Divide divides a by b and returns the result as a float
 //
-//export Divide
-func Divide(a, b C.double) C.double {
+//export EntryPoint_Divide
+func EntryPoint_Divide(a, b C.double) C.double {
 	if b == 0 {
 		return 0
 	}
@@ -35,15 +37,15 @@ func Divide(a, b C.double) C.double {
 
 // GetPi returns the value of Pi
 //
-//export GetPi
-func GetPi() C.double {
+//export EntryPoint_GetPi
+func EntryPoint_GetPi() C.double {
 	return 3.14159265358979
 }
 
 // IsPositive returns 1 if the number is positive, 0 otherwise
 //
-//export IsPositive
-func IsPositive(n C.int) C.int {
+//export EntryPoint_IsPositive
+func EntryPoint_IsPositive(n C.int) C.int {
 	if n > 0 {
 		return 1
 	}
@@ -52,8 +54,8 @@ func IsPositive(n C.int) C.int {
 
 // Max returns the maximum of two integers
 //
-//export Max
-func Max(a, b C.int) C.int {
+//export EntryPoint_Max
+func EntryPoint_Max(a, b C.int) C.int {
 	if a > b {
 		return a
 	}
@@ -62,8 +64,8 @@ func Max(a, b C.int) C.int {
 
 // Factorial calculates factorial of n (n!)
 //
-//export Factorial
-func Factorial(n C.int) C.longlong {
+//export EntryPoint_Factorial
+func EntryPoint_Factorial(n C.int) C.longlong {
 	if n <= 1 {
 		return 1
 	}

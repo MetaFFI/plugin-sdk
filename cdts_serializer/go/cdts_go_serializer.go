@@ -1438,6 +1438,70 @@ func (s *CDTSGoSerializer) ExtractCallable() (CallableInfo, error) {
 	return info, nil
 }
 
+// ExtractInt32Slice extracts a slice of int32 from the serializer (array type)
+func (s *CDTSGoSerializer) ExtractInt32Slice() ([]int32, error) {
+	cdt, err := s.getCurrentCDT()
+	if err != nil {
+		return nil, err
+	}
+
+	actualType := C.get_cdt_type(cdt)
+	expectedType := C.metaffi_type(C.metaffi_array_type | C.metaffi_int32_type)
+	if actualType != expectedType {
+		return nil, fmt.Errorf("type mismatch at index %d: expected int32 array, got %d", s.currentIndex, actualType)
+	}
+
+	innerCdts := C.get_cdt_array(cdt)
+	if innerCdts == nil {
+		return nil, fmt.Errorf("array value is nil at index %d", s.currentIndex)
+	}
+
+	length := uint64(C.get_cdts_length(innerCdts))
+	result := make([]int32, length)
+	for i := uint64(0); i < length; i++ {
+		elem := C.get_cdt_at_index(innerCdts, C.int(i))
+		if elem == nil {
+			return nil, fmt.Errorf("failed to get array element at index %d", i)
+		}
+		result[i] = int32(C.get_cdt_int32_val(elem))
+	}
+
+	s.currentIndex++
+	return result, nil
+}
+
+// ExtractFloat64Slice extracts a slice of float64 from the serializer (array type)
+func (s *CDTSGoSerializer) ExtractFloat64Slice() ([]float64, error) {
+	cdt, err := s.getCurrentCDT()
+	if err != nil {
+		return nil, err
+	}
+
+	actualType := C.get_cdt_type(cdt)
+	expectedType := C.metaffi_type(C.metaffi_array_type | C.metaffi_float64_type)
+	if actualType != expectedType {
+		return nil, fmt.Errorf("type mismatch at index %d: expected float64 array, got %d", s.currentIndex, actualType)
+	}
+
+	innerCdts := C.get_cdt_array(cdt)
+	if innerCdts == nil {
+		return nil, fmt.Errorf("array value is nil at index %d", s.currentIndex)
+	}
+
+	length := uint64(C.get_cdts_length(innerCdts))
+	result := make([]float64, length)
+	for i := uint64(0); i < length; i++ {
+		elem := C.get_cdt_at_index(innerCdts, C.int(i))
+		if elem == nil {
+			return nil, fmt.Errorf("failed to get array element at index %d", i)
+		}
+		result[i] = float64(C.get_cdt_float64_val(elem))
+	}
+
+	s.currentIndex++
+	return result, nil
+}
+
 // ===== Utility Methods =====
 
 // Reset resets the current index to 0

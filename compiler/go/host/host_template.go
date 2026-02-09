@@ -14,7 +14,7 @@ const HostFunctionStubsTemplate = `
 import (
 	api "github.com/MetaFFI/sdk/api/go"
 	"github.com/MetaFFI/sdk/idl_entities/go/IDL"
-	. "github.com/MetaFFI/lang-plugin-go/go-runtime"
+	. "github.com/MetaFFI/sdk/api/go/metaffi"
 )
 
 {{ $pfn := .IDLSource}}

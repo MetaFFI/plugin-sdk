@@ -15,6 +15,10 @@ import (
 	"golang.org/x/text/language"
 )
 
+func logHost(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, "[go_compiler:host] "+format+"\n", args...)
+}
+
 var goKeywords = map[string]bool{
 	"break": true, "default": true, "func": true, "interface": true, "select": true,
 	"case": true, "defer": true, "go": true, "map": true, "struct": true,
@@ -120,6 +124,7 @@ func fixNameCollisionAfterConvertingToGoNameConvention(def *IDL.IDLDefinition) {
 
 // --------------------------------------------------------------------
 func (this *HostCompiler) Compile(definition *IDL.IDLDefinition, outputDir string, outputFilename string, hostOptions map[string]string) (err error) {
+	logHost("Compile: idl_source=%s out_dir=%s out_file=%s", definition.IDLSource, outputDir, outputFilename)
 
 	// make sure definition does not use "go syntax-keywords" as names. If so, change the names a bit...
 	common.ModifyKeywords(definition, goKeywords, func(keyword string) string { return keyword + "__" })
@@ -165,11 +170,12 @@ func (this *HostCompiler) Compile(definition *IDL.IDLDefinition, outputDir strin
 
 	// write to output
 	genOutputFilename := this.outputDir + string(os.PathSeparator) + strings.ToLower(this.def.Modules[0].Name) + string(os.PathSeparator) + this.outputFilename + "_MetaFFIHost.go"
+	logHost("Writing host code to %s", genOutputFilename)
 	err = ioutil.WriteFile(genOutputFilename, []byte(code), 0600)
 	if err != nil {
 		return fmt.Errorf("Failed to write host code to %v. Error: %v", this.outputDir+this.outputFilename, err)
 	}
-
+	logHost("Wrote %s", genOutputFilename)
 	return nil
 }
 

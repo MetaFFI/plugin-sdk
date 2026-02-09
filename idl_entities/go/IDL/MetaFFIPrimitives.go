@@ -55,8 +55,9 @@ const (
 	STRING16 MetaFFIType = "string16"
 	STRING32 MetaFFIType = "string32"
 
-	HANDLE MetaFFIType = "handle"
-	ARRAY  MetaFFIType = "array"
+	HANDLE   MetaFFIType = "handle"
+	CALLABLE MetaFFIType = "callable"
+	ARRAY    MetaFFIType = "array"
 
 	ANY MetaFFIType = "any" // Parameter can receive any MetaFFI type
 
@@ -157,6 +158,7 @@ var TypeStringToEnumName = map[MetaFFIType]string{
 	CHAR16:   "CHAR16",
 	CHAR32:   "CHAR32",
 	HANDLE:   "HANDLE",
+	CALLABLE: "CALLABLE",
 
 	ARRAY: "ARRAY",
 
@@ -204,6 +206,7 @@ var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 	CHAR16:   uint64(C.metaffi_char16_type),
 	CHAR32:   uint64(C.metaffi_char32_type),
 	HANDLE:   uint64(C.metaffi_handle_type),
+	CALLABLE: uint64(C.metaffi_callable_type),
 
 	ARRAY: uint64(C.metaffi_array_type),
 

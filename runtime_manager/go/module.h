@@ -69,12 +69,21 @@ public:
 	 */
 	bool has_symbol(const std::string& symbol_name) const;
 
+	/**
+	 * Get a raw function pointer for a symbol in the module
+	 * @param symbol_name Name of the exported symbol
+	 * @return void* function pointer, or nullptr if not found
+	 */
+	void* get_symbol(const std::string& symbol_name) const;
+
 private:
 	go_runtime_manager* m_runtimeManager = nullptr;
 	std::string m_modulePath;
 	std::shared_ptr<boost::dll::shared_library> m_library;
 	mutable std::mutex m_mutex;
 
-	// Helper to parse entity_path and extract function name
+	// Helper to parse entity_path: returns symbol name (EntryPoint_*)
 	static std::string parse_entity_path(const std::string& entity_path);
+	// Returns logical name (value of callable=, or full string) for Entity::get_name()
+	static std::string parse_entity_path_logical_name(const std::string& entity_path);
 };

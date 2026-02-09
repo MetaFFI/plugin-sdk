@@ -6,7 +6,6 @@ toolchain go1.24.4
 
 require (
 	github.com/Masterminds/sprig/v3 v3.2.3
-	github.com/MetaFFI/lang-plugin-go/idl v0.0.0
 	github.com/MetaFFI/sdk/idl_entities/go v0.0.0
 	golang.org/x/text v0.27.0
 )

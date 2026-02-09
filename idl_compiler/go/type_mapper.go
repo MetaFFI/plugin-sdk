@@ -74,8 +74,9 @@ func (tm *TypeMapper) mapBaseType(typeExpr ast.Expr, typeName string) (IDL.MetaF
 		return IDL.HANDLE, fullName
 
 	case *ast.StarExpr:
-		// Pointer type (*T) - map the underlying type
-		return tm.mapBaseType(t.X, "")
+		// Pointer type (*T) - map the underlying type, but preserve * in alias
+		baseType, baseAlias := tm.mapBaseType(t.X, "")
+		return baseType, "*" + baseAlias
 
 	case *ast.InterfaceType:
 		// Interface type
@@ -91,16 +92,26 @@ func (tm *TypeMapper) mapBaseType(typeExpr ast.Expr, typeName string) (IDL.MetaF
 		return IDL.HANDLE, "struct"
 
 	case *ast.MapType:
-		// Map type (map[K]V)
-		return IDL.HANDLE, "map"
+		// Map type (map[K]V) - render full type
+		_, keyAlias := tm.mapBaseType(t.Key, "")
+		_, valAlias := tm.mapBaseType(t.Value, "")
+		return IDL.HANDLE, "map[" + keyAlias + "]" + valAlias
 
 	case *ast.ChanType:
-		// Channel type
-		return IDL.HANDLE, "chan"
+		// Channel type - render full type (chan T, chan<- T, <-chan T)
+		_, elemAlias := tm.mapBaseType(t.Value, "")
+		switch t.Dir {
+		case ast.SEND:
+			return IDL.HANDLE, "chan<- " + elemAlias
+		case ast.RECV:
+			return IDL.HANDLE, "<-chan " + elemAlias
+		default:
+			return IDL.HANDLE, "chan " + elemAlias
+		}
 
 	case *ast.FuncType:
-		// Function type
-		return IDL.HANDLE, "func"
+		// Function type - render full signature as callable
+		return IDL.CALLABLE, renderFuncType(t, tm)
 
 	default:
 		// Unknown type - fallback to handle
@@ -156,6 +167,8 @@ func (tm *TypeMapper) mapPrimitiveType(typeName string) IDL.MetaFFIType {
 		return IDL.STRING8
 
 	// Special types
+	case "any":
+		return IDL.ANY // any is alias for interface{} (Go 1.18+)
 	case "error":
 		return IDL.HANDLE // error is an interface
 
@@ -174,6 +187,40 @@ func (tm *TypeMapper) mapPrimitiveType(typeName string) IDL.MetaFFIType {
 func (tm *TypeMapper) GetArrayElementType(metaffiType IDL.MetaFFIType) IDL.MetaFFIType {
 	// Already handled in MapType - dimensions are separate
 	return metaffiType
+}
+
+// renderFuncType renders a full Go function type signature from its AST node.
+// Example: func(string, int) (string, error)
+func renderFuncType(ft *ast.FuncType, tm *TypeMapper) string {
+	renderFieldTypes := func(fl *ast.FieldList) string {
+		if fl == nil || len(fl.List) == 0 {
+			return ""
+		}
+		var parts []string
+		for _, f := range fl.List {
+			_, alias := tm.mapBaseType(f.Type, "")
+			if len(f.Names) <= 1 {
+				parts = append(parts, alias)
+			} else {
+				for range f.Names {
+					parts = append(parts, alias)
+				}
+			}
+		}
+		return strings.Join(parts, ", ")
+	}
+
+	params := renderFieldTypes(ft.Params)
+	result := ""
+	if ft.Results != nil && len(ft.Results.List) > 0 {
+		resultTypes := renderFieldTypes(ft.Results)
+		if len(ft.Results.List) > 1 {
+			result = " (" + resultTypes + ")"
+		} else {
+			result = " " + resultTypes
+		}
+	}
+	return "func(" + params + ")" + result
 }
 
 // IsExportedType checks if a type name is exported (public)

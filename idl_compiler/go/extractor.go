@@ -1,6 +1,7 @@
 package idl_compiler
 
 import (
+	"bufio"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -53,13 +54,12 @@ func NewExtractor(sourcePath string, sourceType SourceType) *Extractor {
 
 // Extract performs the extraction from the configured source
 func (e *Extractor) Extract() (*ExtractedInfo, error) {
-	// Determine source type if auto
 	sourceType := e.sourceType
 	if sourceType == SourceTypeAuto {
 		sourceType = e.detectSourceType()
 	}
+	logIDL("Extract: path=%s type=%v", e.sourcePath, sourceType)
 
-	// Parse based on source type
 	switch sourceType {
 	case SourceTypeFile:
 		return e.extractFromFile(e.sourcePath)
@@ -84,8 +84,28 @@ func (e *Extractor) detectSourceType() SourceType {
 	return SourceTypeFile
 }
 
+// detectModulePath reads the "module" line from go.mod in the given directory.
+// Returns the module path (e.g. "metaffi_guest_go") or "" if not found.
+func detectModulePath(dir string) string {
+	f, err := os.Open(filepath.Join(dir, "go.mod"))
+	if err != nil {
+		return ""
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if strings.HasPrefix(line, "module ") {
+			return strings.TrimSpace(strings.TrimPrefix(line, "module "))
+		}
+	}
+	return ""
+}
+
 // extractFromFile extracts from a single Go file
 func (e *Extractor) extractFromFile(filePath string) (*ExtractedInfo, error) {
+	logIDL("Parsing file: %s", filePath)
 	fset := token.NewFileSet()
 
 	// Parse the file
@@ -94,9 +114,12 @@ func (e *Extractor) extractFromFile(filePath string) (*ExtractedInfo, error) {
 		return nil, fmt.Errorf("failed to parse file %s: %w", filePath, err)
 	}
 
+	dir := filepath.Dir(filePath)
+
 	// Create extracted info
 	info := &ExtractedInfo{
 		PackageName: file.Name.Name,
+		ImportPath:  detectModulePath(dir),
 		FileSet:     fset,
 		ParsedFiles: []*ast.File{file},
 	}
@@ -109,6 +132,7 @@ func (e *Extractor) extractFromFile(filePath string) (*ExtractedInfo, error) {
 
 // extractFromDir extracts from all .go files in a directory
 func (e *Extractor) extractFromDir(dirPath string) (*ExtractedInfo, error) {
+	logIDL("Parsing directory: %s", dirPath)
 	fset := token.NewFileSet()
 
 	// Parse all Go files in directory
@@ -141,10 +165,12 @@ func (e *Extractor) extractFromDir(dirPath string) (*ExtractedInfo, error) {
 		pkg = p
 		break
 	}
+	logIDL("Package %q: %d files", pkgName, len(pkg.Files))
 
 	// Create extracted info
 	info := &ExtractedInfo{
 		PackageName: pkgName,
+		ImportPath:  detectModulePath(dirPath),
 		FileSet:     fset,
 	}
 
@@ -190,6 +216,12 @@ func (e *Extractor) extractFunction(funcDecl *ast.FuncDecl, info *ExtractedInfo)
 		return
 	}
 
+	// Skip generic functions (Go 1.18+ type parameters) - MetaFFI doesn't support generics
+	if funcDecl.Type.TypeParams != nil && len(funcDecl.Type.TypeParams.List) > 0 {
+		logIDL("Skipping generic function: %s", funcDecl.Name.Name)
+		return
+	}
+
 	// It's a package-level function
 	funcInfo := e.parseFunctionSignature(funcDecl)
 	if funcInfo != nil {
@@ -217,6 +249,12 @@ func (e *Extractor) extractGenDecl(genDecl *ast.GenDecl, info *ExtractedInfo) {
 
 // extractTypeSpec extracts a type declaration
 func (e *Extractor) extractTypeSpec(typeSpec *ast.TypeSpec, doc *ast.CommentGroup, info *ExtractedInfo) {
+	// Skip generic types (Go 1.18+ type parameters) - MetaFFI doesn't support generics
+	if typeSpec.TypeParams != nil && len(typeSpec.TypeParams.List) > 0 {
+		logIDL("Skipping generic type: %s", typeSpec.Name.Name)
+		return
+	}
+
 	switch t := typeSpec.Type.(type) {
 	case *ast.StructType:
 		// Struct type

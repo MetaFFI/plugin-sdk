@@ -1,0 +1,4522 @@
+{
+  "idl_source": "guest",
+  "idl_extension": "",
+  "idl_filename_with_extension": "go",
+  "idl_full_path": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+  "metaffi_guest_lib": "go_MetaFFIGuest",
+  "target_language": "go",
+  "modules": [
+    {
+      "name": "guest",
+      "comment": "",
+      "tags": {},
+      "functions": [
+        {
+          "name": "MakeBufferedChannel",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "MakeBufferedChannel",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "size",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "chan int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "SendAndClose",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "SendAndClose",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "ch",
+              "type": "handle",
+              "type_alias": "chan int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "values",
+              "type": "int64",
+              "type_alias": "[]int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            }
+          ],
+          "return_values": [],
+          "overload_index": 0
+        },
+        {
+          "name": "ReceiveAll",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ReceiveAll",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "ch",
+              "type": "handle",
+              "type_alias": "chan int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int64",
+              "type_alias": "[]int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "AddAsync",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "AddAsync",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "a",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "b",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "HelloWorld",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "HelloWorld",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ReturnsAnError",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ReturnsAnError",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "error",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "DivIntegers",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "DivIntegers",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "x",
+              "type": "int64",
+              "type_alias": "int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "y",
+              "type": "int64",
+              "type_alias": "int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "float64",
+              "type_alias": "float64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "JoinStrings",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "JoinStrings",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "arr",
+              "type": "string8",
+              "type_alias": "[]string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "WaitABit",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "WaitABit",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "ms",
+              "type": "int64",
+              "type_alias": "int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [],
+          "overload_index": 0
+        },
+        {
+          "name": "ReturnNull",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ReturnNull",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "any",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "CallCallbackAdd",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "CallCallbackAdd",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "add",
+              "type": "handle",
+              "type_alias": "func(int64, int64) int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret_0",
+              "type": "int64",
+              "type_alias": "int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "ret_1",
+              "type": "handle",
+              "type_alias": "error",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ReturnCallbackAdd",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ReturnCallbackAdd",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "func(int64, int64) int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ReturnMultipleReturnValues",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ReturnMultipleReturnValues",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret_0",
+              "type": "int64",
+              "type_alias": "int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "ret_1",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "ret_2",
+              "type": "float64",
+              "type_alias": "float64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "ret_3",
+              "type": "handle",
+              "type_alias": "any",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "ret_4",
+              "type": "uint8",
+              "type_alias": "[]byte",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            },
+            {
+              "name": "ret_5",
+              "type": "handle",
+              "type_alias": "*SomeClass",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ReturnsArrayWithDifferentDimensions",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ReturnsArrayWithDifferentDimensions",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "[]any",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ReturnsArrayOfDifferentObjects",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ReturnsArrayOfDifferentObjects",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "[]any",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ReturnAny",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ReturnAny",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "which",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "any",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "AcceptsAny",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "AcceptsAny",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "which",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "val",
+              "type": "handle",
+              "type_alias": "any",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "error",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ReturnErrorTuple",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ReturnErrorTuple",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "ok",
+              "type": "bool",
+              "type_alias": "bool",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret_0",
+              "type": "bool",
+              "type_alias": "bool",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "ret_1",
+              "type": "handle",
+              "type_alias": "error",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "Panics",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "Panics",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [],
+          "overload_index": 0
+        },
+        {
+          "name": "GetCounter",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "GetCounter",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int64",
+              "type_alias": "int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "SetCounter",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "SetCounter",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "value",
+              "type": "int64",
+              "type_alias": "int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [],
+          "overload_index": 0
+        },
+        {
+          "name": "IncCounter",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "IncCounter",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "delta",
+              "type": "int64",
+              "type_alias": "int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int64",
+              "type_alias": "int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "Sum",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "Sum",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "values",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "Join",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "Join",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "prefix",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "values",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "MakeStringList",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "MakeStringList",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "string8",
+              "type_alias": "[]string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "MakeStringIntMap",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "MakeStringIntMap",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "map[string]int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "MakeIntSet",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "MakeIntSet",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "map[int]struct",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "MakeNestedMap",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "MakeNestedMap",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "map[string]*ast.ArrayType",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "MakeSomeClassList",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "MakeSomeClassList",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "[]*SomeClass",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "MakeMapAny",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "MakeMapAny",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "map[string]any",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "GetColor",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "GetColor",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "idx",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "Color",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ColorName",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ColorName",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "color",
+              "type": "handle",
+              "type_alias": "Color",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "NewIntBox",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "NewIntBox",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "value",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "*ast.IndexExpr",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "NewStringBox",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "NewStringBox",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "value",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "*ast.IndexExpr",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "CallGreeter",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "CallGreeter",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "g",
+              "type": "handle",
+              "type_alias": "Greeter",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "name",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "NewTestMap",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "NewTestMap",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "*TestMap",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "NewOuter",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "NewOuter",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "value",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "*Outer",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "AcceptsPrimitives",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "AcceptsPrimitives",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "boolVal",
+              "type": "bool",
+              "type_alias": "bool",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "byteVal",
+              "type": "uint8",
+              "type_alias": "byte",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "int8Val",
+              "type": "int8",
+              "type_alias": "int8",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "int16Val",
+              "type": "int16",
+              "type_alias": "int16",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "int32Val",
+              "type": "int32",
+              "type_alias": "int32",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "int64Val",
+              "type": "int64",
+              "type_alias": "int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "uintVal",
+              "type": "uint64",
+              "type_alias": "uint",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "uint8Val",
+              "type": "uint8",
+              "type_alias": "uint8",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "uint16Val",
+              "type": "uint16",
+              "type_alias": "uint16",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "uint32Val",
+              "type": "uint32",
+              "type_alias": "uint32",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "uint64Val",
+              "type": "uint64",
+              "type_alias": "uint64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "float32Val",
+              "type": "float32",
+              "type_alias": "float32",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "float64Val",
+              "type": "float64",
+              "type_alias": "float64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "complex64Val",
+              "type": "handle",
+              "type_alias": "complex64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "complex128Val",
+              "type": "handle",
+              "type_alias": "complex128",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "runeVal",
+              "type": "int32",
+              "type_alias": "rune",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "stringVal",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "PrimitiveValues",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "EchoBytes",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "EchoBytes",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "data",
+              "type": "uint8",
+              "type_alias": "[]byte",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "uint8",
+              "type_alias": "[]byte",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ToUpperRune",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ToUpperRune",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "r",
+              "type": "int32",
+              "type_alias": "rune",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int32",
+              "type_alias": "rune",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "GetThreeBuffers",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "GetThreeBuffers",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "uint8",
+              "type_alias": "[][]byte",
+              "comment": "",
+              "tags": {},
+              "dimensions": 2,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ExpectThreeBuffers",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ExpectThreeBuffers",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "buffers",
+              "type": "uint8",
+              "type_alias": "[][]byte",
+              "comment": "",
+              "tags": {},
+              "dimensions": 2,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "error",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "GetSomeClasses",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "GetSomeClasses",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "[]*SomeClass",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ExpectThreeSomeClasses",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ExpectThreeSomeClasses",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "arr",
+              "type": "handle",
+              "type_alias": "[]*SomeClass",
+              "comment": "",
+              "tags": {},
+              "dimensions": 1,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "error",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "Make2DArray",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "Make2DArray",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int64",
+              "type_alias": "[][]int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 2,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "Make3DArray",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "Make3DArray",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int64",
+              "type_alias": "[][][]int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 3,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "MakeRaggedArray",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "MakeRaggedArray",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int64",
+              "type_alias": "[][]int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 2,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "Sum3DArray",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "Sum3DArray",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "arr",
+              "type": "int64",
+              "type_alias": "[][][]int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 3,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "SumRaggedArray",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "SumRaggedArray",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "arr",
+              "type": "int64",
+              "type_alias": "[][]int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 2,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "CallTransformer",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "CallTransformer",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "transformer",
+              "type": "handle",
+              "type_alias": "StringTransformer",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "value",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "ReturnTransformer",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "ReturnTransformer",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "suffix",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "handle",
+              "type_alias": "StringTransformer",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "CallFunction",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "CallFunction",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "function",
+              "type": "handle",
+              "type_alias": "func(string) int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "value",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "CallTransformerWithError",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "CallTransformerWithError",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "cb",
+              "type": "handle",
+              "type_alias": "func(string) (string, error)",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "value",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "ret_0",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "ret_1",
+              "type": "handle",
+              "type_alias": "error",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        },
+        {
+          "name": "CallTransformerRecover",
+          "comment": "",
+          "tags": {},
+          "entity_path": {
+            "callable": "CallTransformerRecover",
+            "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+            "package": "metaffi_guest_go"
+          },
+          "parameters": [
+            {
+              "name": "cb",
+              "type": "handle",
+              "type_alias": "func(string) string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "value",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "return_values": [
+            {
+              "name": "res",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            },
+            {
+              "name": "err",
+              "type": "handle",
+              "type_alias": "error",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false
+            }
+          ],
+          "overload_index": 0
+        }
+      ],
+      "classes": [
+        {
+          "name": "SimpleGreeter",
+          "comment": "",
+          "tags": {},
+          "entity_path": null,
+          "constructors": [],
+          "release": {
+            "name": "ReleaseSimpleGreeter",
+            "comment": "Releases object",
+            "tags": {},
+            "entity_path": {},
+            "parameters": [
+              {
+                "name": "this_instance",
+                "type": "handle",
+                "type_alias": "",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "return_values": [],
+            "overload_index": 0,
+            "instance_required": true
+          },
+          "methods": [
+            {
+              "name": "Greet",
+              "comment": "",
+              "tags": {
+                "receiver_pointer": "false"
+              },
+              "entity_path": {
+                "callable": "SimpleGreeter.Greet",
+                "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                "package": "metaffi_guest_go"
+              },
+              "parameters": [
+                {
+                  "name": "this_instance",
+                  "type": "handle",
+                  "type_alias": "",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                },
+                {
+                  "name": "name",
+                  "type": "string8",
+                  "type_alias": "string",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "return_values": [
+                {
+                  "name": "ret",
+                  "type": "string8",
+                  "type_alias": "string",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "overload_index": 0,
+              "instance_required": true
+            }
+          ],
+          "fields": []
+        },
+        {
+          "name": "SomeClass",
+          "comment": "",
+          "tags": {},
+          "entity_path": null,
+          "constructors": [],
+          "release": {
+            "name": "ReleaseSomeClass",
+            "comment": "Releases object",
+            "tags": {},
+            "entity_path": {},
+            "parameters": [
+              {
+                "name": "this_instance",
+                "type": "handle",
+                "type_alias": "",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "return_values": [],
+            "overload_index": 0,
+            "instance_required": true
+          },
+          "methods": [
+            {
+              "name": "Print",
+              "comment": "",
+              "tags": {
+                "receiver_pointer": "true"
+              },
+              "entity_path": {
+                "callable": "SomeClass.Print",
+                "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                "package": "metaffi_guest_go"
+              },
+              "parameters": [
+                {
+                  "name": "this_instance",
+                  "type": "handle",
+                  "type_alias": "",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "return_values": [
+                {
+                  "name": "ret",
+                  "type": "string8",
+                  "type_alias": "string",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "overload_index": 0,
+              "instance_required": true
+            }
+          ],
+          "fields": [
+            {
+              "name": "Name",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetName",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "SomeClass.Name",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Name",
+                    "type": "string8",
+                    "type_alias": "string",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetName",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "SomeClass.Name",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Name",
+                    "type": "string8",
+                    "type_alias": "string",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            }
+          ]
+        },
+        {
+          "name": "TestMap",
+          "comment": "",
+          "tags": {},
+          "entity_path": null,
+          "constructors": [
+            {
+              "name": "NewTestMap",
+              "comment": "",
+              "tags": {},
+              "entity_path": {
+                "callable": "NewTestMap",
+                "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                "package": "metaffi_guest_go"
+              },
+              "parameters": [],
+              "return_values": [
+                {
+                  "name": "ret",
+                  "type": "handle",
+                  "type_alias": "*TestMap",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "overload_index": 1
+            }
+          ],
+          "release": {
+            "name": "ReleaseTestMap",
+            "comment": "Releases object",
+            "tags": {},
+            "entity_path": {},
+            "parameters": [
+              {
+                "name": "this_instance",
+                "type": "handle",
+                "type_alias": "",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "return_values": [],
+            "overload_index": 0,
+            "instance_required": true
+          },
+          "methods": [
+            {
+              "name": "Set",
+              "comment": "",
+              "tags": {
+                "receiver_pointer": "true"
+              },
+              "entity_path": {
+                "callable": "TestMap.Set",
+                "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                "package": "metaffi_guest_go"
+              },
+              "parameters": [
+                {
+                  "name": "this_instance",
+                  "type": "handle",
+                  "type_alias": "",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                },
+                {
+                  "name": "key",
+                  "type": "string8",
+                  "type_alias": "string",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                },
+                {
+                  "name": "value",
+                  "type": "handle",
+                  "type_alias": "any",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "return_values": [],
+              "overload_index": 0,
+              "instance_required": true
+            },
+            {
+              "name": "Get",
+              "comment": "",
+              "tags": {
+                "receiver_pointer": "true"
+              },
+              "entity_path": {
+                "callable": "TestMap.Get",
+                "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                "package": "metaffi_guest_go"
+              },
+              "parameters": [
+                {
+                  "name": "this_instance",
+                  "type": "handle",
+                  "type_alias": "",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                },
+                {
+                  "name": "key",
+                  "type": "string8",
+                  "type_alias": "string",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "return_values": [
+                {
+                  "name": "ret",
+                  "type": "handle",
+                  "type_alias": "any",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "overload_index": 0,
+              "instance_required": true
+            },
+            {
+              "name": "Contains",
+              "comment": "",
+              "tags": {
+                "receiver_pointer": "true"
+              },
+              "entity_path": {
+                "callable": "TestMap.Contains",
+                "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                "package": "metaffi_guest_go"
+              },
+              "parameters": [
+                {
+                  "name": "this_instance",
+                  "type": "handle",
+                  "type_alias": "",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                },
+                {
+                  "name": "key",
+                  "type": "string8",
+                  "type_alias": "string",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "return_values": [
+                {
+                  "name": "ret",
+                  "type": "bool",
+                  "type_alias": "bool",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "overload_index": 0,
+              "instance_required": true
+            }
+          ],
+          "fields": [
+            {
+              "name": "Name",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetName",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "TestMap.Name",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Name",
+                    "type": "string8",
+                    "type_alias": "string",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetName",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "TestMap.Name",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Name",
+                    "type": "string8",
+                    "type_alias": "string",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            }
+          ]
+        },
+        {
+          "name": "Base",
+          "comment": "",
+          "tags": {},
+          "entity_path": null,
+          "constructors": [],
+          "release": {
+            "name": "ReleaseBase",
+            "comment": "Releases object",
+            "tags": {},
+            "entity_path": {},
+            "parameters": [
+              {
+                "name": "this_instance",
+                "type": "handle",
+                "type_alias": "",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "return_values": [],
+            "overload_index": 0,
+            "instance_required": true
+          },
+          "methods": [
+            {
+              "name": "BaseMethod",
+              "comment": "",
+              "tags": {
+                "receiver_pointer": "false"
+              },
+              "entity_path": {
+                "callable": "Base.BaseMethod",
+                "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                "package": "metaffi_guest_go"
+              },
+              "parameters": [
+                {
+                  "name": "this_instance",
+                  "type": "handle",
+                  "type_alias": "",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "return_values": [
+                {
+                  "name": "ret",
+                  "type": "int64",
+                  "type_alias": "int",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "overload_index": 0,
+              "instance_required": true
+            }
+          ],
+          "fields": [
+            {
+              "name": "BaseValue",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetBaseValue",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "Base.BaseValue",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "BaseValue",
+                    "type": "int64",
+                    "type_alias": "int",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetBaseValue",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "Base.BaseValue",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "BaseValue",
+                    "type": "int64",
+                    "type_alias": "int",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            }
+          ]
+        },
+        {
+          "name": "Derived",
+          "comment": "",
+          "tags": {},
+          "entity_path": null,
+          "constructors": [],
+          "release": {
+            "name": "ReleaseDerived",
+            "comment": "Releases object",
+            "tags": {},
+            "entity_path": {},
+            "parameters": [
+              {
+                "name": "this_instance",
+                "type": "handle",
+                "type_alias": "",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "return_values": [],
+            "overload_index": 0,
+            "instance_required": true
+          },
+          "methods": [
+            {
+              "name": "DerivedMethod",
+              "comment": "",
+              "tags": {
+                "receiver_pointer": "false"
+              },
+              "entity_path": {
+                "callable": "Derived.DerivedMethod",
+                "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                "package": "metaffi_guest_go"
+              },
+              "parameters": [
+                {
+                  "name": "this_instance",
+                  "type": "handle",
+                  "type_alias": "",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "return_values": [
+                {
+                  "name": "ret",
+                  "type": "string8",
+                  "type_alias": "string",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "overload_index": 0,
+              "instance_required": true
+            }
+          ],
+          "fields": [
+            {
+              "name": "Extra",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetExtra",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "Derived.Extra",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Extra",
+                    "type": "string8",
+                    "type_alias": "string",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetExtra",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "Derived.Extra",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Extra",
+                    "type": "string8",
+                    "type_alias": "string",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            }
+          ]
+        },
+        {
+          "name": "Outer",
+          "comment": "",
+          "tags": {},
+          "entity_path": null,
+          "constructors": [
+            {
+              "name": "NewOuter",
+              "comment": "",
+              "tags": {},
+              "entity_path": {
+                "callable": "NewOuter",
+                "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                "package": "metaffi_guest_go"
+              },
+              "parameters": [
+                {
+                  "name": "value",
+                  "type": "int64",
+                  "type_alias": "int",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "return_values": [
+                {
+                  "name": "ret",
+                  "type": "handle",
+                  "type_alias": "*Outer",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "overload_index": 1
+            }
+          ],
+          "release": {
+            "name": "ReleaseOuter",
+            "comment": "Releases object",
+            "tags": {},
+            "entity_path": {},
+            "parameters": [
+              {
+                "name": "this_instance",
+                "type": "handle",
+                "type_alias": "",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "return_values": [],
+            "overload_index": 0,
+            "instance_required": true
+          },
+          "methods": [],
+          "fields": [
+            {
+              "name": "Inner",
+              "type": "handle",
+              "type_alias": "*Inner",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetInner",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "Outer.Inner",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Inner",
+                    "type": "handle",
+                    "type_alias": "*Inner",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetInner",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "Outer.Inner",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Inner",
+                    "type": "handle",
+                    "type_alias": "*Inner",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inner",
+          "comment": "",
+          "tags": {},
+          "entity_path": null,
+          "constructors": [],
+          "release": {
+            "name": "ReleaseInner",
+            "comment": "Releases object",
+            "tags": {},
+            "entity_path": {},
+            "parameters": [
+              {
+                "name": "this_instance",
+                "type": "handle",
+                "type_alias": "",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "return_values": [],
+            "overload_index": 0,
+            "instance_required": true
+          },
+          "methods": [],
+          "fields": [
+            {
+              "name": "Value",
+              "type": "int64",
+              "type_alias": "int",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetValue",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "Inner.Value",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Value",
+                    "type": "int64",
+                    "type_alias": "int",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetValue",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "Inner.Value",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Value",
+                    "type": "int64",
+                    "type_alias": "int",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            }
+          ]
+        },
+        {
+          "name": "PrimitiveValues",
+          "comment": "",
+          "tags": {},
+          "entity_path": null,
+          "constructors": [],
+          "release": {
+            "name": "ReleasePrimitiveValues",
+            "comment": "Releases object",
+            "tags": {},
+            "entity_path": {},
+            "parameters": [
+              {
+                "name": "this_instance",
+                "type": "handle",
+                "type_alias": "",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "return_values": [],
+            "overload_index": 0,
+            "instance_required": true
+          },
+          "methods": [],
+          "fields": [
+            {
+              "name": "BoolVal",
+              "type": "bool",
+              "type_alias": "bool",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetBoolVal",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.BoolVal",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "BoolVal",
+                    "type": "bool",
+                    "type_alias": "bool",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetBoolVal",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.BoolVal",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "BoolVal",
+                    "type": "bool",
+                    "type_alias": "bool",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "ByteVal",
+              "type": "uint8",
+              "type_alias": "byte",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetByteVal",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.ByteVal",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "ByteVal",
+                    "type": "uint8",
+                    "type_alias": "byte",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetByteVal",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.ByteVal",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "ByteVal",
+                    "type": "uint8",
+                    "type_alias": "byte",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Int8Val",
+              "type": "int8",
+              "type_alias": "int8",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetInt8Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Int8Val",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Int8Val",
+                    "type": "int8",
+                    "type_alias": "int8",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetInt8Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Int8Val",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Int8Val",
+                    "type": "int8",
+                    "type_alias": "int8",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Int16Val",
+              "type": "int16",
+              "type_alias": "int16",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetInt16Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Int16Val",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Int16Val",
+                    "type": "int16",
+                    "type_alias": "int16",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetInt16Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Int16Val",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Int16Val",
+                    "type": "int16",
+                    "type_alias": "int16",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Int32Val",
+              "type": "int32",
+              "type_alias": "int32",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetInt32Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Int32Val",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Int32Val",
+                    "type": "int32",
+                    "type_alias": "int32",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetInt32Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Int32Val",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Int32Val",
+                    "type": "int32",
+                    "type_alias": "int32",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Int64Val",
+              "type": "int64",
+              "type_alias": "int64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetInt64Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Int64Val",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Int64Val",
+                    "type": "int64",
+                    "type_alias": "int64",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetInt64Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Int64Val",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Int64Val",
+                    "type": "int64",
+                    "type_alias": "int64",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "UintVal",
+              "type": "uint64",
+              "type_alias": "uint",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetUintVal",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.UintVal",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "UintVal",
+                    "type": "uint64",
+                    "type_alias": "uint",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetUintVal",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.UintVal",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "UintVal",
+                    "type": "uint64",
+                    "type_alias": "uint",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Uint8Val",
+              "type": "uint8",
+              "type_alias": "uint8",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetUint8Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Uint8Val",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Uint8Val",
+                    "type": "uint8",
+                    "type_alias": "uint8",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetUint8Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Uint8Val",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Uint8Val",
+                    "type": "uint8",
+                    "type_alias": "uint8",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Uint16Val",
+              "type": "uint16",
+              "type_alias": "uint16",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetUint16Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Uint16Val",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Uint16Val",
+                    "type": "uint16",
+                    "type_alias": "uint16",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetUint16Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Uint16Val",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Uint16Val",
+                    "type": "uint16",
+                    "type_alias": "uint16",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Uint32Val",
+              "type": "uint32",
+              "type_alias": "uint32",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetUint32Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Uint32Val",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Uint32Val",
+                    "type": "uint32",
+                    "type_alias": "uint32",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetUint32Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Uint32Val",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Uint32Val",
+                    "type": "uint32",
+                    "type_alias": "uint32",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Uint64Val",
+              "type": "uint64",
+              "type_alias": "uint64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetUint64Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Uint64Val",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Uint64Val",
+                    "type": "uint64",
+                    "type_alias": "uint64",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetUint64Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Uint64Val",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Uint64Val",
+                    "type": "uint64",
+                    "type_alias": "uint64",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Float32Val",
+              "type": "float32",
+              "type_alias": "float32",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetFloat32Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Float32Val",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Float32Val",
+                    "type": "float32",
+                    "type_alias": "float32",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetFloat32Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Float32Val",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Float32Val",
+                    "type": "float32",
+                    "type_alias": "float32",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Float64Val",
+              "type": "float64",
+              "type_alias": "float64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetFloat64Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Float64Val",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Float64Val",
+                    "type": "float64",
+                    "type_alias": "float64",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetFloat64Val",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Float64Val",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Float64Val",
+                    "type": "float64",
+                    "type_alias": "float64",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Complex64",
+              "type": "handle",
+              "type_alias": "complex64",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetComplex64",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Complex64",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Complex64",
+                    "type": "handle",
+                    "type_alias": "complex64",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetComplex64",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Complex64",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Complex64",
+                    "type": "handle",
+                    "type_alias": "complex64",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "Complex128",
+              "type": "handle",
+              "type_alias": "complex128",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetComplex128",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Complex128",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "Complex128",
+                    "type": "handle",
+                    "type_alias": "complex128",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetComplex128",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.Complex128",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "Complex128",
+                    "type": "handle",
+                    "type_alias": "complex128",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "RuneVal",
+              "type": "int32",
+              "type_alias": "rune",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetRuneVal",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.RuneVal",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "RuneVal",
+                    "type": "int32",
+                    "type_alias": "rune",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetRuneVal",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.RuneVal",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "RuneVal",
+                    "type": "int32",
+                    "type_alias": "rune",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            },
+            {
+              "name": "StringVal",
+              "type": "string8",
+              "type_alias": "string",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "is_optional": false,
+              "getter": {
+                "name": "GetStringVal",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.StringVal",
+                  "getter": "true",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [
+                  {
+                    "name": "StringVal",
+                    "type": "string8",
+                    "type_alias": "string",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "overload_index": 0,
+                "instance_required": true
+              },
+              "setter": {
+                "name": "SetStringVal",
+                "comment": "",
+                "tags": {},
+                "entity_path": {
+                  "field": "PrimitiveValues.StringVal",
+                  "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                  "package": "metaffi_guest_go",
+                  "setter": "true"
+                },
+                "parameters": [
+                  {
+                    "name": "this_instance",
+                    "type": "handle",
+                    "type_alias": "",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  },
+                  {
+                    "name": "StringVal",
+                    "type": "string8",
+                    "type_alias": "string",
+                    "comment": "",
+                    "tags": {},
+                    "dimensions": 0,
+                    "is_optional": false
+                  }
+                ],
+                "return_values": [],
+                "overload_index": 0,
+                "instance_required": true
+              }
+            }
+          ]
+        },
+        {
+          "name": "Greeter",
+          "comment": "",
+          "tags": {
+            "interface": "true"
+          },
+          "entity_path": null,
+          "constructors": [],
+          "release": {
+            "name": "ReleaseGreeter",
+            "comment": "Releases object",
+            "tags": {},
+            "entity_path": {},
+            "parameters": [
+              {
+                "name": "this_instance",
+                "type": "handle",
+                "type_alias": "",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "return_values": [],
+            "overload_index": 0,
+            "instance_required": true
+          },
+          "methods": [
+            {
+              "name": "Greet",
+              "comment": "",
+              "tags": {
+                "receiver_pointer": "false"
+              },
+              "entity_path": {
+                "callable": "Greeter.Greet",
+                "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+                "package": "metaffi_guest_go"
+              },
+              "parameters": [
+                {
+                  "name": "this_instance",
+                  "type": "handle",
+                  "type_alias": "",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                },
+                {
+                  "name": "name",
+                  "type": "string8",
+                  "type_alias": "string",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "return_values": [
+                {
+                  "name": "ret_0",
+                  "type": "string8",
+                  "type_alias": "string",
+                  "comment": "",
+                  "tags": {},
+                  "dimensions": 0,
+                  "is_optional": false
+                }
+              ],
+              "overload_index": 1,
+              "instance_required": true
+            }
+          ],
+          "fields": []
+        }
+      ],
+      "globals": [
+        {
+          "name": "ConstFiveSeconds",
+          "type": "int64",
+          "type_alias": "int64",
+          "comment": "",
+          "tags": {},
+          "dimensions": 0,
+          "is_optional": false,
+          "getter": {
+            "name": "GetConstFiveSeconds",
+            "comment": "",
+            "tags": {},
+            "entity_path": {
+              "getter": "true",
+              "global": "ConstFiveSeconds",
+              "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+              "package": "metaffi_guest_go"
+            },
+            "parameters": [],
+            "return_values": [
+              {
+                "name": "ConstFiveSeconds",
+                "type": "int64",
+                "type_alias": "int64",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "overload_index": 0
+          },
+          "setter": null
+        },
+        {
+          "name": "FiveSeconds",
+          "type": "int64",
+          "type_alias": "int64",
+          "comment": "",
+          "tags": {},
+          "dimensions": 0,
+          "is_optional": false,
+          "getter": {
+            "name": "GetFiveSeconds",
+            "comment": "",
+            "tags": {},
+            "entity_path": {
+              "getter": "true",
+              "global": "FiveSeconds",
+              "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+              "package": "metaffi_guest_go"
+            },
+            "parameters": [],
+            "return_values": [
+              {
+                "name": "FiveSeconds",
+                "type": "int64",
+                "type_alias": "int64",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "overload_index": 0
+          },
+          "setter": {
+            "name": "SetFiveSeconds",
+            "comment": "",
+            "tags": {},
+            "entity_path": {
+              "global": "FiveSeconds",
+              "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+              "package": "metaffi_guest_go",
+              "setter": "true"
+            },
+            "parameters": [
+              {
+                "name": "FiveSeconds",
+                "type": "int64",
+                "type_alias": "int64",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "return_values": [],
+            "overload_index": 0
+          }
+        },
+        {
+          "name": "ColorRed",
+          "type": "handle",
+          "type_alias": "Color",
+          "comment": "",
+          "tags": {},
+          "dimensions": 0,
+          "is_optional": false,
+          "getter": {
+            "name": "GetColorRed",
+            "comment": "",
+            "tags": {},
+            "entity_path": {
+              "getter": "true",
+              "global": "ColorRed",
+              "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+              "package": "metaffi_guest_go"
+            },
+            "parameters": [],
+            "return_values": [
+              {
+                "name": "ColorRed",
+                "type": "handle",
+                "type_alias": "Color",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "overload_index": 0
+          },
+          "setter": null
+        },
+        {
+          "name": "ColorGreen",
+          "type": "any",
+          "type_alias": "any",
+          "comment": "",
+          "tags": {},
+          "dimensions": 0,
+          "is_optional": false,
+          "getter": {
+            "name": "GetColorGreen",
+            "comment": "",
+            "tags": {},
+            "entity_path": {
+              "getter": "true",
+              "global": "ColorGreen",
+              "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+              "package": "metaffi_guest_go"
+            },
+            "parameters": [],
+            "return_values": [
+              {
+                "name": "ColorGreen",
+                "type": "any",
+                "type_alias": "any",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "overload_index": 0
+          },
+          "setter": null
+        },
+        {
+          "name": "ColorBlue",
+          "type": "any",
+          "type_alias": "any",
+          "comment": "",
+          "tags": {},
+          "dimensions": 0,
+          "is_optional": false,
+          "getter": {
+            "name": "GetColorBlue",
+            "comment": "",
+            "tags": {},
+            "entity_path": {
+              "getter": "true",
+              "global": "ColorBlue",
+              "module": "c:\\src\\github.com\\MetaFFI\\sdk\\test_modules\\guest_modules\\go",
+              "package": "metaffi_guest_go"
+            },
+            "parameters": [],
+            "return_values": [
+              {
+                "name": "ColorBlue",
+                "type": "any",
+                "type_alias": "any",
+                "comment": "",
+                "tags": {},
+                "dimensions": 0,
+                "is_optional": false
+              }
+            ],
+            "overload_index": 0
+          },
+          "setter": null
+        }
+      ],
+      "external_resources": []
+    }
+  ]
+}

@@ -477,16 +477,18 @@ func TestSerializeDeserializeInt32Slice(t *testing.T) {
 		t.Fatalf("AddInt32Slice failed: %v", err)
 	}
 
-	// Note: Array extraction not yet implemented in Go serializer
-	// This test verifies serialization works
 	ser.Reset()
-	peekType, err := ser.PeekType()
+	val, err := ser.ExtractInt32Slice()
 	if err != nil {
-		t.Fatalf("PeekType failed: %v", err)
+		t.Fatalf("ExtractInt32Slice failed: %v", err)
 	}
-	expectedType := CombineArrayType(MetaffiInt32Type())
-	if peekType != expectedType {
-		t.Errorf("Expected array type, got %d", peekType)
+	if len(val) != len(original) {
+		t.Errorf("Expected length %d, got %d", len(original), len(val))
+	}
+	for i := range original {
+		if val[i] != original[i] {
+			t.Errorf("At index %d: expected %d, got %d", i, original[i], val[i])
+		}
 	}
 }
 
@@ -503,13 +505,17 @@ func TestSerializeDeserializeFloat64Slice(t *testing.T) {
 	}
 
 	ser.Reset()
-	peekType, err := ser.PeekType()
+	val, err := ser.ExtractFloat64Slice()
 	if err != nil {
-		t.Fatalf("PeekType failed: %v", err)
+		t.Fatalf("ExtractFloat64Slice failed: %v", err)
 	}
-	expectedType := CombineArrayType(MetaffiFloat64Type())
-	if peekType != expectedType {
-		t.Errorf("Expected array type, got %d", peekType)
+	if len(val) != len(original) {
+		t.Errorf("Expected length %d, got %d", len(original), len(val))
+	}
+	for i := range original {
+		if val[i] != original[i] {
+			t.Errorf("At index %d: expected %v, got %v", i, original[i], val[i])
+		}
 	}
 }
 
@@ -526,13 +532,12 @@ func TestSerializeDeserializeEmptySlice(t *testing.T) {
 	}
 
 	ser.Reset()
-	peekType, err := ser.PeekType()
+	val, err := ser.ExtractInt32Slice()
 	if err != nil {
-		t.Fatalf("PeekType failed: %v", err)
+		t.Fatalf("ExtractInt32Slice failed: %v", err)
 	}
-	expectedType := CombineArrayType(MetaffiInt32Type())
-	if peekType != expectedType {
-		t.Errorf("Expected array type, got %d", peekType)
+	if len(val) != 0 {
+		t.Errorf("Expected empty slice, got length %d", len(val))
 	}
 }
 

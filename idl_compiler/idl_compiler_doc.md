@@ -1703,25 +1703,25 @@ public JavaInfo extractFromJar(String jarPath, String[] packageFilters) {
 
 ### 6.3 Go IDL Compiler
 
-**Location**: `lang-plugin-go/idl/`
+**Location**: `lang-plugin-go/idl/` (C++ plugin); compiler implementation in `sdk/idl_compiler/go/`
 
-**Language**: Pure Go (cgo for plugin interface)
+**Language**: C++ plugin (implements `idl_plugin_interface`); invokes SDK `go_idl_compiler` executable. The actual Go IDL compilation lives in the SDK.
 
 **Input**: Go source files (.go)
 
-**Approach**: AST parsing with custom go-parser
+**Approach**: Plugin calls `METAFFI_HOME/sdk/idl_compiler/go/go_idl_compiler`; SDK uses AST parsing (go-parser) and outputs IDL JSON to stdout.
 
-**Key Files:**
-- `GoIDLCompiler.go` - Main compiler (dual-mode)
-- `ClassesExtractor.go` - Struct/interface extraction
-- `FunctionsExtractor.go` - Function extraction
-- `GlobalsExtractor.go` - Package variable extraction
-- `Extractors.go` - Type mapping
+**Key Files (plugin):**
+- `go_idl_plugin.cpp` - C++ IDL plugin using `metaffi::idl_compiler::GoIDLCompilerWrapper`
+
+**Key Files (SDK):**
+- `sdk/idl_compiler/go/compiler.go` - Main compiler
+- `sdk/idl_compiler/go/cpp_wrapper/` - C++ wrapper for the executable
 
 **Architecture:**
 
 ```
-Go Source → go-parser → AST → Extractors → JSON IDL
+Go Source → (plugin) → go_idl_compiler exe → SDK extractor/generator → JSON IDL
 ```
 
 **Strengths:**

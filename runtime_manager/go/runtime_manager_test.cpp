@@ -56,25 +56,7 @@ bool expect_throw(Func&& func)
 	}
 }
 
-// Get Go info for tests - returns first detected Go or empty if none
-static go_installed_info get_test_go_info()
-{
-	auto installations = go_runtime_manager::detect_installed_go();
-	if (installations.empty())
-	{
-		return go_installed_info{};
-	}
-	return installations[0];
-}
-
-// Check if Go is available for testing
-static bool is_go_available()
-{
-	auto installations = go_runtime_manager::detect_installed_go();
-	return !installations.empty();
-}
-
-// Check if test module is available
+// Check if test module is available (built Go shared library)
 static bool is_test_module_available()
 {
 	std::string module_path = GO_TEST_MODULE_PATH;
@@ -82,89 +64,34 @@ static bool is_test_module_available()
 }
 
 // ============================================================================
-// 1. Detection Tests
+// 1. Runtime Lifecycle Tests
 // ============================================================================
+// Note: Go installation detection lives in the compiler module, not runtime_manager.
 
-TEST_SUITE("1. Go Detection")
+TEST_SUITE("1. Runtime Lifecycle")
 {
-	TEST_CASE("1.1 Detect Go installations")
+	TEST_CASE("1.1 Load runtime - success")
 	{
-		auto installations = go_runtime_manager::detect_installed_go();
-
-		// We should find at least one Go installation (since we're building with Go)
-		REQUIRE(installations.size() > 0);
-
-		for (const auto& info : installations)
-		{
-			INFO("Found Go: " << info.version << " at " << info.goroot);
-			CHECK(!info.version.empty());
-			CHECK(!info.goroot.empty());
-			CHECK(!info.go_exe.empty());
-
-			// Version should start with "go"
-			CHECK(info.version.rfind("go", 0) == 0);
-
-			// Check that go executable exists
-			CHECK(std::filesystem::exists(info.go_exe));
-		}
-	}
-
-	TEST_CASE("1.2 Go installation has valid paths")
-	{
-		REQUIRE(is_go_available());
-
-		auto info = get_test_go_info();
-
-		// GOROOT should exist
-		CHECK(std::filesystem::exists(info.goroot));
-
-		// go executable should exist
-		CHECK(std::filesystem::exists(info.go_exe));
-
-		// bin directory should exist
-		std::filesystem::path bin_dir = std::filesystem::path(info.goroot) / "bin";
-		CHECK(std::filesystem::exists(bin_dir));
-	}
-}
-
-// ============================================================================
-// 2. Runtime Lifecycle Tests
-// ============================================================================
-
-TEST_SUITE("2. Runtime Lifecycle")
-{
-	TEST_CASE("2.1 Load runtime - success")
-	{
-		REQUIRE(is_go_available());
-
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 
 		CHECK(manager.is_runtime_loaded() == false);
 		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
 		CHECK(manager.is_runtime_loaded() == true);
 	}
 
-	TEST_CASE("2.2 Load runtime - idempotent")
+	TEST_CASE("1.2 Load runtime - idempotent")
 	{
-		REQUIRE(is_go_available());
+		go_runtime_manager manager;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
-
-		// Multiple loads should succeed
 		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
 		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
 		CHECK(expect_no_throw([&]() { manager.load_runtime(); }));
 		CHECK(manager.is_runtime_loaded() == true);
 	}
 
-	TEST_CASE("2.3 Release runtime")
+	TEST_CASE("1.3 Release runtime")
 	{
-		REQUIRE(is_go_available());
-
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 
 		manager.load_runtime();
 		CHECK(manager.is_runtime_loaded() == true);
@@ -173,51 +100,32 @@ TEST_SUITE("2. Runtime Lifecycle")
 		CHECK(manager.is_runtime_loaded() == false);
 	}
 
-	TEST_CASE("2.4 Release runtime - idempotent")
+	TEST_CASE("1.4 Release runtime - idempotent")
 	{
-		REQUIRE(is_go_available());
-
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 
 		manager.load_runtime();
 
-		// Multiple releases should succeed
 		CHECK(expect_no_throw([&]() { manager.release_runtime(); }));
 		CHECK(expect_no_throw([&]() { manager.release_runtime(); }));
 		CHECK(expect_no_throw([&]() { manager.release_runtime(); }));
 		CHECK(manager.is_runtime_loaded() == false);
 	}
-
-	TEST_CASE("2.5 Get Go info")
-	{
-		REQUIRE(is_go_available());
-
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
-
-		const auto& retrieved_info = manager.get_go_info();
-		CHECK(retrieved_info.version == info.version);
-		CHECK(retrieved_info.goroot == info.goroot);
-		CHECK(retrieved_info.go_exe == info.go_exe);
-	}
 }
 
 // ============================================================================
-// 3. Module Loading Tests
+// 2. Module Loading Tests
 // ============================================================================
 
-TEST_SUITE("3. Module Loading")
+TEST_SUITE("2. Module Loading")
 {
-	TEST_CASE("3.1 Load valid Go module")
+	TEST_CASE("2.1 Load valid Go module")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		manager.load_runtime();
 
 		std::shared_ptr<Module> module;
@@ -226,30 +134,24 @@ TEST_SUITE("3. Module Loading")
 		CHECK(module->get_module_path() == module_path);
 	}
 
-	TEST_CASE("3.2 Load module - auto-loads runtime")
+	TEST_CASE("2.2 Load module - auto-loads runtime")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 
 		CHECK(manager.is_runtime_loaded() == false);
 
-		// load_module should auto-load runtime
 		auto module = manager.load_module(module_path);
 		CHECK(manager.is_runtime_loaded() == true);
 		CHECK(module != nullptr);
 	}
 
-	TEST_CASE("3.3 Load module - invalid path throws")
+	TEST_CASE("2.3 Load module - invalid path throws")
 	{
-		REQUIRE(is_go_available());
-
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		manager.load_runtime();
 
 		CHECK(expect_throw([&]() {
@@ -257,41 +159,37 @@ TEST_SUITE("3. Module Loading")
 		}));
 	}
 
-	TEST_CASE("3.4 Module - check symbol exists")
+	TEST_CASE("2.4 Module - check symbol exists")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 
-		CHECK(module->has_symbol("Add") == true);
-		CHECK(module->has_symbol("Subtract") == true);
-		CHECK(module->has_symbol("Multiply") == true);
-		CHECK(module->has_symbol("Divide") == true);
-		CHECK(module->has_symbol("GetPi") == true);
-		CHECK(module->has_symbol("NonExistentFunction") == false);
+		CHECK(module->has_symbol("EntryPoint_Add") == true);
+		CHECK(module->has_symbol("EntryPoint_Subtract") == true);
+		CHECK(module->has_symbol("EntryPoint_Multiply") == true);
+		CHECK(module->has_symbol("EntryPoint_Divide") == true);
+		CHECK(module->has_symbol("EntryPoint_GetPi") == true);
+		CHECK(module->has_symbol("EntryPoint_NonExistentFunction") == false);
 	}
 }
 
 // ============================================================================
-// 4. Entity Loading Tests
+// 3. Entity Loading Tests
 // ============================================================================
 
-TEST_SUITE("4. Entity Loading")
+TEST_SUITE("3. Entity Loading")
 {
-	TEST_CASE("4.1 Load entity - callable format")
+	TEST_CASE("3.1 Load entity - callable format")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 
 		std::shared_ptr<Entity> entity;
@@ -301,33 +199,28 @@ TEST_SUITE("4. Entity Loading")
 		CHECK(entity->get_function_pointer() != nullptr);
 	}
 
-	TEST_CASE("4.2 Load entity - bare function name")
+	TEST_CASE("3.2 Load entity - bare function name")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 
-		// Should also work without "callable=" prefix
 		std::shared_ptr<Entity> entity;
 		CHECK(expect_no_throw([&]() { entity = module->load_entity("Multiply"); }));
 		CHECK(entity != nullptr);
 		CHECK(entity->get_name() == "Multiply");
 	}
 
-	TEST_CASE("4.3 Load entity - nonexistent symbol throws")
+	TEST_CASE("3.3 Load entity - nonexistent symbol throws")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 
 		CHECK(expect_throw([&]() {
@@ -337,20 +230,18 @@ TEST_SUITE("4. Entity Loading")
 }
 
 // ============================================================================
-// 5. Function Execution Tests
+// 4. Function Execution Tests
 // ============================================================================
 
-TEST_SUITE("5. Function Execution")
+TEST_SUITE("4. Function Execution")
 {
-	TEST_CASE("5.1 Call Add function")
+	TEST_CASE("4.1 Call Add function")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 		auto entity = module->load_entity("Add");
 
@@ -363,15 +254,13 @@ TEST_SUITE("5. Function Execution")
 		CHECK(add_func(100, 200) == 300);
 	}
 
-	TEST_CASE("5.2 Call Subtract function")
+	TEST_CASE("4.2 Call Subtract function")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 		auto entity = module->load_entity("Subtract");
 
@@ -383,15 +272,13 @@ TEST_SUITE("5. Function Execution")
 		CHECK(subtract_func(3, 5) == -2);
 	}
 
-	TEST_CASE("5.3 Call Multiply function")
+	TEST_CASE("4.3 Call Multiply function")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 		auto entity = module->load_entity("Multiply");
 
@@ -403,15 +290,13 @@ TEST_SUITE("5. Function Execution")
 		CHECK(multiply_func(-2, 3) == -6);
 	}
 
-	TEST_CASE("5.4 Call Divide function")
+	TEST_CASE("4.4 Call Divide function")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 		auto entity = module->load_entity("Divide");
 
@@ -423,15 +308,13 @@ TEST_SUITE("5. Function Execution")
 		CHECK(divide_func(10.0, 0.0) == doctest::Approx(0.0));  // Our Go returns 0 for div by 0
 	}
 
-	TEST_CASE("5.5 Call GetPi function")
+	TEST_CASE("4.5 Call GetPi function")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 		auto entity = module->load_entity("GetPi");
 
@@ -441,15 +324,13 @@ TEST_SUITE("5. Function Execution")
 		CHECK(get_pi_func() == doctest::Approx(3.14159265358979).epsilon(0.0001));
 	}
 
-	TEST_CASE("5.6 Call IsPositive function")
+	TEST_CASE("4.6 Call IsPositive function")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 		auto entity = module->load_entity("IsPositive");
 
@@ -461,15 +342,13 @@ TEST_SUITE("5. Function Execution")
 		CHECK(is_positive_func(-5) == 0);
 	}
 
-	TEST_CASE("5.7 Call Max function")
+	TEST_CASE("4.7 Call Max function")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 		auto entity = module->load_entity("Max");
 
@@ -482,15 +361,13 @@ TEST_SUITE("5. Function Execution")
 		CHECK(max_func(-10, -5) == -5);
 	}
 
-	TEST_CASE("5.8 Call Factorial function")
+	TEST_CASE("4.8 Call Factorial function")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 		auto entity = module->load_entity("Factorial");
 
@@ -505,20 +382,18 @@ TEST_SUITE("5. Function Execution")
 }
 
 // ============================================================================
-// 6. Threading Tests
+// 5. Threading Tests
 // ============================================================================
 
-TEST_SUITE("6. Threading")
+TEST_SUITE("5. Threading")
 {
-	TEST_CASE("6.1 Concurrent function calls")
+	TEST_CASE("5.1 Concurrent function calls")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module = manager.load_module(module_path);
 		auto entity = module->load_entity("Add");
 
@@ -557,16 +432,12 @@ TEST_SUITE("6. Threading")
 
 	TEST_CASE("6.2 Multiple managers with same module")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-
-		// Create multiple managers
-		go_runtime_manager manager1(info);
-		go_runtime_manager manager2(info);
+		go_runtime_manager manager1;
+		go_runtime_manager manager2;
 
 		auto module1 = manager1.load_module(module_path);
 		auto module2 = manager2.load_module(module_path);
@@ -584,20 +455,18 @@ TEST_SUITE("6. Threading")
 }
 
 // ============================================================================
-// 7. Module Copy/Move Tests
+// 6. Module Copy/Move Tests
 // ============================================================================
 
-TEST_SUITE("7. Module Semantics")
+TEST_SUITE("6. Module Semantics")
 {
-	TEST_CASE("7.1 Module copy constructor")
+	TEST_CASE("6.1 Module copy constructor")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module1 = manager.load_module(module_path);
 
 		// Copy the module
@@ -616,15 +485,13 @@ TEST_SUITE("7. Module Semantics")
 		CHECK(func2(1, 2) == 3);
 	}
 
-	TEST_CASE("7.2 Module move constructor")
+	TEST_CASE("6.2 Module move constructor")
 	{
-		REQUIRE(is_go_available());
 		REQUIRE(is_test_module_available());
 
 		std::string module_path = GO_TEST_MODULE_PATH;
 
-		auto info = get_test_go_info();
-		go_runtime_manager manager(info);
+		go_runtime_manager manager;
 		auto module1 = manager.load_module(module_path);
 
 		// Move the module
@@ -640,12 +507,12 @@ TEST_SUITE("7. Module Semantics")
 }
 
 // ============================================================================
-// 8. Go Shared Library Detection Tests
+// 7. Go Shared Library Detection Tests
 // ============================================================================
 
-TEST_SUITE("8. Go Library Detection")
+TEST_SUITE("7. Go Library Detection")
 {
-	TEST_CASE("8.1 Detect Go shared library - test module")
+	TEST_CASE("7.1 Detect Go shared library - test module")
 	{
 		REQUIRE(is_test_module_available());
 
@@ -675,7 +542,7 @@ TEST_SUITE("8. Go Library Detection")
 		}
 	}
 
-	TEST_CASE("8.2 Detect non-Go library - boost DLL")
+	TEST_CASE("7.2 Detect non-Go library - boost DLL")
 	{
 		// Find a non-Go DLL to test against (boost filesystem DLL)
 		std::filesystem::path boost_dll;
@@ -712,7 +579,7 @@ TEST_SUITE("8. Go Library Detection")
 		CHECK(!result.go_version.has_value());
 	}
 
-	TEST_CASE("8.3 Detect Go library - nonexistent file throws")
+	TEST_CASE("7.3 Detect Go library - nonexistent file throws")
 	{
 		CHECK_THROWS_AS(
 			go_runtime_manager::is_go_shared_library("/nonexistent/path/to/library.dll"),
@@ -720,7 +587,7 @@ TEST_SUITE("8. Go Library Detection")
 		);
 	}
 
-	TEST_CASE("8.4 Detection result has meaningful reason")
+	TEST_CASE("7.4 Detection result has meaningful reason")
 	{
 		REQUIRE(is_test_module_available());
 

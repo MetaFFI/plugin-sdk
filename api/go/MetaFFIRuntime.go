@@ -1,7 +1,7 @@
 package api
 
 import (
-	goruntime "github.com/MetaFFI/lang-plugin-go/go-runtime"
+	goruntime "github.com/MetaFFI/sdk/api/go/metaffi"
 )
 
 type MetaFFIRuntime struct {

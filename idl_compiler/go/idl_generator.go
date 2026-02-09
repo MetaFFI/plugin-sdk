@@ -29,6 +29,7 @@ func NewIDLGenerator(extractedInfo *ExtractedInfo, sourcePath string) *IDLGenera
 
 // Generate generates the IDL definition and returns it as JSON string
 func (g *IDLGenerator) Generate() (string, error) {
+	logIDL("Generate IDL JSON: source=%s", g.sourcePath)
 	// Create IDL definition
 	idlDef := IDL.NewIDLDefinition(g.sourcePath, "go")
 
@@ -99,13 +100,10 @@ func (g *IDLGenerator) createModuleDefinition() *IDL.ModuleDefinition {
 		moduleDef.AddClass(classDef)
 	}
 
-	// Add globals as getter/setter function pairs
+	// Add globals as proper GlobalDefinitions (guest template reads $m.Globals, not $m.Functions)
 	for _, globalInfo := range g.extractedInfo.Globals {
-		getterDef, setterDef := g.createGlobalAccessors(globalInfo)
-		moduleDef.AddFunction(getterDef)
-		if setterDef != nil && !globalInfo.IsConst {
-			moduleDef.AddFunction(setterDef)
-		}
+		globalDef := g.createGlobalDefinition(globalInfo)
+		moduleDef.AddGlobal(globalDef)
 	}
 
 	return moduleDef
@@ -118,6 +116,7 @@ func (g *IDLGenerator) createFunctionDefinition(funcInfo *FunctionInfo) *IDL.Fun
 
 	// Set entity path
 	entityPath := g.entityPathGen.CreateFunctionEntityPath(funcInfo.Name)
+	g.enrichEntityPath(entityPath)
 	funcDef.EntityPath = entityPath
 
 	// Add parameters
@@ -126,14 +125,27 @@ func (g *IDLGenerator) createFunctionDefinition(funcInfo *FunctionInfo) *IDL.Fun
 		funcDef.AddParameter(argDef)
 	}
 
-	// Add return values
+	// Add return values.
+	// Go convention: if the last return value is of type `error`, it is
+	// communicated through the out_err C parameter (not via CDT retval slot).
+	// We strip it from the IDL return_values and set a tag so the template
+	// can still generate the correct Go call capturing the error variable.
+	hasErrorReturn := false
 	for i, retVal := range funcInfo.ReturnValues {
+		// Detect the `error` return value: TypeAlias == "error"
+		if retVal.TypeAlias == "error" {
+			hasErrorReturn = true
+			continue // skip adding it to the IDL return values
+		}
 		argDef := g.createArgumentDefinition(retVal)
 		// Generate name if empty
 		if argDef.Name == "" {
 			argDef.Name = fmt.Sprintf("ret_%d", i)
 		}
 		funcDef.AddReturnValues(argDef)
+	}
+	if hasErrorReturn {
+		funcDef.SetTag("has_error_return", "true")
 	}
 
 	// Set overload index
@@ -163,7 +175,9 @@ func (g *IDLGenerator) createClassDefinition(structInfo *StructInfo) *IDL.ClassD
 	// Add constructor if found
 	if structInfo.Constructor != nil {
 		funcDef := g.createFunctionDefinition(structInfo.Constructor)
-		funcDef.EntityPath = g.entityPathGen.CreateConstructorEntityPath(structInfo.Constructor.Name)
+		constructorEP := g.entityPathGen.CreateConstructorEntityPath(structInfo.Constructor.Name)
+		g.enrichEntityPath(constructorEP)
+		funcDef.EntityPath = constructorEP
 		// Constructor returns the struct instance
 		if len(funcDef.ReturnValues) == 0 {
 			retDef := IDL.NewArgDefinitionWithAlias("ret_0", IDL.HANDLE, structInfo.Name)
@@ -172,24 +186,24 @@ func (g *IDLGenerator) createClassDefinition(structInfo *StructInfo) *IDL.ClassD
 		// Convert to ConstructorDefinition
 		constructorDef := IDL.NewConstructorDefinitionFromFunctionDefinition(funcDef)
 		classDef.AddConstructor(constructorDef)
-	} else {
-		// Create default constructor
-		defaultConstructor := IDL.NewConstructorDefinition("New" + structInfo.Name)
-		defaultConstructor.EntityPath = g.entityPathGen.CreateConstructorEntityPath("New" + structInfo.Name)
-		// Update return value type alias
-		if len(defaultConstructor.ReturnValues) > 0 {
-			defaultConstructor.ReturnValues[0].TypeAlias = structInfo.Name
-		}
-		classDef.AddConstructor(defaultConstructor)
 	}
+	// No default constructor: if the struct has no explicit NewXxx function,
+	// don't generate one because calling a non-existent function would fail.
 
 	// Add methods
 	for _, method := range structInfo.Methods {
 		funcDef := g.createFunctionDefinition(method)
-		funcDef.EntityPath = g.entityPathGen.CreateMethodEntityPath(structInfo.Name, method.Name)
-		// Convert to MethodDefinition
-		instanceRequired := method.ReceiverPtr
-		methodDef := IDL.NewMethodDefinitionWithFunction(classDef, funcDef, instanceRequired)
+		methodEP := g.entityPathGen.CreateMethodEntityPath(structInfo.Name, method.Name)
+		g.enrichEntityPath(methodEP)
+		funcDef.EntityPath = methodEP
+		// receiver_pointer tag used by guest template for *T vs T
+		if method.ReceiverPtr {
+			funcDef.SetTag("receiver_pointer", "true")
+		} else {
+			funcDef.SetTag("receiver_pointer", "false")
+		}
+		// Struct methods always need instance (prepends this_instance so template can index Parameters 0)
+		methodDef := IDL.NewMethodDefinitionWithFunction(classDef, funcDef, true)
 		classDef.AddMethod(methodDef)
 	}
 
@@ -211,13 +225,21 @@ func (g *IDLGenerator) createClassDefinition(structInfo *StructInfo) *IDL.ClassD
 func (g *IDLGenerator) createInterfaceClassDefinition(interfaceInfo *InterfaceInfo) *IDL.ClassDefinition {
 	classDef := IDL.NewClassDefinition(interfaceInfo.Name)
 	classDef.Comment = interfaceInfo.Comment
+	classDef.SetTag("interface", "true") // Mark as interface so guest template skips EmptyStruct
 
 	// Interfaces don't have constructors or fields, only methods
 	for _, method := range interfaceInfo.Methods {
 		funcDef := g.createFunctionDefinition(method)
-		funcDef.EntityPath = g.entityPathGen.CreateMethodEntityPath(interfaceInfo.Name, method.Name)
-		// Convert to MethodDefinition (interface methods don't require instance)
-		methodDef := IDL.NewMethodDefinitionWithFunction(classDef, funcDef, false)
+		ifMethodEP := g.entityPathGen.CreateMethodEntityPath(interfaceInfo.Name, method.Name)
+		g.enrichEntityPath(ifMethodEP)
+		funcDef.EntityPath = ifMethodEP
+		if method.ReceiverPtr {
+			funcDef.SetTag("receiver_pointer", "true")
+		} else {
+			funcDef.SetTag("receiver_pointer", "false")
+		}
+		// Prepends this_instance so guest template can index Parameters 0
+		methodDef := IDL.NewMethodDefinitionWithFunction(classDef, funcDef, true)
 		classDef.AddMethod(methodDef)
 	}
 
@@ -259,47 +281,60 @@ func (g *IDLGenerator) createFieldDefinition(field *FieldInfo, structName string
 
 	// Set entity paths for getter and setter
 	if fieldDef.Getter != nil {
-		fieldDef.Getter.EntityPath = g.entityPathGen.CreateFieldGetterEntityPath(structName, field.Name)
+		fgEP := g.entityPathGen.CreateFieldGetterEntityPath(structName, field.Name)
+		g.enrichEntityPath(fgEP)
+		fieldDef.Getter.EntityPath = fgEP
 	}
 	if fieldDef.Setter != nil {
-		fieldDef.Setter.EntityPath = g.entityPathGen.CreateFieldSetterEntityPath(structName, field.Name)
+		fsEP := g.entityPathGen.CreateFieldSetterEntityPath(structName, field.Name)
+		g.enrichEntityPath(fsEP)
+		fieldDef.Setter.EntityPath = fsEP
 	}
 
 	return fieldDef
 }
 
-// createGlobalAccessors creates getter and setter functions for a global variable
-func (g *IDLGenerator) createGlobalAccessors(globalInfo *GlobalInfo) (*IDL.FunctionDefinition, *IDL.FunctionDefinition) {
-	// Create getter
-	getter := IDL.NewFunctionDefinition("Get" + globalInfo.Name)
-	getter.Comment = globalInfo.Comment
-	getter.EntityPath = g.entityPathGen.CreateGlobalGetterEntityPath(globalInfo.Name)
-
-	var retDef *IDL.ArgDefinition
-	if globalInfo.Dimensions > 0 {
-		retDef = IDL.NewArgArrayDefinitionWithAlias("ret_0", globalInfo.Type, globalInfo.Dimensions, globalInfo.TypeAlias)
-	} else {
-		retDef = IDL.NewArgDefinitionWithAlias("ret_0", globalInfo.Type, globalInfo.TypeAlias)
-	}
-	getter.AddReturnValues(retDef)
-
-	// Create setter (not for constants)
-	var setter *IDL.FunctionDefinition
+// createGlobalDefinition creates a GlobalDefinition with getter (and setter if not const).
+func (g *IDLGenerator) createGlobalDefinition(globalInfo *GlobalInfo) *IDL.GlobalDefinition {
+	getterName := "Get" + globalInfo.Name
+	setterName := ""
 	if !globalInfo.IsConst {
-		setter = IDL.NewFunctionDefinition("Set" + globalInfo.Name)
-		setter.Comment = "Set " + globalInfo.Name
-		setter.EntityPath = g.entityPathGen.CreateGlobalSetterEntityPath(globalInfo.Name)
-
-		var paramDef *IDL.ArgDefinition
-		if globalInfo.Dimensions > 0 {
-			paramDef = IDL.NewArgArrayDefinitionWithAlias("value", globalInfo.Type, globalInfo.Dimensions, globalInfo.TypeAlias)
-		} else {
-			paramDef = IDL.NewArgDefinitionWithAlias("value", globalInfo.Type, globalInfo.TypeAlias)
-		}
-		setter.AddParameter(paramDef)
+		setterName = "Set" + globalInfo.Name
 	}
 
-	return getter, setter
+	var globalDef *IDL.GlobalDefinition
+	if globalInfo.Dimensions > 0 {
+		globalDef = IDL.NewGlobalDefinitionWithAlias(globalInfo.Name, globalInfo.Type, globalInfo.TypeAlias, getterName, setterName)
+		globalDef.Dimensions = globalInfo.Dimensions
+	} else {
+		globalDef = IDL.NewGlobalDefinitionWithAlias(globalInfo.Name, globalInfo.Type, globalInfo.TypeAlias, getterName, setterName)
+	}
+	globalDef.Comment = globalInfo.Comment
+
+	// Set entity paths on getter and setter
+	if globalDef.Getter != nil {
+		getterEP := g.entityPathGen.CreateGlobalGetterEntityPath(globalInfo.Name)
+		g.enrichEntityPath(getterEP)
+		globalDef.Getter.EntityPath = getterEP
+	}
+	if globalDef.Setter != nil {
+		setterEP := g.entityPathGen.CreateGlobalSetterEntityPath(globalInfo.Name)
+		g.enrichEntityPath(setterEP)
+		globalDef.Setter.EntityPath = setterEP
+	}
+
+	return globalDef
+}
+
+// enrichEntityPath adds "module" (source directory) and "package" (Go import path)
+// to the given entity_path so the guest compiler can set up import and replace directives.
+func (g *IDLGenerator) enrichEntityPath(entityPath map[string]string) {
+	if g.extractedInfo.ImportPath != "" {
+		entityPath["package"] = g.extractedInfo.ImportPath
+	}
+	// Use the absolute source path as the module location so the guest compiler
+	// can detect it as a local directory and add a replace directive.
+	entityPath["module"] = g.sourcePath
 }
 
 // getNextOverloadIndex returns and increments the overload index for a function name

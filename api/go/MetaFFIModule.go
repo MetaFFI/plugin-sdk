@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	goruntime "github.com/MetaFFI/lang-plugin-go/go-runtime"
+	goruntime "github.com/MetaFFI/sdk/api/go/metaffi"
 	"github.com/MetaFFI/sdk/idl_entities/go/IDL"
 )
 

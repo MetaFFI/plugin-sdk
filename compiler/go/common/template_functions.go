@@ -49,6 +49,35 @@ var TemplateFuncMap = map[string]interface{}{
 	"GetMetaFFINumericType":                      GetMetaFFINumericType,
 	"AssertAndConvert":                           assertAndConvert,
 	"GetTypeForCDTToGo":                          getTypeForCDTToGo,
+	"SafeTypeForAssertion":                       safeTypeForAssertion,
+	"ConvertGlobalSetterExpression":              convertGlobalSetterExpression,
+}
+
+// isGoKeywordType returns true if the type string is a Go keyword that cannot stand alone as a type
+// (e.g. "func", "chan", "map", "struct"). These require additional syntax (parameter lists, element types, etc.)
+// and must be replaced with "interface{}" when used in type assertions or conversions.
+func isGoKeywordType(t string) bool {
+	switch t {
+	case "func", "chan", "map", "struct", "handle", "callable":
+		return true
+	}
+	return false
+}
+
+// safeTypeForAssertion returns a Go type string safe for use in .(type) or (type)(x); never returns empty.
+func safeTypeForAssertion(def *IDL.ArgDefinition, mod *IDL.ModuleDefinition) string {
+	s := def.GetTypeOrAlias()
+	if s != "" && !isGoKeywordType(s) {
+		if def.Dimensions > 0 {
+			s = strings.Repeat("[]", def.Dimensions) + s
+		}
+		return s
+	}
+	s = convertToGoType(def, mod)
+	if s == "" || isGoKeywordType(s) {
+		return "interface{}"
+	}
+	return s
 }
 
 func getTypeForCDTToGo(arg *IDL.ArgDefinition, mod *IDL.ModuleDefinition) string {
@@ -58,14 +87,23 @@ func getTypeForCDTToGo(arg *IDL.ArgDefinition, mod *IDL.ModuleDefinition) string
 		return fmt.Sprintf("reflect.TypeFor[%v]()", strings.ReplaceAll(convertToGoType(arg, mod), "[]", ""))
 	}
 
+	// For callable types, pass the function type to TraverseCDT so it can create
+	// a properly-typed Go func via reflect.MakeFunc.
+	if arg.Type == IDL.CALLABLE && arg.IsTypeAlias() {
+		return fmt.Sprintf("reflect.TypeOf((%v)(nil))", arg.TypeAlias)
+	}
+
 	// otherwise return "nil"
 	return "nil"
 }
 
 func GetMetaFFINumericType(typeName IDL.MetaFFIType) uint64 {
+	if typeName == "" {
+		return 0
+	}
 	t := IDL.TypeStringToTypeEnum[IDL.MetaFFIType(strings.ToLower(string(typeName)))]
 	if t == 0 {
-		panic("Failed to find numeric MetaFFI type for " + strings.ToLower(string(typeName)))
+		return 0
 	}
 	return t
 }
@@ -217,7 +255,14 @@ func generateMethodReceiverCode(meth *IDL.MethodDefinition) string {
 
 // --------------------------------------------------------------------
 func getCDTReturnValueIndex(params []*IDL.ArgDefinition, retvals []*IDL.ArgDefinition) int {
-	return 1 // return values are always at index 1
+	// XLLR calling convention:
+	// - params_ret: cdts[2] -> params at [0], retvals at [1]
+	// - no_params_ret: cdts[1] -> retvals at [0]
+	// - params_no_ret: cdts[1] -> params at [0]
+	if len(params) > 0 {
+		return 1 // retvals after params
+	}
+	return 0 // retvals only, at index 0
 }
 
 // --------------------------------------------------------------------
@@ -376,8 +421,19 @@ func convertToGoType(def *IDL.ArgDefinition, mod *IDL.ModuleDefinition) string {
 		} else {
 			res = "interface{}"
 		}
+	case IDL.CALLABLE:
+		// Callable types: use the full type alias (e.g. "func(int64, int64) int64")
+		// if available; otherwise fall back to interface{}.
+		if def.IsTypeAlias() {
+			res = def.TypeAlias
+		} else {
+			res = "interface{}"
+		}
 	default:
 		res = string(t)
+		if isGoKeywordType(res) {
+			res = "interface{}"
+		}
 	}
 
 	if def.Dimensions > 0 {
@@ -386,6 +442,9 @@ func convertToGoType(def *IDL.ArgDefinition, mod *IDL.ModuleDefinition) string {
 		}
 	}
 
+	if res == "" {
+		res = "interface{}"
+	}
 	return res
 }
 
@@ -601,7 +660,7 @@ func getMetaFFIArrayType(numericType string) (numericTypes uint64) {
 
 func assertAndConvert(varName string, def *IDL.ArgDefinition, mod *IDL.ModuleDefinition) string {
 
-	if def.Type == IDL.HANDLE || def.Type == IDL.HANDLE_ARRAY {
+	if def.Type == IDL.HANDLE || def.Type == IDL.HANDLE_ARRAY || def.Type == IDL.CALLABLE {
 		return varName
 	}
 
@@ -612,6 +671,26 @@ func assertAndConvert(varName string, def *IDL.ArgDefinition, mod *IDL.ModuleDef
 	}
 }
 
+// cdtStorageGoType returns the Go type that FromCDTToGo stores a value as,
+// based on the MetaFFI type (e.g., int64, string, float64, interface{}).
+func cdtStorageGoType(metaffiType IDL.MetaFFIType) string {
+	t := IDL.MetaFFIType(strings.ReplaceAll(string(metaffiType), "_array", ""))
+	switch t {
+	case IDL.STRING8, IDL.STRING16, IDL.STRING32:
+		return "string"
+	case IDL.BOOL:
+		return "bool"
+	case IDL.FLOAT32:
+		return "float32"
+	case IDL.FLOAT64:
+		return "float64"
+	case IDL.HANDLE, IDL.ANY:
+		return "interface{}"
+	default:
+		return string(t) // int8, int16, int32, int64, uint8, etc.
+	}
+}
+
 func convertEmptyInterfaceFromCDTSToCorrectType(elem *IDL.ArgDefinition, mod *IDL.ModuleDefinition, outputVarExists bool) string {
 
 	if elem.IsAny() {
@@ -619,32 +698,102 @@ func convertEmptyInterfaceFromCDTSToCorrectType(elem *IDL.ArgDefinition, mod *ID
 	}
 
 	if elem.Dimensions > 0 {
-		/*
-			{{if gt $f.Dimensions 0}}
-			{{$f.Name}} := {{$f.Name}}AsInterface.({{Repeat [] $f.Dimensions}}{{ConvertToGoType $f.ArgDefinition $m}})
-		*/
-		code := fmt.Sprintf("%v := %vAsInterface.(%v)\n", elem.Name, elem.Name, convertToGoType(elem, mod))
-
-		return code
-	} else {
-		// if casting is needed
-		castingCode := ""
-		if !elem.IsTypeAlias() {
-			castingCode = convertToGoType(elem, mod)
-		} else if elem.IsTypeAlias() && !elem.IsHandle() {
-			castingCode = elem.TypeAlias
+		// For arrays, prefer TypeAlias which has the correct Go type with [] prefixes
+		// (e.g., [][][]int instead of [][][]int64, []*SomeClass instead of []interface{})
+		typ := elem.TypeAlias
+		if typ == "" {
+			typ = convertToGoType(elem, mod)
 		}
-
-		// if the type is a HANDLE - assertion needs to be the Alias
-		// if the type is NOT a handle - assertion needs to be to "covertToGoType"
-		assertion := ""
-		if elem.IsHandle() && elem.IsTypeAlias() {
-			assertion = elem.TypeAlias
-		} else {
-			assertion = convertToGoType(elem, mod)
+		if typ == "" {
+			typ = "interface{}"
 		}
-
-		return fmt.Sprintf("%v := %v(%vAsInterface.(%v))", elem.Name, castingCode, elem.Name, assertion)
-
+		return fmt.Sprintf("%v := %vAsInterface.(%v)\n", elem.Name, elem.Name, typ)
 	}
+
+	// Non-array scalar types
+	baseType := IDL.MetaFFIType(strings.ReplaceAll(string(elem.Type), "_array", ""))
+
+	if baseType == IDL.HANDLE {
+		// HANDLE: CDT stores the original Go value as interface{}.
+		// Assert directly to the target Go type (TypeAlias).
+		targetType := elem.TypeAlias
+		if targetType == "" || isGoKeywordType(targetType) {
+			targetType = "interface{}"
+		}
+		return fmt.Sprintf("%v := %vAsInterface.(%v)", elem.Name, elem.Name, targetType)
+	}
+
+	if baseType == IDL.CALLABLE {
+		// CALLABLE: TraverseCDT returns a Go func of the correct type.
+		// Assert directly to the function type alias (e.g., func(string) int).
+		targetType := elem.TypeAlias
+		if targetType == "" {
+			targetType = "interface{}"
+		}
+		return fmt.Sprintf("%v := %vAsInterface.(%v)", elem.Name, elem.Name, targetType)
+	}
+
+	// Primitive types: CDT stores as the MetaFFI Go type (e.g., int64).
+	// The Go function may expect a different type (e.g., int from TypeAlias).
+	cdtType := cdtStorageGoType(baseType)
+	targetType := safeTypeForAssertion(elem, mod)
+
+	if cdtType == targetType {
+		// Same type, just assert
+		return fmt.Sprintf("%v := %vAsInterface.(%v)", elem.Name, elem.Name, cdtType)
+	}
+
+	// Different types: assert to CDT type, then convert to target
+	// e.g., value := int(valueAsInterface.(int64))
+	return fmt.Sprintf("%v := %v(%vAsInterface.(%v))", elem.Name, targetType, elem.Name, cdtType)
+}
+
+// convertGlobalSetterExpression returns a Go expression that converts _globalSetValAsInterface
+// to the correct Go type for assignment to a global variable.
+// This is separate from convertEmptyInterfaceFromCDTSToCorrectType because for global setters,
+// the parameter name matches the global name, which would cause a shadowing issue with :=.
+func convertGlobalSetterExpression(elem *IDL.ArgDefinition, mod *IDL.ModuleDefinition) string {
+	varName := "_globalSetValAsInterface"
+
+	if elem.IsAny() {
+		return varName
+	}
+
+	if elem.Dimensions > 0 {
+		typ := elem.TypeAlias
+		if typ == "" {
+			typ = convertToGoType(elem, mod)
+		}
+		if typ == "" {
+			typ = "interface{}"
+		}
+		return fmt.Sprintf("%v.(%v)", varName, typ)
+	}
+
+	baseType := IDL.MetaFFIType(strings.ReplaceAll(string(elem.Type), "_array", ""))
+
+	if baseType == IDL.HANDLE {
+		targetType := elem.TypeAlias
+		if targetType == "" || isGoKeywordType(targetType) {
+			targetType = "interface{}"
+		}
+		return fmt.Sprintf("%v.(%v)", varName, targetType)
+	}
+
+	if baseType == IDL.CALLABLE {
+		targetType := elem.TypeAlias
+		if targetType == "" {
+			targetType = "interface{}"
+		}
+		return fmt.Sprintf("%v.(%v)", varName, targetType)
+	}
+
+	cdtType := cdtStorageGoType(baseType)
+	targetType := safeTypeForAssertion(elem, mod)
+
+	if cdtType == targetType {
+		return fmt.Sprintf("%v.(%v)", varName, cdtType)
+	}
+
+	return fmt.Sprintf("%v(%v.(%v))", targetType, varName, cdtType)
 }

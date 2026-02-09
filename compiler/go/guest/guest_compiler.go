@@ -15,6 +15,26 @@ import (
 	"github.com/MetaFFI/sdk/idl_entities/go/IDL"
 )
 
+func logGuest(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, "[go_compiler:guest] "+format+"\n", args...)
+}
+
+// cachedGoExe is set at build start from DetectInstalledGo (compiler needs Go at compile time)
+var cachedGoExe string
+
+func getGoExe() string {
+	if cachedGoExe != "" {
+		return cachedGoExe
+	}
+	installed := common.DetectInstalledGo()
+	if len(installed) > 0 {
+		cachedGoExe = installed[0].GoExe
+		return cachedGoExe
+	}
+	cachedGoExe = "go"
+	return cachedGoExe
+}
+
 const VERSION = "main"
 
 // --------------------------------------------------------------------
@@ -67,6 +87,7 @@ func (this *GuestCompiler) Compile(definition *IDL.IDLDefinition, outputDir stri
 	if outputFilename == "" {
 		outputFilename = definition.IDLSource
 	}
+	logGuest("Compile: idl_source=%s out_dir=%s out_file=%s", definition.IDLSource, outputDir, outputFilename)
 
 	this.def = definition
 	this.outputDir = outputDir
@@ -77,8 +98,10 @@ func (this *GuestCompiler) Compile(definition *IDL.IDLDefinition, outputDir stri
 	if err != nil {
 		return fmt.Errorf("Failed to generate guest code: %v", err)
 	}
+	logGuest("Generated guest code (%d blocks)", len(code))
 
 	if getBoolOption(guestOptions, "source_only", "generate_source_only") {
+		logGuest("Writing source only (no build)")
 		if err := this.writeSourceFiles(code); err != nil {
 			return fmt.Errorf("Failed to write guest source code: %v", err)
 		}
@@ -89,6 +112,7 @@ func (this *GuestCompiler) Compile(definition *IDL.IDLDefinition, outputDir stri
 	if err != nil {
 		return fmt.Errorf("Failed to generate guest code: %v", err)
 	}
+	logGuest("Built dynamic library (%d bytes)", len(file))
 
 	// write to output
 	genOutputFullFileName := fmt.Sprintf("%v%v%v_MetaFFIGuest%v", this.outputDir, string(os.PathSeparator), this.outputFilename, getDynamicLibSuffix())
@@ -96,6 +120,7 @@ func (this *GuestCompiler) Compile(definition *IDL.IDLDefinition, outputDir stri
 	if err != nil {
 		return fmt.Errorf("Failed to write dynamic library to %v. Error: %v", this.outputDir+this.outputFilename, err)
 	}
+	logGuest("Wrote %s", genOutputFullFileName)
 
 	return nil
 
@@ -383,6 +408,7 @@ func removeFromAliasesDotImportedPackagesAndPathToPackages(def *IDL.IDLDefinitio
 
 // --------------------------------------------------------------------
 func (this *GuestCompiler) generateCode() (string, error) {
+	logGuest("generateCode: parsing templates")
 
 	header, err := this.parseHeader()
 	if err != nil {
@@ -444,6 +470,7 @@ func (this *GuestCompiler) writeSourceFiles(code string) error {
 
 // --------------------------------------------------------------------
 func (this *GuestCompiler) buildDynamicLibrary(code string) ([]byte, error) {
+	logGuest("buildDynamicLibrary: creating temp dir and building with go build")
 
 	dir, err := os.MkdirTemp("", "metaffi_go_compiler*")
 	if err != nil {
@@ -474,6 +501,13 @@ func (this *GuestCompiler) buildDynamicLibrary(code string) ([]byte, error) {
 	}
 
 	fmt.Println("Building Go foreign functions")
+
+	// Resolve Go executable (compiler needs Go at compile time)
+	if installed := common.DetectInstalledGo(); len(installed) > 0 {
+		cachedGoExe = installed[0].GoExe
+	} else {
+		cachedGoExe = "go"
+	}
 
 	// add go.mod
 	_, err = this.goModInit(dir, "main")
@@ -511,6 +545,11 @@ func (this *GuestCompiler) buildDynamicLibrary(code string) ([]byte, error) {
 				}
 
 				v = os.ExpandEnv(v)
+				// Resolve to absolute path so that go.mod replace directives are correct
+				// even when the go.mod lives in a temp build directory.
+				if absV, absErr := filepath.Abs(v); absErr == nil {
+					v = absV
+				}
 				if fi, _ := os.Stat(v); fi != nil && fi.IsDir() { // if module is local dir
 					if _, alreadyAdded := addedLocalModules[v]; !alreadyAdded {
 						// if embedded code, write the source code into a Package folder and skip "-replace"
@@ -609,6 +648,8 @@ func (this *GuestCompiler) buildDynamicLibrary(code string) ([]byte, error) {
 
 	_, err = this.goBuild(dir)
 	if err != nil {
+		// Copy the failed source file to output dir for debugging
+		this.copyFailedSource(dir)
 		return nil, err
 	}
 
@@ -623,7 +664,7 @@ func (this *GuestCompiler) buildDynamicLibrary(code string) ([]byte, error) {
 
 // --------------------------------------------------------------------
 func (this *GuestCompiler) goModInit(dir string, packageName string) (string, error) {
-	modInitCmd := exec.Command("go", "mod", "init", packageName)
+	modInitCmd := exec.Command(getGoExe(), "mod", "init", packageName)
 	modInitCmd.Dir = dir
 
 	var symbol string
@@ -653,9 +694,9 @@ func (this *GuestCompiler) goGet(dir string) (string, error) {
 
 		var getCmd *exec.Cmd
 		if module == "" {
-			getCmd = exec.Command("go", "get", "-v")
+			getCmd = exec.Command(getGoExe(), "get", "-v")
 		} else {
-			getCmd = exec.Command("go", "get", "-v", module)
+			getCmd = exec.Command(getGoExe(), "get", "-v", module)
 		}
 
 		getCmd.Dir = dir
@@ -683,7 +724,7 @@ func (this *GuestCompiler) goGet(dir string) (string, error) {
 	}
 
 	idlEntitiesModule := "github.com/MetaFFI/sdk/idl_entities/go"
-	goRuntimeModule := "github.com/MetaFFI/lang-plugin-go/go-runtime"
+	goRuntimeModule := "github.com/MetaFFI/sdk/api/go"
 	if os.Getenv("METAFFI_SOURCE_ROOT") == "" {
 		idlEntitiesModule += "@" + VERSION
 		goRuntimeModule += "@" + VERSION
@@ -714,9 +755,9 @@ func (this *GuestCompiler) applyDevReplaces(dir string) error {
 		return fmt.Errorf("METAFFI_SOURCE_ROOT is set, but idl_entities path is invalid: %v", err)
 	}
 
-	goRuntimePath := filepath.Join(metaffiRoot, "lang-plugin-go", "go-runtime")
+	goRuntimePath := filepath.Join(metaffiRoot, "sdk", "api", "go")
 	if _, err := os.Stat(goRuntimePath); err != nil {
-		return fmt.Errorf("METAFFI_SOURCE_ROOT is set, but go-runtime path is invalid: %v", err)
+		return fmt.Errorf("METAFFI_SOURCE_ROOT is set, but sdk/api/go path is invalid: %v", err)
 	}
 
 	err := this.goReplace(dir, "github.com/MetaFFI/sdk/idl_entities/go", idlEntitiesPath)
@@ -724,12 +765,12 @@ func (this *GuestCompiler) applyDevReplaces(dir string) error {
 		return err
 	}
 
-	return this.goReplace(dir, "github.com/MetaFFI/lang-plugin-go/go-runtime", goRuntimePath)
+	return this.goReplace(dir, "github.com/MetaFFI/sdk/api/go", goRuntimePath)
 }
 
 // --------------------------------------------------------------------
 func (this *GuestCompiler) goClean(dir string) (string, error) {
-	cleanCmd := exec.Command("go", "clean", "-cache")
+	cleanCmd := exec.Command(getGoExe(), "clean", "-cache")
 	cleanCmd.Dir = dir
 
 	var symbol string
@@ -754,7 +795,7 @@ func (this *GuestCompiler) goClean(dir string) (string, error) {
 
 // --------------------------------------------------------------------
 func (this *GuestCompiler) goBuild(dir string) (string, error) {
-	buildCmd := exec.Command("go", "build", "-v", "-tags=guest", "-buildmode=c-shared", "-gcflags=-shared", "-o", dir+this.outputFilename+getDynamicLibSuffix())
+	buildCmd := exec.Command(getGoExe(), "build", "-v", "-tags=guest", "-buildmode=c-shared", "-gcflags=-shared", "-o", dir+this.outputFilename+getDynamicLibSuffix())
 	buildCmd.Dir = dir
 
 	var symbol string
@@ -833,6 +874,25 @@ func (this *GuestCompiler) goReplace(dir string, packageName string, packagePath
 	// 	}
 
 	return err
+}
+
+// copyFailedSource copies the failed metaffi_guest.go to the output directory
+// with a ".failed" extension so developers can inspect it for debugging.
+func (this *GuestCompiler) copyFailedSource(tempDir string) {
+	srcPath := filepath.Join(tempDir, "metaffi_guest.go")
+	data, err := ioutil.ReadFile(srcPath)
+	if err != nil {
+		logGuest("Warning: failed to read generated source for debug copy: %v", err)
+		return
+	}
+
+	destPath := filepath.Join(this.outputDir, this.outputFilename+"_metaffi_guest.go.failed")
+	if writeErr := ioutil.WriteFile(destPath, data, 0644); writeErr != nil {
+		logGuest("Warning: failed to copy failed source to %s: %v", destPath, writeErr)
+		return
+	}
+	logGuest("Failed source copied to: %s", destPath)
+	fmt.Fprintf(os.Stderr, "[go_compiler] Failed source copied to: %s\n", destPath)
 }
 
 //--------------------------------------------------------------------

@@ -1,13 +1,11 @@
 # Go Runtime Manager Library (source-only, no build needed)
 # Tests are built and run here
 
-include(${CMAKE_SOURCE_DIR}/cmake/Go.cmake)
-
 find_or_install_package(Boost COMPONENTS filesystem system)
 find_or_install_package(doctest)
 
 collect_c_cpp_files(${CMAKE_CURRENT_LIST_DIR} go_runtime_manager)
-collect_c_cpp_files("${CMAKE_CURRENT_SOURCE_DIR}/../../utils" sdk_utils)
+collect_c_cpp_files("${metaffi_sdk_root}/utils" sdk_utils)
 
 # Build test Go shared library using go_build macro
 go_build(go_runtime_manager_test_module

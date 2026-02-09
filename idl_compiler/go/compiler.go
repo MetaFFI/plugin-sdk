@@ -6,6 +6,10 @@ import (
 	"path/filepath"
 )
 
+func logIDL(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, "[go_idl_compiler] "+format+"\n", args...)
+}
+
 // Compiler is the main orchestrator for Go IDL compilation
 type Compiler struct {
 	sourcePath string
@@ -23,11 +27,13 @@ func NewCompiler() *Compiler {
 // sourcePath can be a .go file, directory, or module path
 func (c *Compiler) Compile(sourcePath string) (string, error) {
 	c.sourcePath = sourcePath
+	logIDL("Compile start: source=%s", sourcePath)
 
 	// Validate source path
 	if err := c.validateSourcePath(); err != nil {
 		return "", err
 	}
+	logIDL("Source path validated: type=%v", c.sourceType)
 
 	// Extract information from Go source
 	extractor := NewExtractor(c.sourcePath, c.sourceType)
@@ -35,12 +41,16 @@ func (c *Compiler) Compile(sourcePath string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("extraction failed: %w", err)
 	}
+	logIDL("Extraction done: pkg=%s functions=%d structs=%d interfaces=%d globals=%d",
+		extractedInfo.PackageName, len(extractedInfo.Functions), len(extractedInfo.Structs), len(extractedInfo.Interfaces), len(extractedInfo.Globals))
 
 	// Post-processing: attach methods to structs
 	extractor.attachMethodsToStructs(extractedInfo)
+	logIDL("Attached methods to structs")
 
 	// Post-processing: attach constructors to structs
 	extractor.attachConstructorsToStructs(extractedInfo)
+	logIDL("Attached constructors to structs")
 
 	// Generate IDL JSON
 	generator := NewIDLGenerator(extractedInfo, c.sourcePath)
@@ -48,12 +58,14 @@ func (c *Compiler) Compile(sourcePath string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("IDL generation failed: %w", err)
 	}
+	logIDL("IDL JSON generated (%d bytes)", len(jsonOutput))
 
 	return jsonOutput, nil
 }
 
 // CompileToFile compiles and writes output to a file
 func (c *Compiler) CompileToFile(sourcePath string, outputPath string) error {
+	logIDL("CompileToFile: source=%s output=%s", sourcePath, outputPath)
 	// Compile to JSON string
 	jsonOutput, err := c.Compile(sourcePath)
 	if err != nil {
@@ -65,7 +77,7 @@ func (c *Compiler) CompileToFile(sourcePath string, outputPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to write output file: %w", err)
 	}
-
+	logIDL("Wrote IDL to %s", outputPath)
 	return nil
 }
 

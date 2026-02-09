@@ -4,7 +4,10 @@
 
 #include <stdexcept>
 #include <sstream>
+#include <iostream>
 #include <boost/algorithm/string.hpp>
+
+#define GO_MODULE_LOG(msg) (std::cerr << "[go_module] " << msg << std::endl)
 
 Module::Module(go_runtime_manager* manager, const std::string& module_path)
 	: m_runtimeManager(manager)
@@ -91,25 +94,33 @@ std::shared_ptr<Entity> Module::load_entity(const std::string& entity_path)
 {
 	std::lock_guard<std::mutex> lock(m_mutex);
 
+	GO_MODULE_LOG("load_entity: entity_path=" << entity_path << " module=" << m_modulePath);
+
 	if (!m_library || !m_library->is_loaded())
 	{
 		throw std::runtime_error("Module: library not loaded");
 	}
 
-	// Parse entity_path to get function name
-	std::string function_name = parse_entity_path(entity_path);
+	// Parse entity_path to get symbol name (EntryPoint_*) and logical name (for get_name())
+	std::string symbol = parse_entity_path(entity_path);
+	std::string logical_name = parse_entity_path_logical_name(entity_path);
+	GO_MODULE_LOG("load_entity: symbol=" << symbol << " logical_name=" << logical_name);
 
 	// Check if symbol exists
-	if (!m_library->has(function_name))
+	bool has = m_library->has(symbol);
+	GO_MODULE_LOG("load_entity: has(symbol)=" << (has ? "true" : "false"));
+	if (!has)
 	{
-		throw std::runtime_error("Module: symbol '" + function_name + "' not found in '" + m_modulePath + "'");
+		throw std::runtime_error("Module: symbol '" + symbol + "' not found in '" + m_modulePath + "'");
 	}
 
 	// Get raw function pointer
 	// We use get<void*> and reinterpret to avoid type signature requirements
-	void* func_ptr = reinterpret_cast<void*>(m_library->get<void()>(function_name));
+	GO_MODULE_LOG("load_entity: getting function pointer...");
+	void* func_ptr = reinterpret_cast<void*>(m_library->get<void()>(symbol));
+	GO_MODULE_LOG("load_entity: func_ptr=" << func_ptr << " returning Entity");
 
-	return std::make_shared<GoFunction>(func_ptr, function_name);
+	return std::make_shared<GoFunction>(func_ptr, logical_name);
 }
 
 void Module::unload()
@@ -137,25 +148,49 @@ bool Module::has_symbol(const std::string& symbol_name) const
 	return m_library->has(symbol_name);
 }
 
-std::string Module::parse_entity_path(const std::string& entity_path)
+std::string Module::parse_entity_path_logical_name(const std::string& entity_path)
 {
-	// Entity path format: "callable=FunctionName"
-	// Simple key=value parsing
-
 	std::vector<std::string> parts;
 	boost::split(parts, entity_path, boost::is_any_of(","));
 
 	for (const auto& part : parts)
 	{
 		std::string trimmed = boost::trim_copy(part);
-
 		if (trimmed.rfind("callable=", 0) == 0)
 		{
-			// Found "callable=..." - extract function name
-			return trimmed.substr(9);  // Length of "callable="
+			std::string logical_name = trimmed.substr(9);
+			boost::trim(logical_name);
+			if (logical_name.empty())
+			{
+				throw std::runtime_error("Module: callable= value is empty");
+			}
+			return logical_name;
 		}
 	}
-
-	// If no "callable=" prefix, assume the whole string is the function name
 	return entity_path;
+}
+
+void* Module::get_symbol(const std::string& symbol_name) const
+{
+	std::lock_guard<std::mutex> lock(m_mutex);
+	if (!m_library || !m_library->is_loaded() || !m_library->has(symbol_name))
+	{
+		return nullptr;
+	}
+	return reinterpret_cast<void*>(m_library->get<void()>(symbol_name));
+}
+
+std::string Module::parse_entity_path(const std::string& entity_path)
+{
+	// Entity path format: "callable=LogicalName" (e.g. "HelloWorld" or "SomeClass.Print").
+	// MetaFFI Go guest compiler exports C symbols as EntryPoint_<Name> (dots in Name become underscores).
+	// So we map callable=X to symbol "EntryPoint_" + X with '.' replaced by '_'.
+
+	std::string logical_name = parse_entity_path_logical_name(entity_path);
+	std::string symbol = "EntryPoint_";
+	for (char c : logical_name)
+	{
+		symbol += (c == '.') ? '_' : c;
+	}
+	return symbol;
 }

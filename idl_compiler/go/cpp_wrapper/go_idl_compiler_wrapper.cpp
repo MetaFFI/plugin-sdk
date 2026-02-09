@@ -1,13 +1,19 @@
 #include "go_idl_compiler_wrapper.h"
 #include <cstdio>
-#include <array>
+#include <cstdlib>
+#include <fstream>
 #include <sstream>
-#include <memory>
+#include <iostream>
 
 #ifdef _WIN32
-    #define popen _popen
-    #define pclose _pclose
+    #include <process.h>
+    #define getpid _getpid
+#else
+    #include <unistd.h>
+    #include <sys/wait.h>
 #endif
+
+#include <boost/filesystem.hpp>
 
 namespace metaffi {
 namespace idl_compiler {
@@ -17,24 +23,37 @@ GoIDLCompilerWrapper::GoIDLCompilerWrapper(const std::string& executable_path)
 }
 
 std::string GoIDLCompilerWrapper::compile(const std::string& source_path) {
-    // Build command: go_idl_compiler <source_path>
-    std::string command = executable_path_ + " " + quote_string(source_path);
+    // Write JSON to a temp file instead of capturing stdout.
+    // This lets the child process print logs directly to the console.
+    boost::filesystem::path tmp = boost::filesystem::temp_directory_path();
+    tmp /= "metaffi_go_idl_" + std::to_string(getpid()) + ".json";
+    std::string temp_file = tmp.string();
 
-    std::string stdout_output;
-    std::string stderr_output;
+    // Build command: go_idl_compiler <source_path> <temp_file>
+    std::string command = executable_path_ + " " +
+                         quote_string(source_path) + " " +
+                         quote_string(temp_file);
 
-    int exit_code = execute_command(command, stdout_output, stderr_output);
+    int exit_code = run_command(command);
 
     if (exit_code != 0) {
+        boost::filesystem::remove(temp_file);
         std::ostringstream err;
         err << "Go IDL compiler failed with exit code " << exit_code;
-        if (!stderr_output.empty()) {
-            err << ": " << stderr_output;
-        }
         throw std::runtime_error(err.str());
     }
 
-    return stdout_output;
+    // Read the JSON from the temp file
+    std::ifstream f(temp_file);
+    if (!f) {
+        throw std::runtime_error("Go IDL compiler did not produce output file: " + temp_file);
+    }
+    std::ostringstream buf;
+    buf << f.rdbuf();
+    f.close();
+    boost::filesystem::remove(temp_file);
+
+    return buf.str();
 }
 
 void GoIDLCompilerWrapper::compile_to_file(const std::string& source_path,
@@ -44,60 +63,26 @@ void GoIDLCompilerWrapper::compile_to_file(const std::string& source_path,
                          quote_string(source_path) + " " +
                          quote_string(output_path);
 
-    std::string stdout_output;
-    std::string stderr_output;
-
-    int exit_code = execute_command(command, stdout_output, stderr_output);
+    int exit_code = run_command(command);
 
     if (exit_code != 0) {
         std::ostringstream err;
         err << "Go IDL compiler failed with exit code " << exit_code;
-        if (!stderr_output.empty()) {
-            err << ": " << stderr_output;
-        }
         throw std::runtime_error(err.str());
     }
 }
 
-int GoIDLCompilerWrapper::execute_command(const std::string& command,
-                                         std::string& stdout_output,
-                                         std::string& stderr_output) {
-    // Redirect stderr to stdout so we can capture both
-    std::string full_command = command + " 2>&1";
-
-    // Open pipe to command
-    FILE* pipe = popen(full_command.c_str(), "r");
-    if (!pipe) {
-        throw std::runtime_error("Failed to open pipe to go_idl_compiler");
-    }
-
-    // Read output
-    std::array<char, 128> buffer;
-    std::ostringstream output_stream;
-
-    while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-        output_stream << buffer.data();
-    }
-
-    // Close pipe and get exit code
-    int exit_code = pclose(pipe);
-
+int GoIDLCompilerWrapper::run_command(const std::string& command) {
+    // Use system() so the child process inherits the parent's stdout/stderr.
+    // The child prints directly to the console.
+    int status = std::system(command.c_str());
 #ifdef _WIN32
-    // Windows pclose returns the exit code directly
-    // No need to use WEXITSTATUS
+    return status;
 #else
-    // On Unix, extract exit code from status
-    if (WIFEXITED(exit_code)) {
-        exit_code = WEXITSTATUS(exit_code);
-    }
+    if (WIFEXITED(status))
+        return WEXITSTATUS(status);
+    return status;
 #endif
-
-    // The output contains both stdout and stderr mixed
-    // For simplicity, treat all as stdout for now
-    // A more sophisticated implementation could separate them
-    stdout_output = output_stream.str();
-
-    return exit_code;
 }
 
 std::string GoIDLCompilerWrapper::quote_string(const std::string& str) {
@@ -122,7 +107,7 @@ std::string GoIDLCompilerWrapper::quote_string(const std::string& str) {
         std::string quoted = "'";
         for (char c : str) {
             if (c == '\'') {
-                quoted += "'\\''";  // Escape single quote
+                quoted += "'\\''";
             } else {
                 quoted += c;
             }
