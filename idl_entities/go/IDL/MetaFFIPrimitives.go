@@ -164,7 +164,8 @@ var TypeStringToEnumName = map[MetaFFIType]string{
 
 	SIZE: "SIZE",
 
-	ANY: "ANY",
+	ANY:  "ANY",
+	NULL: "NULL",
 
 	FLOAT64_ARRAY:  "FLOAT64_ARRAY",
 	FLOAT32_ARRAY:  "FLOAT32_ARRAY",
@@ -231,6 +232,8 @@ var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 
 	HANDLE_ARRAY: uint64(C.metaffi_handle_array_type),
 	SIZE_ARRAY:   uint64(C.metaffi_size_array_type),
+
+	NULL: uint64(C.metaffi_null_type),
 }
 
 func (this *MetaFFITypeInfo) FillMetaFFITypeFromStringMetaFFIType() {

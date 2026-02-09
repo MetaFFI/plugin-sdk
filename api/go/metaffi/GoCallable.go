@@ -56,6 +56,10 @@ static void set_metaffi_type_at(metaffi_type* arr, int index, metaffi_type val) 
 	arr[index] = val;
 }
 
+static metaffi_type get_metaffi_type_at(metaffi_type* arr, int index) {
+	return arr[index];
+}
+
 static struct cdts* get_cdts_at(struct cdts* arr, int index) {
 	return &arr[index];
 }
@@ -80,6 +84,8 @@ import (
 	"fmt"
 	"reflect"
 	"unsafe"
+
+	"github.com/MetaFFI/sdk/idl_entities/go/IDL"
 )
 
 // -------- Go type → metaffi_type mapping for callable signatures --------
@@ -407,4 +413,62 @@ func wrapForeignCallableAsGoFunc(callable *MetaFFICallable, targetType reflect.T
 	})
 
 	return goFunc
+}
+
+// -------- Public Call method for foreign callables --------
+
+// Call invokes the foreign callable represented by this MetaFFICallable,
+// using the embedded parameter/return type metadata to marshal Go values
+// through CDTs. The calling convention mirrors MetaFFIModule.Load's closure.
+//
+// Returns a slice of interface{} results (nil if no return values), or an error.
+func (c *MetaFFICallable) Call(args ...interface{}) ([]interface{}, error) {
+	if c == nil || c.Val == nil || c.Val.val == nil {
+		return nil, fmt.Errorf("MetaFFICallable.Call: callable is nil")
+	}
+
+	paramsCount := int(c.Val.params_types_length)
+	retvalCount := int(c.Val.retval_types_length)
+
+	if len(args) != paramsCount {
+		return nil, fmt.Errorf("MetaFFICallable.Call: expected %d args, got %d", paramsCount, len(args))
+	}
+
+	// Allocate CDTs buffer (same pattern as MetaFFIModule.Load)
+	xcallBuf, paramsCDTS, retvalsCDTS := XLLRAllocCDTSBuffer(uint64(paramsCount), uint64(retvalCount))
+
+	// Fill params CDTs from Go values, using the callable's embedded type metadata
+	for i := 0; i < paramsCount; i++ {
+		ptype := uint64(C.get_metaffi_type_at(c.Val.parameters_types, C.int(i)))
+		ti := IDL.MetaFFITypeInfo{Type: ptype}
+		FromGoToCDT(args[i], paramsCDTS, ti, i)
+	}
+
+	// Call the appropriate xcall variant
+	var err error
+	if paramsCount > 0 && retvalCount > 0 {
+		err = XLLRXCallParamsRet(unsafe.Pointer(c.Val.val), xcallBuf)
+	} else if paramsCount > 0 {
+		err = XLLRXCallParamsNoRet(unsafe.Pointer(c.Val.val), xcallBuf)
+	} else if retvalCount > 0 {
+		err = XLLRXCallNoParamsRet(unsafe.Pointer(c.Val.val), xcallBuf)
+	} else {
+		err = XLLRXCallNoParamsNoRet(unsafe.Pointer(c.Val.val))
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if retvalCount == 0 {
+		return nil, nil
+	}
+
+	// Read results from retvals CDTs
+	retvals := make([]interface{}, retvalCount)
+	for i := 0; i < retvalCount; i++ {
+		retvals[i] = FromCDTToGo(retvalsCDTS, i, nil)
+	}
+
+	return retvals, nil
 }

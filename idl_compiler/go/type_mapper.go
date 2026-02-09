@@ -3,17 +3,25 @@ package idl_compiler
 import (
 	"fmt"
 	"go/ast"
+	"go/types"
 	"strings"
 
 	"github.com/MetaFFI/sdk/idl_entities/go/IDL"
 )
 
 // TypeMapper maps Go types to MetaFFI types
-type TypeMapper struct{}
+type TypeMapper struct {
+	typesInfo *types.Info // Optional; when set, used to resolve named types to their underlying primitives
+}
 
 // NewTypeMapper creates a new TypeMapper instance
 func NewTypeMapper() *TypeMapper {
 	return &TypeMapper{}
+}
+
+// SetTypesInfo sets the go/types info for resolving named types.
+func (tm *TypeMapper) SetTypesInfo(info *types.Info) {
+	tm.typesInfo = info
 }
 
 // MapType maps a Go type expression to MetaFFI type and dimensions
@@ -71,6 +79,17 @@ func (tm *TypeMapper) mapBaseType(typeExpr ast.Expr, typeName string) (IDL.MetaF
 			pkgName = pkg.Name
 		}
 		fullName := pkgName + "." + t.Sel.Name
+
+		// If we have type info, check whether this named type is actually
+		// based on a primitive (e.g., time.Duration is int64 under the hood).
+		if tm.typesInfo != nil {
+			if tv, ok := tm.typesInfo.Types[typeExpr]; ok {
+				if metaffiType := tm.basicToMetaFFI(tv.Type.Underlying()); metaffiType != "" {
+					return metaffiType, fullName
+				}
+			}
+		}
+
 		return IDL.HANDLE, fullName
 
 	case *ast.StarExpr:
@@ -179,6 +198,49 @@ func (tm *TypeMapper) mapPrimitiveType(typeName string) IDL.MetaFFIType {
 	// Default: custom type
 	default:
 		return IDL.HANDLE
+	}
+}
+
+// basicToMetaFFI checks if a go/types.Type is a basic (primitive) type
+// and returns the corresponding MetaFFI type. Returns "" if not a basic type.
+func (tm *TypeMapper) basicToMetaFFI(typ types.Type) IDL.MetaFFIType {
+	basic, ok := typ.(*types.Basic)
+	if !ok {
+		return ""
+	}
+	switch basic.Kind() {
+	case types.Bool:
+		return IDL.BOOL
+	case types.Int:
+		return IDL.INT64
+	case types.Int8:
+		return IDL.INT8
+	case types.Int16:
+		return IDL.INT16
+	case types.Int32:
+		return IDL.INT32
+	case types.Int64:
+		return IDL.INT64
+	case types.Uint:
+		return IDL.UINT64
+	case types.Uint8:
+		return IDL.UINT8
+	case types.Uint16:
+		return IDL.UINT16
+	case types.Uint32:
+		return IDL.UINT32
+	case types.Uint64:
+		return IDL.UINT64
+	case types.Uintptr:
+		return IDL.SIZE
+	case types.Float32:
+		return IDL.FLOAT32
+	case types.Float64:
+		return IDL.FLOAT64
+	case types.String:
+		return IDL.STRING8
+	default:
+		return ""
 	}
 }
 

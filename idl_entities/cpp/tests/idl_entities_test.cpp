@@ -166,7 +166,7 @@ TEST_CASE("Load xllr.test.idl.json")
 	SUBCASE("IDL metadata")
 	{
 		CHECK(idl.idl_source() == "xllr.test");
-		CHECK(idl.target_language() == "cpp");
+		CHECK(idl.target_language() == "test");
 		CHECK(idl.metaffi_guest_lib() == "xllr_test_plugin");
 	}
 

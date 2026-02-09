@@ -83,7 +83,7 @@ func BindModuleToCode(modulePath string){
 	{{end}}{{/* End globals */}}
 	
 	{{range $findex, $f := $m.Functions}}
-	{{$f.GetNameWithOverloadIndex}}_caller = loadFF("{{$f.EntityPathAsString $idl}}", {{len $f.Parameters}}, {{len $f.ReturnValues}})
+	{{$f.GetNameWithOverloadIndex}}_caller = loadFF("{{$f.EntityPathAsString $idl}}", {{GetMetaFFITypeInfos $f}})
 	{{end}}{{/* End Functions */}}
 
 	{{range $cindex, $c := $m.Classes}}
@@ -117,7 +117,8 @@ func {{ToGoNameConv $f.Getter.GetNameWithOverloadIndex}}_Getter() ({{ConvertToGo
 
 	res, err := {{$f.Getter.GetNameWithOverloadIndex}}_caller()
 	if err != nil{
-		return err
+		var zero {{ConvertToGoType $f.ArgDefinition $m}}
+		return zero, err
 	}
 
 	return res[0].({{ConvertToGoType $f.ArgDefinition $m}}), nil
@@ -127,7 +128,7 @@ func {{ToGoNameConv $f.Getter.GetNameWithOverloadIndex}}_Getter() ({{ConvertToGo
 func {{ToGoNameConv $f.Setter.GetNameWithOverloadIndex}}_Setter({{$f.Name}} {{ConvertToGoType $f.ArgDefinition $m}}) (err error){
 	{{ $paramsLength := len $f.Setter.Parameters }}{{ $returnLength := len $f.Setter.ReturnValues }}
 
-	_, err = {{$f.Getter.GetNameWithOverloadIndex}}_caller({{$f.Name}})
+	_, err = {{$f.Setter.GetNameWithOverloadIndex}}_caller({{$f.Name}})
 	return err
 }
 {{end}}{{/* End Setter */}}
@@ -143,11 +144,15 @@ func {{ToGoNameConv $f.Setter.GetNameWithOverloadIndex}}_Setter({{$f.Name}} {{Co
 {{range $index, $elem := $f.Parameters}}
 {{if $elem.Comment}}// {{$elem.Name}} - {{$elem.Comment}}{{end}}{{end}}{{/* End Parameters comments */}}
 func {{ToGoNameConv $f.GetNameWithOverloadIndex}}({{range $index, $elem := $f.Parameters}}{{if $index}},{{end}} {{$elem.Name}} {{ConvertToGoType $elem $m}}{{end}}) ({{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}{{$elem.Name}} {{ConvertToGoType $elem $m}}{{end}}{{if $f.ReturnValues}},{{end}} err error){
-
+{{if $f.ReturnValues}}
 	var res []interface{}
 	res, err = {{$f.GetNameWithOverloadIndex}}_caller({{range $index, $elem := $f.Parameters}}{{if $index}},{{end}} {{$elem.Name}}{{end}})
 
-	{{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}res[$index].({{ConvertToGoType $elem $m}}){{end}}{{if $f.ReturnValues}},{{end}}, nil
+	return {{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}res[{{$index}}].({{ConvertToGoType $elem $m}}){{end}}, nil
+{{else}}
+	_, err = {{$f.GetNameWithOverloadIndex}}_caller({{range $index, $elem := $f.Parameters}}{{if $index}},{{end}} {{$elem.Name}}{{end}})
+	return err
+{{end}}
 }
 {{end}}{{/* End Function */}}
 
@@ -185,13 +190,12 @@ func (this *{{AsPublic $c.Name}}) SetHandle(h Handle){
 {{range $findex, $f := $c.Fields}}
 {{if $f.Getter}}
 func {{GenerateMethodReceiverCode $f.Getter}} {{GenerateMethodName $f.Getter}}_Getter({{GenerateMethodParams $f.Getter $m}}) ({{range $index, $elem := $f.Getter.ReturnValues}}{{if $index}},{{end}}{{$elem.Name}} {{ConvertToGoType $elem $m}}{{end}}{{if $f.Getter.ReturnValues}},{{end}} err error){
-	{{ $paramsLength := len $f.Getter.Parameters }}{{ $returnLength := len $f.Getter.ReturnValues }}
 
 	var res []interface{}
 	{{if $f.Getter.InstanceRequired}}
-	res, err = {{$c.Name}}_{{$f.Getter.GetNameWithOverloadIndex}}_caller(this.h {{if gt $paramsLength 0}},{{end}} {{range $index, $elem := $f.Getter.Parameters}}{{if gt $index 0}}{{if gt $index 1}},{{end}}{{$elem.Name}}{{end}}{{end}})
+	res, err = {{$c.Name}}_{{$f.Getter.GetNameWithOverloadIndex}}_caller(this.h{{range $index, $elem := $f.Getter.Parameters}}{{if gt $index 0}}, {{$elem.Name}}{{end}}{{end}})
 	{{else}}
-	res, err = {{$c.Name}}_{{$f.Getter.GetNameWithOverloadIndex}}_caller({{range $index, $elem := $f.Getter.Parameters}}{{if gt $index 0}}{{if gt $index 1}},{{end}}{{$elem.Name}}{{end}}{{end}})
+	res, err = {{$c.Name}}_{{$f.Getter.GetNameWithOverloadIndex}}_caller({{range $index, $elem := $f.Getter.Parameters}}{{if $index}}, {{end}}{{$elem.Name}}{{end}})
 	{{end}}
 	if err != nil{
 		return
@@ -202,12 +206,11 @@ func {{GenerateMethodReceiverCode $f.Getter}} {{GenerateMethodName $f.Getter}}_G
 {{end}}{{/* End Getter */}}
 {{if $f.Setter}}
 func {{GenerateMethodReceiverCode $f.Setter}} {{GenerateMethodName $f.Setter}}_Setter({{GenerateMethodParams $f.Setter $m}}) ({{range $index, $elem := $f.Setter.ReturnValues}}{{if $index}},{{end}}{{$elem.Name}} {{ConvertToGoType $elem $m}}{{end}}{{if $f.Setter.ReturnValues}},{{end}} err error){
-	{{ $paramsLength := len $f.Setter.Parameters }}{{ $returnLength := len $f.Setter.ReturnValues }}
 
-	{{if $f.Getter.InstanceRequired}}
-	_, err = {{$c.Name}}_{{$f.Setter.GetNameWithOverloadIndex}}_caller(this.h, {{range $index, $elem := $f.Setter.Parameters}}{{if gt $index 0}}{{if gt $index 1}},{{end}}{{$elem.Name}}{{end}}{{end}})
+	{{if $f.Setter.InstanceRequired}}
+	_, err = {{$c.Name}}_{{$f.Setter.GetNameWithOverloadIndex}}_caller(this.h{{range $index, $elem := $f.Setter.Parameters}}{{if gt $index 0}}, {{$elem.Name}}{{end}}{{end}})
 	{{else}}
-	_, err = {{$c.Name}}_{{$f.Setter.GetNameWithOverloadIndex}}_caller({{range $index, $elem := $f.Setter.Parameters}}{{if gt $index 0}}{{if gt $index 1}},{{end}}{{$elem.Name}}{{end}}{{end}})
+	_, err = {{$c.Name}}_{{$f.Setter.GetNameWithOverloadIndex}}_caller({{range $index, $elem := $f.Setter.Parameters}}{{if $index}}, {{end}}{{$elem.Name}}{{end}})
 	{{end}}
 	
 	return
@@ -216,19 +219,27 @@ func {{GenerateMethodReceiverCode $f.Setter}} {{GenerateMethodName $f.Setter}}_S
 {{end}}{{/* End Fields */}}
 {{range $findex, $f := $c.Methods}}
 func {{GenerateMethodReceiverCode $f}} {{GenerateMethodName $f}}({{GenerateMethodParams $f $m}}) ({{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}{{$elem.Name}} {{ConvertToGoType $elem $m}}{{end}}{{if $f.ReturnValues}},{{end}} err error){
-	{{ $paramsLength := len $f.Parameters }}{{ $returnLength := len $f.ReturnValues }}
 
+{{if $f.ReturnValues}}
 	var res []interface{}
 	{{if $f.InstanceRequired}}
-	res, err = {{$c.Name}}_{{$f.GetNameWithOverloadIndex}}_caller(this.h, {{range $index, $elem := $f.Parameters}}{{if gt $index 0}}{{if gt $index 1}},{{end}}{{$elem.Name}}{{end}}{{end}})
+	res, err = {{$c.Name}}_{{$f.GetNameWithOverloadIndex}}_caller(this.h{{range $index, $elem := $f.Parameters}}{{if gt $index 0}}, {{$elem.Name}}{{end}}{{end}})
 	{{else}}
-	res, err = {{$c.Name}}_{{$f.GetNameWithOverloadIndex}}_caller({{range $index, $elem := $f.Parameters}}{{if gt $index 0}}{{if gt $index 1}},{{end}}{{$elem.Name}}{{end}}{{end}})
+	res, err = {{$c.Name}}_{{$f.GetNameWithOverloadIndex}}_caller({{range $index, $elem := $f.Parameters}}{{if $index}}, {{end}}{{$elem.Name}}{{end}})
 	{{end}}
 	if err != nil{
 		return
 	}
 	
-	return {{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}res[{{$index}}].({{ConvertToGoType $elem $m}}){{end}}{{if gt $returnLength 0}},{{end}} nil
+	return {{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}res[{{$index}}].({{ConvertToGoType $elem $m}}){{end}}, nil
+{{else}}
+	{{if $f.InstanceRequired}}
+	_, err = {{$c.Name}}_{{$f.GetNameWithOverloadIndex}}_caller(this.h{{range $index, $elem := $f.Parameters}}{{if gt $index 0}}, {{$elem.Name}}{{end}}{{end}})
+	{{else}}
+	_, err = {{$c.Name}}_{{$f.GetNameWithOverloadIndex}}_caller({{range $index, $elem := $f.Parameters}}{{if $index}}, {{end}}{{$elem.Name}}{{end}})
+	{{end}}
+	return err
+{{end}}
 }
 {{end}}{{/* End Methods */}}
 {{end}}{{/* End Classes */}}

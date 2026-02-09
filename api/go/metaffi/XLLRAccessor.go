@@ -155,7 +155,7 @@ func XLLRXCallParamsRet(xcall unsafe.Pointer, pcdts unsafe.Pointer) error {
 	C.call_plugin_xcall_params_ret((*C.struct_xcall)(xcall), C.cast_to_cdts(pcdts), &out_err)
 
 	if out_err != nil {
-		defer C.free(unsafe.Pointer(out_err))
+		defer C.xllr_free_string(out_err)
 		return fmt.Errorf("%v", C.GoString(out_err))
 	}
 
@@ -168,7 +168,7 @@ func XLLRXCallNoParamsRet(xcall unsafe.Pointer, cdts unsafe.Pointer) error {
 	C.call_plugin_xcall_no_params_ret((*C.struct_xcall)(xcall), C.cast_to_cdts(cdts), &out_err)
 
 	if out_err != nil {
-		defer C.free(unsafe.Pointer(out_err))
+		defer C.xllr_free_string(out_err)
 		return fmt.Errorf("%v", C.GoString(out_err))
 	}
 
@@ -181,7 +181,7 @@ func XLLRXCallParamsNoRet(xcall unsafe.Pointer, cdts unsafe.Pointer) error {
 	C.call_plugin_xcall_params_no_ret((*C.struct_xcall)(xcall), C.cast_to_cdts(cdts), &out_err)
 
 	if out_err != nil {
-		defer C.free(unsafe.Pointer(out_err))
+		defer C.xllr_free_string(out_err)
 		return fmt.Errorf("%v", C.GoString(out_err))
 	}
 

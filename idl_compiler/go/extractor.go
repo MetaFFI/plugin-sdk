@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"go/ast"
+	"go/importer"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"os"
 	"path/filepath"
 	"strings"
@@ -103,6 +105,32 @@ func detectModulePath(dir string) string {
 	return ""
 }
 
+// runTypeChecking runs go/types type checking on the parsed files.
+// This allows the type mapper to resolve named types (e.g., time.Duration -> int64).
+// If type checking fails (e.g., unresolvable imports), it logs and returns nil.
+func (e *Extractor) runTypeChecking(fset *token.FileSet, files []*ast.File, pkgName string) *types.Info {
+	conf := types.Config{
+		Importer: importer.Default(),
+		// Ignore function bodies - we only need type resolution for declarations
+		IgnoreFuncBodies: true,
+		// Don't fail on errors (some types may not resolve for external packages)
+		Error: func(err error) {}, // swallow errors
+	}
+	info := &types.Info{
+		Types: make(map[ast.Expr]types.TypeAndValue),
+	}
+	_, err := conf.Check(pkgName, fset, files, info)
+	if err != nil {
+		logIDL("Type checking completed with errors (non-fatal, type resolution may be partial): %v", err)
+	}
+	if len(info.Types) > 0 {
+		logIDL("Type checking resolved %d expressions", len(info.Types))
+		e.typeMapper.SetTypesInfo(info)
+		return info
+	}
+	return nil
+}
+
 // extractFromFile extracts from a single Go file
 func (e *Extractor) extractFromFile(filePath string) (*ExtractedInfo, error) {
 	logIDL("Parsing file: %s", filePath)
@@ -123,6 +151,9 @@ func (e *Extractor) extractFromFile(filePath string) (*ExtractedInfo, error) {
 		FileSet:     fset,
 		ParsedFiles: []*ast.File{file},
 	}
+
+	// Run type checking for named type resolution (best-effort)
+	e.runTypeChecking(fset, []*ast.File{file}, file.Name.Name)
 
 	// Extract entities from the single file
 	e.extractEntitiesFromFile(file, info)
@@ -178,6 +209,9 @@ func (e *Extractor) extractFromDir(dirPath string) (*ExtractedInfo, error) {
 	for _, file := range pkg.Files {
 		info.ParsedFiles = append(info.ParsedFiles, file)
 	}
+
+	// Run type checking for named type resolution (best-effort)
+	e.runTypeChecking(fset, info.ParsedFiles, pkgName)
 
 	// Extract entities from all files
 	for _, file := range pkg.Files {

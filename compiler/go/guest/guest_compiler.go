@@ -550,6 +550,10 @@ func (this *GuestCompiler) buildDynamicLibrary(code string) ([]byte, error) {
 				if absV, absErr := filepath.Abs(v); absErr == nil {
 					v = absV
 				}
+				// If module path points to a file (e.g. "TestRuntime.go"), use its parent directory.
+				if fi, _ := os.Stat(v); fi != nil && !fi.IsDir() {
+					v = filepath.Dir(v)
+				}
 				if fi, _ := os.Stat(v); fi != nil && fi.IsDir() { // if module is local dir
 					if _, alreadyAdded := addedLocalModules[v]; !alreadyAdded {
 						// if embedded code, write the source code into a Package folder and skip "-replace"
@@ -633,6 +637,14 @@ func (this *GuestCompiler) buildDynamicLibrary(code string) ([]byte, error) {
 	_, err = ioutil.ReadFile(dir + "go.mod")
 	if err != nil {
 		println("Failed to find go.mod in " + dir + "go.mod")
+	}
+
+	// Run "go mod tidy" to add all missing require directives.
+	// In Go 1.17+, replace directives without matching require directives are ignored,
+	// so we must ensure require entries exist for every imported module.
+	_, err = this.goModTidy(dir)
+	if err != nil {
+		return nil, err
 	}
 
 	// build dynamic library
@@ -766,6 +778,32 @@ func (this *GuestCompiler) applyDevReplaces(dir string) error {
 	}
 
 	return this.goReplace(dir, "github.com/MetaFFI/sdk/api/go", goRuntimePath)
+}
+
+// --------------------------------------------------------------------
+func (this *GuestCompiler) goModTidy(dir string) (string, error) {
+	tidyCmd := exec.Command(getGoExe(), "mod", "tidy")
+	tidyCmd.Dir = dir
+
+	var symbol string
+	if runtime.GOOS == "windows" {
+		symbol = ">"
+	} else {
+		symbol = "$"
+	}
+
+	dirDisplay := dir
+	if strings.HasSuffix(dirDisplay, "/") || strings.HasSuffix(dirDisplay, "\\") {
+		dirDisplay = dirDisplay[:len(dirDisplay)-1]
+	}
+
+	fmt.Printf("%v%v %v\n", dirDisplay, symbol, strings.Join(tidyCmd.Args, " "))
+	output, err := tidyCmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("Failed running 'go mod tidy' in \"%v\" with error: %v.\nOutput:\n%v", dir, err, string(output))
+	}
+
+	return string(output), err
 }
 
 // --------------------------------------------------------------------

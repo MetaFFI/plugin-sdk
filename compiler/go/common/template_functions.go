@@ -413,6 +413,8 @@ func convertToGoType(def *IDL.ArgDefinition, mod *IDL.ModuleDefinition) string {
 		res = "string"
 	case IDL.ANY:
 		res = "interface{}"
+	case IDL.NULL:
+		res = "interface{}"
 	case IDL.HANDLE:
 		if def.IsTypeAlias() && mod.IsContainsClass(def.TypeAlias) {
 			res = asPublic(def.TypeAlias)

@@ -4,7 +4,7 @@
   "idl_filename_with_extension": "xllr.test.idl.json",
   "idl_full_path": "",
   "metaffi_guest_lib": "xllr_test_plugin",
-  "target_language": "cpp",
+  "target_language": "test",
   "modules": [
     {
       "name": "test",
