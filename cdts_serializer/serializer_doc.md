@@ -641,6 +641,21 @@ This comprehensive testing caught several issues during development:
 - **Type Caching**: Cache compile-time type information
 - **Memory Pooling**: Reuse CDTS allocations when possible (use cache flag)
 
+### Implemented Fast Paths (Transparent to Callers)
+
+The current serializers include internal optimizations for hot paths. These are implemented **behind the scenes** and do not change the public serializer APIs.
+
+- **JVM serializer/runtime**:
+  - 1D array bulk traverse/construct fast paths for primitive numeric types, `bool`, and `handle`.
+  - Class/method lookup caching for stable Java core classes (primitive arrays + wrapper types) to avoid repeated JNI `FindClass`/`GetMethodID` overhead.
+- **CPython3 serializer**:
+  - 1D primitive sequence fast-fill path for array serialization.
+- **Go serializer**:
+  - 1D primitive slice bulk-fill from Go slices into CDTS in C (single cgo transition per slice, instead of per-element cgo calls).
+  - Bulk extraction path for supported primitive slices (currently `int32[]` and `float64[]` extraction APIs).
+
+These optimizations preserve serializer behavior and memory ownership semantics (`free_required`, XLLR allocation/free rules). Components that consume `cdts_serializer` do not need any code changes to benefit from them.
+
 ## Conclusion
 
 CDTS serializers are the bridge between language-native code and MetaFFI's interoperability layer.

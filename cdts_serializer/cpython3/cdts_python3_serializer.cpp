@@ -15,6 +15,7 @@
 #include <cdts_serializer/cpython3/runtime_id.h>
 #include <sstream>
 #include <cstring>
+#include <limits>
 #include <utils/logger.hpp>
 #include <utils/safe_func.h>
 
@@ -1749,6 +1750,153 @@ static Py_ssize_t detect_dimensions(PyObject* list)
 	return 1;
 }
 
+static void validate_integer_range_strict(long long value, metaffi_type target_type)
+{
+	switch(target_type)
+	{
+		case metaffi_int8_type:
+			if(value < -128 || value > 127) { throw std::runtime_error("Value out of range for int8"); }
+			break;
+		case metaffi_int16_type:
+			if(value < -32768 || value > 32767) { throw std::runtime_error("Value out of range for int16"); }
+			break;
+		case metaffi_int32_type:
+			if(value < -2147483648LL || value > 2147483647LL) { throw std::runtime_error("Value out of range for int32"); }
+			break;
+		case metaffi_int64_type:
+			break;
+		case metaffi_uint8_type:
+			if(value < 0 || value > 255) { throw std::runtime_error("Value out of range for uint8"); }
+			break;
+		case metaffi_uint16_type:
+			if(value < 0 || value > 65535) { throw std::runtime_error("Value out of range for uint16"); }
+			break;
+		case metaffi_uint32_type:
+			if(value < 0 || value > 4294967295LL) { throw std::runtime_error("Value out of range for uint32"); }
+			break;
+		default:
+			break;
+	}
+}
+
+static bool is_fast_1d_primitive_type(metaffi_type t)
+{
+	switch(t)
+	{
+		case metaffi_float64_type:
+		case metaffi_float32_type:
+		case metaffi_int8_type:
+		case metaffi_uint8_type:
+		case metaffi_int16_type:
+		case metaffi_uint16_type:
+		case metaffi_int32_type:
+		case metaffi_uint32_type:
+		case metaffi_int64_type:
+		case metaffi_uint64_type:
+		case metaffi_bool_type:
+			return true;
+		default:
+			return false;
+	}
+}
+
+static bool try_fill_1d_primitive_cdts_from_pysequence(PyObject* list, cdts& arr, metaffi_type resolved_type)
+{
+	if(!is_fast_1d_primitive_type(resolved_type))
+	{
+		return false;
+	}
+
+	if(arr.length == 0)
+	{
+		return true;
+	}
+
+	for(metaffi_size i = 0; i < arr.length; i++)
+	{
+		PyObject* item = py_list::check(list) ? pPyList_GetItem(list, (Py_ssize_t)i) : pPyTuple_GetItem(list, (Py_ssize_t)i);
+		cdt& dst = arr[i];
+		dst.type = resolved_type;
+		dst.free_required = false;
+
+		switch(resolved_type)
+		{
+			case metaffi_float64_type:
+			{
+				double v = pPyFloat_AsDouble(item);
+				if(v == -1.0 && pPyErr_Occurred())
+				{
+					throw std::runtime_error("Failed converting element to float64");
+				}
+				dst.cdt_val.float64_val = (metaffi_float64)v;
+				break;
+			}
+			case metaffi_float32_type:
+			{
+				double v = pPyFloat_AsDouble(item);
+				if(v == -1.0 && pPyErr_Occurred())
+				{
+					throw std::runtime_error("Failed converting element to float32");
+				}
+				dst.cdt_val.float32_val = (metaffi_float32)v;
+				break;
+			}
+			case metaffi_int8_type:
+			case metaffi_int16_type:
+			case metaffi_int32_type:
+			case metaffi_int64_type:
+			case metaffi_uint8_type:
+			case metaffi_uint16_type:
+			case metaffi_uint32_type:
+			{
+				long long v = pPyLong_AsLongLong(item);
+				if(v == -1 && pPyErr_Occurred())
+				{
+					throw std::runtime_error("Failed converting element to integer");
+				}
+				validate_integer_range_strict(v, resolved_type);
+
+				switch(resolved_type)
+				{
+					case metaffi_int8_type:   dst.cdt_val.int8_val = (metaffi_int8)v; break;
+					case metaffi_int16_type:  dst.cdt_val.int16_val = (metaffi_int16)v; break;
+					case metaffi_int32_type:  dst.cdt_val.int32_val = (metaffi_int32)v; break;
+					case metaffi_int64_type:  dst.cdt_val.int64_val = (metaffi_int64)v; break;
+					case metaffi_uint8_type:  dst.cdt_val.uint8_val = (metaffi_uint8)v; break;
+					case metaffi_uint16_type: dst.cdt_val.uint16_val = (metaffi_uint16)v; break;
+					case metaffi_uint32_type: dst.cdt_val.uint32_val = (metaffi_uint32)v; break;
+					default: break;
+				}
+				break;
+			}
+			case metaffi_uint64_type:
+			{
+				unsigned long long v = pPyLong_AsUnsignedLongLong(item);
+				if(v == (unsigned long long)-1 && pPyErr_Occurred())
+				{
+					throw std::runtime_error("Failed converting element to uint64");
+				}
+				dst.cdt_val.uint64_val = (metaffi_uint64)v;
+				break;
+			}
+			case metaffi_bool_type:
+			{
+				int truth = pPyObject_IsTrue(item);
+				if(truth < 0)
+				{
+					throw std::runtime_error("Failed converting element to bool");
+				}
+				dst.cdt_val.bool_val = truth ? 1 : 0;
+				break;
+			}
+			default:
+				return false;
+		}
+	}
+
+	return true;
+}
+
 void cdts_python3_serializer::pylist_to_cdt_array(PyObject* list, cdt& target, metaffi_type element_type)
 {
 	// GIL assumed to be held
@@ -1806,6 +1954,12 @@ void cdts_python3_serializer::pylist_to_cdt_array(PyObject* list, cdt& target, m
 	// Allocate CDTS array
 	target.set_new_array(len, dimensions, static_cast<metaffi_types>(resolved_type));
 	cdts& arr = static_cast<cdts&>(target);
+
+	// Fast path: 1D homogeneous primitive arrays can be filled directly.
+	if(is_1d_array && try_fill_1d_primitive_cdts_from_pysequence(list, arr, resolved_type))
+	{
+		return;
+	}
 
 	// Fill array elements
 	for(Py_ssize_t i = 0; i < len; i++)

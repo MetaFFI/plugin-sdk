@@ -23,6 +23,10 @@ def wait_a_bit(secs: int) -> None:
 	return None
 
 
+def no_op():
+	pass
+
+
 def return_null():
 	return None
 
@@ -82,6 +86,10 @@ def accepts_any(which_type_to_expect: int, val: typing.Any):
 		raise ValueError(f"Expected bytes, got {type(val)}")
 	if which_type_to_expect == 5 and not isinstance(val, SomeClass):
 		raise ValueError(f"Expected SomeClass, got {type(val)}")
+
+
+def echo_any(val: typing.Any) -> typing.Any:
+	return val
 
 
 def get_three_buffers():

@@ -97,11 +97,27 @@ JNIEXPORT jlong JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_alloc_1cdts
 
 /*
  * Class:     metaffi_api_accessor_MetaFFIAccessor
+ * Method:    free_cdts
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_free_1cdts
+		(JNIEnv *, jclass, jlong);
+
+/*
+ * Class:     metaffi_api_accessor_MetaFFIAccessor
  * Method:    get_pcdt
  * Signature: (JB)J
  */
 JNIEXPORT jlong JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_get_1pcdt
 		(JNIEnv *, jclass, jlong, jbyte);
+
+/*
+ * Class:     metaffi_api_accessor_MetaFFIAccessor
+ * Method:    set_cdt_int64
+ * Signature: (JIJ)V
+ */
+JNIEXPORT void JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_set_1cdt_1int64
+		(JNIEnv *, jclass, jlong, jint, jlong);
 
 /*
  * Class:     metaffi_api_accessor_MetaFFIAccessor

@@ -51,6 +51,11 @@ struct cdt* get_cdts_index_pcdt(struct cdts* p, int index)
 	return p[index].arr;
 }
 
+struct cdts* get_cdts_index_pcdts(struct cdts* p, int index)
+{
+	return &p[index];
+}
+
 */
 import "C"
 import (
@@ -211,6 +216,10 @@ func XLLRAllocCDTSBuffer(paramsCount uint64, retsCount uint64) (pcdts unsafe.Poi
 	}
 
 	return
+}
+
+func XLLRGetCDTS(pcdts unsafe.Pointer, index int) unsafe.Pointer {
+	return unsafe.Pointer(C.get_cdts_index_pcdts((*C.struct_cdts)(pcdts), C.int(index)))
 }
 
 func XLLRFreeCDTSBuffer(pcdts unsafe.Pointer) {

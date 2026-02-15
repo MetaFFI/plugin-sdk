@@ -18,6 +18,8 @@
 #include "runtime_id.h"
 #include "utils/defines.h"
 #include <algorithm>
+#include <cstdlib>
+#include <mutex>
 #include <runtime/cdts_traverse_construct.h>
 #include <utility>
 #include <utils/defines.h>
@@ -27,10 +29,109 @@
 extern std::shared_ptr<jvm> pjvm;
 static auto LOG = metaffi::get_logger("jvm.api");
 
+void jni_releaser(cdt_metaffi_handle* ptr);
+
 //--------------------------------------------------------------------
 
 namespace
 {
+	struct jvm_common_cache
+	{
+		jclass arr_double = nullptr; // [D
+		jclass arr_float = nullptr; // [F
+		jclass arr_byte = nullptr; // [B
+		jclass arr_short = nullptr; // [S
+		jclass arr_int = nullptr; // [I
+		jclass arr_long = nullptr; // [J
+		jclass arr_bool = nullptr; // [Z
+		jclass arr_object = nullptr; // [Ljava/lang/Object;
+		jclass cls_string = nullptr; // java/lang/String
+		jclass cls_integer = nullptr; // java/lang/Integer
+		jclass cls_long = nullptr; // java/lang/Long
+		jclass cls_short = nullptr; // java/lang/Short
+		jclass cls_byte = nullptr; // java/lang/Byte
+		jclass cls_character = nullptr; // java/lang/Character
+		jclass cls_float = nullptr; // java/lang/Float
+		jclass cls_double = nullptr; // java/lang/Double
+		jclass cls_boolean = nullptr; // java/lang/Boolean
+		jmethodID ctor_integer = nullptr; // (I)V
+		jmethodID ctor_long = nullptr; // (J)V
+		jmethodID ctor_short = nullptr; // (S)V
+		jmethodID ctor_byte = nullptr; // (B)V
+		jmethodID ctor_character = nullptr; // (C)V
+		jmethodID ctor_float = nullptr; // (F)V
+		jmethodID ctor_double = nullptr; // (D)V
+		jmethodID ctor_boolean = nullptr; // (Z)V
+	};
+
+	jclass cache_global_class(JNIEnv* env, const char* class_name)
+	{
+		jclass local = env->FindClass(class_name);
+		check_and_throw_jvm_exception(env, local);
+
+		jclass global = (jclass)env->NewGlobalRef(local);
+		env->DeleteLocalRef(local);
+		check_and_throw_jvm_exception(env, global);
+		return global;
+	}
+
+	const jvm_common_cache& get_jvm_common_cache(JNIEnv* env)
+	{
+		static jvm_common_cache cache;
+		static JavaVM* cached_vm = nullptr;
+		static std::mutex cache_mutex;
+
+		std::lock_guard<std::mutex> lock(cache_mutex);
+		JavaVM* current_vm = nullptr;
+		env->GetJavaVM(&current_vm);
+		check_and_throw_jvm_exception(env, current_vm);
+
+		if(cache.arr_double && current_vm == cached_vm)
+		{
+			return cache;
+		}
+
+		cache = {};
+		cached_vm = current_vm;
+
+		cache.arr_double = cache_global_class(env, "[D");
+		cache.arr_float = cache_global_class(env, "[F");
+		cache.arr_byte = cache_global_class(env, "[B");
+		cache.arr_short = cache_global_class(env, "[S");
+		cache.arr_int = cache_global_class(env, "[I");
+		cache.arr_long = cache_global_class(env, "[J");
+		cache.arr_bool = cache_global_class(env, "[Z");
+		cache.arr_object = cache_global_class(env, "[Ljava/lang/Object;");
+		cache.cls_string = cache_global_class(env, "java/lang/String");
+		cache.cls_integer = cache_global_class(env, "java/lang/Integer");
+		cache.cls_long = cache_global_class(env, "java/lang/Long");
+		cache.cls_short = cache_global_class(env, "java/lang/Short");
+		cache.cls_byte = cache_global_class(env, "java/lang/Byte");
+		cache.cls_character = cache_global_class(env, "java/lang/Character");
+		cache.cls_float = cache_global_class(env, "java/lang/Float");
+		cache.cls_double = cache_global_class(env, "java/lang/Double");
+		cache.cls_boolean = cache_global_class(env, "java/lang/Boolean");
+
+		cache.ctor_integer = env->GetMethodID(cache.cls_integer, "<init>", "(I)V");
+		check_and_throw_jvm_exception(env, cache.ctor_integer);
+		cache.ctor_long = env->GetMethodID(cache.cls_long, "<init>", "(J)V");
+		check_and_throw_jvm_exception(env, cache.ctor_long);
+		cache.ctor_short = env->GetMethodID(cache.cls_short, "<init>", "(S)V");
+		check_and_throw_jvm_exception(env, cache.ctor_short);
+		cache.ctor_byte = env->GetMethodID(cache.cls_byte, "<init>", "(B)V");
+		check_and_throw_jvm_exception(env, cache.ctor_byte);
+		cache.ctor_character = env->GetMethodID(cache.cls_character, "<init>", "(C)V");
+		check_and_throw_jvm_exception(env, cache.ctor_character);
+		cache.ctor_float = env->GetMethodID(cache.cls_float, "<init>", "(F)V");
+		check_and_throw_jvm_exception(env, cache.ctor_float);
+		cache.ctor_double = env->GetMethodID(cache.cls_double, "<init>", "(D)V");
+		check_and_throw_jvm_exception(env, cache.ctor_double);
+		cache.ctor_boolean = env->GetMethodID(cache.cls_boolean, "<init>", "(Z)V");
+		check_and_throw_jvm_exception(env, cache.ctor_boolean);
+
+		return cache;
+	}
+
 	struct big_integer_cache
 	{
 		jclass cls = nullptr;
@@ -41,23 +142,33 @@ namespace
 	big_integer_cache& get_big_integer_cache(JNIEnv* env)
 	{
 		static big_integer_cache cache;
-		if(!cache.cls)
+		static JavaVM* cached_vm = nullptr;
+		static std::mutex cache_mutex;
+
+		std::lock_guard<std::mutex> lock(cache_mutex);
+		JavaVM* current_vm = nullptr;
+		env->GetJavaVM(&current_vm);
+		check_and_throw_jvm_exception(env, current_vm);
+
+		if(cache.cls && current_vm == cached_vm)
 		{
-			jclass tmp = env->FindClass("java/math/BigInteger");
-			check_and_throw_jvm_exception(env, tmp);
-			cache.cls = (jclass)env->NewGlobalRef(tmp);
-			env->DeleteLocalRef(tmp);
+			return cache;
 		}
-		if(!cache.ctor)
-		{
-			cache.ctor = env->GetMethodID(cache.cls, "<init>", "(I[B)V");
-			check_and_throw_jvm_exception(env, cache.ctor);
-		}
-		if(!cache.zero_field)
-		{
-			cache.zero_field = env->GetStaticFieldID(cache.cls, "ZERO", "Ljava/math/BigInteger;");
-			check_and_throw_jvm_exception(env, cache.zero_field);
-		}
+
+		cache = {};
+		cached_vm = current_vm;
+
+		jclass tmp = env->FindClass("java/math/BigInteger");
+		check_and_throw_jvm_exception(env, tmp);
+		cache.cls = (jclass)env->NewGlobalRef(tmp);
+		env->DeleteLocalRef(tmp);
+		check_and_throw_jvm_exception(env, cache.cls);
+
+		cache.ctor = env->GetMethodID(cache.cls, "<init>", "(I[B)V");
+		check_and_throw_jvm_exception(env, cache.ctor);
+		cache.zero_field = env->GetStaticFieldID(cache.cls, "ZERO", "Ljava/math/BigInteger;");
+		check_and_throw_jvm_exception(env, cache.zero_field);
+
 		return cache;
 	}
 
@@ -87,6 +198,608 @@ namespace
 		env->DeleteLocalRef(bytes);
 		check_and_throw_jvm_exception(env, big);
 		return big;
+	}
+
+	bool is_supported_fast_1d_common_type(metaffi_type common_type)
+	{
+		switch(common_type)
+		{
+			case metaffi_float64_type:
+			case metaffi_float32_type:
+			case metaffi_int8_type:
+			case metaffi_uint8_type:
+			case metaffi_int16_type:
+			case metaffi_uint16_type:
+			case metaffi_int32_type:
+			case metaffi_uint32_type:
+			case metaffi_int64_type:
+			case metaffi_uint64_type:
+			case metaffi_bool_type:
+			case metaffi_handle_type:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	bool is_supported_fast_1d_jvm_array(JNIEnv* env, jobject obj, metaffi_type common_type)
+	{
+		if(!obj)
+		{
+			return false;
+		}
+
+		const auto& cache = get_jvm_common_cache(env);
+
+		switch(common_type)
+		{
+			case metaffi_float64_type:
+				return env->IsInstanceOf(obj, cache.arr_double);
+			case metaffi_float32_type:
+				return env->IsInstanceOf(obj, cache.arr_float);
+			case metaffi_int8_type:
+			case metaffi_uint8_type:
+				return env->IsInstanceOf(obj, cache.arr_byte);
+			case metaffi_int16_type:
+			case metaffi_uint16_type:
+				return env->IsInstanceOf(obj, cache.arr_short);
+			case metaffi_int32_type:
+			case metaffi_uint32_type:
+				return env->IsInstanceOf(obj, cache.arr_int);
+			case metaffi_int64_type:
+			case metaffi_uint64_type:
+				return env->IsInstanceOf(obj, cache.arr_long);
+			case metaffi_bool_type:
+				return env->IsInstanceOf(obj, cache.arr_bool);
+			case metaffi_handle_type:
+				return env->IsInstanceOf(obj, cache.arr_object);
+			default:
+				return false;
+		}
+	}
+
+	template<typename JElem, typename ConvertFn, typename RegionSetterFn>
+	void set_jni_primitive_array_region_from_cdts(JNIEnv* env, const cdts& source, ConvertFn&& convert, RegionSetterFn&& set_region)
+	{
+		const jsize length = to_jsize(source.length);
+		if(length == 0)
+		{
+			return;
+		}
+
+		struct tls_buffer
+		{
+			JElem* data = nullptr;
+			size_t capacity = 0;
+			~tls_buffer()
+			{
+				if(data)
+				{
+					std::free(data);
+				}
+			}
+		};
+
+		thread_local tls_buffer buffer;
+		if((size_t)length > buffer.capacity)
+		{
+			size_t next_capacity = (size_t)length;
+			JElem* resized = static_cast<JElem*>(std::realloc(buffer.data, sizeof(JElem) * next_capacity));
+			if(!resized)
+			{
+				throw std::runtime_error("Failed to allocate fast 1D JVM traverse buffer");
+			}
+			buffer.data = resized;
+			buffer.capacity = next_capacity;
+		}
+
+		for(metaffi_size i = 0; i < source.length; i++)
+		{
+			buffer.data[i] = convert(source.arr[i], i);
+		}
+
+		set_region(buffer.data, length);
+		check_and_throw_jvm_exception(env, true);
+	}
+
+	template<typename JElem, typename RegionGetterFn, typename StoreFn>
+	void set_cdts_from_jni_primitive_array(JNIEnv* env, jsize length, cdts* target, RegionGetterFn&& get_region, StoreFn&& store)
+	{
+		if((metaffi_size)length != target->length)
+		{
+			std::stringstream ss;
+			ss << "Array length mismatch while fast-constructing 1D array. Java length=" << length
+			   << ", CDTS length=" << target->length;
+			throw std::runtime_error(ss.str());
+		}
+
+		if(length == 0)
+		{
+			target->fixed_dimensions = 1;
+			return;
+		}
+
+		struct tls_buffer
+		{
+			JElem* data = nullptr;
+			size_t capacity = 0;
+			~tls_buffer()
+			{
+				if(data)
+				{
+					std::free(data);
+				}
+			}
+		};
+
+		thread_local tls_buffer buffer;
+		if((size_t)length > buffer.capacity)
+		{
+			size_t next_capacity = (size_t)length;
+			JElem* resized = static_cast<JElem*>(std::realloc(buffer.data, sizeof(JElem) * next_capacity));
+			if(!resized)
+			{
+				throw std::runtime_error("Failed to allocate fast 1D JVM construct buffer");
+			}
+			buffer.data = resized;
+			buffer.capacity = next_capacity;
+		}
+
+		get_region(buffer.data, length);
+		check_and_throw_jvm_exception(env, true);
+
+		for(jsize i = 0; i < length; i++)
+		{
+			store(target->arr[(metaffi_size)i], buffer.data[(size_t)i], (metaffi_size)i);
+		}
+
+		target->fixed_dimensions = 1;
+	}
+
+	bool try_fast_traverse_1d_array(JNIEnv* env, jarray target, const cdts& source, metaffi_type common_type)
+	{
+		if(!target || source.fixed_dimensions != 1 || !is_supported_fast_1d_common_type(common_type))
+		{
+			return false;
+		}
+
+		switch(common_type)
+		{
+			case metaffi_float64_type:
+			{
+				set_jni_primitive_array_region_from_cdts<jdouble>(
+						env, source,
+						[](const cdt& elem, metaffi_size i) -> jdouble
+						{
+							if(elem.type != metaffi_float64_type)
+							{
+								std::stringstream ss;
+								ss << "Fast traverse expected float64 element at index " << i << ", got type " << elem.type;
+								throw std::runtime_error(ss.str());
+							}
+							return (jdouble)elem.cdt_val.float64_val;
+						},
+						[env, target](const jdouble* data, jsize len)
+						{
+							env->SetDoubleArrayRegion((jdoubleArray)target, 0, len, data);
+						});
+				return true;
+			}
+			case metaffi_float32_type:
+			{
+				set_jni_primitive_array_region_from_cdts<jfloat>(
+						env, source,
+						[](const cdt& elem, metaffi_size i) -> jfloat
+						{
+							if(elem.type != metaffi_float32_type)
+							{
+								std::stringstream ss;
+								ss << "Fast traverse expected float32 element at index " << i << ", got type " << elem.type;
+								throw std::runtime_error(ss.str());
+							}
+							return (jfloat)elem.cdt_val.float32_val;
+						},
+						[env, target](const jfloat* data, jsize len)
+						{
+							env->SetFloatArrayRegion((jfloatArray)target, 0, len, data);
+						});
+				return true;
+			}
+			case metaffi_int8_type:
+			case metaffi_uint8_type:
+			{
+				set_jni_primitive_array_region_from_cdts<jbyte>(
+						env, source,
+						[](const cdt& elem, metaffi_size i) -> jbyte
+						{
+							if(elem.type == metaffi_int8_type)
+							{
+								return (jbyte)elem.cdt_val.int8_val;
+							}
+							if(elem.type == metaffi_uint8_type)
+							{
+								return (jbyte)elem.cdt_val.uint8_val;
+							}
+
+							std::stringstream ss;
+							ss << "Fast traverse expected int8/uint8 element at index " << i << ", got type " << elem.type;
+							throw std::runtime_error(ss.str());
+						},
+						[env, target](const jbyte* data, jsize len)
+						{
+							env->SetByteArrayRegion((jbyteArray)target, 0, len, data);
+						});
+				return true;
+			}
+			case metaffi_int16_type:
+			case metaffi_uint16_type:
+			{
+				set_jni_primitive_array_region_from_cdts<jshort>(
+						env, source,
+						[](const cdt& elem, metaffi_size i) -> jshort
+						{
+							if(elem.type == metaffi_int16_type)
+							{
+								return (jshort)elem.cdt_val.int16_val;
+							}
+							if(elem.type == metaffi_uint16_type)
+							{
+								return (jshort)elem.cdt_val.uint16_val;
+							}
+
+							std::stringstream ss;
+							ss << "Fast traverse expected int16/uint16 element at index " << i << ", got type " << elem.type;
+							throw std::runtime_error(ss.str());
+						},
+						[env, target](const jshort* data, jsize len)
+						{
+							env->SetShortArrayRegion((jshortArray)target, 0, len, data);
+						});
+				return true;
+			}
+			case metaffi_int32_type:
+			case metaffi_uint32_type:
+			{
+				set_jni_primitive_array_region_from_cdts<jint>(
+						env, source,
+						[](const cdt& elem, metaffi_size i) -> jint
+						{
+							if(elem.type == metaffi_int32_type)
+							{
+								return (jint)elem.cdt_val.int32_val;
+							}
+							if(elem.type == metaffi_uint32_type)
+							{
+								return (jint)elem.cdt_val.uint32_val;
+							}
+
+							std::stringstream ss;
+							ss << "Fast traverse expected int32/uint32 element at index " << i << ", got type " << elem.type;
+							throw std::runtime_error(ss.str());
+						},
+						[env, target](const jint* data, jsize len)
+						{
+							env->SetIntArrayRegion((jintArray)target, 0, len, data);
+						});
+				return true;
+			}
+			case metaffi_int64_type:
+			case metaffi_uint64_type:
+			{
+				set_jni_primitive_array_region_from_cdts<jlong>(
+						env, source,
+						[](const cdt& elem, metaffi_size i) -> jlong
+						{
+							if(elem.type == metaffi_int64_type)
+							{
+								return (jlong)elem.cdt_val.int64_val;
+							}
+							if(elem.type == metaffi_uint64_type)
+							{
+								return (jlong)elem.cdt_val.uint64_val;
+							}
+
+							std::stringstream ss;
+							ss << "Fast traverse expected int64/uint64 element at index " << i << ", got type " << elem.type;
+							throw std::runtime_error(ss.str());
+						},
+						[env, target](const jlong* data, jsize len)
+						{
+							env->SetLongArrayRegion((jlongArray)target, 0, len, data);
+						});
+				return true;
+			}
+			case metaffi_bool_type:
+			{
+				set_jni_primitive_array_region_from_cdts<jboolean>(
+						env, source,
+						[](const cdt& elem, metaffi_size i) -> jboolean
+						{
+							if(elem.type != metaffi_bool_type)
+							{
+								std::stringstream ss;
+								ss << "Fast traverse expected bool element at index " << i << ", got type " << elem.type;
+								throw std::runtime_error(ss.str());
+							}
+							return elem.cdt_val.bool_val ? JNI_TRUE : JNI_FALSE;
+						},
+						[env, target](const jboolean* data, jsize len)
+						{
+							env->SetBooleanArrayRegion((jbooleanArray)target, 0, len, data);
+						});
+				return true;
+			}
+			case metaffi_handle_type:
+			{
+				if(!env->IsInstanceOf(target, env->FindClass("[Ljava/lang/Object;")))
+				{
+					return false;
+				}
+
+				jobjectArray jarr = (jobjectArray)target;
+				for(metaffi_size i = 0; i < source.length; i++)
+				{
+					const cdt& elem = source.arr[i];
+					if(elem.type != metaffi_handle_type)
+					{
+						std::stringstream ss;
+						ss << "Fast traverse expected handle element at index " << i << ", got type " << elem.type;
+						throw std::runtime_error(ss.str());
+					}
+
+					jobject out = nullptr;
+					cdt_metaffi_handle* handle = elem.cdt_val.handle_val;
+					if(handle)
+					{
+						if(handle->runtime_id != JVM_RUNTIME_ID)
+						{
+							if(handle->handle != nullptr)
+							{
+								jni_metaffi_handle wrapper(env, handle->handle, handle->runtime_id, handle->release);
+								out = wrapper.new_jvm_object(env);
+							}
+						}
+						else
+						{
+							out = (jobject)handle->handle;
+						}
+					}
+
+					env->SetObjectArrayElement(jarr, to_jsize(i), out);
+					check_and_throw_jvm_exception(env, true);
+
+					if(out && env->GetObjectRefType(out) == JNILocalRefType)
+					{
+						env->DeleteLocalRef(out);
+					}
+				}
+				return true;
+			}
+			default:
+				return false;
+		}
+	}
+
+	bool try_fast_construct_1d_array(JNIEnv* env, jarray source, cdts* target, const metaffi_type_info& root_type_info)
+	{
+		if(!source || !target)
+		{
+			return false;
+		}
+
+		metaffi_type common_type = metaffi_null_type;
+		metaffi_int64 fixed_dimensions = MIXED_OR_UNKNOWN_DIMENSIONS;
+
+		// Prefer the declared type-info for hot benchmark paths (avoids repeated full runtime array introspection).
+		if((root_type_info.type & metaffi_array_type) && root_type_info.type != metaffi_array_type &&
+		   root_type_info.fixed_dimensions == 1)
+		{
+			common_type = root_type_info.type & (~metaffi_array_type);
+			fixed_dimensions = 1;
+		}
+		else
+		{
+			auto info = jarray_wrapper::get_array_info(env, source, root_type_info);
+			common_type = info.first.type & (~metaffi_array_type);
+			fixed_dimensions = info.first.fixed_dimensions;
+		}
+
+		if(fixed_dimensions != 1 || !is_supported_fast_1d_common_type(common_type) ||
+		   !is_supported_fast_1d_jvm_array(env, source, common_type))
+		{
+			return false;
+		}
+
+		const jsize length = env->GetArrayLength(source);
+		check_and_throw_jvm_exception(env, true);
+
+		switch(common_type)
+		{
+			case metaffi_float64_type:
+			{
+				set_cdts_from_jni_primitive_array<jdouble>(
+						env, length, target,
+						[env, source](jdouble* data, jsize len)
+						{
+							env->GetDoubleArrayRegion((jdoubleArray)source, 0, len, data);
+						},
+						[](cdt& dst, jdouble val, metaffi_size)
+						{
+							dst.type = metaffi_float64_type;
+							dst.cdt_val.float64_val = (metaffi_float64)val;
+							dst.free_required = false;
+						});
+				return true;
+			}
+			case metaffi_float32_type:
+			{
+				set_cdts_from_jni_primitive_array<jfloat>(
+						env, length, target,
+						[env, source](jfloat* data, jsize len)
+						{
+							env->GetFloatArrayRegion((jfloatArray)source, 0, len, data);
+						},
+						[](cdt& dst, jfloat val, metaffi_size)
+						{
+							dst.type = metaffi_float32_type;
+							dst.cdt_val.float32_val = (metaffi_float32)val;
+							dst.free_required = false;
+						});
+				return true;
+			}
+			case metaffi_int8_type:
+			case metaffi_uint8_type:
+			{
+				set_cdts_from_jni_primitive_array<jbyte>(
+						env, length, target,
+						[env, source](jbyte* data, jsize len)
+						{
+							env->GetByteArrayRegion((jbyteArray)source, 0, len, data);
+						},
+						[common_type](cdt& dst, jbyte val, metaffi_size)
+						{
+							dst.type = common_type;
+							if(common_type == metaffi_int8_type)
+							{
+								dst.cdt_val.int8_val = (metaffi_int8)val;
+							}
+							else
+							{
+								dst.cdt_val.uint8_val = (metaffi_uint8)((uint8_t)val);
+							}
+							dst.free_required = false;
+						});
+				return true;
+			}
+			case metaffi_int16_type:
+			case metaffi_uint16_type:
+			{
+				set_cdts_from_jni_primitive_array<jshort>(
+						env, length, target,
+						[env, source](jshort* data, jsize len)
+						{
+							env->GetShortArrayRegion((jshortArray)source, 0, len, data);
+						},
+						[common_type](cdt& dst, jshort val, metaffi_size)
+						{
+							dst.type = common_type;
+							if(common_type == metaffi_int16_type)
+							{
+								dst.cdt_val.int16_val = (metaffi_int16)val;
+							}
+							else
+							{
+								dst.cdt_val.uint16_val = (metaffi_uint16)((uint16_t)val);
+							}
+							dst.free_required = false;
+						});
+				return true;
+			}
+			case metaffi_int32_type:
+			case metaffi_uint32_type:
+			{
+				set_cdts_from_jni_primitive_array<jint>(
+						env, length, target,
+						[env, source](jint* data, jsize len)
+						{
+							env->GetIntArrayRegion((jintArray)source, 0, len, data);
+						},
+						[common_type](cdt& dst, jint val, metaffi_size)
+						{
+							dst.type = common_type;
+							if(common_type == metaffi_int32_type)
+							{
+								dst.cdt_val.int32_val = (metaffi_int32)val;
+							}
+							else
+							{
+								dst.cdt_val.uint32_val = (metaffi_uint32)((uint32_t)val);
+							}
+							dst.free_required = false;
+						});
+				return true;
+			}
+			case metaffi_int64_type:
+			case metaffi_uint64_type:
+			{
+				set_cdts_from_jni_primitive_array<jlong>(
+						env, length, target,
+						[env, source](jlong* data, jsize len)
+						{
+							env->GetLongArrayRegion((jlongArray)source, 0, len, data);
+						},
+						[common_type](cdt& dst, jlong val, metaffi_size)
+						{
+							dst.type = common_type;
+							if(common_type == metaffi_int64_type)
+							{
+								dst.cdt_val.int64_val = (metaffi_int64)val;
+							}
+							else
+							{
+								dst.cdt_val.uint64_val = (metaffi_uint64)((uint64_t)val);
+							}
+							dst.free_required = false;
+						});
+				return true;
+			}
+			case metaffi_bool_type:
+			{
+				set_cdts_from_jni_primitive_array<jboolean>(
+						env, length, target,
+						[env, source](jboolean* data, jsize len)
+						{
+							env->GetBooleanArrayRegion((jbooleanArray)source, 0, len, data);
+						},
+						[](cdt& dst, jboolean val, metaffi_size)
+						{
+							dst.type = metaffi_bool_type;
+							dst.cdt_val.bool_val = val ? 1 : 0;
+							dst.free_required = false;
+						});
+				return true;
+			}
+			case metaffi_handle_type:
+			{
+				if((metaffi_size)length != target->length)
+				{
+					std::stringstream ss;
+					ss << "Array length mismatch while fast-constructing handle array. Java length=" << length
+					   << ", CDTS length=" << target->length;
+					throw std::runtime_error(ss.str());
+				}
+
+				auto jarr = (jobjectArray)source;
+				for(jsize i = 0; i < length; i++)
+				{
+					jobject elem_obj = env->GetObjectArrayElement(jarr, i);
+					check_and_throw_jvm_exception(env, true);
+
+					cdt& dst = target->arr[(metaffi_size)i];
+					dst.type = metaffi_handle_type;
+					dst.free_required = true;
+
+					if(elem_obj && jni_metaffi_handle::is_metaffi_handle_wrapper_object(env, elem_obj))
+					{
+						dst.cdt_val.handle_val = (cdt_metaffi_handle*)jni_metaffi_handle(env, elem_obj);
+					}
+					else
+					{
+						dst.cdt_val.handle_val = (cdt_metaffi_handle*)jni_metaffi_handle::wrap_in_metaffi_handle(
+								env, elem_obj, (void*)jni_releaser);
+					}
+
+					if(elem_obj && env->GetObjectRefType(elem_obj) == JNILocalRefType)
+					{
+						env->DeleteLocalRef(elem_obj);
+					}
+				}
+				target->fixed_dimensions = 1;
+				return true;
+			}
+			default:
+				return false;
+		}
 	}
 }
 
@@ -955,6 +1668,7 @@ DLL_PRIVATE metaffi_bool on_traverse_array(const metaffi_size* index, metaffi_si
 	std::pair<JNIEnv*, jvalue&>* pair = static_cast<std::pair<JNIEnv*, jvalue&>*>(context);
 	JNIEnv* env = pair->first;
 	jobject obj = pair->second.l;
+	jarray target_array = nullptr;
 
 	if(obj && env->IsInstanceOf(obj, env->FindClass("[Ljava/lang/Object;")))// if jobject is jobjectArray of Object
 	{
@@ -970,14 +1684,24 @@ DLL_PRIVATE metaffi_bool on_traverse_array(const metaffi_size* index, metaffi_si
 
 		jarray_wrapper jarr(env, (jarray) hosting_array, metaffi_array_type);
 		jarr.set(to_jsize(index[index_size - 1]), new_arr);
+		target_array = (jarray)new_arr.l;
 	}
 	else if(!obj)
 	{
 		pair->second.l = jarray_wrapper::create_jni_array(env, common_type, fixed_dimensions, val.length);
+		target_array = (jarray)pair->second.l;
 	}
 	else
 	{
 		throw std::invalid_argument("Expected jobject to be jarray of Object");
+	}
+
+	if(fixed_dimensions == 1)
+	{
+		if(try_fast_traverse_1d_array(env, target_array, val, common_type))
+		{
+			return 0;
+		}
 	}
 
 	return 1;
@@ -1029,7 +1753,33 @@ DLL_PRIVATE metaffi_size on_construct_array_metadata(const metaffi_size* index, 
 	*is_1d_array = res.first.fixed_dimensions == 1;
 	*is_manually_construct_array = 0;
 
+	if(*is_1d_array)
+	{
+		metaffi_type root_common_type = (*common_type) & (~metaffi_array_type);
+		if(is_supported_fast_1d_common_type(root_common_type) &&
+		   is_supported_fast_1d_jvm_array(JNIEnv_context(context), (jobject)elem.first.l, root_common_type))
+		{
+			*is_manually_construct_array = 1;
+		}
+	}
+
 	return res.second;
+}
+
+DLL_PRIVATE void on_construct_cdt_array(const metaffi_size* index, metaffi_size index_length, cdts* manually_fill_array, void* context)
+{
+	JNIEnv* env = JNIEnv_context(context);
+
+	auto elem = jarray_wrapper::get_element(env, (jarray)jvalue_context(context).l, index, index_length);
+	if(elem.second != 'L')
+	{
+		throw std::invalid_argument("Expected jobject to be an array while manually constructing CDTS array");
+	}
+
+	if(!try_fast_construct_1d_array(env, (jarray)elem.first.l, manually_fill_array, metaffi_type_info_context(context)))
+	{
+		throw std::runtime_error("Manual 1D array construction was selected but fast construction is not supported for this array type");
+	}
 }
 
 DLL_PRIVATE metaffi_size on_get_root_elements_count(void* context)
@@ -2384,7 +3134,7 @@ DLL_PRIVATE metaffi::runtime::construct_cdts_callbacks jni_get_construct_cdts_ca
 	metaffi::runtime::construct_cdts_callbacks callbacks{};
 	callbacks.context = context;
 	callbacks.get_array_metadata = &on_construct_array_metadata;
-	callbacks.construct_cdt_array = nullptr;
+	callbacks.construct_cdt_array = &on_construct_cdt_array;
 	callbacks.get_root_elements_count = &on_get_root_elements_count;
 	callbacks.get_type_info = &on_get_type_info;
 	callbacks.get_float64 = &on_construct_float64;
@@ -2735,7 +3485,8 @@ bool cdts_java_wrapper::is_jstring(JNIEnv* env, int index) const
 	}
 
 	jobject obj = (jobject) (this->pcdts->at(index).cdt_val.handle_val->handle);
-	return env->IsInstanceOf(obj, env->FindClass("java/lang/String")) != JNI_FALSE;
+	const auto& cache = get_jvm_common_cache(env);
+	return env->IsInstanceOf(obj, cache.cls_string) != JNI_FALSE;
 }
 
 //--------------------------------------------------------------------
@@ -2758,37 +3509,38 @@ char cdts_java_wrapper::get_jni_primitive_signature_from_object_form_of_primitiv
 	}
 
 	jobject obj = (jobject) (this->pcdts->at(index).cdt_val.handle_val->handle);
+	const auto& cache = get_jvm_common_cache(env);
 
 	// Check if the object is an instance of a primitive type
-	if(env->IsInstanceOf(obj, env->FindClass("java/lang/Integer")))
+	if(env->IsInstanceOf(obj, cache.cls_integer))
 	{
 		return 'I';
 	}
-	else if(env->IsInstanceOf(obj, env->FindClass("java/lang/Long")))
+	else if(env->IsInstanceOf(obj, cache.cls_long))
 	{
 		return 'J';
 	}
-	else if(env->IsInstanceOf(obj, env->FindClass("java/lang/Short")))
+	else if(env->IsInstanceOf(obj, cache.cls_short))
 	{
 		return 'S';
 	}
-	else if(env->IsInstanceOf(obj, env->FindClass("java/lang/Byte")))
+	else if(env->IsInstanceOf(obj, cache.cls_byte))
 	{
 		return 'B';
 	}
-	else if(env->IsInstanceOf(obj, env->FindClass("java/lang/Character")))
+	else if(env->IsInstanceOf(obj, cache.cls_character))
 	{
 		return 'C';
 	}
-	else if(env->IsInstanceOf(obj, env->FindClass("java/lang/Float")))
+	else if(env->IsInstanceOf(obj, cache.cls_float))
 	{
 		return 'F';
 	}
-	else if(env->IsInstanceOf(obj, env->FindClass("java/lang/Double")))
+	else if(env->IsInstanceOf(obj, cache.cls_double))
 	{
 		return 'D';
 	}
-	else if(env->IsInstanceOf(obj, env->FindClass("java/lang/Boolean")))
+	else if(env->IsInstanceOf(obj, cache.cls_boolean))
 	{
 		return 'Z';
 	}
@@ -2802,13 +3554,8 @@ char cdts_java_wrapper::get_jni_primitive_signature_from_object_form_of_primitiv
 //--------------------------------------------------------------------
 void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_int32 val) const
 {
-	jclass cls = env->FindClass("java/lang/Integer");
-	check_and_throw_jvm_exception(env, true);
-
-	jmethodID constructor = env->GetMethodID(cls, "<init>", "(I)V");
-	check_and_throw_jvm_exception(env, true);
-
-	jobject obj = env->NewObject(cls, constructor, val);
+	const auto& cache = get_jvm_common_cache(env);
+	jobject obj = env->NewObject(cache.cls_integer, cache.ctor_integer, val);
 	check_and_throw_jvm_exception(env, true);
 
 	cdt& c = this->pcdts->at(index);
@@ -2818,13 +3565,8 @@ void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_int32 val) co
 //--------------------------------------------------------------------
 void cdts_java_wrapper::set_object(JNIEnv* env, int index, bool val) const
 {
-	jclass cls = env->FindClass("java/lang/Boolean");
-	check_and_throw_jvm_exception(env, true);
-
-	jmethodID constructor = env->GetMethodID(cls, "<init>", "(Z)V");
-	check_and_throw_jvm_exception(env, true);
-
-	jobject obj = env->NewObject(cls, constructor, val);
+	const auto& cache = get_jvm_common_cache(env);
+	jobject obj = env->NewObject(cache.cls_boolean, cache.ctor_boolean, val);
 	check_and_throw_jvm_exception(env, true);
 
 	//	obj = env->NewGlobalRef(obj);
@@ -2837,13 +3579,8 @@ void cdts_java_wrapper::set_object(JNIEnv* env, int index, bool val) const
 //--------------------------------------------------------------------
 void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_int8 val) const
 {
-	jclass cls = env->FindClass("java/lang/Byte");
-	check_and_throw_jvm_exception(env, true);
-
-	jmethodID constructor = env->GetMethodID(cls, "<init>", "(B)V");
-	check_and_throw_jvm_exception(env, true);
-
-	jobject obj = env->NewObject(cls, constructor, val);
+	const auto& cache = get_jvm_common_cache(env);
+	jobject obj = env->NewObject(cache.cls_byte, cache.ctor_byte, val);
 	check_and_throw_jvm_exception(env, true);
 
 	cdt& c = this->pcdts->at(index);
@@ -2854,13 +3591,8 @@ void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_int8 val) con
 //--------------------------------------------------------------------
 void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_uint16 val) const
 {
-	jclass cls = env->FindClass("java/lang/Character");
-	check_and_throw_jvm_exception(env, true);
-
-	jmethodID constructor = env->GetMethodID(cls, "<init>", "(C)V");
-	check_and_throw_jvm_exception(env, true);
-
-	jobject obj = env->NewObject(cls, constructor, val);
+	const auto& cache = get_jvm_common_cache(env);
+	jobject obj = env->NewObject(cache.cls_character, cache.ctor_character, val);
 	check_and_throw_jvm_exception(env, true);
 
 	cdt& c = this->pcdts->at(index);
@@ -2871,13 +3603,8 @@ void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_uint16 val) c
 //--------------------------------------------------------------------
 void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_int16 val) const
 {
-	jclass cls = env->FindClass("java/lang/Short");
-	check_and_throw_jvm_exception(env, true);
-
-	jmethodID constructor = env->GetMethodID(cls, "<init>", "(S)V");
-	check_and_throw_jvm_exception(env, true);
-
-	jobject obj = env->NewObject(cls, constructor, val);
+	const auto& cache = get_jvm_common_cache(env);
+	jobject obj = env->NewObject(cache.cls_short, cache.ctor_short, val);
 	check_and_throw_jvm_exception(env, true);
 
 	cdt& c = this->pcdts->at(index);
@@ -2888,13 +3615,8 @@ void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_int16 val) co
 //--------------------------------------------------------------------
 void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_int64 val) const
 {
-	jclass cls = env->FindClass("java/lang/Long");
-	check_and_throw_jvm_exception(env, true);
-
-	jmethodID constructor = env->GetMethodID(cls, "<init>", "(J)V");
-	check_and_throw_jvm_exception(env, true);
-
-	jobject obj = env->NewObject(cls, constructor, val);
+	const auto& cache = get_jvm_common_cache(env);
+	jobject obj = env->NewObject(cache.cls_long, cache.ctor_long, val);
 	check_and_throw_jvm_exception(env, true);
 
 	cdt& c = this->pcdts->at(index);
@@ -2905,13 +3627,8 @@ void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_int64 val) co
 //--------------------------------------------------------------------
 void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_float32 val) const
 {
-	jclass cls = env->FindClass("java/lang/Float");
-	check_and_throw_jvm_exception(env, true);
-
-	jmethodID constructor = env->GetMethodID(cls, "<init>", "(F)V");
-	check_and_throw_jvm_exception(env, true);
-
-	jobject obj = env->NewObject(cls, constructor, val);
+	const auto& cache = get_jvm_common_cache(env);
+	jobject obj = env->NewObject(cache.cls_float, cache.ctor_float, val);
 	check_and_throw_jvm_exception(env, true);
 
 	cdt& c = this->pcdts->at(index);
@@ -2922,13 +3639,8 @@ void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_float32 val) 
 //--------------------------------------------------------------------
 void cdts_java_wrapper::set_object(JNIEnv* env, int index, metaffi_float64 val) const
 {
-	jclass cls = env->FindClass("java/lang/Double");
-	check_and_throw_jvm_exception(env, true);
-
-	jmethodID constructor = env->GetMethodID(cls, "<init>", "(D)V");
-	check_and_throw_jvm_exception(env, true);
-
-	jobject obj = env->NewObject(cls, constructor, val);
+	const auto& cache = get_jvm_common_cache(env);
+	jobject obj = env->NewObject(cache.cls_double, cache.ctor_double, val);
 	check_and_throw_jvm_exception(env, true);
 
 	cdt& c = this->pcdts->at(index);

@@ -449,9 +449,9 @@ func (c *MetaFFICallable) Call(args ...interface{}) ([]interface{}, error) {
 	if paramsCount > 0 && retvalCount > 0 {
 		err = XLLRXCallParamsRet(unsafe.Pointer(c.Val.val), xcallBuf)
 	} else if paramsCount > 0 {
-		err = XLLRXCallParamsNoRet(unsafe.Pointer(c.Val.val), xcallBuf)
+		err = XLLRXCallParamsNoRet(unsafe.Pointer(c.Val.val), XLLRGetCDTS(xcallBuf, 0))
 	} else if retvalCount > 0 {
-		err = XLLRXCallNoParamsRet(unsafe.Pointer(c.Val.val), xcallBuf)
+		err = XLLRXCallNoParamsRet(unsafe.Pointer(c.Val.val), XLLRGetCDTS(xcallBuf, 1))
 	} else {
 		err = XLLRXCallNoParamsNoRet(unsafe.Pointer(c.Val.val))
 	}

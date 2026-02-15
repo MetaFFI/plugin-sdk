@@ -12,6 +12,7 @@
 #include <runtime_manager/jvm/exception_macro.h>
 #include <runtime_manager/jvm/jni_size_utils.h>
 #include <runtime_manager/jvm/contexts.h>
+#include <mutex>
 
 // JNI to call XLLR from java
 
@@ -488,6 +489,21 @@ JNIEXPORT jlong JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_alloc_1cdts(JN
 	}
 }
 //--------------------------------------------------------------------
+JNIEXPORT void JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_free_1cdts(JNIEnv* env, jclass, jlong pcdts)
+{
+	try
+	{
+		if(pcdts != 0)
+		{
+			xllr_free_cdts_buffer(reinterpret_cast<cdts*>(pcdts));
+		}
+	}
+	catch(std::exception& err)
+	{
+		throwMetaFFIException(env, err.what());
+	}
+}
+//--------------------------------------------------------------------
 JNIEXPORT jlong JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_get_1pcdt(JNIEnv* env, jclass, jlong pcdts, jbyte index)
 {
 	try
@@ -498,6 +514,35 @@ JNIEXPORT jlong JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_get_1pcdt(JNIE
 	{
 		throwMetaFFIException(env, err.what());
 		return 0;
+	}
+}
+//--------------------------------------------------------------------
+JNIEXPORT void JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_set_1cdt_1int64(JNIEnv* env, jclass, jlong pcdt, jint index, jlong value)
+{
+	try
+	{
+		if(pcdt == 0)
+		{
+			throwMetaFFIException(env, "internal error. pointer to pcdt is null");
+			return;
+		}
+
+		cdts* p = reinterpret_cast<cdts*>(pcdt);
+		if(index < 0 || static_cast<metaffi_size>(index) >= p->length)
+		{
+			throwMetaFFIException(env, "internal error. cdt index out of bounds");
+			return;
+		}
+
+		cdt& slot = p->arr[index];
+		slot.free();
+		slot.type = metaffi_int64_type;
+		slot.cdt_val.int64_val = static_cast<metaffi_int64>(value);
+		slot.free_required = false;
+	}
+	catch(std::exception& err)
+	{
+		throwMetaFFIException(env, err.what());
 	}
 }
 //--------------------------------------------------------------------
@@ -515,15 +560,98 @@ JNIEXPORT void JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_remove_1object 
 	jvm_objects_table::instance().remove(env, (jobject)phandle);
 }
 //--------------------------------------------------------------------
+namespace
+{
+	struct array_dims_cache
+	{
+		JavaVM* vm = nullptr;
+		jclass arr_bool = nullptr;
+		jclass arr_byte = nullptr;
+		jclass arr_short = nullptr;
+		jclass arr_int = nullptr;
+		jclass arr_long = nullptr;
+		jclass arr_float = nullptr;
+		jclass arr_double = nullptr;
+		jclass cls_object = nullptr;
+		jclass cls_class = nullptr;
+		jmethodID mid_get_class = nullptr;
+		jmethodID mid_get_name = nullptr;
+	};
+
+	array_dims_cache& get_array_dims_cache(JNIEnv* env)
+	{
+		static array_dims_cache cache;
+		static std::mutex cache_mutex;
+
+		std::lock_guard<std::mutex> lock(cache_mutex);
+		JavaVM* current_vm = nullptr;
+		env->GetJavaVM(&current_vm);
+		check_and_throw_jvm_exception(env, current_vm);
+
+		if(cache.vm == current_vm && cache.mid_get_class && cache.mid_get_name)
+		{
+			return cache;
+		}
+
+		cache = {};
+		cache.vm = current_vm;
+
+		auto make_global = [&](const char* class_name) -> jclass
+		{
+			jclass local = env->FindClass(class_name);
+			check_and_throw_jvm_exception(env, local);
+			jclass global = (jclass)env->NewGlobalRef(local);
+			env->DeleteLocalRef(local);
+			check_and_throw_jvm_exception(env, global);
+			return global;
+		};
+
+		cache.arr_bool = make_global("[Z");
+		cache.arr_byte = make_global("[B");
+		cache.arr_short = make_global("[S");
+		cache.arr_int = make_global("[I");
+		cache.arr_long = make_global("[J");
+		cache.arr_float = make_global("[F");
+		cache.arr_double = make_global("[D");
+		cache.cls_object = make_global("java/lang/Object");
+		cache.cls_class = make_global("java/lang/Class");
+
+		cache.mid_get_class = env->GetMethodID(cache.cls_object, "getClass", "()Ljava/lang/Class;");
+		check_and_throw_jvm_exception(env, cache.mid_get_class);
+		cache.mid_get_name = env->GetMethodID(cache.cls_class, "getName", "()Ljava/lang/String;");
+		check_and_throw_jvm_exception(env, cache.mid_get_name);
+
+		return cache;
+	}
+}
+
 int get_array_dimensions(JNIEnv *env, jobjectArray arr)
 {
-	jclass cls = env->GetObjectClass(arr);
-	jmethodID mid = env->GetMethodID(cls, "getClass", "()Ljava/lang/Class;");
-	jobject clsObj = env->CallObjectMethod(arr, mid);
-	cls = env->GetObjectClass(clsObj);
-	mid = env->GetMethodID(cls, "getName", "()Ljava/lang/String;");
-	jstring name = (jstring)env->CallObjectMethod(clsObj, mid);
+	if(!arr)
+	{
+		return 0;
+	}
+
+	auto& cache = get_array_dims_cache(env);
+
+	// Hot-path: all primitive JVM arrays are always 1D at the root.
+	if(env->IsInstanceOf(arr, cache.arr_bool) ||
+	   env->IsInstanceOf(arr, cache.arr_byte) ||
+	   env->IsInstanceOf(arr, cache.arr_short) ||
+	   env->IsInstanceOf(arr, cache.arr_int) ||
+	   env->IsInstanceOf(arr, cache.arr_long) ||
+	   env->IsInstanceOf(arr, cache.arr_float) ||
+	   env->IsInstanceOf(arr, cache.arr_double))
+	{
+		return 1;
+	}
+
+	jobject clsObj = env->CallObjectMethod(arr, cache.mid_get_class);
+	check_and_throw_jvm_exception(env, clsObj);
+	jstring name = (jstring)env->CallObjectMethod(clsObj, cache.mid_get_name);
+	check_and_throw_jvm_exception(env, name);
 	const char* nameStr = env->GetStringUTFChars(name, nullptr);
+	check_and_throw_jvm_exception(env, nameStr);
 	
 	int dimensions = 0;
 	for (const char* c = nameStr; *c != '\0'; c++)
@@ -534,6 +662,8 @@ int get_array_dimensions(JNIEnv *env, jobjectArray arr)
 	}
 	
 	env->ReleaseStringUTFChars(name, nameStr);
+	env->DeleteLocalRef(name);
+	env->DeleteLocalRef(clsObj);
 	
 	return dimensions;
 }

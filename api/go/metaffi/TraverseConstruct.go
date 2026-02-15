@@ -16,6 +16,73 @@ void GoMetaFFIHandleTocdt_metaffi_handle(struct cdt_metaffi_handle* p , void* ha
 	p->release = (void (*)(struct cdt_metaffi_handle*))release;
 }
 
+void copy_cdts_to_uint8_buffer(struct cdts* src, uint8_t* dst, metaffi_size len) {
+	for (metaffi_size i = 0; i < len; i++) {
+		dst[i] = (uint8_t)src->arr[i].cdt_val.uint8_val;
+	}
+}
+
+void copy_cdts_to_int8_buffer(struct cdts* src, int8_t* dst, metaffi_size len) {
+	for (metaffi_size i = 0; i < len; i++) {
+		dst[i] = (int8_t)src->arr[i].cdt_val.int8_val;
+	}
+}
+
+void fill_cdts_from_uint8_buffer(struct cdts* dst, const uint8_t* src, metaffi_size len) {
+	for (metaffi_size i = 0; i < len; i++) {
+		struct cdt* elem = &dst->arr[i];
+		elem->free_required = 0;
+		elem->type = metaffi_uint8_type;
+		elem->cdt_val.uint8_val = (metaffi_uint8)src[i];
+	}
+}
+
+void fill_cdts_from_int8_buffer(struct cdts* dst, const int8_t* src, metaffi_size len) {
+	for (metaffi_size i = 0; i < len; i++) {
+		struct cdt* elem = &dst->arr[i];
+		elem->free_required = 0;
+		elem->type = metaffi_int8_type;
+		elem->cdt_val.int8_val = (metaffi_int8)src[i];
+	}
+}
+
+#define DEFINE_COPY_CDTS_NUMERIC(NAME, CTYPE, METAFFI_TYPE, FIELD) \
+void copy_cdts_to_##NAME##_buffer(struct cdts* src, CTYPE* dst, metaffi_size len) { \
+	for (metaffi_size i = 0; i < len; i++) { \
+		dst[i] = (CTYPE)src->arr[i].cdt_val.FIELD; \
+	} \
+}
+
+#define DEFINE_FILL_CDTS_NUMERIC(NAME, CTYPE, METAFFI_TYPE, FIELD) \
+void fill_cdts_from_##NAME##_buffer(struct cdts* dst, const CTYPE* src, metaffi_size len) { \
+	for (metaffi_size i = 0; i < len; i++) { \
+		struct cdt* elem = &dst->arr[i]; \
+		elem->free_required = 0; \
+		elem->type = METAFFI_TYPE; \
+		elem->cdt_val.FIELD = src[i]; \
+	} \
+}
+
+DEFINE_COPY_CDTS_NUMERIC(int16, int16_t, metaffi_int16_type, int16_val)
+DEFINE_COPY_CDTS_NUMERIC(uint16, uint16_t, metaffi_uint16_type, uint16_val)
+DEFINE_COPY_CDTS_NUMERIC(int32, int32_t, metaffi_int32_type, int32_val)
+DEFINE_COPY_CDTS_NUMERIC(uint32, uint32_t, metaffi_uint32_type, uint32_val)
+DEFINE_COPY_CDTS_NUMERIC(int64, int64_t, metaffi_int64_type, int64_val)
+DEFINE_COPY_CDTS_NUMERIC(uint64, uint64_t, metaffi_uint64_type, uint64_val)
+DEFINE_COPY_CDTS_NUMERIC(float32, float, metaffi_float32_type, float32_val)
+DEFINE_COPY_CDTS_NUMERIC(float64, double, metaffi_float64_type, float64_val)
+DEFINE_COPY_CDTS_NUMERIC(bool, metaffi_bool, metaffi_bool_type, bool_val)
+
+DEFINE_FILL_CDTS_NUMERIC(int16, int16_t, metaffi_int16_type, int16_val)
+DEFINE_FILL_CDTS_NUMERIC(uint16, uint16_t, metaffi_uint16_type, uint16_val)
+DEFINE_FILL_CDTS_NUMERIC(int32, int32_t, metaffi_int32_type, int32_val)
+DEFINE_FILL_CDTS_NUMERIC(uint32, uint32_t, metaffi_uint32_type, uint32_val)
+DEFINE_FILL_CDTS_NUMERIC(int64, int64_t, metaffi_int64_type, int64_val)
+DEFINE_FILL_CDTS_NUMERIC(uint64, uint64_t, metaffi_uint64_type, uint64_val)
+DEFINE_FILL_CDTS_NUMERIC(float32, float, metaffi_float32_type, float32_val)
+DEFINE_FILL_CDTS_NUMERIC(float64, double, metaffi_float64_type, float64_val)
+DEFINE_FILL_CDTS_NUMERIC(bool, metaffi_bool, metaffi_bool_type, bool_val)
+
 */
 import "C"
 import (
@@ -28,15 +95,16 @@ import (
 func getElement(index []uint64, root interface{}) reflect.Value {
 
 	if index == nil {
-		return reflect.ValueOf(root)
+		return unwrapInterfaceValue(reflect.ValueOf(root))
 	}
 
 	// Traverse the root object
-	v := reflect.ValueOf(root)
+	v := unwrapInterfaceValue(reflect.ValueOf(root))
 	for _, idx := range index {
+		v = unwrapInterfaceValue(v)
 		if v.Kind() == reflect.Slice || v.Kind() == reflect.Array {
 			if idx < uint64(v.Len()) {
-				v = v.Index(int(idx))
+				v = unwrapInterfaceValue(v.Index(int(idx)))
 			} else {
 				panic(fmt.Sprintf("Index out of range: %v. Length: %v", idx, v.Len()))
 			}
@@ -45,7 +113,307 @@ func getElement(index []uint64, root interface{}) reflect.Value {
 		}
 	}
 
+	return unwrapInterfaceValue(v)
+}
+
+func isByteLikeCommonType(t C.metaffi_type) bool {
+	return t == C.metaffi_uint8_type || t == C.metaffi_int8_type
+}
+
+func isFastPrimitiveCommonType(t C.metaffi_type) bool {
+	switch t {
+	case C.metaffi_int8_type, C.metaffi_uint8_type,
+		C.metaffi_int16_type, C.metaffi_uint16_type,
+		C.metaffi_int32_type, C.metaffi_uint32_type,
+		C.metaffi_int64_type, C.metaffi_uint64_type,
+		C.metaffi_float32_type, C.metaffi_float64_type,
+		C.metaffi_bool_type:
+		return true
+	default:
+		return false
+	}
+}
+
+func unwrapInterfaceValue(v reflect.Value) reflect.Value {
+	for v.IsValid() && v.Kind() == reflect.Interface && !v.IsNil() {
+		v = v.Elem()
+	}
 	return v
+}
+
+func setArrayResultValue(target reflect.Value, value reflect.Value) error {
+	if !target.CanSet() {
+		return fmt.Errorf("target is not settable for fast array path")
+	}
+	if value.Type().AssignableTo(target.Type()) {
+		target.Set(value)
+		return nil
+	}
+	if value.Type().ConvertibleTo(target.Type()) {
+		target.Set(value.Convert(target.Type()))
+		return nil
+	}
+	if target.Kind() == reflect.Interface {
+		target.Set(value)
+		return nil
+	}
+	return fmt.Errorf("cannot assign fast array result %v to target type %v", value.Type(), target.Type())
+}
+
+func tryFastTraversePrimitiveArray(item *CDT, currentIndex []uint64, ctxt *TraverseContext, commonType C.metaffi_type) (bool, error) {
+	if !isFastPrimitiveCommonType(commonType) {
+		return false, nil
+	}
+
+	arr := item.GetArray()
+	if arr == nil {
+		return false, fmt.Errorf("Array value is null")
+	}
+	if arr.GetFixedDimensions() != 1 {
+		return false, nil
+	}
+
+	length := int(arr.GetLength())
+	if commonType == C.metaffi_uint8_type {
+		result := make([]uint8, length)
+		if length > 0 {
+			C.copy_cdts_to_uint8_buffer(arr.c, (*C.uint8_t)(unsafe.Pointer(&result[0])), C.metaffi_size(length))
+		}
+
+		if currentIndex == nil || len(currentIndex) == 0 {
+			ctxt.Result = result
+			return true, nil
+		}
+
+		elem := getElement(currentIndex, ctxt.Result)
+		return true, setArrayResultValue(elem, reflect.ValueOf(result))
+	}
+
+	switch commonType {
+	case C.metaffi_int8_type:
+		result := make([]int8, length)
+		if length > 0 {
+			C.copy_cdts_to_int8_buffer(arr.c, (*C.int8_t)(unsafe.Pointer(&result[0])), C.metaffi_size(length))
+		}
+		if currentIndex == nil || len(currentIndex) == 0 {
+			ctxt.Result = result
+			return true, nil
+		}
+		elem := getElement(currentIndex, ctxt.Result)
+		return true, setArrayResultValue(elem, reflect.ValueOf(result))
+	case C.metaffi_int16_type:
+		result := make([]int16, length)
+		if length > 0 {
+			C.copy_cdts_to_int16_buffer(arr.c, (*C.int16_t)(unsafe.Pointer(&result[0])), C.metaffi_size(length))
+		}
+		if currentIndex == nil || len(currentIndex) == 0 {
+			ctxt.Result = result
+			return true, nil
+		}
+		elem := getElement(currentIndex, ctxt.Result)
+		return true, setArrayResultValue(elem, reflect.ValueOf(result))
+	case C.metaffi_uint16_type:
+		result := make([]uint16, length)
+		if length > 0 {
+			C.copy_cdts_to_uint16_buffer(arr.c, (*C.uint16_t)(unsafe.Pointer(&result[0])), C.metaffi_size(length))
+		}
+		if currentIndex == nil || len(currentIndex) == 0 {
+			ctxt.Result = result
+			return true, nil
+		}
+		elem := getElement(currentIndex, ctxt.Result)
+		return true, setArrayResultValue(elem, reflect.ValueOf(result))
+	case C.metaffi_int32_type:
+		result := make([]int32, length)
+		if length > 0 {
+			C.copy_cdts_to_int32_buffer(arr.c, (*C.int32_t)(unsafe.Pointer(&result[0])), C.metaffi_size(length))
+		}
+		if currentIndex == nil || len(currentIndex) == 0 {
+			ctxt.Result = result
+			return true, nil
+		}
+		elem := getElement(currentIndex, ctxt.Result)
+		return true, setArrayResultValue(elem, reflect.ValueOf(result))
+	case C.metaffi_uint32_type:
+		result := make([]uint32, length)
+		if length > 0 {
+			C.copy_cdts_to_uint32_buffer(arr.c, (*C.uint32_t)(unsafe.Pointer(&result[0])), C.metaffi_size(length))
+		}
+		if currentIndex == nil || len(currentIndex) == 0 {
+			ctxt.Result = result
+			return true, nil
+		}
+		elem := getElement(currentIndex, ctxt.Result)
+		return true, setArrayResultValue(elem, reflect.ValueOf(result))
+	case C.metaffi_int64_type:
+		result := make([]int64, length)
+		if length > 0 {
+			C.copy_cdts_to_int64_buffer(arr.c, (*C.int64_t)(unsafe.Pointer(&result[0])), C.metaffi_size(length))
+		}
+		if currentIndex == nil || len(currentIndex) == 0 {
+			ctxt.Result = result
+			return true, nil
+		}
+		elem := getElement(currentIndex, ctxt.Result)
+		return true, setArrayResultValue(elem, reflect.ValueOf(result))
+	case C.metaffi_uint64_type:
+		result := make([]uint64, length)
+		if length > 0 {
+			C.copy_cdts_to_uint64_buffer(arr.c, (*C.uint64_t)(unsafe.Pointer(&result[0])), C.metaffi_size(length))
+		}
+		if currentIndex == nil || len(currentIndex) == 0 {
+			ctxt.Result = result
+			return true, nil
+		}
+		elem := getElement(currentIndex, ctxt.Result)
+		return true, setArrayResultValue(elem, reflect.ValueOf(result))
+	case C.metaffi_float32_type:
+		result := make([]float32, length)
+		if length > 0 {
+			C.copy_cdts_to_float32_buffer(arr.c, (*C.float)(unsafe.Pointer(&result[0])), C.metaffi_size(length))
+		}
+		if currentIndex == nil || len(currentIndex) == 0 {
+			ctxt.Result = result
+			return true, nil
+		}
+		elem := getElement(currentIndex, ctxt.Result)
+		return true, setArrayResultValue(elem, reflect.ValueOf(result))
+	case C.metaffi_float64_type:
+		result := make([]float64, length)
+		if length > 0 {
+			C.copy_cdts_to_float64_buffer(arr.c, (*C.double)(unsafe.Pointer(&result[0])), C.metaffi_size(length))
+		}
+		if currentIndex == nil || len(currentIndex) == 0 {
+			ctxt.Result = result
+			return true, nil
+		}
+		elem := getElement(currentIndex, ctxt.Result)
+		return true, setArrayResultValue(elem, reflect.ValueOf(result))
+	case C.metaffi_bool_type:
+		cbuf := make([]C.metaffi_bool, length)
+		if length > 0 {
+			C.copy_cdts_to_bool_buffer(arr.c, (*C.metaffi_bool)(unsafe.Pointer(&cbuf[0])), C.metaffi_size(length))
+		}
+		result := make([]bool, length)
+		for i, v := range cbuf {
+			result[i] = v != 0
+		}
+		if currentIndex == nil || len(currentIndex) == 0 {
+			ctxt.Result = result
+			return true, nil
+		}
+		elem := getElement(currentIndex, ctxt.Result)
+		return true, setArrayResultValue(elem, reflect.ValueOf(result))
+	default:
+		return false, nil
+	}
+}
+
+func tryFastConstructPrimitiveArray(goVal reflect.Value, arr *CDTS, commonType C.metaffi_type) (bool, error) {
+	if !isFastPrimitiveCommonType(commonType) {
+		return false, nil
+	}
+
+	goVal = unwrapInterfaceValue(goVal)
+	if !goVal.IsValid() || goVal.Kind() != reflect.Slice {
+		return false, nil
+	}
+
+	length := goVal.Len()
+	if int(arr.GetLength()) != length {
+		return false, fmt.Errorf("array length mismatch in fast path: expected %d, got %d", int(arr.GetLength()), length)
+	}
+	if length == 0 {
+		return true, nil
+	}
+
+	switch commonType {
+	case C.metaffi_uint8_type:
+		vals, ok := goVal.Interface().([]uint8)
+		if !ok {
+			return false, nil
+		}
+		C.fill_cdts_from_uint8_buffer(arr.c, (*C.uint8_t)(unsafe.Pointer(&vals[0])), C.metaffi_size(length))
+		return true, nil
+	case C.metaffi_int8_type:
+		vals, ok := goVal.Interface().([]int8)
+		if !ok {
+			return false, nil
+		}
+		C.fill_cdts_from_int8_buffer(arr.c, (*C.int8_t)(unsafe.Pointer(&vals[0])), C.metaffi_size(length))
+		return true, nil
+	case C.metaffi_int16_type:
+		vals, ok := goVal.Interface().([]int16)
+		if !ok {
+			return false, nil
+		}
+		C.fill_cdts_from_int16_buffer(arr.c, (*C.int16_t)(unsafe.Pointer(&vals[0])), C.metaffi_size(length))
+		return true, nil
+	case C.metaffi_uint16_type:
+		vals, ok := goVal.Interface().([]uint16)
+		if !ok {
+			return false, nil
+		}
+		C.fill_cdts_from_uint16_buffer(arr.c, (*C.uint16_t)(unsafe.Pointer(&vals[0])), C.metaffi_size(length))
+		return true, nil
+	case C.metaffi_int32_type:
+		vals, ok := goVal.Interface().([]int32)
+		if !ok {
+			return false, nil
+		}
+		C.fill_cdts_from_int32_buffer(arr.c, (*C.int32_t)(unsafe.Pointer(&vals[0])), C.metaffi_size(length))
+		return true, nil
+	case C.metaffi_uint32_type:
+		vals, ok := goVal.Interface().([]uint32)
+		if !ok {
+			return false, nil
+		}
+		C.fill_cdts_from_uint32_buffer(arr.c, (*C.uint32_t)(unsafe.Pointer(&vals[0])), C.metaffi_size(length))
+		return true, nil
+	case C.metaffi_int64_type:
+		vals, ok := goVal.Interface().([]int64)
+		if !ok {
+			return false, nil
+		}
+		C.fill_cdts_from_int64_buffer(arr.c, (*C.int64_t)(unsafe.Pointer(&vals[0])), C.metaffi_size(length))
+		return true, nil
+	case C.metaffi_uint64_type:
+		vals, ok := goVal.Interface().([]uint64)
+		if !ok {
+			return false, nil
+		}
+		C.fill_cdts_from_uint64_buffer(arr.c, (*C.uint64_t)(unsafe.Pointer(&vals[0])), C.metaffi_size(length))
+		return true, nil
+	case C.metaffi_float32_type:
+		vals, ok := goVal.Interface().([]float32)
+		if !ok {
+			return false, nil
+		}
+		C.fill_cdts_from_float32_buffer(arr.c, (*C.float)(unsafe.Pointer(&vals[0])), C.metaffi_size(length))
+		return true, nil
+	case C.metaffi_float64_type:
+		vals, ok := goVal.Interface().([]float64)
+		if !ok {
+			return false, nil
+		}
+		C.fill_cdts_from_float64_buffer(arr.c, (*C.double)(unsafe.Pointer(&vals[0])), C.metaffi_size(length))
+		return true, nil
+	case C.metaffi_bool_type:
+		vals, ok := goVal.Interface().([]bool)
+		if !ok {
+			return false, nil
+		}
+		cvals := make([]C.metaffi_bool, len(vals))
+		for i, v := range vals {
+			if v {
+				cvals[i] = 1
+			}
+		}
+		C.fill_cdts_from_bool_buffer(arr.c, (*C.metaffi_bool)(unsafe.Pointer(&cvals[0])), C.metaffi_size(length))
+		return true, nil
+	default:
+		return false, nil
+	}
 }
 
 func createMultiDimSlice(length int, dimensions int, elemType reflect.Type) interface{} {
@@ -169,31 +537,39 @@ func getMetaFFITypeFromGoType(v reflect.Value) (detectedType C.metaffi_type, is1
 
 			// []interface{}
 			if arrayMask == C.metaffi_array_type {
-
-				// if one of the elements is a slice - 1D array is false
+				haveDetected := false
 				for i := 0; i < v.Len(); i++ {
-					curv := v.Index(i)
+					curv := unwrapInterfaceValue(v.Index(i))
+					if !curv.IsValid() {
+						continue
+					}
+
 					if curv.Kind() == reflect.Slice {
 						is1DArray = false
-						detectedType, _ = getMetaFFITypeFromGoType(curv)
-						break
-					} else if curv.Elem().Kind() == reflect.Slice {
+					}
+
+					curDetectedType, isInner1DArray := getMetaFFITypeFromGoType(curv)
+					if isInner1DArray && is1DArray {
 						is1DArray = false
-						detectedType, _ = getMetaFFITypeFromGoType(curv.Elem())
+					}
+
+					if !haveDetected {
+						detectedType = curDetectedType
+						haveDetected = true
+						continue
+					}
+
+					// Mixed element types in []interface{} must be encoded as dynamic-any arrays.
+					if detectedType != curDetectedType {
+						detectedType = C.metaffi_any_type
 						break
-					} else {
-						var isInner1DArray bool
-						detectedType, isInner1DArray = getMetaFFITypeFromGoType(curv)
-						if isInner1DArray && is1DArray {
-							is1DArray = false
-						}
 					}
 				}
 
 			} else { // interface{}
 
 				var isInner1DArray bool
-				detectedType, isInner1DArray = getMetaFFITypeFromGoType(v.Elem())
+				detectedType, isInner1DArray = getMetaFFITypeFromGoType(unwrapInterfaceValue(v))
 				if isInner1DArray && is1DArray {
 					is1DArray = false
 				}
@@ -426,6 +802,18 @@ func ConstructCDT(item *CDT, currentIndex []uint64, ctxt *ConstructContext, know
 		item.SetArray(arr)
 		arr.SetLength(arrayLength)
 
+		if is1DArray != 0 {
+			goVal := getElement(currentIndex, ctxt.Input)
+			fastDone, fastErr := tryFastConstructPrimitiveArray(goVal, arr, commonType)
+			if fastErr != nil {
+				return fastErr
+			}
+			if fastDone {
+				item.GetArray().SetFixedDimensions(1)
+				return nil
+			}
+		}
+
 		var foundDims C.metaffi_int64
 		if isFixedDimension != 0 {
 			foundDims = C.INT_MIN
@@ -433,10 +821,20 @@ func ConstructCDT(item *CDT, currentIndex []uint64, ctxt *ConstructContext, know
 			foundDims = C.MIXED_OR_UNKNOWN_DIMENSIONS
 		}
 
+		var childKnownType *IDL.MetaFFITypeInfo
+		if commonType != C.metaffi_any_type && ti.fixed_dimensions > 0 {
+			dims := int(ti.fixed_dimensions) - 1
+			if dims < 0 {
+				dims = 0
+			}
+			known := IDL.MetaFFITypeInfo{Type: uint64(commonType), Dimensions: dims}
+			childKnownType = &known
+		}
+
 		for i := 0; i < int(arrayLength); i++ {
 			newIndex := append(currentIndex, uint64(i))
 			newItem := arr.GetCDT(i)
-			if err := ConstructCDT(newItem, newIndex, ctxt, nil); err != nil {
+			if err := ConstructCDT(newItem, newIndex, ctxt, childKnownType); err != nil {
 				return err
 			}
 
@@ -539,7 +937,9 @@ func TraverseCDT(item *CDT, currentIndex []uint64, ctxt *TraverseContext) error 
 				ctxt.Result = item.GetFloat64()
 			} else { // within an array
 				elem := getElement(currentIndex, ctxt.Result)
-				elem.SetFloat(item.GetFloat64())
+				if err := setArrayResultValue(elem, reflect.ValueOf(item.GetFloat64())); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -776,12 +1176,20 @@ func TraverseCDT(item *CDT, currentIndex []uint64, ctxt *TraverseContext) error 
 
 			} else { // within an array
 				elem := getElement(currentIndex, ctxt.Result)
-				elem.Set(reflect.ValueOf(nil))
+				elem.Set(reflect.Zero(elem.Type()))
 			}
 		}
 
 	case C.metaffi_array_type:
 		{
+			fastDone, fastErr := tryFastTraversePrimitiveArray(item, currentIndex, ctxt, C.metaffi_type(commonType))
+			if fastErr != nil {
+				return fastErr
+			}
+			if fastDone {
+				return nil
+			}
+
 			arr := item.GetArray()
 
 			if arr == nil {

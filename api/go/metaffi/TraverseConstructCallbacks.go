@@ -55,7 +55,6 @@ char* copy_string(char* s, int n) {
 */
 import "C"
 import (
-	"fmt"
 	"reflect"
 	"unsafe"
 
@@ -100,7 +99,10 @@ func onArray(index []uint64, val *C.struct_cdts, fixedDimensions C.metaffi_int64
 				elem := GetGoObject(cdts.GetCDT(int(i)).GetHandleStruct())
 
 				if elem == nil {
-					panic(fmt.Sprintf("Go Object returned nil - Handle: %v %v", cdts.GetCDT(int(i)).GetHandleVal(), cdts.GetCDT(int(i)).GetHandleRuntime()))
+					// Null foreign handle inside handle-array (e.g. Java Object[] with null):
+					// fall back to []interface{} typing for safe mixed/null conversion.
+					commonGoType = reflect.TypeFor[interface{}]()
+					break
 				}
 
 				curType := reflect.ValueOf(elem).Type()

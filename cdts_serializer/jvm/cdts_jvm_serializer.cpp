@@ -1892,6 +1892,109 @@ void cdts_jvm_serializer::serialize_array(jarray arr, int dimensions, metaffi_ty
 		data[current_index].set_new_array(length, dimensions, static_cast<metaffi_types>(element_type));
 		cdts& arr_cdts = *data[current_index].cdt_val.array_val;
 
+		// Dynamic ANY[]: each element must carry a concrete CDT type.
+		// metaffi_any_type is only a type-hint in signatures, not a concrete runtime CDT element type.
+		if (element_type == metaffi_any_type) {
+			jobjectArray objArr = (jobjectArray)arr;
+			for (jsize i = 0; i < length; i++) {
+				jobject obj = env->GetObjectArrayElement(objArr, i);
+				if (!obj) {
+					arr_cdts[i].type = metaffi_null_type;
+					arr_cdts[i].free_required = false;
+					continue;
+				}
+
+				metaffi_type detected = detect_type(obj);
+				arr_cdts[i].free_required = false;
+
+				switch (detected) {
+					case metaffi_int8_type:
+						arr_cdts[i].cdt_val.int8_val = extract_byte_from_wrapper(obj);
+						arr_cdts[i].type = metaffi_int8_type;
+						break;
+					case metaffi_int16_type:
+						arr_cdts[i].cdt_val.int16_val = extract_short_from_wrapper(obj);
+						arr_cdts[i].type = metaffi_int16_type;
+						break;
+					case metaffi_int32_type:
+						arr_cdts[i].cdt_val.int32_val = extract_int_from_wrapper(obj);
+						arr_cdts[i].type = metaffi_int32_type;
+						break;
+					case metaffi_int64_type:
+						arr_cdts[i].cdt_val.int64_val = extract_long_from_wrapper(obj);
+						arr_cdts[i].type = metaffi_int64_type;
+						break;
+					case metaffi_uint64_type:
+						arr_cdts[i].cdt_val.uint64_val = is_big_integer(env, obj) ? big_integer_to_uint64(env, obj)
+						                                                           : static_cast<uint64_t>(extract_long_from_wrapper(obj));
+						arr_cdts[i].type = metaffi_uint64_type;
+						break;
+					case metaffi_float32_type:
+						arr_cdts[i].cdt_val.float32_val = extract_float_from_wrapper(obj);
+						arr_cdts[i].type = metaffi_float32_type;
+						break;
+					case metaffi_float64_type:
+						arr_cdts[i].cdt_val.float64_val = extract_double_from_wrapper(obj);
+						arr_cdts[i].type = metaffi_float64_type;
+						break;
+					case metaffi_bool_type:
+						arr_cdts[i].cdt_val.bool_val = (extract_boolean_from_wrapper(obj) == JNI_TRUE);
+						arr_cdts[i].type = metaffi_bool_type;
+						break;
+					case metaffi_char16_type: {
+						jchar ch = extract_char_from_wrapper(obj);
+						char16_t utf16_char[2] = {static_cast<char16_t>(ch), u'\0'};
+						arr_cdts[i].cdt_val.char16_val = metaffi_char16(utf16_char);
+						arr_cdts[i].type = metaffi_char16_type;
+						break;
+					}
+					case metaffi_string8_type:
+						arr_cdts[i].cdt_val.string8_val = jstring_to_string8((jstring)obj);
+						arr_cdts[i].type = metaffi_string8_type;
+						arr_cdts[i].free_required = true;
+						break;
+					case metaffi_array_type: {
+						auto [sub_dimensions, sub_element_type] = detect_array_info((jarray)obj);
+						serialize_array_into((jarray)obj, arr_cdts[i], sub_dimensions, sub_element_type);
+						break;
+					}
+					case metaffi_callable_type:
+						arr_cdts[i].cdt_val.callable_val = extract_caller(env, obj);
+						arr_cdts[i].type = metaffi_callable_type;
+						arr_cdts[i].free_required = true;
+						break;
+					case metaffi_handle_type:
+					default: {
+						void* handle_mem = xllr_alloc_memory(sizeof(cdt_metaffi_handle));
+						if (!handle_mem) {
+							env->DeleteLocalRef(obj);
+							throw std::runtime_error("Failed to allocate cdt_metaffi_handle");
+						}
+
+						arr_cdts[i].cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
+						if (is_metaffi_handle(env, obj)) {
+							cdt_metaffi_handle h = extract_metaffi_handle(env, obj);
+							arr_cdts[i].cdt_val.handle_val->handle = h.handle;
+							arr_cdts[i].cdt_val.handle_val->runtime_id = h.runtime_id;
+							arr_cdts[i].cdt_val.handle_val->release = h.release;
+						} else {
+							arr_cdts[i].cdt_val.handle_val->handle = env->NewGlobalRef(obj);
+							arr_cdts[i].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
+							arr_cdts[i].cdt_val.handle_val->release = nullptr;
+						}
+						arr_cdts[i].type = metaffi_handle_type;
+						arr_cdts[i].free_required = true;
+						break;
+					}
+				}
+
+				env->DeleteLocalRef(obj);
+			}
+
+			current_index++;
+			return;
+		}
+
 		// Copy elements based on type
 		switch(element_type) {
 			case metaffi_int8_type: {
@@ -2133,81 +2236,121 @@ jarray cdts_jvm_serializer::create_primitive_array(cdts& arr_cdts, metaffi_type 
 		case metaffi_int8_type: {
 			jsize jni_length = static_cast<jsize>(length);
 			jbyteArray result = env->NewByteArray(jni_length);
-			std::vector<jbyte> elements(length);
-			for (metaffi_size i = 0; i < length; i++) {
-				elements[i] = arr_cdts[i].cdt_val.int8_val;
+			jbyte* dst = static_cast<jbyte*>(env->GetPrimitiveArrayCritical(result, nullptr));
+			if(!dst)
+			{
+				throw std::runtime_error("Failed to get byte array critical section");
 			}
-			env->SetByteArrayRegion(result, 0, jni_length, elements.data());
+			for(metaffi_size i = 0; i < length; i++)
+			{
+				dst[i] = arr_cdts[i].cdt_val.int8_val;
+			}
+			env->ReleasePrimitiveArrayCritical(result, dst, 0);
 			return result;
 		}
 		case metaffi_int16_type: {
 			jsize jni_length = static_cast<jsize>(length);
 			jshortArray result = env->NewShortArray(jni_length);
-			std::vector<jshort> elements(length);
-			for (metaffi_size i = 0; i < length; i++) {
-				elements[i] = arr_cdts[i].cdt_val.int16_val;
+			jshort* dst = static_cast<jshort*>(env->GetPrimitiveArrayCritical(result, nullptr));
+			if(!dst)
+			{
+				throw std::runtime_error("Failed to get short array critical section");
 			}
-			env->SetShortArrayRegion(result, 0, jni_length, elements.data());
+			for(metaffi_size i = 0; i < length; i++)
+			{
+				dst[i] = arr_cdts[i].cdt_val.int16_val;
+			}
+			env->ReleasePrimitiveArrayCritical(result, dst, 0);
 			return result;
 		}
 		case metaffi_int32_type: {
 			jsize jni_length = static_cast<jsize>(length);
 			jintArray result = env->NewIntArray(jni_length);
-			std::vector<jint> elements(length);
-			for (metaffi_size i = 0; i < length; i++) {
-				elements[i] = arr_cdts[i].cdt_val.int32_val;
+			jint* dst = static_cast<jint*>(env->GetPrimitiveArrayCritical(result, nullptr));
+			if(!dst)
+			{
+				throw std::runtime_error("Failed to get int array critical section");
 			}
-			env->SetIntArrayRegion(result, 0, jni_length, elements.data());
+			for(metaffi_size i = 0; i < length; i++)
+			{
+				dst[i] = arr_cdts[i].cdt_val.int32_val;
+			}
+			env->ReleasePrimitiveArrayCritical(result, dst, 0);
 			return result;
 		}
 		case metaffi_int64_type: {
 			jsize jni_length = static_cast<jsize>(length);
 			jlongArray result = env->NewLongArray(jni_length);
-			std::vector<jlong> elements(length);
-			for (metaffi_size i = 0; i < length; i++) {
-				elements[i] = arr_cdts[i].cdt_val.int64_val;
+			jlong* dst = static_cast<jlong*>(env->GetPrimitiveArrayCritical(result, nullptr));
+			if(!dst)
+			{
+				throw std::runtime_error("Failed to get long array critical section");
 			}
-			env->SetLongArrayRegion(result, 0, jni_length, elements.data());
+			for(metaffi_size i = 0; i < length; i++)
+			{
+				dst[i] = arr_cdts[i].cdt_val.int64_val;
+			}
+			env->ReleasePrimitiveArrayCritical(result, dst, 0);
 			return result;
 		}
 		case metaffi_float32_type: {
 			jsize jni_length = static_cast<jsize>(length);
 			jfloatArray result = env->NewFloatArray(jni_length);
-			std::vector<jfloat> elements(length);
-			for (metaffi_size i = 0; i < length; i++) {
-				elements[i] = arr_cdts[i].cdt_val.float32_val;
+			jfloat* dst = static_cast<jfloat*>(env->GetPrimitiveArrayCritical(result, nullptr));
+			if(!dst)
+			{
+				throw std::runtime_error("Failed to get float array critical section");
 			}
-			env->SetFloatArrayRegion(result, 0, jni_length, elements.data());
+			for(metaffi_size i = 0; i < length; i++)
+			{
+				dst[i] = arr_cdts[i].cdt_val.float32_val;
+			}
+			env->ReleasePrimitiveArrayCritical(result, dst, 0);
 			return result;
 		}
 		case metaffi_float64_type: {
 			jsize jni_length = static_cast<jsize>(length);
 			jdoubleArray result = env->NewDoubleArray(jni_length);
-			std::vector<jdouble> elements(length);
-			for (metaffi_size i = 0; i < length; i++) {
-				elements[i] = arr_cdts[i].cdt_val.float64_val;
+			jdouble* dst = static_cast<jdouble*>(env->GetPrimitiveArrayCritical(result, nullptr));
+			if(!dst)
+			{
+				throw std::runtime_error("Failed to get double array critical section");
 			}
-			env->SetDoubleArrayRegion(result, 0, jni_length, elements.data());
+			for(metaffi_size i = 0; i < length; i++)
+			{
+				dst[i] = arr_cdts[i].cdt_val.float64_val;
+			}
+			env->ReleasePrimitiveArrayCritical(result, dst, 0);
 			return result;
 		}
 		case metaffi_bool_type: {
 			jsize jni_length = static_cast<jsize>(length);
 			jbooleanArray result = env->NewBooleanArray(jni_length);
-			std::vector<jboolean> elements(length);
-			for (metaffi_size i = 0; i < length; i++) {
-				elements[i] = arr_cdts[i].cdt_val.bool_val ? JNI_TRUE : JNI_FALSE;
+			jboolean* dst = static_cast<jboolean*>(env->GetPrimitiveArrayCritical(result, nullptr));
+			if(!dst)
+			{
+				throw std::runtime_error("Failed to get boolean array critical section");
 			}
-			env->SetBooleanArrayRegion(result, 0, jni_length, elements.data());
+			for(metaffi_size i = 0; i < length; i++)
+			{
+				dst[i] = arr_cdts[i].cdt_val.bool_val ? JNI_TRUE : JNI_FALSE;
+			}
+			env->ReleasePrimitiveArrayCritical(result, dst, 0);
 			return result;
 		}
 		case metaffi_char16_type: {
 			jsize jni_length = static_cast<jsize>(length);
 			jcharArray result = env->NewCharArray(jni_length);
-			std::vector<jchar> elements(length);
-			for (metaffi_size i = 0; i < length; i++) {
-				elements[i] = static_cast<jchar>(arr_cdts[i].cdt_val.char16_val.c[0]);
+			jchar* dst = static_cast<jchar*>(env->GetPrimitiveArrayCritical(result, nullptr));
+			if(!dst)
+			{
+				throw std::runtime_error("Failed to get char array critical section");
 			}
-			env->SetCharArrayRegion(result, 0, jni_length, elements.data());
+			for(metaffi_size i = 0; i < length; i++)
+			{
+				dst[i] = static_cast<jchar>(arr_cdts[i].cdt_val.char16_val.c[0]);
+			}
+			env->ReleasePrimitiveArrayCritical(result, dst, 0);
 			return result;
 		}
 		default:

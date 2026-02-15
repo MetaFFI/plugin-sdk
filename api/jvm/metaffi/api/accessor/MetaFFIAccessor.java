@@ -14,7 +14,9 @@ public class MetaFFIAccessor
 	public static native long java_to_cdts(long pcdt, Object[] params, long[] parameterTypes);
 	public static native Object[] cdts_to_java(long pcdt, long length);
 	public static native long alloc_cdts(byte params_count, byte retval_count);
+	public static native void free_cdts(long pcdts);
 	public static native long get_pcdt(long pcdts, byte index);
+	public static native void set_cdt_int64(long pcdt, int index, long value);
 	public static native Object get_object(long phandle);
 	public static native void remove_object(long phandle);
 

@@ -30,6 +30,32 @@ namespace
 	JavaVM* s_shared_jvm = nullptr;
 	static auto LOG = metaffi::get_logger("jvm_runtime_manager");
 
+#ifdef _WIN32
+	// Workaround for Go's Vectored Exception Handler (VEH) intercepting JVM's
+	// internal SEH exceptions during JNI_CreateJavaVM (e.g., probing address 0xcafebabe).
+	// Go's VEH runs before JVM's SEH handler and terminates the process.
+	// Running JNI_CreateJavaVM on a dedicated Windows thread avoids this because
+	// Go's VEH checks getg() which returns NULL on non-Go threads, causing it
+	// to return EXCEPTION_CONTINUE_SEARCH and letting JVM's SEH work correctly.
+	// See: https://github.com/golang/go/issues/47576
+	//      https://github.com/golang/go/issues/58542
+	struct create_vm_thread_ctx
+	{
+		jni_api_wrapper::JNI_CreateJavaVM_t pfn_create;
+		JavaVM** p_jvm;
+		JavaVMInitArgs* p_args;
+		jint result;
+	};
+
+	static DWORD WINAPI create_vm_thread_proc(LPVOID param)
+	{
+		auto* ctx = static_cast<create_vm_thread_ctx*>(param);
+		JNIEnv* env = nullptr;
+		ctx->result = ctx->pfn_create(ctx->p_jvm, reinterpret_cast<void**>(&env), ctx->p_args);
+		return 0;
+	}
+#endif
+
 
 	void set_env_var(const char* key, const std::string& value)
 	{
@@ -38,6 +64,32 @@ namespace
 #else
 		setenv(key, value.c_str(), 1);
 #endif
+	}
+
+	bool parse_bool_env_value(std::string value, bool default_value)
+	{
+		if(value.empty())
+		{
+			return default_value;
+		}
+
+		std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+		if(value == "1" || value == "true" || value == "yes" || value == "on")
+		{
+			return true;
+		}
+		if(value == "0" || value == "false" || value == "no" || value == "off")
+		{
+			return false;
+		}
+		return default_value;
+	}
+
+	bool read_detach_on_env_release_flag()
+	{
+		// Performance-first default: keep threads attached and avoid per-call
+		// attach/detach overhead on hot xcall paths.
+		return parse_bool_env_value(get_env_var("METAFFI_JVM_DETACH_ON_ENV_RELEASE"), false);
 	}
 
 #ifdef _WIN32
@@ -546,6 +598,7 @@ jvm::jvm()
 #else
 #define SEPARATOR ':'
 #endif
+	m_detach_on_env_release = read_detach_on_env_release_flag();
 
 	m_info = select_default_jvm();
 
@@ -579,6 +632,7 @@ jvm::jvm()
 jvm::jvm(const jvm_installed_info& info, const std::string& classpath_option)
 	: m_info(info)
 {
+	m_detach_on_env_release = read_detach_on_env_release_flag();
 	load_or_create_with_info(classpath_option);
 }
 //--------------------------------------------------------------------
@@ -690,9 +744,22 @@ void jvm::load_or_create_with_info(const std::string& classpath_option)
 
 	auto try_create_vm = [&](JavaVMInitArgs& args)
 	{
-		JNIEnv* env = nullptr;
 		METAFFI_DEBUG(LOG, "Creating JVM (JNI_CreateJavaVM)");
+#ifdef _WIN32
+		// Run on dedicated thread to avoid Go VEH/SEH conflict
+		create_vm_thread_ctx ctx{m_jni_api->create_java_vm, &m_jvm, &args, JNI_ERR};
+		HANDLE hThread = CreateThread(nullptr, 0, create_vm_thread_proc, &ctx, 0, nullptr);
+		if(!hThread)
+		{
+			throw std::runtime_error("CreateThread for JNI_CreateJavaVM failed: " + std::to_string(GetLastError()));
+		}
+		WaitForSingleObject(hThread, INFINITE);
+		CloseHandle(hThread);
+		jint create_res = ctx.result;
+#else
+		JNIEnv* env = nullptr;
 		jint create_res = m_jni_api->create_java_vm(&m_jvm, reinterpret_cast<void**>(&env), &args);
+#endif
 		METAFFI_DEBUG(LOG, "JNI_CreateJavaVM result: {}", create_res);
 		return create_res;
 	};
@@ -798,7 +865,12 @@ std::function<void()> jvm::get_environment(JNIEnv** env) const
 		throw std::runtime_error("Failed to get JVM environment - unsupported JNI version");
 	}
 
-	return did_attach_thread ? std::function<void()>([this](){ m_jvm->DetachCurrentThread(); }) : []() {};
+	if(did_attach_thread && m_detach_on_env_release)
+	{
+		return std::function<void()>([this](){ m_jvm->DetachCurrentThread(); });
+	}
+
+	return []() {};
 }
 //--------------------------------------------------------------------
 void jvm::check_throw_error(jint err)

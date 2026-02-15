@@ -25,6 +25,8 @@ func WaitABit(ms int64) {
 	_ = ms
 }
 
+func NoOp() {}
+
 func ReturnNull() any {
 	return nil
 }

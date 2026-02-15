@@ -28,12 +28,17 @@ type MetaFFIHandle struct {
 }
 
 var (
-	handlesToObjects map[C.metaffi_handle]interface{}
+	handlesToObjects map[uint64]interface{}
+	nextHandleID     uint64
 	lock             sync.RWMutex
 )
 
 func init() {
-	handlesToObjects = make(map[C.metaffi_handle]interface{})
+	handlesToObjects = make(map[uint64]interface{})
+}
+
+func handleToKey(h Handle) uint64 {
+	return uint64(uintptr(unsafe.Pointer(C.metaffi_handle(h))))
 }
 
 // sets the object and returns a handle
@@ -43,10 +48,11 @@ func SetObject(obj interface{}) Handle {
 	lock.Lock()
 	defer lock.Unlock()
 
-	handleID := C.int_to_handle(C.ulonglong(len(handlesToObjects) + 1))
+	nextHandleID++
+	handleID := nextHandleID
 	handlesToObjects[handleID] = obj
 
-	return Handle(handleID)
+	return Handle(C.int_to_handle(C.ulonglong(handleID)))
 }
 
 func GetObject(h Handle) interface{} {
@@ -54,7 +60,7 @@ func GetObject(h Handle) interface{} {
 	lock.RLock()
 	defer lock.RUnlock()
 
-	if o, found := handlesToObjects[C.metaffi_handle(h)]; found {
+	if o, found := handlesToObjects[handleToKey(h)]; found {
 
 		return o
 	} else {
@@ -67,12 +73,13 @@ func ReleaseObject(h Handle) error {
 	lock.Lock()
 	defer lock.Unlock()
 
-	_, found := handlesToObjects[C.metaffi_handle(h)]
+	key := handleToKey(h)
+	_, found := handlesToObjects[key]
 	if !found {
 		return fmt.Errorf("Given handle (%v) is not found in MetaFFI Go's object table", h)
 	}
 
-	delete(handlesToObjects, C.metaffi_handle(h))
+	delete(handlesToObjects, key)
 
 	return nil
 }

@@ -5,9 +5,30 @@
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
+#include <cstdlib>
 #include <boost/algorithm/string.hpp>
 
-#define GO_MODULE_LOG(msg) (std::cerr << "[go_module] " << msg << std::endl)
+namespace
+{
+	bool go_module_log_enabled()
+	{
+		static const bool enabled = []() -> bool
+		{
+			const char* raw = std::getenv("METAFFI_GO_PLUGIN_DEBUG_LOG");
+			if(!raw)
+			{
+				return false;
+			}
+
+			std::string val(raw);
+			boost::algorithm::to_lower(val);
+			return val == "1" || val == "true" || val == "yes" || val == "on";
+		}();
+		return enabled;
+	}
+}
+
+#define GO_MODULE_LOG(msg) do { if(go_module_log_enabled()) { std::cerr << "[go_module] " << msg << std::endl; } } while(0)
 
 Module::Module(go_runtime_manager* manager, const std::string& module_path)
 	: m_runtimeManager(manager)

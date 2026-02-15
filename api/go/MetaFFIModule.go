@@ -81,9 +81,9 @@ func (this *MetaFFIModule) LoadWithInfo(entityPath string, paramsMetaFFITypes []
 		if paramsCount > 0 && retvalCount > 0 {
 			err = goruntime.XLLRXCallParamsRet(pff, xcall_params)
 		} else if paramsCount > 0 && retvalCount == 0 {
-			err = goruntime.XLLRXCallParamsNoRet(pff, xcall_params)
+			err = goruntime.XLLRXCallParamsNoRet(pff, goruntime.XLLRGetCDTS(xcall_params, 0))
 		} else if paramsCount == 0 && retvalCount > 0 {
-			err = goruntime.XLLRXCallNoParamsRet(pff, xcall_params)
+			err = goruntime.XLLRXCallNoParamsRet(pff, goruntime.XLLRGetCDTS(xcall_params, 1))
 		} else {
 			err = goruntime.XLLRXCallNoParamsNoRet(pff)
 		}

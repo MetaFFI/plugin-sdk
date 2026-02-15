@@ -46,4 +46,5 @@ private:
 	std::shared_ptr<jni_api_wrapper> m_jni_api;
 	JavaVM* m_jvm = nullptr;
 	bool m_is_destroy = false;
+	bool m_detach_on_env_release = false;
 };

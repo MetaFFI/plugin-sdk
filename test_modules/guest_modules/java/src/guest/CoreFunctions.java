@@ -23,6 +23,8 @@ public class CoreFunctions {
 		// no-op, just verify call
 	}
 
+	public static void noOp() {}
+
 	public static Object returnNull() {
 		return null;
 	}
@@ -103,5 +105,9 @@ public class CoreFunctions {
 			default:
 				throw new IllegalArgumentException("Unsupported type");
 		}
+	}
+
+	public static Object echoAny(Object value) {
+		return value;
 	}
 }
