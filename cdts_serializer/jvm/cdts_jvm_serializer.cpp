@@ -601,7 +601,14 @@ metaffi_size cdts_jvm_serializer::get_index() const
 
 void cdts_jvm_serializer::set_index(metaffi_size index)
 {
-	check_bounds(index);
+	// Allow setting to one-past-the-end (like C++ iterators) — this is the
+	// normal state after extracting the last element. Only reject if truly
+	// beyond one-past-the-end.
+	if (index > data.length) {
+		std::stringstream ss;
+		ss << "Index " << index << " out of bounds (size: " << data.length << ")";
+		throw std::out_of_range(ss.str());
+	}
 	current_index = index;
 }
 
@@ -1430,7 +1437,10 @@ cdts_jvm_serializer& cdts_jvm_serializer::add_handle(jobject val)
 		cdt_metaffi_handle h = extract_metaffi_handle(env, val);
 		data[current_index].cdt_val.handle_val->handle = h.handle;
 		data[current_index].cdt_val.handle_val->runtime_id = h.runtime_id;
-		data[current_index].cdt_val.handle_val->release = h.release;
+		// Do NOT copy the releaser into input-parameter CDTs.
+		// Java retains ownership of the handle; freeing this temporary CDT
+		// must not release the underlying object from the foreign runtime's table.
+		data[current_index].cdt_val.handle_val->release = nullptr;
 	} else {
 		data[current_index].cdt_val.handle_val->handle = env->NewGlobalRef(val);
 		data[current_index].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
@@ -1976,7 +1986,8 @@ void cdts_jvm_serializer::serialize_array(jarray arr, int dimensions, metaffi_ty
 							cdt_metaffi_handle h = extract_metaffi_handle(env, obj);
 							arr_cdts[i].cdt_val.handle_val->handle = h.handle;
 							arr_cdts[i].cdt_val.handle_val->runtime_id = h.runtime_id;
-							arr_cdts[i].cdt_val.handle_val->release = h.release;
+							// Do not copy releaser into temp input CDTs (Java retains ownership)
+							arr_cdts[i].cdt_val.handle_val->release = nullptr;
 						} else {
 							arr_cdts[i].cdt_val.handle_val->handle = env->NewGlobalRef(obj);
 							arr_cdts[i].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
@@ -2104,26 +2115,27 @@ void cdts_jvm_serializer::serialize_array(jarray arr, int dimensions, metaffi_ty
 							env->DeleteLocalRef(obj);
 							throw std::runtime_error("Failed to allocate cdt_metaffi_handle");
 						}
-						arr_cdts[i].cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
-						if (is_metaffi_handle(env, obj)) {
-							cdt_metaffi_handle h = extract_metaffi_handle(env, obj);
-							arr_cdts[i].cdt_val.handle_val->handle = h.handle;
-							arr_cdts[i].cdt_val.handle_val->runtime_id = h.runtime_id;
-							arr_cdts[i].cdt_val.handle_val->release = h.release;
-						} else {
-							arr_cdts[i].cdt_val.handle_val->handle = env->NewGlobalRef(obj);
-							arr_cdts[i].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
-							arr_cdts[i].cdt_val.handle_val->release = nullptr;
-						}
-						arr_cdts[i].free_required = true;
-						arr_cdts[i].type = metaffi_handle_type;
-						env->DeleteLocalRef(obj);
+					arr_cdts[i].cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
+					if (is_metaffi_handle(env, obj)) {
+						cdt_metaffi_handle h = extract_metaffi_handle(env, obj);
+						arr_cdts[i].cdt_val.handle_val->handle = h.handle;
+						arr_cdts[i].cdt_val.handle_val->runtime_id = h.runtime_id;
+						// Do not copy releaser into temp input CDTs (Java retains ownership)
+						arr_cdts[i].cdt_val.handle_val->release = nullptr;
 					} else {
-						arr_cdts[i].type = metaffi_null_type;
+						arr_cdts[i].cdt_val.handle_val->handle = env->NewGlobalRef(obj);
+						arr_cdts[i].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;
+						arr_cdts[i].cdt_val.handle_val->release = nullptr;
 					}
+					arr_cdts[i].free_required = true;
+					arr_cdts[i].type = metaffi_handle_type;
+					env->DeleteLocalRef(obj);
+				} else {
+					arr_cdts[i].type = metaffi_null_type;
 				}
-				break;
 			}
+			break;
+		}
 			case metaffi_callable_type: {
 				jobjectArray objArr = (jobjectArray)arr;
 				for (jsize i = 0; i < length; i++) {
@@ -2484,20 +2496,22 @@ jobjectArray cdts_jvm_serializer::create_object_array(cdts& arr_cdts, metaffi_ty
 					element = string8_to_jstring(arr_cdts[i].cdt_val.string8_val);
 					break;
 				}
-				case metaffi_handle_type: {
-					if(arr_cdts[i].cdt_val.handle_val) {
-						const cdt_metaffi_handle& h = *arr_cdts[i].cdt_val.handle_val;
-						if(h.runtime_id == JVM_RUNTIME_ID) {
-							element = (jobject)h.handle;
-						} else {
-							element = create_metaffi_handle_object(env, h);
-						}
+			case metaffi_handle_type: {
+				if(arr_cdts[i].cdt_val.handle_val) {
+					const cdt_metaffi_handle& h = *arr_cdts[i].cdt_val.handle_val;
+					if(h.runtime_id == JVM_RUNTIME_ID) {
+						element = (jobject)h.handle;
+					} else {
+						element = create_metaffi_handle_object(env, h);
 					}
-					break;
+					// Transfer ownership to Java; prevent CDT free from releasing
+					arr_cdts[i].cdt_val.handle_val->release = nullptr;
 				}
-				case metaffi_callable_type: {
-					if(arr_cdts[i].cdt_val.callable_val) {
-						element = create_caller_object(env, *arr_cdts[i].cdt_val.callable_val);
+				break;
+			}
+			case metaffi_callable_type: {
+				if(arr_cdts[i].cdt_val.callable_val) {
+					element = create_caller_object(env, *arr_cdts[i].cdt_val.callable_val);
 					}
 					break;
 				}
@@ -2541,8 +2555,51 @@ jobjectArray cdts_jvm_serializer::extract_multidim_array(cdts& arr_cdts)
 				metaffi_type sub_elem_type = (*sub_arr)[0].type;
 
 				if (sub_elem_type & metaffi_array_type) {
-					// Deeper nesting - use Object[] as element class
-					elementClass = env->FindClass("[Ljava/lang/Object;");
+					// Deeper nesting — recursively determine the leaf primitive type
+					// and build the correct JNI class descriptor.
+					// For int[][][], elements are int[][] → descriptor "[[I"
+					std::string leaf_base = "Ljava/lang/Object;";
+					int leaf_depth = 0;
+					// Walk down the nested array structure to find the leaf type
+					cdts* walk = sub_arr;
+					while (walk && walk->length > 0) {
+						bool found_next = false;
+						for (metaffi_size k = 0; k < walk->length; k++) {
+							if ((*walk)[k].type == metaffi_null_type) continue;
+							if ((*walk)[k].type & metaffi_array_type) {
+								cdts* inner = (*walk)[k].cdt_val.array_val;
+								if (inner && inner->length > 0) {
+									leaf_depth++;
+									walk = inner;
+									found_next = true;
+									break;
+								}
+							} else {
+								// Found the leaf type
+								switch((*walk)[k].type) {
+									case metaffi_int8_type: leaf_base = "B"; break;
+									case metaffi_int16_type: leaf_base = "S"; break;
+									case metaffi_int32_type: leaf_base = "I"; break;
+									case metaffi_int64_type: leaf_base = "J"; break;
+									case metaffi_float32_type: leaf_base = "F"; break;
+									case metaffi_float64_type: leaf_base = "D"; break;
+									case metaffi_bool_type: leaf_base = "Z"; break;
+									case metaffi_char16_type: leaf_base = "C"; break;
+									case metaffi_string8_type:
+									case metaffi_string16_type:
+									case metaffi_string32_type: leaf_base = "Ljava/lang/String;"; break;
+									default: leaf_base = "Ljava/lang/Object;"; break;
+								}
+								found_next = false;
+								walk = nullptr;
+								break;
+							}
+						}
+						if (!found_next) break;
+					}
+					std::string desc(static_cast<size_t>(leaf_depth + 1), '[');
+					desc += leaf_base;
+					elementClass = env->FindClass(desc.c_str());
 				} else {
 					// Base level - use appropriate primitive/object array class
 					switch(sub_elem_type) {
@@ -2711,6 +2768,11 @@ jobject cdts_jvm_serializer::extract_handle()
 			} else {
 				result = create_metaffi_handle_object(env, h);
 			}
+			// Ownership of the handle transfers to Java (MetaFFIHandle object or
+			// direct JVM reference).  Null out the releaser so that when the CDT
+			// is freed it will not call the foreign runtime's release callback --
+			// only Java should decide when to release the handle.
+			current.cdt_val.handle_val->release = nullptr;
 		}
 	} else if (current.type == metaffi_callable_type) {
 		if (current.cdt_val.callable_val && current.cdt_val.callable_val->val) {
@@ -2926,7 +2988,8 @@ cdts_jvm_serializer& cdts_jvm_serializer::operator<<(jobject val)
 				cdt_metaffi_handle h = extract_metaffi_handle(env, val);
 				data[current_index].cdt_val.handle_val->handle = h.handle;
 				data[current_index].cdt_val.handle_val->runtime_id = h.runtime_id;
-				data[current_index].cdt_val.handle_val->release = h.release;
+				// Do not copy releaser into temp input CDTs (Java retains ownership)
+				data[current_index].cdt_val.handle_val->release = nullptr;
 			} else {
 				data[current_index].cdt_val.handle_val->handle = env->NewGlobalRef(val);
 				data[current_index].cdt_val.handle_val->runtime_id = JVM_RUNTIME_ID;

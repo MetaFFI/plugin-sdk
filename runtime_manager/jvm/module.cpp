@@ -472,9 +472,9 @@ Module::~Module()
 	if(m_classLoader && m_runtimeManager)
 	{
 		JNIEnv* env = nullptr;
-		auto release_env = m_runtimeManager->get_env(&env);
+		bool env_needs_release = m_runtimeManager->get_env(&env);
 		env->DeleteGlobalRef(m_classLoader);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		m_classLoader = nullptr;
 	}
 }
@@ -487,9 +487,9 @@ Module::Module(const Module& other)
 	if(m_classLoader && m_runtimeManager)
 	{
 		JNIEnv* env = nullptr;
-		auto release_env = m_runtimeManager->get_env(&env);
+		bool env_needs_release = m_runtimeManager->get_env(&env);
 		m_classLoader = env->NewGlobalRef(m_classLoader);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 	}
 }
 
@@ -517,9 +517,9 @@ Module& Module::operator=(const Module& other)
 		if(m_classLoader && m_runtimeManager)
 		{
 			JNIEnv* env = nullptr;
-			auto release_env = m_runtimeManager->get_env(&env);
+			bool env_needs_release = m_runtimeManager->get_env(&env);
 			m_classLoader = env->NewGlobalRef(m_classLoader);
-			release_env();
+			if(env_needs_release) m_runtimeManager->release_env();
 		}
 	}
 	return *this;
@@ -554,7 +554,7 @@ jclass Module::load_class(const std::string& class_name)
 	}
 
 	JNIEnv* env = nullptr;
-	auto release_env = m_runtimeManager->get_env(&env);
+	bool env_needs_release = m_runtimeManager->get_env(&env);
 
 	jclass local_class = nullptr;
 	try
@@ -563,19 +563,19 @@ jclass Module::load_class(const std::string& class_name)
 	}
 	catch(...)
 	{
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw;
 	}
 
 	if(!local_class)
 	{
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error("Failed to load Java class");
 	}
 
 	jclass global_class = (jclass)env->NewGlobalRef(local_class);
 	env->DeleteLocalRef(local_class);
-	release_env();
+	if(env_needs_release) m_runtimeManager->release_env();
 	if(!global_class)
 	{
 		throw std::runtime_error("Failed to create global reference for Java class");
@@ -600,7 +600,7 @@ std::shared_ptr<Entity> Module::load_entity(
 	}
 
 	JNIEnv* env = nullptr;
-	auto release_env = m_runtimeManager->get_env(&env);
+	bool env_needs_release = m_runtimeManager->get_env(&env);
 
 	metaffi::utils::entity_path_parser fp(entity_path);
 	if(fp.contains("callable"))
@@ -680,7 +680,7 @@ std::shared_ptr<Entity> Module::load_entity(
 					env->DeleteLocalRef(type_cls);
 				}
 			}
-			release_env();
+			if(env_needs_release) m_runtimeManager->release_env();
 			throw std::runtime_error(error.empty() ? "Failed to resolve Java method" : error);
 		}
 		if(!method)
@@ -700,7 +700,7 @@ std::shared_ptr<Entity> Module::load_entity(
 					env->DeleteLocalRef(type_cls);
 				}
 			}
-			release_env();
+			if(env_needs_release) m_runtimeManager->release_env();
 			throw std::runtime_error("Failed to resolve Java method");
 		}
 
@@ -728,7 +728,7 @@ std::shared_ptr<Entity> Module::load_entity(
 				env->DeleteLocalRef(type_cls);
 			}
 		}
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		return entity;
 	}
 	else if(fp.contains("field"))
@@ -741,7 +741,7 @@ std::shared_ptr<Entity> Module::load_entity(
 
 		if(!is_getter && !is_setter)
 		{
-			release_env();
+			if(env_needs_release) m_runtimeManager->release_env();
 			throw std::runtime_error("Field entity path missing getter/setter flag");
 		}
 
@@ -770,13 +770,13 @@ std::shared_ptr<Entity> Module::load_entity(
 		else if(is_getter && effective_retvals.empty())
 		{
 			env->DeleteLocalRef(cls);
-			release_env();
+			if(env_needs_release) m_runtimeManager->release_env();
 			throw std::runtime_error("Field getter requires a return type");
 		}
 		else if(is_setter && effective_params.empty())
 		{
 			env->DeleteLocalRef(cls);
-			release_env();
+			if(env_needs_release) m_runtimeManager->release_env();
 			throw std::runtime_error("Field setter requires a parameter type");
 		}
 
@@ -811,7 +811,7 @@ std::shared_ptr<Entity> Module::load_entity(
 					env->DeleteLocalRef(type_cls);
 				}
 			}
-			release_env();
+			if(env_needs_release) m_runtimeManager->release_env();
 			throw std::runtime_error(error.empty() ? "Failed to resolve Java field" : error);
 		}
 		if(!field_id)
@@ -831,7 +831,7 @@ std::shared_ptr<Entity> Module::load_entity(
 					env->DeleteLocalRef(type_cls);
 				}
 			}
-			release_env();
+			if(env_needs_release) m_runtimeManager->release_env();
 			throw std::runtime_error("Failed to resolve Java field");
 		}
 
@@ -859,11 +859,11 @@ std::shared_ptr<Entity> Module::load_entity(
 				env->DeleteLocalRef(type_cls);
 			}
 		}
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		return entity;
 	}
 
-	release_env();
+	if(env_needs_release) m_runtimeManager->release_env();
 	throw std::runtime_error("Entity path must contain callable or field");
 }
 
@@ -921,13 +921,13 @@ void Module::ensure_class_loader()
 	}
 
 	JNIEnv* env = nullptr;
-	auto release_env = m_runtimeManager->get_env(&env);
+	bool env_needs_release = m_runtimeManager->get_env(&env);
 
 	jclass m_classLoaderclass = env->FindClass("java/lang/ClassLoader");
 	if(!m_classLoaderclass)
 	{
 		std::string error = get_exception_description(env);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error(error.empty() ? "Failed to find ClassLoader" : error);
 	}
 
@@ -935,7 +935,7 @@ void Module::ensure_class_loader()
 	if(!get_system_class_loader)
 	{
 		std::string error = get_exception_description(env);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error(error.empty() ? "Failed to get ClassLoader.getSystemClassLoader" : error);
 	}
 
@@ -943,7 +943,7 @@ void Module::ensure_class_loader()
 	if(env->ExceptionCheck() || !parent_loader)
 	{
 		std::string error = get_exception_description(env);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error(error.empty() ? "Failed to get system class loader" : error);
 	}
 
@@ -952,7 +952,7 @@ void Module::ensure_class_loader()
 	if(!url_class || !url_class_loader)
 	{
 		std::string error = get_exception_description(env);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error(error.empty() ? "Failed to find URL classes" : error);
 	}
 
@@ -961,7 +961,7 @@ void Module::ensure_class_loader()
 	if(!url_ctor || !url_m_classLoaderctor)
 	{
 		std::string error = get_exception_description(env);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error(error.empty() ? "Failed to get URLClassLoader constructors" : error);
 	}
 
@@ -977,7 +977,7 @@ void Module::ensure_class_loader()
 		if(env->ExceptionCheck())
 		{
 			std::string error = get_exception_description(env);
-			release_env();
+			if(env_needs_release) m_runtimeManager->release_env();
 			throw std::runtime_error(error.empty() ? "Failed to create URL array" : error);
 		}
 	}
@@ -986,7 +986,7 @@ void Module::ensure_class_loader()
 	if(env->ExceptionCheck() || !loader)
 	{
 		std::string error = get_exception_description(env);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error(error.empty() ? "Failed to create URLClassLoader" : error);
 	}
 
@@ -997,7 +997,7 @@ void Module::ensure_class_loader()
 	env->DeleteLocalRef(m_classLoaderclass);
 	env->DeleteLocalRef(url_class);
 	env->DeleteLocalRef(url_class_loader);
-	release_env();
+	if(env_needs_release) m_runtimeManager->release_env();
 }
 
 jclass Module::load_class(JNIEnv* env, const std::string& class_name)

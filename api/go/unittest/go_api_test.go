@@ -61,16 +61,30 @@ func tiArray(t IDL.MetaFFIType, dims int) IDL.MetaFFITypeInfo {
 }
 
 // load loads an entity from the test module; fails immediately on error.
+// LoadWithInfo now returns specialized function types. This wrapper normalizes
+// them to the generic signature for backward-compatible test callsites.
 func load(t *testing.T, entityPath string, params []IDL.MetaFFITypeInfo, retvals []IDL.MetaFFITypeInfo) func(...interface{}) ([]interface{}, error) {
 	t.Helper()
-	ff, err := testModule.LoadWithInfo(entityPath, params, retvals)
+	raw, err := testModule.LoadWithInfo(entityPath, params, retvals)
 	if err != nil {
 		t.Fatalf("load %q: %v", entityPath, err)
 	}
-	if ff == nil {
+	if raw == nil {
 		t.Fatalf("load %q: returned nil", entityPath)
 	}
-	return ff
+	switch f := raw.(type) {
+	case func() error:
+		return func(_ ...interface{}) ([]interface{}, error) { return nil, f() }
+	case func() ([]interface{}, error):
+		return func(_ ...interface{}) ([]interface{}, error) { return f() }
+	case func(...interface{}) error:
+		return func(args ...interface{}) ([]interface{}, error) { return nil, f(args...) }
+	case func(...interface{}) ([]interface{}, error):
+		return f
+	default:
+		t.Fatalf("load %q: unexpected function type %T", entityPath, raw)
+		return nil
+	}
 }
 
 // call invokes ff and fatals on error, returning the result slice.

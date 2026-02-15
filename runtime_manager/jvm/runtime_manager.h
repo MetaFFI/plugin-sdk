@@ -66,7 +66,11 @@ public:
 	bool is_runtime_loaded() const;
 	const jvm_installed_info& get_jvm_info() const;
 
-	std::function<void()> get_env(JNIEnv** env) const;
+	// Returns true if the environment needs to be released via release_env().
+	bool get_env(JNIEnv** env) const;
+
+	// Detaches the current thread from the JVM. Only call when get_env() returned true.
+	void release_env() const;
 
 private:
 	jvm_installed_info m_info;

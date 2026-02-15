@@ -50,21 +50,21 @@ bool expect_throw(Func&& func)
 struct env_guard
 {
 	explicit env_guard(jvm_runtime_manager& manager)
-		: manager_(manager), release_(manager_.get_env(&env_))
+		: manager_(manager), needs_release_(manager_.get_env(&env_))
 	{
 	}
 
 	~env_guard()
 	{
-		if(release_)
+		if(needs_release_)
 		{
-			release_();
+			manager_.release_env();
 		}
 	}
 
 	jvm_runtime_manager& manager_;
 	JNIEnv* env_ = nullptr;
-	std::function<void()> release_;
+	bool needs_release_ = false;
 };
 
 static jclass get_class(JNIEnv* env, const char* name)

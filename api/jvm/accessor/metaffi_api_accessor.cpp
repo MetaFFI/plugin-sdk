@@ -12,11 +12,53 @@
 #include <runtime_manager/jvm/exception_macro.h>
 #include <runtime_manager/jvm/jni_size_utils.h>
 #include <runtime_manager/jvm/contexts.h>
+#include <runtime_manager/jvm/runtime_id.h>
 #include <mutex>
 
 // JNI to call XLLR from java
 
 using namespace metaffi::utils;
+
+// Recursively walk a CDT tree and null out foreign-runtime handle release
+// pointers.  This prevents cdt::free() from invoking foreign-runtime release
+// callbacks.  JVM handles (runtime_id == JVM_RUNTIME_ID) are left intact
+// because their jni_releaser is needed to clean up JNI global references.
+static void null_foreign_handle_releasers(cdt* arr, metaffi_size length)
+{
+	if(!arr) return;
+	for(metaffi_size i = 0; i < length; i++)
+	{
+		if(arr[i].type == metaffi_handle_type)
+		{
+			if(arr[i].cdt_val.handle_val &&
+			   arr[i].cdt_val.handle_val->release &&
+			   arr[i].cdt_val.handle_val->runtime_id != JVM_RUNTIME_ID)
+			{
+				arr[i].cdt_val.handle_val->release = nullptr;
+			}
+		}
+		else if(arr[i].type & metaffi_array_type)
+		{
+			if(arr[i].cdt_val.array_val)
+			{
+				null_foreign_handle_releasers(arr[i].cdt_val.array_val->arr, arr[i].cdt_val.array_val->length);
+			}
+		}
+	}
+}
+
+// Walk a cdts[N] buffer (params + returns) and null foreign handle releasers.
+static void null_foreign_handle_releasers_buffer(cdts* buffer, int count)
+{
+	if(!buffer) return;
+	for(int b = 0; b < count; b++)
+	{
+		if(buffer[b].arr && buffer[b].length > 0)
+		{
+			null_foreign_handle_releasers(buffer[b].arr, buffer[b].length);
+		}
+	}
+}
 
 
 //--------------------------------------------------------------------
@@ -495,7 +537,13 @@ JNIEXPORT void JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_free_1cdts(JNIE
 	{
 		if(pcdts != 0)
 		{
-			xllr_free_cdts_buffer(reinterpret_cast<cdts*>(pcdts));
+			cdts* buf = reinterpret_cast<cdts*>(pcdts);
+			// Safety net: null foreign-runtime handle releasers before freeing
+			// the buffer.  The per-element nulling in cdts_to_java should have
+			// already done this, but any missed path (e.g. error returns,
+			// any_echo edge-cases) is caught here.
+			null_foreign_handle_releasers_buffer(buf, 2);
+			xllr_free_cdts_buffer(buf);
 		}
 	}
 	catch(std::exception& err)
@@ -692,7 +740,16 @@ JNIEXPORT jlong JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_java_1to_1cdts
 			wrapper.switch_to_primitive(env, i, types_elements[i]);
 		}
 		
-		return (jlong)(cdts*)wrapper;
+		// Null foreign-runtime handle releasers on input CDTs.
+		// Java retains ownership of all handles it passes as arguments;
+		// the CDT destructor must not release them.
+		cdts* input_buf = (cdts*)wrapper;
+		if(input_buf && input_buf->arr && input_buf->length > 0)
+		{
+			null_foreign_handle_releasers(input_buf->arr, input_buf->length);
+		}
+		
+		return (jlong)input_buf;
 	}
 	catch(std::exception& exp)
 	{
@@ -720,6 +777,12 @@ JNIEXPORT jobjectArray JNICALL Java_metaffi_api_accessor_MetaFFIAccessor_cdts_1t
 				env->DeleteGlobalRef(j.l); // delete the global reference
 			}
 
+			// After extracting values into Java objects, null foreign handle
+			// release pointers in this CDT element (including nested arrays)
+			// so that freeing the CDT buffer will not release the underlying
+			// objects from the foreign runtime's table.
+			cdt& c = wrapper[i];
+			null_foreign_handle_releasers(&c, 1);
 		}
 
 		return arr;

@@ -540,7 +540,7 @@ const jvm_installed_info& jvm_runtime_manager::get_jvm_info() const
 	return m_info;
 }
 
-std::function<void()> jvm_runtime_manager::get_env(JNIEnv** env) const
+bool jvm_runtime_manager::get_env(JNIEnv** env) const
 {
 	if(!env)
 	{
@@ -553,6 +553,14 @@ std::function<void()> jvm_runtime_manager::get_env(JNIEnv** env) const
 	}
 
 	return m_jvm->get_environment(env);
+}
+
+void jvm_runtime_manager::release_env() const
+{
+	if(m_jvm)
+	{
+		m_jvm->release_environment();
+	}
 }
 
 void jvm_runtime_manager::ensure_jvm_loaded()

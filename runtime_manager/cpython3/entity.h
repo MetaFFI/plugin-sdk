@@ -24,6 +24,12 @@ public:
 	 * Get return value types
 	 */
 	virtual const std::vector<PyObject*>& get_retval_types() const = 0;
+
+	/**
+	 * Get the underlying Python callable (for fast-path direct calls).
+	 * Returns nullptr for non-callable entities.
+	 */
+	virtual PyObject* get_py_callable() const { return nullptr; }
 };
 
 /**
@@ -48,6 +54,13 @@ public:
 	
 	virtual const std::vector<PyObject*>& get_params_types() const override;
 	virtual const std::vector<PyObject*>& get_retval_types() const override;
+
+	/**
+	 * Get the underlying Python callable for fast-path direct calls.
+	 * Avoids the overhead of call() (GIL, mutex, tuple creation) when
+	 * the caller already holds the GIL and needs no argument handling.
+	 */
+	PyObject* get_py_callable() const override { return m_pyCallable; }
 
 protected:
 	PyObject* m_pyCallable;  // Python callable object

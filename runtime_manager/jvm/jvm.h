@@ -29,9 +29,12 @@ public:
 
 	void fini();
 
-	// returns release environment function
-	// TODO: add scoped wrapper
-	std::function<void()> get_environment(JNIEnv** env) const;
+	// Returns true if the environment needs to be released via release_environment().
+	// When detach-on-release is disabled (default), returns false and no release is needed.
+	bool get_environment(JNIEnv** env) const;
+
+	// Detaches the current thread from the JVM. Only call when get_environment() returned true.
+	void release_environment() const;
 
 	static std::string get_exception_description(JNIEnv* env, jthrowable throwable);
 	std::string get_exception_description(jthrowable throwable) const;

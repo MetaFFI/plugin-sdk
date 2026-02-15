@@ -536,44 +536,46 @@ namespace
 					return false;
 				}
 
-				jobjectArray jarr = (jobjectArray)target;
-				for(metaffi_size i = 0; i < source.length; i++)
+			jobjectArray jarr = (jobjectArray)target;
+			for(metaffi_size i = 0; i < source.length; i++)
+			{
+				const cdt& elem = source.arr[i];
+				if(elem.type != metaffi_handle_type)
 				{
-					const cdt& elem = source.arr[i];
-					if(elem.type != metaffi_handle_type)
-					{
-						std::stringstream ss;
-						ss << "Fast traverse expected handle element at index " << i << ", got type " << elem.type;
-						throw std::runtime_error(ss.str());
-					}
-
-					jobject out = nullptr;
-					cdt_metaffi_handle* handle = elem.cdt_val.handle_val;
-					if(handle)
-					{
-						if(handle->runtime_id != JVM_RUNTIME_ID)
-						{
-							if(handle->handle != nullptr)
-							{
-								jni_metaffi_handle wrapper(env, handle->handle, handle->runtime_id, handle->release);
-								out = wrapper.new_jvm_object(env);
-							}
-						}
-						else
-						{
-							out = (jobject)handle->handle;
-						}
-					}
-
-					env->SetObjectArrayElement(jarr, to_jsize(i), out);
-					check_and_throw_jvm_exception(env, true);
-
-					if(out && env->GetObjectRefType(out) == JNILocalRefType)
-					{
-						env->DeleteLocalRef(out);
-					}
+					std::stringstream ss;
+					ss << "Fast traverse expected handle element at index " << i << ", got type " << elem.type;
+					throw std::runtime_error(ss.str());
 				}
-				return true;
+
+				jobject out = nullptr;
+				cdt_metaffi_handle* handle = elem.cdt_val.handle_val;
+				if(handle)
+				{
+					if(handle->runtime_id != JVM_RUNTIME_ID)
+					{
+						if(handle->handle != nullptr)
+						{
+							jni_metaffi_handle wrapper(env, handle->handle, handle->runtime_id, handle->release);
+							out = wrapper.new_jvm_object(env);
+						}
+					}
+					else
+					{
+						out = (jobject)handle->handle;
+					}
+					// Ownership transferred to Java; prevent CDT free from releasing
+					handle->release = nullptr;
+				}
+
+				env->SetObjectArrayElement(jarr, to_jsize(i), out);
+				check_and_throw_jvm_exception(env, true);
+
+				if(out && env->GetObjectRefType(out) == JNILocalRefType)
+				{
+					env->DeleteLocalRef(out);
+				}
+			}
+			return true;
 			}
 			default:
 				return false;
@@ -779,15 +781,17 @@ namespace
 					dst.type = metaffi_handle_type;
 					dst.free_required = true;
 
-					if(elem_obj && jni_metaffi_handle::is_metaffi_handle_wrapper_object(env, elem_obj))
-					{
-						dst.cdt_val.handle_val = (cdt_metaffi_handle*)jni_metaffi_handle(env, elem_obj);
-					}
-					else
-					{
-						dst.cdt_val.handle_val = (cdt_metaffi_handle*)jni_metaffi_handle::wrap_in_metaffi_handle(
-								env, elem_obj, (void*)jni_releaser);
-					}
+				if(elem_obj && jni_metaffi_handle::is_metaffi_handle_wrapper_object(env, elem_obj))
+				{
+					dst.cdt_val.handle_val = (cdt_metaffi_handle*)jni_metaffi_handle(env, elem_obj);
+					// Java retains ownership — do not copy releaser into temp input CDT
+					dst.cdt_val.handle_val->release = nullptr;
+				}
+				else
+				{
+					dst.cdt_val.handle_val = (cdt_metaffi_handle*)jni_metaffi_handle::wrap_in_metaffi_handle(
+							env, elem_obj, (void*)jni_releaser);
+				}
 
 					if(elem_obj && env->GetObjectRefType(elem_obj) == JNILocalRefType)
 					{
@@ -3038,7 +3042,7 @@ void jni_releaser(cdt_metaffi_handle* ptr)
 	}
 
     JNIEnv* env = nullptr;
-	auto release_env = pjvm->get_environment(&env);
+	bool env_needs_release = pjvm->get_environment(&env);
 	
 	if(!env)
 	{
@@ -3071,7 +3075,7 @@ void jni_releaser(cdt_metaffi_handle* ptr)
 	ptr->runtime_id = 0;
 	ptr->release = nullptr;
 	
-	release_env();
+	if(env_needs_release) pjvm->release_environment();
 }
 
 DLL_PRIVATE cdt_metaffi_handle* on_construct_handle(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context)
@@ -3088,7 +3092,12 @@ DLL_PRIVATE cdt_metaffi_handle* on_construct_handle(const metaffi_size* index, m
 		char jvalue_type = jvalue_type_context(context);
 		if(jvalue_type == 'L' && jni_metaffi_handle::is_metaffi_handle_wrapper_object(env, jval.l))
 		{
-			return (cdt_metaffi_handle*)jni_metaffi_handle(env, jval.l);
+			cdt_metaffi_handle* h = (cdt_metaffi_handle*)jni_metaffi_handle(env, jval.l);
+			// Java retains ownership of this handle.  Do not copy the releaser
+			// into the temporary input CDT so that freeing the CDT will not
+			// release the underlying object from the foreign runtime's table.
+			h->release = nullptr;
+			return h;
 		}
 		else
 		{
@@ -3103,7 +3112,10 @@ DLL_PRIVATE cdt_metaffi_handle* on_construct_handle(const metaffi_size* index, m
 		if(jni_metaffi_handle::is_metaffi_handle_wrapper_object(env, val.l))
 		{
 			jni_metaffi_handle wrapper(env, val.l);
-			return (cdt_metaffi_handle*)wrapper;
+			cdt_metaffi_handle* h = (cdt_metaffi_handle*)wrapper;
+			// Java retains ownership — do not copy releaser into temp input CDT
+			h->release = nullptr;
+			return h;
 		}
 		else// if jobject is jobjectArray of Object
 		{

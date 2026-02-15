@@ -147,11 +147,11 @@ CallableEntity::CallableEntity(jvm_runtime_manager* runtime_manager,
 		throw std::runtime_error("Runtime manager is null");
 	}
 	JNIEnv* env = nullptr;
-	auto release_env = m_runtimeManager->get_env(&env);
+	bool env_needs_release = m_runtimeManager->get_env(&env);
 	m_cls = (jclass)env->NewGlobalRef(cls);
 	m_paramsTypes = make_global_types(env, params_types);
 	m_retvalTypes = make_global_types(env, retval_types);
-	release_env();
+	if(env_needs_release) m_runtimeManager->release_env();
 	if(!m_cls)
 	{
 		throw std::runtime_error("Failed to create global reference for Java class");
@@ -164,7 +164,7 @@ CallableEntity::~CallableEntity()
 	if(m_cls && m_runtimeManager)
 	{
 		JNIEnv* env = nullptr;
-		auto release_env = m_runtimeManager->get_env(&env);
+		bool env_needs_release = m_runtimeManager->get_env(&env);
 		for(auto* type_cls : m_paramsTypes)
 		{
 			if(type_cls)
@@ -180,7 +180,7 @@ CallableEntity::~CallableEntity()
 			}
 		}
 		env->DeleteGlobalRef(m_cls);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		m_cls = nullptr;
 		m_paramsTypes.clear();
 		m_retvalTypes.clear();
@@ -215,7 +215,7 @@ jvalue CallableEntity::call(jobject instance, const std::vector<jvalue>& args)
 	}
 
 	JNIEnv* env = nullptr;
-	auto release_env = m_runtimeManager->get_env(&env);
+	bool env_needs_release = m_runtimeManager->get_env(&env);
 
 	const jvalue* argv = args.empty() ? nullptr : args.data();
 	jvalue result{};
@@ -226,11 +226,11 @@ jvalue CallableEntity::call(jobject instance, const std::vector<jvalue>& args)
 		if(env->ExceptionCheck() || !obj)
 		{
 			std::string error = get_exception_description(env);
-			release_env();
+			if(env_needs_release) m_runtimeManager->release_env();
 			throw std::runtime_error(error.empty() ? "Failed to create Java object" : error);
 		}
 		result.l = obj;
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		return result;
 	}
 
@@ -311,11 +311,11 @@ jvalue CallableEntity::call(jobject instance, const std::vector<jvalue>& args)
 	if(env->ExceptionCheck())
 	{
 		std::string error = get_exception_description(env);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error(error.empty() ? "Failed to call Java method" : error);
 	}
 
-	release_env();
+	if(env_needs_release) m_runtimeManager->release_env();
 	return result;
 }
 
@@ -342,11 +342,11 @@ VariableEntity::VariableEntity(jvm_runtime_manager* runtime_manager,
 		throw std::runtime_error("Runtime manager is null");
 	}
 	JNIEnv* env = nullptr;
-	auto release_env = m_runtimeManager->get_env(&env);
+	bool env_needs_release = m_runtimeManager->get_env(&env);
 	m_cls = (jclass)env->NewGlobalRef(cls);
 	m_paramsTypes = make_global_types(env, params_types);
 	m_retvalTypes = make_global_types(env, retval_types);
-	release_env();
+	if(env_needs_release) m_runtimeManager->release_env();
 	if(!m_cls)
 	{
 		throw std::runtime_error("Failed to create global reference for Java class");
@@ -359,7 +359,7 @@ VariableEntity::~VariableEntity()
 	if(m_cls && m_runtimeManager)
 	{
 		JNIEnv* env = nullptr;
-		auto release_env = m_runtimeManager->get_env(&env);
+		bool env_needs_release = m_runtimeManager->get_env(&env);
 		for(auto* type_cls : m_paramsTypes)
 		{
 			if(type_cls)
@@ -375,7 +375,7 @@ VariableEntity::~VariableEntity()
 			}
 		}
 		env->DeleteGlobalRef(m_cls);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		m_cls = nullptr;
 		m_paramsTypes.clear();
 		m_retvalTypes.clear();
@@ -405,7 +405,7 @@ jvalue VariableEntity::get(jobject instance)
 	}
 
 	JNIEnv* env = nullptr;
-	auto release_env = m_runtimeManager->get_env(&env);
+	bool env_needs_release = m_runtimeManager->get_env(&env);
 
 	jvalue result{};
 	jni_value_type field_type;
@@ -419,7 +419,7 @@ jvalue VariableEntity::get(jobject instance)
 	}
 	else
 	{
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error("Field type information is missing");
 	}
 
@@ -455,7 +455,7 @@ jvalue VariableEntity::get(jobject instance)
 				result.l = env->GetObjectField(instance, m_fieldId);
 				break;
 			case jni_value_type::void_type:
-				release_env();
+				if(env_needs_release) m_runtimeManager->release_env();
 				throw std::runtime_error("Void is not valid for field getter");
 		}
 	}
@@ -491,7 +491,7 @@ jvalue VariableEntity::get(jobject instance)
 				result.l = env->GetStaticObjectField(m_cls, m_fieldId);
 				break;
 			case jni_value_type::void_type:
-				release_env();
+				if(env_needs_release) m_runtimeManager->release_env();
 				throw std::runtime_error("Void is not valid for field getter");
 		}
 	}
@@ -499,11 +499,11 @@ jvalue VariableEntity::get(jobject instance)
 	if(env->ExceptionCheck())
 	{
 		std::string error = get_exception_description(env);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error(error.empty() ? "Failed to get Java field" : error);
 	}
 
-	release_env();
+	if(env_needs_release) m_runtimeManager->release_env();
 	return result;
 }
 
@@ -518,7 +518,7 @@ void VariableEntity::set(jobject instance, jvalue value)
 	}
 
 	JNIEnv* env = nullptr;
-	auto release_env = m_runtimeManager->get_env(&env);
+	bool env_needs_release = m_runtimeManager->get_env(&env);
 
 	jni_value_type field_type;
 	if(!m_paramsTypes.empty())
@@ -531,7 +531,7 @@ void VariableEntity::set(jobject instance, jvalue value)
 	}
 	else
 	{
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error("Field type information is missing");
 	}
 
@@ -567,7 +567,7 @@ void VariableEntity::set(jobject instance, jvalue value)
 				env->SetObjectField(instance, m_fieldId, value.l);
 				break;
 			case jni_value_type::void_type:
-				release_env();
+				if(env_needs_release) m_runtimeManager->release_env();
 				throw std::runtime_error("Void is not valid for field setter");
 		}
 	}
@@ -603,7 +603,7 @@ void VariableEntity::set(jobject instance, jvalue value)
 				env->SetStaticObjectField(m_cls, m_fieldId, value.l);
 				break;
 			case jni_value_type::void_type:
-				release_env();
+				if(env_needs_release) m_runtimeManager->release_env();
 				throw std::runtime_error("Void is not valid for field setter");
 		}
 	}
@@ -611,11 +611,11 @@ void VariableEntity::set(jobject instance, jvalue value)
 	if(env->ExceptionCheck())
 	{
 		std::string error = get_exception_description(env);
-		release_env();
+		if(env_needs_release) m_runtimeManager->release_env();
 		throw std::runtime_error(error.empty() ? "Failed to set Java field" : error);
 	}
 
-	release_env();
+	if(env_needs_release) m_runtimeManager->release_env();
 }
 
 const std::vector<jclass>& VariableEntity::get_params_types() const

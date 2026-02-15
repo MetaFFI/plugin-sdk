@@ -840,37 +840,61 @@ void jvm::fini()
 	}
 }
 //--------------------------------------------------------------------
-std::function<void()> jvm::get_environment(JNIEnv** env) const
+// Thread-local cache: JNIEnv* is per-OS-thread and remains valid as long as the
+// thread stays attached to the JVM. When detach-on-release is disabled (default),
+// we cache the env to avoid the per-call JNI GetEnv overhead.
+// CGO pins the goroutine to the OS thread for the duration of the C call, so
+// thread_local correctly returns this thread's env even if Go migrates goroutines.
+static thread_local JNIEnv* t_cached_jni_env = nullptr;
+
+bool jvm::get_environment(JNIEnv** env) const
 {
+	// Fast path: return cached env (only when threads are kept attached)
+	if(!m_detach_on_env_release && t_cached_jni_env)
+	{
+		*env = t_cached_jni_env;
+		return false;
+	}
+
 	if(!m_jvm)
 	{
 		throw std::runtime_error("JVM is not initialized");
 	}
 
-	bool did_attach_thread = false;
 	auto get_env_result = m_jvm->GetEnv(reinterpret_cast<void**>(env), JNI_VERSION_1_8);
 	if(get_env_result == JNI_EDETACHED)
 	{
-		if(m_jvm->AttachCurrentThread(reinterpret_cast<void**>(env), nullptr) == JNI_OK)
-		{
-			did_attach_thread = true;
-		}
-		else
+		if(m_jvm->AttachCurrentThread(reinterpret_cast<void**>(env), nullptr) != JNI_OK)
 		{
 			throw std::runtime_error("Failed to attach environment to current thread");
 		}
+		if(!m_detach_on_env_release)
+		{
+			t_cached_jni_env = *env;
+		}
+		return m_detach_on_env_release;
 	}
 	else if(get_env_result == JNI_EVERSION)
 	{
 		throw std::runtime_error("Failed to get JVM environment - unsupported JNI version");
 	}
 
-	if(did_attach_thread && m_detach_on_env_release)
+	// Cache for future calls from this thread
+	if(!m_detach_on_env_release)
 	{
-		return std::function<void()>([this](){ m_jvm->DetachCurrentThread(); });
+		t_cached_jni_env = *env;
 	}
 
-	return []() {};
+	return false;
+}
+//--------------------------------------------------------------------
+void jvm::release_environment() const
+{
+	if(m_jvm)
+	{
+		m_jvm->DetachCurrentThread();
+		t_cached_jni_env = nullptr; // Invalidate cache on detach
+	}
 }
 //--------------------------------------------------------------------
 void jvm::check_throw_error(jint err)
@@ -902,10 +926,10 @@ void jvm::check_throw_error(jint err)
 std::string jvm::get_exception_description(jthrowable throwable) const
 {
 	JNIEnv* penv = nullptr;
-	auto release_env = get_environment(&penv);
-	scope_guard sg_env([&](){ release_env(); });
-
-	return get_exception_description(penv, throwable);
+	bool needs_release = get_environment(&penv);
+	auto result = get_exception_description(penv, throwable);
+	if(needs_release) release_environment();
+	return result;
 }
 //--------------------------------------------------------------------
 std::string jvm::get_exception_description(JNIEnv* penv, jthrowable throwable)

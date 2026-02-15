@@ -67,6 +67,32 @@ inline std::string get_exception_description(JNIEnv* env)
 
 	env->ExceptionClear();
 
+	// Unwrap InvocationTargetException / UndeclaredThrowableException to get the root cause.
+	// Java reflection wraps checked and unchecked exceptions in these wrappers.
+	jclass ite_class = env->FindClass("java/lang/reflect/InvocationTargetException");
+	jclass ute_class = env->FindClass("java/lang/reflect/UndeclaredThrowableException");
+	if(ite_class || ute_class)
+	{
+		jclass throwable_class_tmp = env->FindClass("java/lang/Throwable");
+		jmethodID get_cause = throwable_class_tmp ? env->GetMethodID(throwable_class_tmp, "getCause", "()Ljava/lang/Throwable;") : nullptr;
+		if(get_cause)
+		{
+			// Walk the cause chain to unwrap reflection wrappers
+			while((ite_class && env->IsInstanceOf(throwable, ite_class)) ||
+			      (ute_class && env->IsInstanceOf(throwable, ute_class)))
+			{
+				jthrowable cause = (jthrowable)env->CallObjectMethod(throwable, get_cause);
+				if(!cause) break;
+				env->DeleteLocalRef(throwable);
+				throwable = cause;
+			}
+		}
+		if(throwable_class_tmp) env->DeleteLocalRef(throwable_class_tmp);
+	}
+	if(ite_class) env->DeleteLocalRef(ite_class);
+	if(ute_class) env->DeleteLocalRef(ute_class);
+	if(env->ExceptionCheck()) env->ExceptionClear();
+
 	jclass throwable_class = env->FindClass("java/lang/Throwable");
 	if(!throwable_class)
 	{
@@ -97,5 +123,8 @@ inline std::string get_exception_description(JNIEnv* env)
 	{
 		env->ReleaseStringUTFChars((jstring)str_obj, cstr);
 	}
+	env->DeleteLocalRef(throwable);
+	env->DeleteLocalRef(throwable_class);
+	env->DeleteLocalRef(str_obj);
 	return result;
 }
