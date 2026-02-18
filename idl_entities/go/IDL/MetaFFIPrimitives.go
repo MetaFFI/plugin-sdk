@@ -95,6 +95,29 @@ const (
 
 	SIZE_ARRAY MetaFFIType = "size_array"
 
+	//--------------------------------------------------------------------
+	// Packed array types (contiguous typed buffers)
+
+	FLOAT64_PACKED_ARRAY MetaFFIType = "float64_packed_array"
+	FLOAT32_PACKED_ARRAY MetaFFIType = "float32_packed_array"
+
+	INT8_PACKED_ARRAY  MetaFFIType = "int8_packed_array"
+	INT16_PACKED_ARRAY MetaFFIType = "int16_packed_array"
+	INT32_PACKED_ARRAY MetaFFIType = "int32_packed_array"
+	INT64_PACKED_ARRAY MetaFFIType = "int64_packed_array"
+
+	UINT8_PACKED_ARRAY  MetaFFIType = "uint8_packed_array"
+	UINT16_PACKED_ARRAY MetaFFIType = "uint16_packed_array"
+	UINT32_PACKED_ARRAY MetaFFIType = "uint32_packed_array"
+	UINT64_PACKED_ARRAY MetaFFIType = "uint64_packed_array"
+
+	BOOL_PACKED_ARRAY MetaFFIType = "bool_packed_array"
+
+	STRING8_PACKED_ARRAY MetaFFIType = "string8_packed_array"
+
+	HANDLE_PACKED_ARRAY   MetaFFIType = "handle_packed_array"
+	CALLABLE_PACKED_ARRAY MetaFFIType = "callable_packed_array"
+
 	METAFFI_TYPE_FLOAT64        = uint64(C.metaffi_float64_type)
 	METAFFI_TYPE_FLOAT32        = uint64(C.metaffi_float32_type)
 	METAFFI_TYPE_INT8           = uint64(C.metaffi_int8_type)
@@ -137,6 +160,22 @@ const (
 	METAFFI_TYPE_SIZE_ARRAY     = uint64(C.metaffi_size_array_type)
 	METAFFI_TYPE_NULL           = uint64(C.metaffi_null_type)
 	METAFFI_TYPE_CALLABLE       = uint64(C.metaffi_callable_type)
+
+	METAFFI_TYPE_PACKED                  = uint64(C.metaffi_packed_type)
+	METAFFI_TYPE_FLOAT64_PACKED_ARRAY    = uint64(C.metaffi_float64_packed_array_type)
+	METAFFI_TYPE_FLOAT32_PACKED_ARRAY    = uint64(C.metaffi_float32_packed_array_type)
+	METAFFI_TYPE_INT8_PACKED_ARRAY       = uint64(C.metaffi_int8_packed_array_type)
+	METAFFI_TYPE_INT16_PACKED_ARRAY      = uint64(C.metaffi_int16_packed_array_type)
+	METAFFI_TYPE_INT32_PACKED_ARRAY      = uint64(C.metaffi_int32_packed_array_type)
+	METAFFI_TYPE_INT64_PACKED_ARRAY      = uint64(C.metaffi_int64_packed_array_type)
+	METAFFI_TYPE_UINT8_PACKED_ARRAY      = uint64(C.metaffi_uint8_packed_array_type)
+	METAFFI_TYPE_UINT16_PACKED_ARRAY     = uint64(C.metaffi_uint16_packed_array_type)
+	METAFFI_TYPE_UINT32_PACKED_ARRAY     = uint64(C.metaffi_uint32_packed_array_type)
+	METAFFI_TYPE_UINT64_PACKED_ARRAY     = uint64(C.metaffi_uint64_packed_array_type)
+	METAFFI_TYPE_BOOL_PACKED_ARRAY       = uint64(C.metaffi_bool_packed_array_type)
+	METAFFI_TYPE_STRING8_PACKED_ARRAY    = uint64(C.metaffi_string8_packed_array_type)
+	METAFFI_TYPE_HANDLE_PACKED_ARRAY     = uint64(C.metaffi_handle_packed_array_type)
+	METAFFI_TYPE_CALLABLE_PACKED_ARRAY   = uint64(C.metaffi_callable_packed_array_type)
 )
 
 var TypeStringToEnumName = map[MetaFFIType]string{
@@ -186,6 +225,21 @@ var TypeStringToEnumName = map[MetaFFIType]string{
 
 	HANDLE_ARRAY: "HANDLE_ARRAY",
 	SIZE_ARRAY:   "SIZE_ARRAY",
+
+	FLOAT64_PACKED_ARRAY:  "FLOAT64_PACKED_ARRAY",
+	FLOAT32_PACKED_ARRAY:  "FLOAT32_PACKED_ARRAY",
+	INT8_PACKED_ARRAY:     "INT8_PACKED_ARRAY",
+	INT16_PACKED_ARRAY:    "INT16_PACKED_ARRAY",
+	INT32_PACKED_ARRAY:    "INT32_PACKED_ARRAY",
+	INT64_PACKED_ARRAY:    "INT64_PACKED_ARRAY",
+	UINT8_PACKED_ARRAY:    "UINT8_PACKED_ARRAY",
+	UINT16_PACKED_ARRAY:   "UINT16_PACKED_ARRAY",
+	UINT32_PACKED_ARRAY:   "UINT32_PACKED_ARRAY",
+	UINT64_PACKED_ARRAY:   "UINT64_PACKED_ARRAY",
+	BOOL_PACKED_ARRAY:     "BOOL_PACKED_ARRAY",
+	STRING8_PACKED_ARRAY:  "STRING8_PACKED_ARRAY",
+	HANDLE_PACKED_ARRAY:   "HANDLE_PACKED_ARRAY",
+	CALLABLE_PACKED_ARRAY: "CALLABLE_PACKED_ARRAY",
 }
 
 var TypeStringToTypeEnum = map[MetaFFIType]uint64{
@@ -234,6 +288,21 @@ var TypeStringToTypeEnum = map[MetaFFIType]uint64{
 	SIZE_ARRAY:   uint64(C.metaffi_size_array_type),
 
 	NULL: uint64(C.metaffi_null_type),
+
+	FLOAT64_PACKED_ARRAY:  uint64(C.metaffi_float64_packed_array_type),
+	FLOAT32_PACKED_ARRAY:  uint64(C.metaffi_float32_packed_array_type),
+	INT8_PACKED_ARRAY:     uint64(C.metaffi_int8_packed_array_type),
+	INT16_PACKED_ARRAY:    uint64(C.metaffi_int16_packed_array_type),
+	INT32_PACKED_ARRAY:    uint64(C.metaffi_int32_packed_array_type),
+	INT64_PACKED_ARRAY:    uint64(C.metaffi_int64_packed_array_type),
+	UINT8_PACKED_ARRAY:    uint64(C.metaffi_uint8_packed_array_type),
+	UINT16_PACKED_ARRAY:   uint64(C.metaffi_uint16_packed_array_type),
+	UINT32_PACKED_ARRAY:   uint64(C.metaffi_uint32_packed_array_type),
+	UINT64_PACKED_ARRAY:   uint64(C.metaffi_uint64_packed_array_type),
+	BOOL_PACKED_ARRAY:     uint64(C.metaffi_bool_packed_array_type),
+	STRING8_PACKED_ARRAY:  uint64(C.metaffi_string8_packed_array_type),
+	HANDLE_PACKED_ARRAY:   uint64(C.metaffi_handle_packed_array_type),
+	CALLABLE_PACKED_ARRAY: uint64(C.metaffi_callable_packed_array_type),
 }
 
 func (this *MetaFFITypeInfo) FillMetaFFITypeFromStringMetaFFIType() {

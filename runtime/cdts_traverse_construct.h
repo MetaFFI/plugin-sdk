@@ -47,6 +47,10 @@ struct traverse_cdts_callbacks
 	#else
 	metaffi_bool (*on_array)(const metaffi_size* index, metaffi_size index_size, const struct cdts* val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context);
 	#endif
+	
+	// Packed array: a contiguous T* buffer + length.
+	// element_type is the scalar element type (e.g. metaffi_int32_type).
+	void (*on_packed_array)(const metaffi_size* index, metaffi_size index_size, const struct cdt_packed_array* val, metaffi_type element_type, void* context);
 
 #ifdef __cplusplus
 	
@@ -75,6 +79,7 @@ struct traverse_cdts_callbacks
 		on_callable = nullptr;
 		on_null = nullptr;
 		on_array = nullptr;
+		on_packed_array = nullptr;
 	}
 	
 	traverse_cdts_callbacks(
@@ -99,7 +104,8 @@ struct traverse_cdts_callbacks
 			void (*on_handle)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_handle& val, void* context),
 			void (*on_callable)(const metaffi_size* index, metaffi_size index_size, const struct cdt_metaffi_callable& val, void* context),
 			void (*on_null)(const metaffi_size* index, metaffi_size index_size, void* context),
-			metaffi_bool (*on_array)(const metaffi_size* index, metaffi_size index_size, const cdts& val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context)
+			metaffi_bool (*on_array)(const metaffi_size* index, metaffi_size index_size, const cdts& val, metaffi_int64 fixed_dimensions, metaffi_type common_type, void* context),
+			void (*on_packed_array)(const metaffi_size* index, metaffi_size index_size, const cdt_packed_array* val, metaffi_type element_type, void* context) = nullptr
 	) : context(context),
 	    on_float64(on_float64),
 	    on_float32(on_float32),
@@ -121,7 +127,8 @@ struct traverse_cdts_callbacks
 	    on_handle(on_handle),
 	    on_callable(on_callable),
 	    on_null(on_null),
-	    on_array(on_array)
+	    on_array(on_array),
+	    on_packed_array(on_packed_array)
 	{}
 #endif // __cplusplus
 };
@@ -178,6 +185,11 @@ struct construct_cdts_callbacks
 	metaffi_string32 (*get_string32)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context);
 	struct cdt_metaffi_handle* (*get_handle)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context);
 	struct cdt_metaffi_callable* (*get_callable)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context);
+	
+	// Packed array: return a heap-allocated cdt_packed_array* with data buffer.
+	// element_type is the scalar element type from the type_info (e.g. metaffi_int32_type).
+	// Caller takes ownership of the returned cdt_packed_array and its data buffer.
+	struct cdt_packed_array* (*get_packed_array)(const metaffi_size* index, metaffi_size index_size, metaffi_type element_type, metaffi_bool* is_free_required, void* context);
 
 #ifdef __cplusplus
 	
@@ -208,6 +220,7 @@ struct construct_cdts_callbacks
 		get_string32 = nullptr;
 		get_handle = nullptr;
 		get_callable = nullptr;
+		get_packed_array = nullptr;
 	}
 	
 	construct_cdts_callbacks(
@@ -234,7 +247,8 @@ struct construct_cdts_callbacks
 			struct metaffi_char32 (*get_char32)(const metaffi_size* index, metaffi_size index_size, void* context),
 			metaffi_string32 (*get_string32)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context),
 			struct cdt_metaffi_handle* (*get_handle)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context),
-			struct cdt_metaffi_callable* (*get_callable)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context)
+			struct cdt_metaffi_callable* (*get_callable)(const metaffi_size* index, metaffi_size index_size, metaffi_bool* is_free_required, void* context),
+			struct cdt_packed_array* (*get_packed_array)(const metaffi_size* index, metaffi_size index_size, metaffi_type element_type, metaffi_bool* is_free_required, void* context) = nullptr
 	) : context(context),
 	    get_array_metadata(get_array_metadata),
         construct_cdt_array(construct_cdt_array),
@@ -258,7 +272,8 @@ struct construct_cdts_callbacks
 	    get_char32(get_char32),
 	    get_string32(get_string32),
 	    get_handle(get_handle),
-	    get_callable(get_callable)
+	    get_callable(get_callable),
+	    get_packed_array(get_packed_array)
 	{}
 	
 #endif // __cplusplus

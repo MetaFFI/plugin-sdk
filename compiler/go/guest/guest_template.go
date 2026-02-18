@@ -196,14 +196,16 @@ func EntryPoint_{{GenerateCodeEntryPointSignature "" $f.Getter.Name $f.Getter.Pa
 	{{ $paramsLength := len $f.Getter.Parameters }}{{ $returnLength := len $f.Getter.ReturnValues }}
 
 	retvals_CDTS := C.get_cdt_element(xcall_params, {{GetCDTReturnValueIndex $f.Getter.Parameters $f.Getter.ReturnValues}})
-	t0 := IDL.MetaFFITypeInfo{ {{$t := index $f.Getter.ReturnValues 0}}
-	    StringType: "{{$t.Type}}",
+	{{$t := index $f.Getter.ReturnValues 0}}
+	{{if IsDirectlySerializable $t}}{{DirectSetStmt $t $m 0 "retvals_CDTS" $f.Name}}
+	{{else}}t0 := IDL.MetaFFITypeInfo{
+	    StringType: "{{AutoPackedTypeStr $t}}",
 	    Alias:"{{$t.TypeAlias}}",
 	    Dimensions: {{$t.Dimensions}},
-		Type: {{GetMetaFFINumericType $t.Type}},
+		Type: {{AutoPackedNumericType $t}},
 	}
 	FromGoToCDT({{$f.Name}}, unsafe.Pointer(retvals_CDTS), t0, 0)
-
+	{{end}}
 }
 {{end}} {{/* end $f.Get */}}
 
@@ -219,8 +221,10 @@ func EntryPoint_{{GenerateCodeEntryPointSignature "" $f.Setter.Name $f.Setter.Pa
 
 	parameters_CDTS := C.get_cdt_element(xcall_params, 0)
 	{{$elem := index $f.Setter.Parameters 0}}
-	_globalSetValAsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), 0, {{GetTypeForCDTToGo $elem $m}})
+	{{if IsDirectlySerializableScalarOnly $elem}}{{$f.Name}} = {{DirectExtractExpr $elem $m 0 "parameters_CDTS"}}
+	{{else}}_globalSetValAsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), 0, {{GetTypeForCDTToGo $elem $m}})
 	{{$f.Name}} = {{ConvertGlobalSetterExpression $elem $m}}
+	{{end}}
 }
 {{end}} {{/* end $f.Set */}}
 
@@ -246,9 +250,10 @@ func EntryPoint_{{GenerateCodeEntryPointSignature "" $f.Name $f.Parameters $f.Re
 
 	// parameters from C to Go
 	{{range $index, $elem := $f.Parameters}}
-	{{$elem.Name}}AsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), {{$index}}, {{GetTypeForCDTToGo $elem $m}})
+	{{if IsDirectlySerializableScalarOnly $elem}}{{$elem.Name}} := {{DirectExtractExpr $elem $m $index "parameters_CDTS"}}
+	{{else}}{{$elem.Name}}AsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), {{$index}}, {{GetTypeForCDTToGo $elem $m}})
 	{{ConvertEmptyInterfaceFromCDTSToCorrectType $elem $m false}}
-	{{end}} {{/* end range params */}}
+	{{end}}{{end}} {{/* end range params */}}
 	
 	// call original function
 	{{$hasErrorReturn := index $f.Tags "has_error_return"}}
@@ -263,19 +268,20 @@ func EntryPoint_{{GenerateCodeEntryPointSignature "" $f.Name $f.Parameters $f.Re
 	
 	// return values
 	{{range $index, $elem := $f.ReturnValues}}
-	if err, isError := interface{}({{$elem.Name}}).(error); isError{ // in case of error
+	{{if IsDirectlySerializable $elem}}{{DirectSetStmt $elem $m $index "retvals_CDTS" $elem.Name}}
+	{{else}}if err, isError := interface{}({{$elem.Name}}).(error); isError{ // in case of error
 		errToOutError(out_err, "Error returned", err)
 		return
 	} else { // Convert return values from Go to C
 		t{{$index}} := IDL.MetaFFITypeInfo{   {{$t := index $f.ReturnValues $index}}
-			StringType: "{{$t.Type}}",
+			StringType: "{{AutoPackedTypeStr $t}}",
 			Alias:"{{$t.TypeAlias}}",
 			Dimensions: {{$t.Dimensions}},
-			Type: {{GetMetaFFINumericType $t.Type}},
+			Type: {{AutoPackedNumericType $t}},
 		}
 		FromGoToCDT({{$elem.Name}}, unsafe.Pointer(retvals_CDTS), t{{$index}}, {{$index}})
-	}	
-	{{end}} {{/* end range return vals */}}
+	}
+	{{end}}{{end}} {{/* end range return vals */}}
 }
 {{end}} {{/* end range functions */}}
 
@@ -313,9 +319,10 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Name $f.Parameters 
 
 	// parameters from C to Go
 	{{range $index, $elem := $f.Parameters}}	
-	{{$elem.Name}}AsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), {{$index}}, {{GetTypeForCDTToGo $elem $m}})
+	{{if IsDirectlySerializableScalarOnly $elem}}{{$elem.Name}} := {{DirectExtractExpr $elem $m $index "parameters_CDTS"}}
+	{{else}}{{$elem.Name}}AsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), {{$index}}, {{GetTypeForCDTToGo $elem $m}})
 	{{ConvertEmptyInterfaceFromCDTSToCorrectType $elem $m false}}
-	{{end}} {{/* end range params */}}
+	{{end}}{{end}} {{/* end range params */}}
 	
 	// call original function
 	{{$hasErrorReturn := index $f.Tags "has_error_return"}}
@@ -330,19 +337,20 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Name $f.Parameters 
 	
 	// return values
 	{{range $index, $elem := $f.ReturnValues}}
-	if err, isError := interface{}({{$elem.Name}}).(error); isError{ // in case of error
+	{{if IsDirectlySerializable $elem}}{{DirectSetStmt $elem $m $index "retvals_CDTS" $elem.Name}}
+	{{else}}if err, isError := interface{}({{$elem.Name}}).(error); isError{ // in case of error
 		errToOutError(out_err, "Error returned", err)
 		return
 	} else { // Convert return values from Go to C
 		t{{$index}} := IDL.MetaFFITypeInfo{ {{$t := index $f.ReturnValues $index}}
-			StringType: "{{$t.Type}}",
+			StringType: "{{AutoPackedTypeStr $t}}",
 			Alias:"{{$t.TypeAlias}}",
 			Dimensions: {{$t.Dimensions}},
-			Type: {{GetMetaFFINumericType $t.Type}},
+			Type: {{AutoPackedNumericType $t}},
 		}
 		FromGoToCDT({{$elem.Name}}, unsafe.Pointer(retvals_CDTS), t{{$index}}, {{$index}})
-	}	
-	{{end}} {{/* end range return vals */}}
+	}
+	{{end}}{{end}} {{/* end range return vals */}}
 }
 {{end}} {{/* end range constructors */}}
 
@@ -365,9 +373,10 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Name $f.Parameters 
 
 	// parameters from C to Go
 	{{range $index, $elem := $f.Parameters}}	
-	{{$elem.Name}}AsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), {{$index}}, {{GetTypeForCDTToGo $elem $m}})
+	{{if IsDirectlySerializableScalarOnly $elem}}{{$elem.Name}} := {{DirectExtractExpr $elem $m $index "parameters_CDTS"}}
+	{{else}}{{$elem.Name}}AsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), {{$index}}, {{GetTypeForCDTToGo $elem $m}})
 	{{ConvertEmptyInterfaceFromCDTSToCorrectType $elem $m false}}
-	{{end}} {{/* end range params */}}
+	{{end}}{{end}} {{/* end range params */}}
 	
 	// call original function (method receiver must be first parameter; IDL adds this_instance for methods)
 	{{ $receiver_pointer := index $f.Tags "receiver_pointer"}}
@@ -388,19 +397,20 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Name $f.Parameters 
 
 	// return values
 	{{range $index, $elem := $f.ReturnValues}}
-	if err, isError := interface{}({{$elem.Name}}).(error); isError{ // in case of error
+	{{if IsDirectlySerializable $elem}}{{DirectSetStmt $elem $m $index "retvals_CDTS" $elem.Name}}
+	{{else}}if err, isError := interface{}({{$elem.Name}}).(error); isError{ // in case of error
 		errToOutError(out_err, "Error returned", err)
 		return
 	} else { // Convert return values from Go to C
 		t{{$index}} := IDL.MetaFFITypeInfo{   {{$t := index $f.ReturnValues $index}}
-			StringType: "{{$t.Type}}",
+			StringType: "{{AutoPackedTypeStr $t}}",
 			Alias:"{{$t.TypeAlias}}",
 			Dimensions: {{$t.Dimensions}},
-			Type: {{GetMetaFFINumericType $t.Type}},
+			Type: {{AutoPackedNumericType $t}},
 		}
 		FromGoToCDT({{$elem.Name}}, unsafe.Pointer(retvals_CDTS), t{{$index}}, {{$index}})
-	}	
-	{{end}} {{/* end range return values */}}
+	}
+	{{end}}{{end}} {{/* end range return values */}}
 }
 {{end}} {{/* end range methods */}}
 
@@ -431,14 +441,16 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Getter.Name $f.Gett
 	{{$f.Name}}_res := obj.({{if eq $receiver_pointer "true"}}*{{end}}{{$className}}).{{$f.Name}}
 
 	{{ if gt $returnLength 0 }}
-	t0 := IDL.MetaFFITypeInfo{ {{$t := index $f.Getter.ReturnValues 0}}
-		StringType: "{{$t.Type}}",
+	{{$t := index $f.Getter.ReturnValues 0}}
+	{{if IsDirectlySerializable $t}}{{DirectSetStmt $t $m 0 "retvals_CDTS" (printf "%s_res" $f.Name)}}
+	{{else}}t0 := IDL.MetaFFITypeInfo{
+		StringType: "{{AutoPackedTypeStr $t}}",
 		Alias:"{{$t.TypeAlias}}",
 		Dimensions: {{$t.Dimensions}},
-		Type: {{GetMetaFFINumericType $t.Type}},
+		Type: {{AutoPackedNumericType $t}},
 	}
 	FromGoToCDT({{$f.Name}}_res, unsafe.Pointer(retvals_CDTS), t0, 0)
-	{{end}}
+	{{end}}{{end}}
 }
 {{end}} {{/* end $f.Getter */}}
 
@@ -466,9 +478,10 @@ func EntryPoint_{{GenerateCodeEntryPointSignature $c.Name $f.Setter.Name $f.Sett
 
 	// get val
 	{{ $elem = index $f.Setter.Parameters 1 }}
-	{{$elem.Name}}AsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), 1, {{GetTypeForCDTToGo $elem $m}})
+	{{if IsDirectlySerializableScalarOnly $elem}}{{$elem.Name}} := {{DirectExtractExpr $elem $m 1 "parameters_CDTS"}}
+	{{else}}{{$elem.Name}}AsInterface := FromCDTToGo(unsafe.Pointer(parameters_CDTS), 1, {{GetTypeForCDTToGo $elem $m}})
 	{{ConvertEmptyInterfaceFromCDTSToCorrectType $elem $m false}}
-	
+	{{end}}
 	// set new data (always use pointer assertion for setters - value assertions are non-addressable in Go)
 	this.(*{{$className}}).{{$f.Name}} = {{$elem.Name}}
 	

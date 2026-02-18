@@ -221,7 +221,7 @@ TEST_CASE("Load xllr.test.idl.json")
 						[](const FunctionDefinition& f) { return f.name() == "return_int64_array_1d"; });
 		REQUIRE(it != functions.end());
 		CHECK(it->return_values().size() == 1);
-		CHECK(it->return_values()[0].type() == "int64_array");
+		CHECK(it->return_values()[0].type() == "int64_packed_array");
 		CHECK(it->return_values()[0].dimensions() == 1);
 
 		// Find call_callback_add (callable test)

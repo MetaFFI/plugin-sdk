@@ -32,7 +32,20 @@ inline void log_cdt_value(std::ostream& os, const cdt& c, int indent_level = 0)
 
 	os << indent << "type=" << get_type_name(c.type);
 
-	// Check if it's an array type
+	// Check for packed array first (has both packed and array flags)
+	if(metaffi_is_packed_array(c.type))
+	{
+		os << " [packed_array";
+		const cdt_packed_array* packed = c.cdt_val.packed_array_val;
+		if(packed)
+		{
+			os << " length=" << packed->length;
+		}
+		os << "]";
+		return;
+	}
+
+	// Check if it's a regular array type
 	if(c.type & metaffi_array_type)
 	{
 		os << " [array";

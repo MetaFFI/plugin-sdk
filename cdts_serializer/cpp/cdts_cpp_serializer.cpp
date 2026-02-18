@@ -500,7 +500,7 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator>>(cdt_metaffi_handle*& handle
 	if(data[current_index].type != metaffi_handle_type)
 	{
 		std::stringstream ss;
-		ss << "Type mismatch at index " << current_index << ": expected handle, got type "
+		ss << "(cdts_cpp_serializer) Type mismatch at index " << current_index << ": expected handle, got type "
 		   << data[current_index].type;
 		throw std::runtime_error(ss.str());
 	}
@@ -517,7 +517,7 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator>>(metaffi_handle& val)
 	if(data[current_index].type != metaffi_handle_type)
 	{
 		std::stringstream ss;
-		ss << "Type mismatch at index " << current_index << ": expected handle, got type "
+		ss << "(cdts_cpp_serializer) Type mismatch at index " << current_index << ": expected handle, got type "
 		   << data[current_index].type;
 		throw std::runtime_error(ss.str());
 	}
@@ -560,7 +560,7 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator>>(cdt_metaffi_callable*& call
 	if(data[current_index].type != metaffi_callable_type)
 	{
 		std::stringstream ss;
-		ss << "Type mismatch at index " << current_index << ": expected callable, got type "
+		ss << "(cdts_cpp_serializer) Type mismatch at index " << current_index << ": expected callable, got type "
 		   << data[current_index].type;
 		throw std::runtime_error(ss.str());
 	}

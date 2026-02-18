@@ -69,3 +69,25 @@ func SumRaggedArray(arr [][]int) int {
 	}
 	return sum
 }
+
+// --- Packed array test functions (1D primitive arrays) ---
+
+func Sum1dInt64Array(arr []int64) int64 {
+	var sum int64
+	for _, v := range arr {
+		sum += v
+	}
+	return sum
+}
+
+func Echo1dInt64Array(arr []int64) []int64 {
+	return arr
+}
+
+func Echo1dFloat64Array(arr []float64) []float64 {
+	return arr
+}
+
+func Make1dInt64Array() []int64 {
+	return []int64{10, 20, 30, 40, 50}
+}

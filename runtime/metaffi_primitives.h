@@ -185,6 +185,8 @@ enum metaffi_types
 
 	metaffi_callable_type = (metaffi_type)16777216ULL,
 
+	metaffi_packed_type = (metaffi_type)33554432ULL,
+
 	metaffi_float64_array_type = (metaffi_type)(metaffi_float64_type | metaffi_array_type),
 	metaffi_float32_array_type = (metaffi_type)(metaffi_float32_type | metaffi_array_type),
 	metaffi_int8_array_type = (metaffi_type)(metaffi_int8_type | metaffi_array_type),
@@ -203,8 +205,58 @@ enum metaffi_types
 	metaffi_char32_array_type = (metaffi_type)(metaffi_char32_type | metaffi_array_type),
 	metaffi_string32_array_type = (metaffi_type)(metaffi_string32_type | metaffi_array_type),
 	
+	metaffi_any_array_type = (metaffi_type)(metaffi_any_type | metaffi_array_type),
 	metaffi_handle_array_type = (metaffi_type)(metaffi_handle_type | metaffi_array_type),
-	metaffi_size_array_type = (metaffi_type)(metaffi_size_type | metaffi_array_type)
+	metaffi_size_array_type = (metaffi_type)(metaffi_size_type | metaffi_array_type),
+
+	// Packed array types: contiguous typed buffers (T* + length) instead of per-element CDTs.
+	// Use for homogeneous 1D arrays to eliminate per-element type metadata overhead.
+	metaffi_float64_packed_array_type = (metaffi_type)(metaffi_float64_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_float32_packed_array_type = (metaffi_type)(metaffi_float32_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_int8_packed_array_type = (metaffi_type)(metaffi_int8_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_int16_packed_array_type = (metaffi_type)(metaffi_int16_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_int32_packed_array_type = (metaffi_type)(metaffi_int32_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_int64_packed_array_type = (metaffi_type)(metaffi_int64_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_uint8_packed_array_type = (metaffi_type)(metaffi_uint8_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_uint16_packed_array_type = (metaffi_type)(metaffi_uint16_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_uint32_packed_array_type = (metaffi_type)(metaffi_uint32_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_uint64_packed_array_type = (metaffi_type)(metaffi_uint64_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_bool_packed_array_type = (metaffi_type)(metaffi_bool_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_char8_packed_array_type = (metaffi_type)(metaffi_char8_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_string8_packed_array_type = (metaffi_type)(metaffi_string8_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_char16_packed_array_type = (metaffi_type)(metaffi_char16_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_string16_packed_array_type = (metaffi_type)(metaffi_string16_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_char32_packed_array_type = (metaffi_type)(metaffi_char32_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_string32_packed_array_type = (metaffi_type)(metaffi_string32_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_handle_packed_array_type = (metaffi_type)(metaffi_handle_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_size_packed_array_type = (metaffi_type)(metaffi_size_type | metaffi_array_type | metaffi_packed_type),
+	metaffi_callable_packed_array_type = (metaffi_type)(metaffi_callable_type | metaffi_array_type | metaffi_packed_type)
+};
+
+// Helper macros for packed array types
+#define metaffi_is_packed_array(t) (((t) & metaffi_packed_type) && ((t) & metaffi_array_type))
+#define metaffi_packed_element_type(t) ((t) & ~(metaffi_array_type | metaffi_packed_type))
+
+/**
+ * @brief A packed (contiguous) array of a single element type.
+ * Instead of N individual CDTs, stores a raw T* buffer + length.
+ * Element type is determined by the containing CDT's type field.
+ *
+ * Data interpretation by element type:
+ * - Numerics, bool, size, char: data points to a contiguous T[] buffer
+ * - Strings: data points to an array of string pointers (e.g. metaffi_string8[])
+ * - Handles: data points to a cdt_metaffi_handle[] array
+ * - Callables: data points to a cdt_metaffi_callable[] array
+ */
+struct cdt_packed_array
+{
+	void* data;           // Raw typed data buffer
+	metaffi_size length;  // Number of elements
+
+#ifdef __cplusplus
+	cdt_packed_array() : data(nullptr), length(0) {}
+	cdt_packed_array(void* data, metaffi_size length) : data(data), length(length) {}
+#endif
 };
 
 #define metaffi_type_to_str(t, str) \
@@ -249,6 +301,27 @@ enum metaffi_types
           (t == metaffi_handle_array_type) ? "metaffi_handle_array" : \
           (t == metaffi_size_array_type) ? "metaffi_size_array" : \
 		  (t == metaffi_callable_type) ? "metaffi_callable_type" : \
+		  (t == metaffi_packed_type) ? "metaffi_packed" : \
+		  (t == metaffi_float64_packed_array_type) ? "metaffi_float64_packed_array" : \
+		  (t == metaffi_float32_packed_array_type) ? "metaffi_float32_packed_array" : \
+		  (t == metaffi_int8_packed_array_type) ? "metaffi_int8_packed_array" : \
+		  (t == metaffi_int16_packed_array_type) ? "metaffi_int16_packed_array" : \
+		  (t == metaffi_int32_packed_array_type) ? "metaffi_int32_packed_array" : \
+		  (t == metaffi_int64_packed_array_type) ? "metaffi_int64_packed_array" : \
+		  (t == metaffi_uint8_packed_array_type) ? "metaffi_uint8_packed_array" : \
+		  (t == metaffi_uint16_packed_array_type) ? "metaffi_uint16_packed_array" : \
+		  (t == metaffi_uint32_packed_array_type) ? "metaffi_uint32_packed_array" : \
+		  (t == metaffi_uint64_packed_array_type) ? "metaffi_uint64_packed_array" : \
+		  (t == metaffi_bool_packed_array_type) ? "metaffi_bool_packed_array" : \
+		  (t == metaffi_char8_packed_array_type) ? "metaffi_char8_packed_array" : \
+		  (t == metaffi_string8_packed_array_type) ? "metaffi_string8_packed_array" : \
+		  (t == metaffi_char16_packed_array_type) ? "metaffi_char16_packed_array" : \
+		  (t == metaffi_string16_packed_array_type) ? "metaffi_string16_packed_array" : \
+		  (t == metaffi_char32_packed_array_type) ? "metaffi_char32_packed_array" : \
+		  (t == metaffi_string32_packed_array_type) ? "metaffi_string32_packed_array" : \
+		  (t == metaffi_handle_packed_array_type) ? "metaffi_handle_packed_array" : \
+		  (t == metaffi_size_packed_array_type) ? "metaffi_size_packed_array" : \
+		  (t == metaffi_callable_packed_array_type) ? "metaffi_callable_packed_array" : \
 		  "Unknown type"
 
 

@@ -70,4 +70,26 @@ public class ArrayFunctions {
 		}
 		return sum;
 	}
+
+	// --- Packed array test functions (1D primitive arrays) ---
+
+	public static int sumInt1dArray(int[] arr) {
+		int sum = 0;
+		for (int v : arr) {
+			sum += v;
+		}
+		return sum;
+	}
+
+	public static long[] echoLong1dArray(long[] arr) {
+		return arr;
+	}
+
+	public static double[] echoDouble1dArray(double[] arr) {
+		return arr;
+	}
+
+	public static int[] makeInt1dArray() {
+		return new int[]{10, 20, 30, 40, 50};
+	}
 }

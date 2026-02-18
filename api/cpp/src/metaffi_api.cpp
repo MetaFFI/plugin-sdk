@@ -64,7 +64,8 @@ bool is_array_type(metaffi_type type)
 
 metaffi_type base_type(metaffi_type type)
 {
-	return is_array_type(type) ? (type & ~metaffi_array_type) : type;
+	// Remove array and packed flags to get the base element type
+	return is_array_type(type) ? (type & ~(metaffi_array_type | metaffi_packed_type)) : type;
 }
 
 bool matches_expected_type(const MetaFFITypeInfo& expected, const cdt& actual)

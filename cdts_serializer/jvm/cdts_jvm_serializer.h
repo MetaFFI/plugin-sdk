@@ -344,6 +344,17 @@ public:
 	 */
 	cdts_jvm_serializer& add_array(jarray arr, int dimensions, metaffi_type element_type);
 
+	/**
+	 * @brief Add a 1D primitive array as a packed CDT (contiguous buffer, no per-element CDTs).
+	 * Uses memcpy for numeric types for maximum performance.
+	 * Supports: int8, int16, int32, int64, float32, float64, bool (uint8-compatible types).
+	 * @param arr Java primitive array (jintArray, jdoubleArray, etc.)
+	 * @param element_type Base element type (e.g. metaffi_int32_type)
+	 * @return Reference to this for chaining
+	 * @throws std::runtime_error if arr is null or element_type is unsupported
+	 */
+	cdts_jvm_serializer& add_packed_array(jarray arr, metaffi_type element_type);
+
 	// Wrapper objects and other objects - auto-detect type
 
 	/**
@@ -427,12 +438,21 @@ public:
 	jstring extract_string();
 
 	/**
-	 * @brief Extract value as jarray (from array types)
+	 * @brief Extract value as jarray (from array types, including packed arrays)
 	 * Returns primitive array (int[], double[]) or object array (Integer[], String[])
+	 * Packed arrays are extracted using memcpy for maximum performance.
 	 * @return jarray (local reference)
 	 */
 	jarray extract_array();
 	jarray extract_array(const metaffi_type_info& type_info);
+
+	/**
+	 * @brief Extract a packed array CDT to a Java primitive array.
+	 * Uses memcpy from packed buffer for numeric types.
+	 * @return jarray (local reference to Java primitive array)
+	 * @throws std::runtime_error if current CDT is not a packed array
+	 */
+	jarray extract_packed_array();
 
 	/**
 	 * @brief Extract value as jobject (from handle type)

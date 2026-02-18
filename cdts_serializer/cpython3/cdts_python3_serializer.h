@@ -76,6 +76,19 @@ public:
 	 */
 	cdts_python3_serializer& add(PyObject* obj, metaffi_type target_type);
 
+	/**
+	 * @brief Serialize a Python list/tuple as a packed (contiguous buffer) CDT.
+	 * All elements must be convertible to the specified element_type.
+	 * Uses contiguous memory layout for maximum performance.
+	 * Supports: int8-64, uint8-64, float32/64, bool, string8.
+	 * For bytes objects: pass as list of int, not bytes.
+	 * @param obj Python list or tuple (borrowed reference)
+	 * @param element_type Base element type (e.g. metaffi_int32_type)
+	 * @return Reference to this serializer (for chaining)
+	 * @throws std::runtime_error if obj is not a list/tuple, or element_type unsupported
+	 */
+	cdts_python3_serializer& add_packed_array(PyObject* obj, metaffi_type element_type);
+
 	// ===== DESERIALIZATION (CDTS → Python) =====
 
 	/**
@@ -212,6 +225,16 @@ private:
 	 * Assumes GIL is held
 	 */
 	PyObject* cdt_array_to_pybytes(const cdts& arr, metaffi_type element_type);
+
+	/**
+	 * @brief Convert a packed CDT array to a Python list (or bytes for uint8/int8).
+	 * @param source CDT with packed array data
+	 * @return New Python reference (list or bytes)
+	 * @throws std::runtime_error if source is not a packed array
+	 *
+	 * Assumes GIL is held
+	 */
+	PyObject* packed_cdt_to_pyobject(const cdt& source);
 
 	/**
 	 * @brief Validate that a Python integer fits in the target type

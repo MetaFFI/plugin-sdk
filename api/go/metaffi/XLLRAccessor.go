@@ -56,6 +56,13 @@ struct cdts* get_cdts_index_pcdts(struct cdts* p, int index)
 	return &p[index];
 }
 
+static void null_cdt_free_required(struct cdt* arr, int count)
+{
+	for (int i = 0; i < count; i++) {
+		arr[i].free_required = 0;
+	}
+}
+
 */
 import "C"
 import (
@@ -224,6 +231,26 @@ func XLLRGetCDTS(pcdts unsafe.Pointer, index int) unsafe.Pointer {
 
 func XLLRFreeCDTSBuffer(pcdts unsafe.Pointer) {
 	C.xllr_free_cdts_buffer((*C.struct_cdts)(pcdts))
+}
+
+// XLLRClearAndFreeCDTSBuffer nulls free_required on all CDT elements
+// in the params sub-buffer (index 0) and then frees the CDTS buffer.
+// This prevents cdt::free() from releasing Go-owned resources (handles,
+// callables) while still properly managing the CDT cache indices.
+// The retvals sub-buffer (index 1) is left intact so that callee-allocated
+// memory (e.g. strings) is properly freed.
+func XLLRClearAndFreeCDTSBuffer(pcdts unsafe.Pointer, paramsCount int) {
+	if pcdts == nil {
+		return
+	}
+	buf := (*C.struct_cdts)(pcdts)
+	// Null free_required on all input param CDTs so that cdt::free()
+	// does not release Go-owned handles, callables, or strings.
+	paramsCDTS := C.get_cdts_index_pcdt(buf, 0)
+	if paramsCDTS != nil && paramsCount > 0 {
+		C.null_cdt_free_required(paramsCDTS, C.int(paramsCount))
+	}
+	C.xllr_free_cdts_buffer(buf)
 }
 
 func XLLRLoadRuntimePlugin(runtimePlugin string) error {

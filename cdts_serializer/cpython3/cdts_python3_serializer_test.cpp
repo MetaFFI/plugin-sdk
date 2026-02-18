@@ -1109,4 +1109,228 @@ TEST_SUITE("CDTS Python3 Serializer")
 
 		// No manual cleanup needed - CDT destructor handles it via free_required=true
 	}
+
+	// ========================================================================
+	// PACKED ARRAY TESTS
+	// ========================================================================
+
+	TEST_CASE("Packed int32 array round-trip")
+	{
+		cdts data(1);
+		cdts_python3_serializer ser(*g_runtime, data);
+
+		// Create Python list [10, 20, 30, 40, 50]
+		PyObject* list = pPyList_New(5);
+		for(int i = 0; i < 5; i++)
+		{
+			pPyList_SetItem(list, i, pPyLong_FromLongLong(10 * (i + 1)));
+		}
+
+		ser.add_packed_array(list, metaffi_int32_type);
+		Py_DECREF(list);
+
+		// Verify CDT type
+		CHECK(metaffi_is_packed_array(data[0].type));
+		CHECK(metaffi_packed_element_type(data[0].type) == metaffi_int32_type);
+
+		// Extract back
+		ser.reset();
+		PyObject* extracted = ser.extract_pyobject();
+
+		REQUIRE(pPyList_Check(extracted));
+		CHECK(pPyList_Size(extracted) == 5);
+		for(int i = 0; i < 5; i++)
+		{
+			long long v = pPyLong_AsLongLong(pPyList_GetItem(extracted, i));
+			CHECK(v == 10 * (i + 1));
+		}
+
+		Py_DECREF(extracted);
+	}
+
+	TEST_CASE("Packed float64 array round-trip")
+	{
+		cdts data(1);
+		cdts_python3_serializer ser(*g_runtime, data);
+
+		PyObject* list = pPyList_New(3);
+		pPyList_SetItem(list, 0, pPyFloat_FromDouble(1.1));
+		pPyList_SetItem(list, 1, pPyFloat_FromDouble(2.2));
+		pPyList_SetItem(list, 2, pPyFloat_FromDouble(3.3));
+
+		ser.add_packed_array(list, metaffi_float64_type);
+		Py_DECREF(list);
+
+		CHECK(metaffi_is_packed_array(data[0].type));
+
+		ser.reset();
+		PyObject* extracted = ser.extract_pyobject();
+
+		REQUIRE(pPyList_Check(extracted));
+		CHECK(pPyList_Size(extracted) == 3);
+		CHECK(pPyFloat_AsDouble(pPyList_GetItem(extracted, 0)) == doctest::Approx(1.1));
+		CHECK(pPyFloat_AsDouble(pPyList_GetItem(extracted, 1)) == doctest::Approx(2.2));
+		CHECK(pPyFloat_AsDouble(pPyList_GetItem(extracted, 2)) == doctest::Approx(3.3));
+
+		Py_DECREF(extracted);
+	}
+
+	TEST_CASE("Packed uint8 array to bytes round-trip")
+	{
+		cdts data(1);
+		cdts_python3_serializer ser(*g_runtime, data);
+
+		// Create Python list [0, 127, 200, 255]
+		PyObject* list = pPyList_New(4);
+		pPyList_SetItem(list, 0, pPyLong_FromLongLong(0));
+		pPyList_SetItem(list, 1, pPyLong_FromLongLong(127));
+		pPyList_SetItem(list, 2, pPyLong_FromLongLong(200));
+		pPyList_SetItem(list, 3, pPyLong_FromLongLong(255));
+
+		ser.add_packed_array(list, metaffi_uint8_type);
+		Py_DECREF(list);
+
+		CHECK(metaffi_is_packed_array(data[0].type));
+
+		ser.reset();
+		PyObject* extracted = ser.extract_pyobject();
+
+		// uint8 packed arrays become Python bytes
+		REQUIRE(pPyBytes_Check(extracted));
+		Py_ssize_t size;
+		char* bytes_data;
+		pPyBytes_AsStringAndSize(extracted, &bytes_data, &size);
+		CHECK(size == 4);
+		CHECK(static_cast<uint8_t>(bytes_data[0]) == 0);
+		CHECK(static_cast<uint8_t>(bytes_data[1]) == 127);
+		CHECK(static_cast<uint8_t>(bytes_data[2]) == 200);
+		CHECK(static_cast<uint8_t>(bytes_data[3]) == 255);
+
+		Py_DECREF(extracted);
+	}
+
+	TEST_CASE("Packed bool array round-trip")
+	{
+		cdts data(1);
+		cdts_python3_serializer ser(*g_runtime, data);
+
+		PyObject* list = pPyList_New(3);
+		pPyList_SetItem(list, 0, pPyBool_FromLong(1));
+		pPyList_SetItem(list, 1, pPyBool_FromLong(0));
+		pPyList_SetItem(list, 2, pPyBool_FromLong(1));
+
+		ser.add_packed_array(list, metaffi_bool_type);
+		Py_DECREF(list);
+
+		CHECK(metaffi_is_packed_array(data[0].type));
+
+		ser.reset();
+		PyObject* extracted = ser.extract_pyobject();
+
+		REQUIRE(pPyList_Check(extracted));
+		CHECK(pPyList_Size(extracted) == 3);
+		CHECK(pPyObject_IsTrue(pPyList_GetItem(extracted, 0)) == 1);
+		CHECK(pPyObject_IsTrue(pPyList_GetItem(extracted, 1)) == 0);
+		CHECK(pPyObject_IsTrue(pPyList_GetItem(extracted, 2)) == 1);
+
+		Py_DECREF(extracted);
+	}
+
+	TEST_CASE("Packed string8 array round-trip")
+	{
+		cdts data(1);
+		cdts_python3_serializer ser(*g_runtime, data);
+
+		PyObject* list = pPyList_New(3);
+		pPyList_SetItem(list, 0, pPyUnicode_FromString("hello"));
+		pPyList_SetItem(list, 1, pPyUnicode_FromString("packed"));
+		pPyList_SetItem(list, 2, pPyUnicode_FromString("world"));
+
+		ser.add_packed_array(list, metaffi_string8_type);
+		Py_DECREF(list);
+
+		CHECK(metaffi_is_packed_array(data[0].type));
+		CHECK(metaffi_packed_element_type(data[0].type) == metaffi_string8_type);
+
+		ser.reset();
+		PyObject* extracted = ser.extract_pyobject();
+
+		REQUIRE(pPyList_Check(extracted));
+		CHECK(pPyList_Size(extracted) == 3);
+		CHECK(std::string(pPyUnicode_AsUTF8(pPyList_GetItem(extracted, 0))) == "hello");
+		CHECK(std::string(pPyUnicode_AsUTF8(pPyList_GetItem(extracted, 1))) == "packed");
+		CHECK(std::string(pPyUnicode_AsUTF8(pPyList_GetItem(extracted, 2))) == "world");
+
+		Py_DECREF(extracted);
+	}
+
+	TEST_CASE("Packed empty array round-trip")
+	{
+		cdts data(1);
+		cdts_python3_serializer ser(*g_runtime, data);
+
+		PyObject* list = pPyList_New(0);
+		ser.add_packed_array(list, metaffi_int32_type);
+		Py_DECREF(list);
+
+		CHECK(metaffi_is_packed_array(data[0].type));
+		cdt_packed_array* packed = data[0].get_packed_array();
+		CHECK(packed->length == 0);
+
+		ser.reset();
+		PyObject* extracted = ser.extract_pyobject();
+		REQUIRE(pPyList_Check(extracted));
+		CHECK(pPyList_Size(extracted) == 0);
+
+		Py_DECREF(extracted);
+	}
+
+	TEST_CASE("Packed int64 array round-trip with edge values")
+	{
+		cdts data(1);
+		cdts_python3_serializer ser(*g_runtime, data);
+
+		PyObject* list = pPyList_New(3);
+		pPyList_SetItem(list, 0, pPyLong_FromLongLong(INT64_MIN));
+		pPyList_SetItem(list, 1, pPyLong_FromLongLong(0));
+		pPyList_SetItem(list, 2, pPyLong_FromLongLong(INT64_MAX));
+
+		ser.add_packed_array(list, metaffi_int64_type);
+		Py_DECREF(list);
+
+		ser.reset();
+		PyObject* extracted = ser.extract_pyobject();
+
+		REQUIRE(pPyList_Check(extracted));
+		CHECK(pPyList_Size(extracted) == 3);
+		CHECK(pPyLong_AsLongLong(pPyList_GetItem(extracted, 0)) == INT64_MIN);
+		CHECK(pPyLong_AsLongLong(pPyList_GetItem(extracted, 1)) == 0);
+		CHECK(pPyLong_AsLongLong(pPyList_GetItem(extracted, 2)) == INT64_MAX);
+
+		Py_DECREF(extracted);
+	}
+
+	TEST_CASE("Manually constructed packed CDT → Python")
+	{
+		// Build packed float32 array manually, extract via serializer
+		cdts data(1);
+
+		cdt_packed_array* packed = new cdt_packed_array();
+		packed->length = 3;
+		float* buf = static_cast<float*>(malloc(3 * sizeof(float)));
+		buf[0] = 1.5f; buf[1] = 2.5f; buf[2] = 3.5f;
+		packed->data = buf;
+		data[0].set_packed_array(packed, metaffi_float32_type);
+
+		cdts_python3_serializer deser(*g_runtime, data);
+		PyObject* extracted = deser.extract_pyobject();
+
+		REQUIRE(pPyList_Check(extracted));
+		CHECK(pPyList_Size(extracted) == 3);
+		CHECK(pPyFloat_AsDouble(pPyList_GetItem(extracted, 0)) == doctest::Approx(1.5));
+		CHECK(pPyFloat_AsDouble(pPyList_GetItem(extracted, 1)) == doctest::Approx(2.5));
+		CHECK(pPyFloat_AsDouble(pPyList_GetItem(extracted, 2)) == doctest::Approx(3.5));
+
+		Py_DECREF(extracted);
+	}
 }

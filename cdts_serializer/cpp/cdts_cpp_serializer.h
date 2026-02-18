@@ -2,6 +2,7 @@
 
 #include <runtime/cdt.h>
 #include <runtime/metaffi_primitives.h>
+#include <runtime/xllr_capi_loader.h>
 #include <string>
 #include <vector>
 #include <variant>
@@ -330,7 +331,115 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator<<(const std::vector<T>& vec)
 		return *this;
 	}
 
-	// Create nested CDTS structure
+	// For 1D vectors of primitive types (NOT metaffi_variant or handles): use packed arrays
+	if constexpr (depth == 1 && !std::is_same_v<T, metaffi_variant> &&
+	              !std::is_same_v<T, cdt_metaffi_handle> && !std::is_same_v<T, cdt_metaffi_handle*>)
+	{
+		// Allocate packed array struct via xllr_alloc_memory (matching xllr_free_memory in cdt::free_packed_array)
+		cdt_packed_array* packed = static_cast<cdt_packed_array*>(xllr_alloc_memory(sizeof(cdt_packed_array)));
+		packed->length = static_cast<metaffi_size>(vec.size());
+
+		if (vec.empty())
+		{
+			packed->data = nullptr;
+			data[current_index].set_packed_array(packed, static_cast<metaffi_types>(common_type));
+			current_index++;
+			return *this;
+		}
+
+		// Allocate and copy data based on element type.
+		// All data buffers use xllr_alloc_memory to match xllr_free_memory in free_packed_array.
+		if constexpr (std::is_same_v<T, metaffi_int8>)
+		{
+			auto* buf = static_cast<metaffi_int8*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_int8)));
+			std::memcpy(buf, vec.data(), vec.size() * sizeof(metaffi_int8));
+			packed->data = buf;
+		}
+		else if constexpr (std::is_same_v<T, metaffi_uint8>)
+		{
+			auto* buf = static_cast<metaffi_uint8*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_uint8)));
+			std::memcpy(buf, vec.data(), vec.size() * sizeof(metaffi_uint8));
+			packed->data = buf;
+		}
+		else if constexpr (std::is_same_v<T, metaffi_int16>)
+		{
+			auto* buf = static_cast<metaffi_int16*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_int16)));
+			std::memcpy(buf, vec.data(), vec.size() * sizeof(metaffi_int16));
+			packed->data = buf;
+		}
+		else if constexpr (std::is_same_v<T, metaffi_uint16>)
+		{
+			auto* buf = static_cast<metaffi_uint16*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_uint16)));
+			std::memcpy(buf, vec.data(), vec.size() * sizeof(metaffi_uint16));
+			packed->data = buf;
+		}
+		else if constexpr (std::is_same_v<T, metaffi_int32>)
+		{
+			auto* buf = static_cast<metaffi_int32*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_int32)));
+			std::memcpy(buf, vec.data(), vec.size() * sizeof(metaffi_int32));
+			packed->data = buf;
+		}
+		else if constexpr (std::is_same_v<T, metaffi_uint32>)
+		{
+			auto* buf = static_cast<metaffi_uint32*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_uint32)));
+			std::memcpy(buf, vec.data(), vec.size() * sizeof(metaffi_uint32));
+			packed->data = buf;
+		}
+		else if constexpr (std::is_same_v<T, metaffi_int64>)
+		{
+			auto* buf = static_cast<metaffi_int64*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_int64)));
+			std::memcpy(buf, vec.data(), vec.size() * sizeof(metaffi_int64));
+			packed->data = buf;
+		}
+		else if constexpr (std::is_same_v<T, metaffi_uint64>)
+		{
+			auto* buf = static_cast<metaffi_uint64*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_uint64)));
+			std::memcpy(buf, vec.data(), vec.size() * sizeof(metaffi_uint64));
+			packed->data = buf;
+		}
+		else if constexpr (std::is_same_v<T, metaffi_float32>)
+		{
+			auto* buf = static_cast<metaffi_float32*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_float32)));
+			std::memcpy(buf, vec.data(), vec.size() * sizeof(metaffi_float32));
+			packed->data = buf;
+		}
+		else if constexpr (std::is_same_v<T, metaffi_float64>)
+		{
+			auto* buf = static_cast<metaffi_float64*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_float64)));
+			std::memcpy(buf, vec.data(), vec.size() * sizeof(metaffi_float64));
+			packed->data = buf;
+		}
+		else if constexpr (std::is_same_v<T, bool>)
+		{
+			auto* buf = static_cast<metaffi_bool*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_bool)));
+			for (size_t i = 0; i < vec.size(); ++i)
+			{
+				buf[i] = vec[i] ? 1 : 0;
+			}
+			packed->data = buf;
+		}
+		else if constexpr (std::is_same_v<T, std::string>)
+		{
+			auto* buf = static_cast<metaffi_string8*>(xllr_alloc_memory(vec.size() * sizeof(metaffi_string8)));
+			for (size_t i = 0; i < vec.size(); ++i)
+			{
+				buf[i] = xllr_alloc_string8(reinterpret_cast<const char8_t*>(vec[i].c_str()), vec[i].length());
+			}
+			packed->data = buf;
+		}
+		else
+		{
+			// Unsupported type for packed array - clean up and throw
+			xllr_free_memory(packed);
+			throw std::runtime_error("Unsupported type for packed array serialization");
+		}
+
+		data[current_index].set_packed_array(packed, static_cast<metaffi_types>(common_type));
+		current_index++;
+		return *this;
+	}
+
+	// For multi-dimensional arrays or vector<metaffi_variant>: use regular CDTS arrays
 	data[current_index].set_new_array(vec.size(), depth, static_cast<metaffi_types>(common_type));
 	cdts& arr = static_cast<cdts&>(data[current_index]);
 
@@ -360,6 +469,87 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator>>(std::vector<T>& vec)
 		throw std::runtime_error(ss.str());
 	}
 
+	// Check if it's a packed array
+	if (metaffi_is_packed_array(data[current_index].type))
+	{
+		const cdt_packed_array* packed = data[current_index].cdt_val.packed_array_val;
+		if (!packed)
+		{
+			vec.clear();
+			current_index++;
+			return *this;
+		}
+
+		vec.resize(packed->length);
+		metaffi_type elem_type = metaffi_packed_element_type(data[current_index].type);
+
+		// Extract based on element type
+		if constexpr (std::is_same_v<T, metaffi_int8>)
+		{
+			std::memcpy(vec.data(), packed->data, packed->length * sizeof(metaffi_int8));
+		}
+		else if constexpr (std::is_same_v<T, metaffi_uint8>)
+		{
+			std::memcpy(vec.data(), packed->data, packed->length * sizeof(metaffi_uint8));
+		}
+		else if constexpr (std::is_same_v<T, metaffi_int16>)
+		{
+			std::memcpy(vec.data(), packed->data, packed->length * sizeof(metaffi_int16));
+		}
+		else if constexpr (std::is_same_v<T, metaffi_uint16>)
+		{
+			std::memcpy(vec.data(), packed->data, packed->length * sizeof(metaffi_uint16));
+		}
+		else if constexpr (std::is_same_v<T, metaffi_int32>)
+		{
+			std::memcpy(vec.data(), packed->data, packed->length * sizeof(metaffi_int32));
+		}
+		else if constexpr (std::is_same_v<T, metaffi_uint32>)
+		{
+			std::memcpy(vec.data(), packed->data, packed->length * sizeof(metaffi_uint32));
+		}
+		else if constexpr (std::is_same_v<T, metaffi_int64>)
+		{
+			std::memcpy(vec.data(), packed->data, packed->length * sizeof(metaffi_int64));
+		}
+		else if constexpr (std::is_same_v<T, metaffi_uint64>)
+		{
+			std::memcpy(vec.data(), packed->data, packed->length * sizeof(metaffi_uint64));
+		}
+		else if constexpr (std::is_same_v<T, metaffi_float32>)
+		{
+			std::memcpy(vec.data(), packed->data, packed->length * sizeof(metaffi_float32));
+		}
+		else if constexpr (std::is_same_v<T, metaffi_float64>)
+		{
+			std::memcpy(vec.data(), packed->data, packed->length * sizeof(metaffi_float64));
+		}
+		else if constexpr (std::is_same_v<T, bool>)
+		{
+			const metaffi_bool* buf = static_cast<const metaffi_bool*>(packed->data);
+			for (size_t i = 0; i < packed->length; ++i)
+			{
+				vec[i] = (buf[i] != 0);
+			}
+		}
+		else if constexpr (std::is_same_v<T, std::string>)
+		{
+			const metaffi_string8* buf = static_cast<const metaffi_string8*>(packed->data);
+			for (size_t i = 0; i < packed->length; ++i)
+			{
+				vec[i] = std::string(reinterpret_cast<const char*>(buf[i]));
+			}
+		}
+		else
+		{
+			throw std::runtime_error("Unsupported type for packed array deserialization");
+		}
+
+		current_index++;
+		return *this;
+	}
+
+	// Regular CDTS array
 	cdts& arr = static_cast<cdts&>(data[current_index]);
 	vec.resize(arr.length);
 

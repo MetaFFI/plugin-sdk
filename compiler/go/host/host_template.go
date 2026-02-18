@@ -12,6 +12,7 @@ const HostPackageTemplate = `package {{.Package}}
 
 const HostFunctionStubsTemplate = `
 import (
+	"fmt"
 	api "github.com/MetaFFI/sdk/api/go"
 	"github.com/MetaFFI/sdk/idl_entities/go/IDL"
 	. "github.com/MetaFFI/sdk/api/go/metaffi"
@@ -66,13 +67,25 @@ func BindModuleToCode(modulePath string){
 	}
 
 	// load functions
-	loadFF := func(fpath string, params []IDL.MetaFFITypeInfo, retvals []IDL.MetaFFITypeInfo) (caller func(...interface{}) ([]interface{}, error)){
-		var err error
-		caller, err = mod.LoadWithInfo(fpath, params, retvals)
+	loadFF := func(fpath string, params []IDL.MetaFFITypeInfo, retvals []IDL.MetaFFITypeInfo) func(...interface{}) ([]interface{}, error) {
+		raw, err := mod.LoadWithInfo(fpath, params, retvals)
 		if err != nil{ // failed
 			panic(err)
 		}
-		return caller
+		// LoadWithInfo returns one of 4 specialized function types.
+		// Normalize to the generic signature for uniform caller usage.
+		switch fn := raw.(type) {
+		case func(...interface{}) ([]interface{}, error):
+			return fn
+		case func() error:
+			return func(args ...interface{}) ([]interface{}, error) { return nil, fn() }
+		case func() ([]interface{}, error):
+			return func(args ...interface{}) ([]interface{}, error) { return fn() }
+		case func(...interface{}) error:
+			return func(args ...interface{}) ([]interface{}, error) { return nil, fn(args...) }
+		default:
+			panic(fmt.Sprintf("LoadWithInfo returned unexpected type %T", raw))
+		}
 	}
 
 	{{ $idl := . }}

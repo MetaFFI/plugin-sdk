@@ -37,13 +37,15 @@ static void null_foreign_handle_releasers(cdt* arr, metaffi_size length)
 				arr[i].cdt_val.handle_val->release = nullptr;
 			}
 		}
-		else if(arr[i].type & metaffi_array_type)
+		else if((arr[i].type & metaffi_array_type) && !(arr[i].type & metaffi_packed_type))
 		{
+			// Regular (non-packed) arrays contain nested CDTs that may hold handles.
 			if(arr[i].cdt_val.array_val)
 			{
 				null_foreign_handle_releasers(arr[i].cdt_val.array_val->arr, arr[i].cdt_val.array_val->length);
 			}
 		}
+		// Packed arrays store raw data, not CDTs — no handles to process.
 	}
 }
 

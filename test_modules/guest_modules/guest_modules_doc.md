@@ -53,6 +53,7 @@ Non-primitives:
 - 2D array.
 - 3D array.
 - Ragged (jagged) arrays.
+- Packed 1D arrays (contiguous primitive arrays for int, float, etc.).
 - Collections of objects (array/list of handles).
 
 ### Error handling

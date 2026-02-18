@@ -103,6 +103,190 @@ cdts_python3_serializer& cdts_python3_serializer::add(PyObject* obj, metaffi_typ
 	return *this;
 }
 
+cdts_python3_serializer& cdts_python3_serializer::add_packed_array(PyObject* obj, metaffi_type element_type)
+{
+	auto gil = m_runtime.acquire_gil();
+
+	check_bounds(current_index);
+
+	if(!py_list::check(obj) && !py_tuple::check(obj))
+	{
+		throw_py_err("add_packed_array: expected list or tuple");
+	}
+
+	Py_ssize_t length = py_list::check(obj) ? pPyList_Size(obj) : pPyTuple_Size(obj);
+
+	// Allocate packed array struct via xllr allocator
+	cdt_packed_array* packed = static_cast<cdt_packed_array*>(xllr_alloc_memory(sizeof(cdt_packed_array)));
+	if(!packed) { throw_py_err("add_packed_array: xllr_alloc_memory failed for cdt_packed_array"); }
+	packed->data = nullptr;
+	packed->length = static_cast<metaffi_size>(length);
+
+	if(length == 0)
+	{
+		packed->data = nullptr;
+		data[current_index].set_packed_array(packed, static_cast<metaffi_types>(element_type));
+		current_index++;
+		return *this;
+	}
+
+	auto get_item = [&](Py_ssize_t i) -> PyObject* {
+		return py_list::check(obj) ? pPyList_GetItem(obj, i) : pPyTuple_GetItem(obj, i);
+	};
+
+	switch(element_type)
+	{
+		case metaffi_int8_type: {
+			auto* buf = static_cast<metaffi_int8*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_int8)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for int8"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				long long v = pPyLong_AsLongLong(get_item(i));
+				if(v == -1 && pPyErr_Occurred()) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("add_packed_array: failed converting element to int8"); }
+				buf[i] = static_cast<metaffi_int8>(v);
+			}
+			packed->data = buf;
+			break;
+		}
+		case metaffi_uint8_type: {
+			auto* buf = static_cast<metaffi_uint8*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_uint8)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for uint8"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				long long v = pPyLong_AsLongLong(get_item(i));
+				if(v == -1 && pPyErr_Occurred()) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("add_packed_array: failed converting element to uint8"); }
+				buf[i] = static_cast<metaffi_uint8>(v);
+			}
+			packed->data = buf;
+			break;
+		}
+		case metaffi_int16_type: {
+			auto* buf = static_cast<metaffi_int16*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_int16)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for int16"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				long long v = pPyLong_AsLongLong(get_item(i));
+				if(v == -1 && pPyErr_Occurred()) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("add_packed_array: failed converting element to int16"); }
+				buf[i] = static_cast<metaffi_int16>(v);
+			}
+			packed->data = buf;
+			break;
+		}
+		case metaffi_uint16_type: {
+			auto* buf = static_cast<metaffi_uint16*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_uint16)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for uint16"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				long long v = pPyLong_AsLongLong(get_item(i));
+				if(v == -1 && pPyErr_Occurred()) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("add_packed_array: failed converting element to uint16"); }
+				buf[i] = static_cast<metaffi_uint16>(v);
+			}
+			packed->data = buf;
+			break;
+		}
+		case metaffi_int32_type: {
+			auto* buf = static_cast<metaffi_int32*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_int32)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for int32"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				long long v = pPyLong_AsLongLong(get_item(i));
+				if(v == -1 && pPyErr_Occurred()) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("add_packed_array: failed converting element to int32"); }
+				buf[i] = static_cast<metaffi_int32>(v);
+			}
+			packed->data = buf;
+			break;
+		}
+		case metaffi_uint32_type: {
+			auto* buf = static_cast<metaffi_uint32*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_uint32)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for uint32"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				long long v = pPyLong_AsLongLong(get_item(i));
+				if(v == -1 && pPyErr_Occurred()) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("add_packed_array: failed converting element to uint32"); }
+				buf[i] = static_cast<metaffi_uint32>(v);
+			}
+			packed->data = buf;
+			break;
+		}
+		case metaffi_int64_type: {
+			auto* buf = static_cast<metaffi_int64*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_int64)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for int64"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				long long v = pPyLong_AsLongLong(get_item(i));
+				if(v == -1 && pPyErr_Occurred()) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("add_packed_array: failed converting element to int64"); }
+				buf[i] = static_cast<metaffi_int64>(v);
+			}
+			packed->data = buf;
+			break;
+		}
+		case metaffi_uint64_type: {
+			auto* buf = static_cast<metaffi_uint64*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_uint64)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for uint64"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				unsigned long long v = pPyLong_AsUnsignedLongLong(get_item(i));
+				if(v == (unsigned long long)-1 && pPyErr_Occurred()) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("add_packed_array: failed converting element to uint64"); }
+				buf[i] = static_cast<metaffi_uint64>(v);
+			}
+			packed->data = buf;
+			break;
+		}
+		case metaffi_float32_type: {
+			auto* buf = static_cast<metaffi_float32*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_float32)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for float32"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				double v = pPyFloat_AsDouble(get_item(i));
+				if(v == -1.0 && pPyErr_Occurred()) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("add_packed_array: failed converting element to float32"); }
+				buf[i] = static_cast<metaffi_float32>(v);
+			}
+			packed->data = buf;
+			break;
+		}
+		case metaffi_float64_type: {
+			auto* buf = static_cast<metaffi_float64*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_float64)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for float64"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				double v = pPyFloat_AsDouble(get_item(i));
+				if(v == -1.0 && pPyErr_Occurred()) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("add_packed_array: failed converting element to float64"); }
+				buf[i] = static_cast<metaffi_float64>(v);
+			}
+			packed->data = buf;
+			break;
+		}
+		case metaffi_bool_type: {
+			auto* buf = static_cast<metaffi_bool*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_bool)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for bool"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				buf[i] = (pPyObject_IsTrue(get_item(i)) == 1) ? 1 : 0;
+			}
+			packed->data = buf;
+			break;
+		}
+		case metaffi_string8_type: {
+			auto* buf = static_cast<metaffi_string8*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_string8)));
+			if(!buf) { xllr_free_memory(packed); throw_py_err("add_packed_array: xllr_alloc_memory failed for string8"); }
+			for(Py_ssize_t i = 0; i < length; i++) {
+				PyObject* item = get_item(i);
+				if(item == pPy_None) {
+					buf[i] = nullptr;
+				} else {
+					Py_ssize_t str_len;
+					const char* utf8 = pPyUnicode_AsUTF8AndSize(item, &str_len);
+					if(!utf8) {
+						// Clean up previously allocated strings
+						for(Py_ssize_t j = 0; j < i; j++) { if(buf[j]) xllr_free_memory(buf[j]); }
+						xllr_free_memory(buf); xllr_free_memory(packed);
+						throw_py_err("add_packed_array: failed converting element to string8");
+					}
+					buf[i] = xllr_alloc_string8(reinterpret_cast<const char8_t*>(utf8), static_cast<uint64_t>(str_len));
+				}
+			}
+			packed->data = buf;
+			break;
+		}
+		default:
+			xllr_free_memory(packed);
+			throw_py_err("add_packed_array: unsupported element type " + std::to_string(element_type));
+	}
+
+	data[current_index].set_packed_array(packed, static_cast<metaffi_types>(element_type));
+	current_index++;
+	return *this;
+}
+
 // ============================================================================
 // VALIDATION HELPERS
 // ============================================================================
@@ -368,7 +552,41 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 				throw_py_err("Failed to get bytes data: " + error_msg);
 			}
 
-			// Create uint8 array
+			// Check if target expects a packed array
+			if(metaffi_is_packed_array(target_type))
+			{
+				// Create packed uint8 array via xllr allocator
+				cdt_packed_array* packed = static_cast<cdt_packed_array*>(xllr_alloc_memory(sizeof(cdt_packed_array)));
+				if(!packed) { throw_py_err("Failed to allocate cdt_packed_array for packed bytes array"); }
+				packed->data = nullptr;
+				packed->length = static_cast<metaffi_size>(size);
+
+				if(size == 0)
+				{
+					// packed->data already nullptr
+				}
+				else
+				{
+					auto* buf = static_cast<metaffi_uint8*>(xllr_alloc_memory(static_cast<size_t>(size) * sizeof(metaffi_uint8)));
+					if(!buf)
+					{
+						xllr_free_memory(packed);
+						throw_py_err("Failed to allocate buffer for packed bytes array");
+					}
+
+					// Copy bytes to buffer
+					for(Py_ssize_t i = 0; i < size; i++)
+					{
+						buf[i] = static_cast<metaffi_uint8>(data[i]);
+					}
+					packed->data = buf;
+				}
+
+				target.set_packed_array(packed, metaffi_uint8_type);
+				return;
+			}
+
+			// Create regular uint8 array
 			target.set_new_array(size, 1, static_cast<metaffi_types>(metaffi_uint8_type));
 			cdts& arr = static_cast<cdts&>(target);
 
@@ -390,7 +608,85 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 	{
 		if(target_type != metaffi_handle_type)
 		{
-			// Extract element type from target_type (if it's an array type)
+			// If the target type is a packed array, route to add_packed_array logic
+			if(metaffi_is_packed_array(target_type))
+			{
+				metaffi_type elem_type = metaffi_packed_element_type(target_type);
+				
+				Py_ssize_t length = py_list::check(obj) ? pPyList_Size(obj) : pPyTuple_Size(obj);
+				
+				cdt_packed_array* packed = static_cast<cdt_packed_array*>(xllr_alloc_memory(sizeof(cdt_packed_array)));
+				if(!packed) { throw_py_err("pyobject_to_cdt packed: xllr_alloc_memory failed for cdt_packed_array"); }
+				packed->data = nullptr;
+				packed->length = static_cast<metaffi_size>(length);
+
+				if(length == 0)
+				{
+					target.set_packed_array(packed, static_cast<metaffi_types>(elem_type));
+					return;
+				}
+				
+				// Delegate to add_packed_array by temporarily adjusting current_index
+				// Instead, directly construct the packed array in-place
+				auto get_item = [&](Py_ssize_t i) -> PyObject* {
+					return py_list::check(obj) ? pPyList_GetItem(obj, i) : pPyTuple_GetItem(obj, i);
+				};
+				
+				switch(elem_type)
+				{
+					#define PACKED_NUMERIC_CASE(METAFFI_TYPE, C_TYPE, PY_CONVERT) \
+					case METAFFI_TYPE: { \
+						auto* buf = static_cast<C_TYPE*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(C_TYPE))); \
+						if(!buf) { xllr_free_memory(packed); throw_py_err("pyobject_to_cdt packed: xllr_alloc_memory failed"); } \
+						for(Py_ssize_t i = 0; i < length; i++) { \
+							buf[i] = static_cast<C_TYPE>(PY_CONVERT(get_item(i))); \
+							if(pPyErr_Occurred()) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("pyobject_to_cdt packed: conversion failed at element " + std::to_string(i)); } \
+						} \
+						packed->data = buf; \
+						break; \
+					}
+					PACKED_NUMERIC_CASE(metaffi_int8_type, metaffi_int8, pPyLong_AsLongLong)
+					PACKED_NUMERIC_CASE(metaffi_uint8_type, metaffi_uint8, pPyLong_AsLongLong)
+					PACKED_NUMERIC_CASE(metaffi_int16_type, metaffi_int16, pPyLong_AsLongLong)
+					PACKED_NUMERIC_CASE(metaffi_uint16_type, metaffi_uint16, pPyLong_AsLongLong)
+					PACKED_NUMERIC_CASE(metaffi_int32_type, metaffi_int32, pPyLong_AsLongLong)
+					PACKED_NUMERIC_CASE(metaffi_uint32_type, metaffi_uint32, pPyLong_AsUnsignedLongLong)
+					PACKED_NUMERIC_CASE(metaffi_int64_type, metaffi_int64, pPyLong_AsLongLong)
+					PACKED_NUMERIC_CASE(metaffi_uint64_type, metaffi_uint64, pPyLong_AsUnsignedLongLong)
+					PACKED_NUMERIC_CASE(metaffi_float32_type, metaffi_float32, pPyFloat_AsDouble)
+					PACKED_NUMERIC_CASE(metaffi_float64_type, metaffi_float64, pPyFloat_AsDouble)
+					#undef PACKED_NUMERIC_CASE
+					case metaffi_bool_type: {
+						auto* buf = static_cast<metaffi_bool*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_bool)));
+						if(!buf) { xllr_free_memory(packed); throw_py_err("pyobject_to_cdt packed: xllr_alloc_memory failed for bool"); }
+						for(Py_ssize_t i = 0; i < length; i++) {
+							buf[i] = static_cast<metaffi_bool>(pPyObject_IsTrue(get_item(i)));
+						}
+						packed->data = buf;
+						break;
+					}
+					case metaffi_string8_type: {
+						auto* buf = static_cast<metaffi_string8*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_string8)));
+						if(!buf) { xllr_free_memory(packed); throw_py_err("pyobject_to_cdt packed: xllr_alloc_memory failed for string8"); }
+						for(Py_ssize_t i = 0; i < length; i++) {
+							Py_ssize_t str_len = 0;
+							const char* str = pPyUnicode_AsUTF8AndSize(get_item(i), &str_len);
+							if(!str) { xllr_free_memory(buf); xllr_free_memory(packed); throw_py_err("pyobject_to_cdt packed: string conversion failed"); }
+							buf[i] = xllr_alloc_string8(reinterpret_cast<const char8_t*>(str), static_cast<uint64_t>(str_len));
+						}
+						packed->data = buf;
+						break;
+					}
+					default:
+						xllr_free_memory(packed);
+						throw_py_err("pyobject_to_cdt: unsupported packed element type " + std::to_string(elem_type));
+				}
+				
+				target.set_packed_array(packed, static_cast<metaffi_types>(elem_type));
+				return;
+			}
+			
+			// Extract element type from target_type (if it's a regular array type)
 			metaffi_type element_type = metaffi_any_type;
 			if(target_type & metaffi_array_type)
 			{
@@ -713,7 +1009,11 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 		target.cdt_val.handle_val = new (handle_mem) cdt_metaffi_handle();
 		target.cdt_val.handle_val->handle = handle_ptr;
 		target.cdt_val.handle_val->runtime_id = rt_id;
-		target.cdt_val.handle_val->release = release;
+		// Don't copy the release callback — the Python MetaFFIHandle wrapper still
+		// owns the underlying handle.  Setting release=nullptr means cdt::free()
+		// will only free the temporary cdt_metaffi_handle struct (allocated above)
+		// without destroying the resource the handle points to.
+		target.cdt_val.handle_val->release = nullptr;
 		target.free_required = true;
 		return;
 	}
@@ -1527,6 +1827,12 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 
 		default:
 		{
+			// Handle packed arrays first (before general array check)
+			if(metaffi_is_packed_array(source.type))
+			{
+				return packed_cdt_to_pyobject(source);
+			}
+
 			if(source.type & metaffi_array_type)
 			{
 				// Array type - convert to Python list
@@ -2059,6 +2365,143 @@ PyObject* cdts_python3_serializer::cdt_array_to_pybytes(const cdts& arr, metaffi
 	}
 
 	return bytes_obj;
+}
+
+PyObject* cdts_python3_serializer::packed_cdt_to_pyobject(const cdt& source)
+{
+	// GIL assumed to be held
+	if(!metaffi_is_packed_array(source.type))
+	{
+		throw_py_err("packed_cdt_to_pyobject: CDT is not a packed array");
+	}
+
+	metaffi_type elem_type = metaffi_packed_element_type(source.type);
+	const cdt_packed_array* packed = source.cdt_val.packed_array_val;
+
+	if(!packed || packed->length == 0)
+	{
+		if(pPyErr_Occurred()) pPyErr_Clear();
+		// Return empty list (or empty bytes for uint8/int8)
+		if(elem_type == metaffi_uint8_type || elem_type == metaffi_int8_type)
+		{
+			PyObject* result = pPyBytes_FromStringAndSize("", 0);
+			if(!result || pPyErr_Occurred()) {
+				std::string error = check_python_error();
+				if(error.empty()) error = "unknown error";
+				throw_py_err("packed_cdt_to_pyobject: failed to create empty bytes: " + error);
+			}
+			return result;
+		}
+		// Create empty list - use PyList_New then check with detailed diagnostics
+		Py_ssize_t zero = 0;
+		PyObject* result = pPyList_New(zero);
+		if(!result || pPyErr_Occurred()) {
+			std::string error = check_python_error();
+			throw_py_err("packed_cdt_to_pyobject: failed to create empty list (elem_type=" 
+				+ std::to_string(elem_type) + ", packed_ptr=" 
+				+ std::to_string(reinterpret_cast<uintptr_t>(packed)) 
+				+ "): " + error);
+		}
+		return result;
+	}
+
+	Py_ssize_t len = static_cast<Py_ssize_t>(packed->length);
+
+	// Special case: uint8/int8 → Python bytes
+	if(elem_type == metaffi_uint8_type || elem_type == metaffi_int8_type)
+	{
+		if(pPyErr_Occurred()) pPyErr_Clear();
+		PyObject* result = pPyBytes_FromStringAndSize(
+			static_cast<const char*>(packed->data),
+			len
+		);
+		if(!result || pPyErr_Occurred()) {
+			std::string error = check_python_error();
+			if(error.empty()) error = "unknown error";
+			throw_py_err("packed_cdt_to_pyobject: failed to create bytes from packed uint8/int8: " + error);
+		}
+		return result;
+	}
+
+	// Clear any lingering Python errors before creating objects
+	if(pPyErr_Occurred()) {
+		pPyErr_Clear();
+	}
+
+	// General case: create Python list
+	PyObject* list = pPyList_New(len);
+	if(!list || pPyErr_Occurred()) {
+		std::string error = check_python_error();
+		if(error.empty()) error = "unknown error";
+		throw_py_err("packed_cdt_to_pyobject: failed to create list: " + error);
+	}
+
+	try
+	{
+		for(Py_ssize_t i = 0; i < len; i++)
+		{
+			PyObject* item = nullptr;
+
+			switch(elem_type)
+			{
+				case metaffi_int16_type:
+					item = pPyLong_FromLongLong(static_cast<metaffi_int16*>(packed->data)[i]);
+					break;
+				case metaffi_uint16_type:
+					item = pPyLong_FromUnsignedLongLong(static_cast<metaffi_uint16*>(packed->data)[i]);
+					break;
+				case metaffi_int32_type:
+					item = pPyLong_FromLongLong(static_cast<metaffi_int32*>(packed->data)[i]);
+					break;
+				case metaffi_uint32_type:
+					item = pPyLong_FromUnsignedLongLong(static_cast<metaffi_uint32*>(packed->data)[i]);
+					break;
+				case metaffi_int64_type:
+					item = pPyLong_FromLongLong(static_cast<metaffi_int64*>(packed->data)[i]);
+					break;
+				case metaffi_uint64_type:
+					item = pPyLong_FromUnsignedLongLong(static_cast<metaffi_uint64*>(packed->data)[i]);
+					break;
+				case metaffi_float32_type:
+					item = pPyFloat_FromDouble(static_cast<double>(static_cast<metaffi_float32*>(packed->data)[i]));
+					break;
+				case metaffi_float64_type:
+					item = pPyFloat_FromDouble(static_cast<metaffi_float64*>(packed->data)[i]);
+					break;
+				case metaffi_bool_type:
+					item = pPyBool_FromLong(static_cast<metaffi_bool*>(packed->data)[i] ? 1 : 0);
+					break;
+				case metaffi_string8_type: {
+					metaffi_string8 s = static_cast<metaffi_string8*>(packed->data)[i];
+					if(s) {
+						item = pPyUnicode_FromString(reinterpret_cast<const char*>(s));
+					} else {
+						Py_INCREF(pPy_None);
+						item = pPy_None;
+					}
+					break;
+				}
+				default:
+					Py_DECREF(list);
+					throw_py_err("packed_cdt_to_pyobject: unsupported element type " + std::to_string(elem_type));
+			}
+
+			if(!item)
+			{
+				Py_DECREF(list);
+				throw_py_err("packed_cdt_to_pyobject: failed to create Python object for element");
+			}
+
+			pPyList_SetItem(list, i, item); // Steals reference
+		}
+
+		return list;
+	}
+	catch(...)
+	{
+		Py_DECREF(list);
+		throw;
+	}
 }
 
 } // namespace metaffi::utils

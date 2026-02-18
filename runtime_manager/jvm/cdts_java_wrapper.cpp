@@ -19,8 +19,10 @@
 #include "utils/defines.h"
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #include <mutex>
 #include <runtime/cdts_traverse_construct.h>
+#include <runtime/xllr_capi_loader.h>
 #include <utility>
 #include <utils/defines.h>
 #include <utils/logger.hpp>
@@ -1711,6 +1713,137 @@ DLL_PRIVATE metaffi_bool on_traverse_array(const metaffi_size* index, metaffi_si
 	return 1;
 }
 
+DLL_PRIVATE void on_traverse_packed_array(const metaffi_size* index, metaffi_size index_size, const cdt_packed_array* val, metaffi_type element_type, void* context)
+{
+	std::pair<JNIEnv*, jvalue&>* pair = static_cast<std::pair<JNIEnv*, jvalue&>*>(context);
+	JNIEnv* env = pair->first;
+
+	jsize jni_length = val ? static_cast<jsize>(val->length) : 0;
+
+	// Create JNI array from packed buffer using bulk memcpy
+	jarray result = nullptr;
+	switch(element_type)
+	{
+		case metaffi_int8_type:
+		case metaffi_uint8_type: {
+			jbyteArray arr = env->NewByteArray(jni_length);
+			if(val && val->data && jni_length > 0)
+			{
+				void* dst = env->GetPrimitiveArrayCritical(arr, nullptr);
+				if(dst) { std::memcpy(dst, val->data, jni_length * sizeof(jbyte)); env->ReleasePrimitiveArrayCritical(arr, dst, 0); }
+			}
+			result = arr;
+			break;
+		}
+		case metaffi_int16_type:
+		case metaffi_uint16_type: {
+			jshortArray arr = env->NewShortArray(jni_length);
+			if(val && val->data && jni_length > 0)
+			{
+				void* dst = env->GetPrimitiveArrayCritical(arr, nullptr);
+				if(dst) { std::memcpy(dst, val->data, jni_length * sizeof(jshort)); env->ReleasePrimitiveArrayCritical(arr, dst, 0); }
+			}
+			result = arr;
+			break;
+		}
+		case metaffi_int32_type:
+		case metaffi_uint32_type: {
+			jintArray arr = env->NewIntArray(jni_length);
+			if(val && val->data && jni_length > 0)
+			{
+				void* dst = env->GetPrimitiveArrayCritical(arr, nullptr);
+				if(dst) { std::memcpy(dst, val->data, jni_length * sizeof(jint)); env->ReleasePrimitiveArrayCritical(arr, dst, 0); }
+			}
+			result = arr;
+			break;
+		}
+		case metaffi_int64_type:
+		case metaffi_uint64_type: {
+			jlongArray arr = env->NewLongArray(jni_length);
+			if(val && val->data && jni_length > 0)
+			{
+				void* dst = env->GetPrimitiveArrayCritical(arr, nullptr);
+				if(dst) { std::memcpy(dst, val->data, jni_length * sizeof(jlong)); env->ReleasePrimitiveArrayCritical(arr, dst, 0); }
+			}
+			result = arr;
+			break;
+		}
+		case metaffi_float32_type: {
+			jfloatArray arr = env->NewFloatArray(jni_length);
+			if(val && val->data && jni_length > 0)
+			{
+				void* dst = env->GetPrimitiveArrayCritical(arr, nullptr);
+				if(dst) { std::memcpy(dst, val->data, jni_length * sizeof(jfloat)); env->ReleasePrimitiveArrayCritical(arr, dst, 0); }
+			}
+			result = arr;
+			break;
+		}
+		case metaffi_float64_type: {
+			jdoubleArray arr = env->NewDoubleArray(jni_length);
+			if(val && val->data && jni_length > 0)
+			{
+				void* dst = env->GetPrimitiveArrayCritical(arr, nullptr);
+				if(dst) { std::memcpy(dst, val->data, jni_length * sizeof(jdouble)); env->ReleasePrimitiveArrayCritical(arr, dst, 0); }
+			}
+			result = arr;
+			break;
+		}
+		case metaffi_bool_type: {
+			jbooleanArray arr = env->NewBooleanArray(jni_length);
+			if(val && val->data && jni_length > 0)
+			{
+				void* dst = env->GetPrimitiveArrayCritical(arr, nullptr);
+				if(dst) { std::memcpy(dst, val->data, jni_length * sizeof(jboolean)); env->ReleasePrimitiveArrayCritical(arr, dst, 0); }
+			}
+			result = arr;
+			break;
+		}
+		case metaffi_string8_type: {
+			jclass string_class = env->FindClass("java/lang/String");
+			jobjectArray arr = env->NewObjectArray(jni_length, string_class, nullptr);
+			if(val && val->data)
+			{
+				metaffi_string8* strings = static_cast<metaffi_string8*>(val->data);
+				for(jsize i = 0; i < jni_length; i++)
+				{
+					if(strings[i])
+					{
+						jstring jstr = env->NewStringUTF(reinterpret_cast<const char*>(strings[i]));
+						env->SetObjectArrayElement(arr, i, jstr);
+						env->DeleteLocalRef(jstr);
+					}
+				}
+			}
+			env->DeleteLocalRef(string_class);
+			result = arr;
+			break;
+		}
+		default:
+			throw std::invalid_argument("on_traverse_packed_array: unsupported element type " + std::to_string(element_type));
+	}
+
+	if(index_size == 0)
+	{
+		// Root-level packed array - set directly in jvalue
+		pair->second.l = result;
+	}
+	else
+	{
+		// Nested within another array - navigate to parent and set
+		jobject obj = pair->second.l;
+		jarray hosting_array = (jarray)obj;
+		if(index_size > 1)
+		{
+			auto elem = jarray_wrapper::get_element(env, (jarray)obj, index, index_size - 1);
+			hosting_array = (jarray)elem.first.l;
+		}
+		jarray_wrapper jarr(env, hosting_array, metaffi_array_type);
+		jvalue arr_val;
+		arr_val.l = result;
+		jarr.set(to_jsize(index[index_size - 1]), arr_val);
+	}
+}
+
 DLL_PRIVATE metaffi::runtime::traverse_cdts_callbacks jni_get_traverse_cdts_callback(void* context)
 {
 	metaffi::runtime::traverse_cdts_callbacks tcc = {
@@ -1735,7 +1868,8 @@ DLL_PRIVATE metaffi::runtime::traverse_cdts_callbacks jni_get_traverse_cdts_call
 	        &on_traverse_handle,
 	        &on_traverse_callable,
 	        &on_traverse_null,
-	        &on_traverse_array};
+	        &on_traverse_array,
+	        &on_traverse_packed_array};
 
 	return tcc;
 }
@@ -3141,6 +3275,122 @@ DLL_PRIVATE cdt_metaffi_callable* on_construct_callable(const metaffi_size* inde
 	return callable;
 }
 
+DLL_PRIVATE cdt_packed_array* on_construct_get_packed_array(const metaffi_size* index, metaffi_size index_size, metaffi_type element_type, metaffi_bool* is_free_required, void* context)
+{
+	std::tuple<JNIEnv*, jvalue&, char, const metaffi_type_info&>* context_data = static_cast<std::tuple<JNIEnv*, jvalue&, char, const metaffi_type_info&>*>(context);
+	JNIEnv* env = std::get<0>(*context_data);
+	jvalue& jval = std::get<1>(*context_data);
+	*is_free_required = true;
+
+	// Get the Java array from the jvalue (navigate indices if needed)
+	jarray arr;
+	if(index_size == 0)
+	{
+		arr = (jarray)jval.l;
+	}
+	else
+	{
+		auto elem = jarray_wrapper::get_element(env, (jarray)jval.l, index, index_size);
+		arr = (jarray)elem.first.l;
+	}
+
+	jsize length = arr ? env->GetArrayLength(arr) : 0;
+
+	cdt_packed_array* packed = static_cast<cdt_packed_array*>(xllr_alloc_memory(sizeof(cdt_packed_array)));
+	if (!packed) { throw std::runtime_error("on_construct_get_packed_array: xllr_alloc_memory failed"); }
+	packed->data = nullptr;
+	packed->length = static_cast<metaffi_size>(length);
+
+	if(length == 0)
+	{
+		return packed;
+	}
+
+	switch(element_type)
+	{
+		case metaffi_int8_type:
+		case metaffi_uint8_type: {
+			size_t byte_size = static_cast<size_t>(length) * sizeof(jbyte);
+			packed->data = xllr_alloc_memory(byte_size);
+			void* src = env->GetPrimitiveArrayCritical(arr, nullptr);
+			if(src) { std::memcpy(packed->data, src, byte_size); env->ReleasePrimitiveArrayCritical(arr, src, JNI_ABORT); }
+			break;
+		}
+		case metaffi_int16_type:
+		case metaffi_uint16_type: {
+			size_t byte_size = static_cast<size_t>(length) * sizeof(jshort);
+			packed->data = xllr_alloc_memory(byte_size);
+			void* src = env->GetPrimitiveArrayCritical(arr, nullptr);
+			if(src) { std::memcpy(packed->data, src, byte_size); env->ReleasePrimitiveArrayCritical(arr, src, JNI_ABORT); }
+			break;
+		}
+		case metaffi_int32_type:
+		case metaffi_uint32_type: {
+			size_t byte_size = static_cast<size_t>(length) * sizeof(jint);
+			packed->data = xllr_alloc_memory(byte_size);
+			void* src = env->GetPrimitiveArrayCritical(arr, nullptr);
+			if(src) { std::memcpy(packed->data, src, byte_size); env->ReleasePrimitiveArrayCritical(arr, src, JNI_ABORT); }
+			break;
+		}
+		case metaffi_int64_type:
+		case metaffi_uint64_type: {
+			size_t byte_size = static_cast<size_t>(length) * sizeof(jlong);
+			packed->data = xllr_alloc_memory(byte_size);
+			void* src = env->GetPrimitiveArrayCritical(arr, nullptr);
+			if(src) { std::memcpy(packed->data, src, byte_size); env->ReleasePrimitiveArrayCritical(arr, src, JNI_ABORT); }
+			break;
+		}
+		case metaffi_float32_type: {
+			size_t byte_size = static_cast<size_t>(length) * sizeof(jfloat);
+			packed->data = xllr_alloc_memory(byte_size);
+			void* src = env->GetPrimitiveArrayCritical(arr, nullptr);
+			if(src) { std::memcpy(packed->data, src, byte_size); env->ReleasePrimitiveArrayCritical(arr, src, JNI_ABORT); }
+			break;
+		}
+		case metaffi_float64_type: {
+			size_t byte_size = static_cast<size_t>(length) * sizeof(jdouble);
+			packed->data = xllr_alloc_memory(byte_size);
+			void* src = env->GetPrimitiveArrayCritical(arr, nullptr);
+			if(src) { std::memcpy(packed->data, src, byte_size); env->ReleasePrimitiveArrayCritical(arr, src, JNI_ABORT); }
+			break;
+		}
+		case metaffi_bool_type: {
+			size_t byte_size = static_cast<size_t>(length) * sizeof(jboolean);
+			packed->data = xllr_alloc_memory(byte_size);
+			void* src = env->GetPrimitiveArrayCritical(arr, nullptr);
+			if(src) { std::memcpy(packed->data, src, byte_size); env->ReleasePrimitiveArrayCritical(arr, src, JNI_ABORT); }
+			break;
+		}
+		case metaffi_string8_type: {
+			jobjectArray objArr = (jobjectArray)arr;
+			metaffi_string8* str_buf = static_cast<metaffi_string8*>(xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_string8)));
+			for(jsize i = 0; i < length; i++)
+			{
+				jstring jstr = (jstring)env->GetObjectArrayElement(objArr, i);
+				if(jstr)
+				{
+					const char* utf8 = env->GetStringUTFChars(jstr, nullptr);
+					jsize utf8_len = env->GetStringUTFLength(jstr);
+					str_buf[i] = xllr_alloc_string8(reinterpret_cast<const char8_t*>(utf8), static_cast<uint64_t>(utf8_len));
+					env->ReleaseStringUTFChars(jstr, utf8);
+					env->DeleteLocalRef(jstr);
+				}
+				else
+				{
+					str_buf[i] = nullptr;
+				}
+			}
+			packed->data = str_buf;
+			break;
+		}
+		default:
+			xllr_free_memory(packed);
+			throw std::invalid_argument("on_construct_get_packed_array: unsupported element type " + std::to_string(element_type));
+	}
+
+	return packed;
+}
+
 DLL_PRIVATE metaffi::runtime::construct_cdts_callbacks jni_get_construct_cdts_callbacks(void* context)
 {
 	metaffi::runtime::construct_cdts_callbacks callbacks{};
@@ -3168,6 +3418,7 @@ DLL_PRIVATE metaffi::runtime::construct_cdts_callbacks jni_get_construct_cdts_ca
 	callbacks.get_string32 = &on_construct_string32;
 	callbacks.get_handle = &on_construct_handle;
 	callbacks.get_callable = &on_construct_callable;
+	callbacks.get_packed_array = &on_construct_get_packed_array;
 
 	return callbacks;
 }

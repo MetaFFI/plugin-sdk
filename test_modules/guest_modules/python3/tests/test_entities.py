@@ -49,6 +49,10 @@ from module import (
 	returns_nested_dict,
 	returns_list_of_objects,
 	returns_optional,
+	sum_1d_int_array,
+	echo_1d_int_array,
+	echo_1d_float_array,
+	make_1d_int_array,
 	generator_count,
 	async_add,
 	CustomError,
@@ -159,6 +163,12 @@ class TestEntities(unittest.TestCase):
 		self.assertIsNone(returns_optional(False))
 		self.assertEqual([0, 1, 2], list(generator_count(3)))
 		self.assertEqual(5, asyncio.run(async_add(2, 3)))
+
+	def test_packed_arrays(self):
+		self.assertEqual(15, sum_1d_int_array([1, 2, 3, 4, 5]))
+		self.assertEqual([100, 200, 300], echo_1d_int_array([100, 200, 300]))
+		self.assertEqual([1.5, 2.5, 3.5], echo_1d_float_array([1.5, 2.5, 3.5]))
+		self.assertEqual([10, 20, 30, 40, 50], make_1d_int_array())
 
 	def test_errors(self):
 		with self.assertRaises(CustomError):

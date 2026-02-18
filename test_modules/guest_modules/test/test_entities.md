@@ -110,6 +110,17 @@ All entities are accessed via `test::<entity_name>` paths.
 | `test::echo_int64_array` | `(int64[]) -> int64[]` | Returns the input array unchanged |
 | `test::join_strings` | `(string8[]) -> string8` | Joins strings with comma separator |
 
+### Packed Arrays (1D primitive arrays via contiguous memory)
+
+Packed arrays store 1D homogeneous primitive arrays as a contiguous `type*` block + length, bypassing per-element CDT wrapping. The `metaffi_packed_type` flag is OR'd with the base type and array type flags.
+
+| Entity | Signature | Behavior |
+|--------|-----------|----------|
+| `sum_1d_int_array` | `(int64_packed_array) -> int64` | Sums elements of a packed int64 array |
+| `echo_1d_int_array` | `(int64_packed_array) -> int64_packed_array` | Returns the input packed array unchanged |
+| `echo_1d_float_array` | `(float64_packed_array) -> float64_packed_array` | Returns the input packed float64 array unchanged |
+| `make_1d_int_array` | `() -> int64_packed_array` | Returns `[10, 20, 30, 40, 50]` as packed array |
+
 ---
 
 ## TestHandle Class (Opaque Object)
@@ -274,3 +285,7 @@ For `metaffi_type_info.type` field:
 
 Array types are created by OR-ing with `metaffi_array_type`:
 - `metaffi_int64_array_type` = `metaffi_int64_type | metaffi_array_type` = `32 | 65536` = `65568`
+
+Packed array types additionally OR with `metaffi_packed_type` (`33554432`):
+- `metaffi_int64_packed_array_type` = `metaffi_int64_type | metaffi_array_type | metaffi_packed_type` = `33619488`
+- Packed arrays are used for 1D arrays of packable primitives (numerics, bool, string8, handle, callable)

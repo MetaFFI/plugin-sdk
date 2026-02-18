@@ -218,6 +218,39 @@ void set_handle_releaser(struct cdt_metaffi_handle* handle, void* releaser) {
 	handle->release = releaser;
 }
 
+struct cdt_packed_array* get_cdt_packed_array(struct cdt* c) {
+	return c->cdt_val.packed_array_val;
+}
+
+void set_cdt_packed_array(struct cdt* c, struct cdt_packed_array* packed, metaffi_type element_type) {
+	c->type = element_type | metaffi_array_type | metaffi_packed_type;
+	c->free_required = 1;
+	c->cdt_val.packed_array_val = packed;
+}
+
+struct cdt_packed_array* alloc_packed_array(void* data, metaffi_size length) {
+	struct cdt_packed_array* p = (struct cdt_packed_array*)xllr_alloc_memory(sizeof(struct cdt_packed_array));
+	p->data = data;
+	p->length = length;
+	return p;
+}
+
+void* get_packed_array_data(struct cdt_packed_array* p) {
+	return p ? p->data : 0;
+}
+
+metaffi_size get_packed_array_length(struct cdt_packed_array* p) {
+	return p ? p->length : 0;
+}
+
+int is_packed_array(metaffi_type t) {
+	return (t & metaffi_packed_type) && (t & metaffi_array_type);
+}
+
+metaffi_type packed_element_type(metaffi_type t) {
+	return t & ~(metaffi_array_type | metaffi_packed_type);
+}
+
 */
 import "C"
 import (
@@ -658,6 +691,30 @@ func (cdt *CDT) GetArray() *CDTS {
 
 func (cdt *CDT) SetArray(val *CDTS) {
 	C.set_cdt_array(cdt.c, val.c)
+}
+
+func (cdt *CDT) IsPackedArray() bool {
+	return C.is_packed_array(C.get_cdt_type(cdt.c)) != 0
+}
+
+func (cdt *CDT) PackedElementType() C.metaffi_type {
+	return C.packed_element_type(C.get_cdt_type(cdt.c))
+}
+
+func (cdt *CDT) GetPackedArray() *C.struct_cdt_packed_array {
+	return C.get_cdt_packed_array(cdt.c)
+}
+
+func (cdt *CDT) SetPackedArray(packed *C.struct_cdt_packed_array, elementType C.metaffi_type) {
+	C.set_cdt_packed_array(cdt.c, packed, elementType)
+}
+
+func (cdt *CDT) GetPackedArrayData() unsafe.Pointer {
+	return C.get_packed_array_data(C.get_cdt_packed_array(cdt.c))
+}
+
+func (cdt *CDT) GetPackedArrayLength() C.metaffi_size {
+	return C.get_packed_array_length(C.get_cdt_packed_array(cdt.c))
 }
 
 //------------------------------------------------------------

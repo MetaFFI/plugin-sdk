@@ -287,7 +287,7 @@ func TestArithmeticFunctions(t *testing.T) {
 func TestArrays(t *testing.T) {
 	// return 1D int64 array → [1,2,3]
 	ret := call(t, "return_int64_array_1d",
-		load(t, "test::return_int64_array_1d", nil, []IDL.MetaFFITypeInfo{tiArray(IDL.INT64_ARRAY, 1)}))
+		load(t, "test::return_int64_array_1d", nil, []IDL.MetaFFITypeInfo{tiArray(IDL.INT64_PACKED_ARRAY, 1)}))
 	arr1d, ok := ret[0].([]int64)
 	if !ok {
 		t.Fatalf("return_int64_array_1d: unexpected type %T", ret[0])
@@ -303,8 +303,7 @@ func TestArrays(t *testing.T) {
 	}
 
 	// return 2D int64 array → [[1,2],[3,4]]
-	ret = call(t, "return_int64_array_2d",
-		load(t, "test::return_int64_array_2d", nil, []IDL.MetaFFITypeInfo{tiArray(IDL.INT64_ARRAY, 2)}))
+	ret = call(t, "return_int64_array_2d", load(t, "test::return_int64_array_2d", nil, []IDL.MetaFFITypeInfo{tiArray(IDL.INT64_ARRAY, 2)}))
 	arr2d, ok := ret[0].([][]int64)
 	if !ok {
 		t.Fatalf("return_int64_array_2d: unexpected type %T", ret[0])
@@ -350,7 +349,7 @@ func TestArrays(t *testing.T) {
 
 	// return string array → ["one","two","three"]
 	ret = call(t, "return_string_array",
-		load(t, "test::return_string_array", nil, []IDL.MetaFFITypeInfo{tiArray(IDL.STRING8_ARRAY, 1)}))
+		load(t, "test::return_string_array", nil, []IDL.MetaFFITypeInfo{tiArray(IDL.STRING8_PACKED_ARRAY, 1)}))
 	strArr, ok := ret[0].([]string)
 	if !ok {
 		t.Fatalf("return_string_array: unexpected type %T", ret[0])

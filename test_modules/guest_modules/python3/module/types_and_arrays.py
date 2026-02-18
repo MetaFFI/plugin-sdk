@@ -48,12 +48,24 @@ def accepts_primitives(
 
 
 def accepts_collections(
-	items_list: list,
-	items_tuple: tuple,
-	items_set: set,
-	items_frozenset: frozenset,
-	items_dict: dict,
+	items_list,
+	items_tuple,
+	items_set,
+	items_frozenset,
+	items_dict,
 ) -> tuple:
+	# Validate types
+	if not isinstance(items_list, list):
+		raise TypeError(f"Expected list, got {type(items_list)}")
+	if not isinstance(items_tuple, tuple):
+		raise TypeError(f"Expected tuple, got {type(items_tuple)}")
+	if not isinstance(items_set, set):
+		raise TypeError(f"Expected set, got {type(items_set)}")
+	if not isinstance(items_frozenset, frozenset):
+		raise TypeError(f"Expected frozenset, got {type(items_frozenset)}")
+	if not isinstance(items_dict, dict):
+		raise TypeError(f"Expected dict, got {type(items_dict)}")
+
 	return items_list, items_tuple, items_set, items_frozenset, items_dict
 
 
@@ -81,6 +93,24 @@ def returns_optional(flag: bool) -> typing.Optional[int]:
 	if flag:
 		return 123
 	return None
+
+
+# --- Packed array test functions (1D primitive arrays) ---
+
+def sum_1d_int_array(arr: list[int]) -> int:
+	return sum(arr)
+
+
+def echo_1d_int_array(arr: list[int]) -> list[int]:
+	return list(arr)
+
+
+def echo_1d_float_array(arr: list[float]) -> list[float]:
+	return list(arr)
+
+
+def make_1d_int_array() -> list[int]:
+	return [10, 20, 30, 40, 50]
 
 
 def generator_count(n: int):

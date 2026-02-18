@@ -7,8 +7,42 @@ package metaffi
 #include <include/xllr_capi_loader.h>
 #include <include/xllr_capi_loader.c>
 #include <include/cdts_traverse_construct.h>
+#include <include/metaffi_primitives.h>
 #include <stdint.h>
+#include <stdlib.h>
 
+int tc_is_packed_array(metaffi_type t) {
+	return (t & metaffi_packed_type) && (t & metaffi_array_type);
+}
+
+metaffi_type tc_packed_element_type(metaffi_type t) {
+	return t & ~(metaffi_array_type | metaffi_packed_type);
+}
+
+struct cdt_packed_array* tc_alloc_packed_array(void* data, metaffi_size length) {
+	struct cdt_packed_array* p = (struct cdt_packed_array*)xllr_alloc_memory(sizeof(struct cdt_packed_array));
+	p->data = data;
+	p->length = length;
+	return p;
+}
+
+void tc_set_cdt_packed_array(struct cdt* c, struct cdt_packed_array* packed, metaffi_type element_type) {
+	c->type = element_type | metaffi_array_type | metaffi_packed_type;
+	c->free_required = 1;
+	c->cdt_val.packed_array_val = packed;
+}
+
+struct cdt_packed_array* tc_get_cdt_packed_array(struct cdt* c) {
+	return c->cdt_val.packed_array_val;
+}
+
+void* tc_get_packed_array_data(struct cdt_packed_array* p) {
+	return p ? p->data : 0;
+}
+
+metaffi_size tc_get_packed_array_length(struct cdt_packed_array* p) {
+	return p ? p->length : 0;
+}
 
 void GoMetaFFIHandleTocdt_metaffi_handle(struct cdt_metaffi_handle* p , void* handle, uint64_t runtime_id, void* release) {
 	p->handle = (metaffi_handle)handle;
@@ -656,6 +690,20 @@ func ConstructCDT(item *CDT, currentIndex []uint64, ctxt *ConstructContext, know
 
 	item.SetTypeVal(ti._type)
 
+	// Handle packed array types: construct a contiguous typed buffer from a Go slice.
+	// If the element type is unsupported (e.g. handle, callable), fall through to
+	// regular per-element array construction by stripping the packed flag.
+	if C.tc_is_packed_array(ti._type) != 0 {
+		err := constructPackedArray(item, currentIndex, ctxt, ti._type)
+		if err == nil {
+			return nil
+		}
+
+		// Strip packed flag and fall through to regular array handling
+		ti._type = ti._type &^ C.metaffi_packed_type
+		item.SetTypeVal(ti._type)
+	}
+
 	var commonType C.metaffi_type
 	if ti._type&C.metaffi_array_type != 0 && ti._type != C.metaffi_array_type {
 		commonType = ti._type &^ C.metaffi_array_type
@@ -782,6 +830,8 @@ func ConstructCDT(item *CDT, currentIndex []uint64, ctxt *ConstructContext, know
 				item.SetHandleStruct(cdtHandle)
 			}
 		}
+		// Go retains ownership of the handle; the CDT destructor must not release it.
+		item.SetFreeRequired(false)
 
 	case C.metaffi_null_type:
 		item.SetTypeVal(C.metaffi_null_type)
@@ -920,6 +970,18 @@ func TraverseCDT(item *CDT, currentIndex []uint64, ctxt *TraverseContext) error 
 
 	if item.GetTypeVal() == C.metaffi_any_type {
 		return fmt.Errorf("traversed CDT must have a concrete type, not dynamic type like metaffi_any_type")
+	}
+
+	// Handle packed array types: extract contiguous typed buffer to Go slice.
+	// If the element type is unsupported, fall through to regular per-element traversal.
+	if C.tc_is_packed_array(item.GetTypeVal()) != 0 {
+		err := traversePackedArray(item, currentIndex, ctxt)
+		if err == nil {
+			return nil
+		}
+
+		// Strip packed flag and fall through to regular array handling
+		item.SetTypeVal(item.GetTypeVal() &^ C.metaffi_packed_type)
 	}
 
 	commonType := C.metaffi_type(C.metaffi_any_type) // common type for all elements in the array
@@ -1132,6 +1194,9 @@ func TraverseCDT(item *CDT, currentIndex []uint64, ctxt *TraverseContext) error 
 	case C.metaffi_handle_type:
 		{
 			val := item.GetHandleStruct()
+			// Go takes ownership of the handle; prevent the CDT destructor
+			// from releasing it (e.g. deleting the JNI global reference).
+			item.SetFreeRequired(false)
 
 			if currentIndex == nil || len(currentIndex) == 0 {
 				// If not Go, return CDTMetaFFIHandle
@@ -1146,6 +1211,9 @@ func TraverseCDT(item *CDT, currentIndex []uint64, ctxt *TraverseContext) error 
 	case C.metaffi_callable_type:
 		{
 			callableStruct := item.GetCallableVal()
+			// Go takes ownership of the callable; prevent the CDT destructor
+			// from freeing it (same as handle_type above).
+			item.SetFreeRequired(false)
 
 			if currentIndex == nil || len(currentIndex) == 0 {
 				// Return a Go func wrapper around the foreign callable
@@ -1210,6 +1278,294 @@ func TraverseCDT(item *CDT, currentIndex []uint64, ctxt *TraverseContext) error 
 		{
 			return fmt.Errorf("Unknown type while traversing CDTS: %v", item.GetTypeVal())
 		}
+	}
+
+	return nil
+}
+
+// constructPackedArray converts a Go slice into a cdt_packed_array.
+func constructPackedArray(item *CDT, currentIndex []uint64, ctxt *ConstructContext, fullType C.metaffi_type) error {
+	elemType := C.tc_packed_element_type(fullType)
+	goVal := getElement(currentIndex, ctxt.Input)
+
+	if !goVal.IsValid() || (goVal.Kind() == reflect.Slice && goVal.IsNil()) {
+		packed := C.tc_alloc_packed_array(nil, 0)
+		C.tc_set_cdt_packed_array(item.c, packed, elemType)
+		return nil
+	}
+
+	if goVal.Kind() != reflect.Slice {
+		return fmt.Errorf("constructPackedArray: expected slice, got %v", goVal.Kind())
+	}
+
+	length := goVal.Len()
+	if length == 0 {
+		packed := C.tc_alloc_packed_array(nil, 0)
+		C.tc_set_cdt_packed_array(item.c, packed, elemType)
+		return nil
+	}
+
+	switch elemType {
+	case C.metaffi_float32_type:
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(unsafe.Sizeof(C.metaffi_float32(0))))
+		dst := (*[1 << 30]C.metaffi_float32)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			dst[i] = C.metaffi_float32(goVal.Index(i).Float())
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	case C.metaffi_float64_type:
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(unsafe.Sizeof(C.metaffi_float64(0))))
+		dst := (*[1 << 30]C.metaffi_float64)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			dst[i] = C.metaffi_float64(goVal.Index(i).Float())
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	case C.metaffi_int8_type:
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(unsafe.Sizeof(C.metaffi_int8(0))))
+		dst := (*[1 << 30]C.metaffi_int8)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			dst[i] = C.metaffi_int8(goVal.Index(i).Int())
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	case C.metaffi_uint8_type:
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(unsafe.Sizeof(C.metaffi_uint8(0))))
+		dst := (*[1 << 30]C.metaffi_uint8)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			dst[i] = C.metaffi_uint8(goVal.Index(i).Uint())
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	case C.metaffi_int16_type:
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(unsafe.Sizeof(C.metaffi_int16(0))))
+		dst := (*[1 << 30]C.metaffi_int16)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			dst[i] = C.metaffi_int16(goVal.Index(i).Int())
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	case C.metaffi_uint16_type:
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(unsafe.Sizeof(C.metaffi_uint16(0))))
+		dst := (*[1 << 30]C.metaffi_uint16)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			dst[i] = C.metaffi_uint16(goVal.Index(i).Uint())
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	case C.metaffi_int32_type:
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(unsafe.Sizeof(C.metaffi_int32(0))))
+		dst := (*[1 << 30]C.metaffi_int32)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			dst[i] = C.metaffi_int32(goVal.Index(i).Int())
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	case C.metaffi_uint32_type:
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(unsafe.Sizeof(C.metaffi_uint32(0))))
+		dst := (*[1 << 30]C.metaffi_uint32)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			dst[i] = C.metaffi_uint32(goVal.Index(i).Uint())
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	case C.metaffi_int64_type:
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(unsafe.Sizeof(C.metaffi_int64(0))))
+		dst := (*[1 << 30]C.metaffi_int64)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			dst[i] = C.metaffi_int64(goVal.Index(i).Int())
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	case C.metaffi_uint64_type:
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(unsafe.Sizeof(C.metaffi_uint64(0))))
+		dst := (*[1 << 30]C.metaffi_uint64)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			dst[i] = C.metaffi_uint64(goVal.Index(i).Uint())
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	case C.metaffi_bool_type:
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(unsafe.Sizeof(C.metaffi_bool(0))))
+		dst := (*[1 << 30]C.metaffi_bool)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			if goVal.Index(i).Bool() {
+				dst[i] = 1
+			} else {
+				dst[i] = 0
+			}
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	case C.metaffi_string8_type:
+		ptrSize := unsafe.Sizeof((*C.char)(nil))
+		buf := C.xllr_alloc_memory(C.uint64_t(length) * C.uint64_t(ptrSize))
+		dst := (*[1 << 30]*C.char)(buf)[:length:length]
+		for i := 0; i < length; i++ {
+			s := goVal.Index(i).String()
+			cstr := C.CString(s)
+			allocated := C.xllr_alloc_string(cstr, C.uint64_t(len(s)))
+			C.free(unsafe.Pointer(cstr))
+			dst[i] = allocated
+		}
+		C.tc_set_cdt_packed_array(item.c, C.tc_alloc_packed_array(buf, C.metaffi_size(length)), elemType)
+
+	default:
+		return fmt.Errorf("constructPackedArray: unsupported element type %v", elemType)
+	}
+
+	return nil
+}
+
+// traversePackedArray converts a cdt_packed_array back to a Go slice.
+func traversePackedArray(item *CDT, currentIndex []uint64, ctxt *TraverseContext) error {
+	elemType := C.tc_packed_element_type(item.GetTypeVal())
+	packed := C.tc_get_cdt_packed_array(item.c)
+	length := int(C.tc_get_packed_array_length(packed))
+	data := C.tc_get_packed_array_data(packed)
+
+	var result interface{}
+
+	if length == 0 || data == nil {
+		switch elemType {
+		case C.metaffi_float32_type:
+			result = []float32{}
+		case C.metaffi_float64_type:
+			result = []float64{}
+		case C.metaffi_int8_type:
+			result = []int8{}
+		case C.metaffi_uint8_type:
+			result = []uint8{}
+		case C.metaffi_int16_type:
+			result = []int16{}
+		case C.metaffi_uint16_type:
+			result = []uint16{}
+		case C.metaffi_int32_type:
+			result = []int32{}
+		case C.metaffi_uint32_type:
+			result = []uint32{}
+		case C.metaffi_int64_type:
+			result = []int64{}
+		case C.metaffi_uint64_type:
+			result = []uint64{}
+		case C.metaffi_bool_type:
+			result = []bool{}
+		case C.metaffi_string8_type:
+			result = []string{}
+		default:
+			return fmt.Errorf("traversePackedArray: unsupported element type %v for empty array", elemType)
+		}
+	} else {
+		switch elemType {
+		case C.metaffi_float32_type:
+			src := (*[1 << 30]C.metaffi_float32)(data)[:length:length]
+			out := make([]float32, length)
+			for i := 0; i < length; i++ {
+				out[i] = float32(src[i])
+			}
+			result = out
+
+		case C.metaffi_float64_type:
+			src := (*[1 << 30]C.metaffi_float64)(data)[:length:length]
+			out := make([]float64, length)
+			for i := 0; i < length; i++ {
+				out[i] = float64(src[i])
+			}
+			result = out
+
+		case C.metaffi_int8_type:
+			src := (*[1 << 30]C.metaffi_int8)(data)[:length:length]
+			out := make([]int8, length)
+			for i := 0; i < length; i++ {
+				out[i] = int8(src[i])
+			}
+			result = out
+
+		case C.metaffi_uint8_type:
+			src := (*[1 << 30]C.metaffi_uint8)(data)[:length:length]
+			out := make([]uint8, length)
+			for i := 0; i < length; i++ {
+				out[i] = uint8(src[i])
+			}
+			result = out
+
+		case C.metaffi_int16_type:
+			src := (*[1 << 30]C.metaffi_int16)(data)[:length:length]
+			out := make([]int16, length)
+			for i := 0; i < length; i++ {
+				out[i] = int16(src[i])
+			}
+			result = out
+
+		case C.metaffi_uint16_type:
+			src := (*[1 << 30]C.metaffi_uint16)(data)[:length:length]
+			out := make([]uint16, length)
+			for i := 0; i < length; i++ {
+				out[i] = uint16(src[i])
+			}
+			result = out
+
+		case C.metaffi_int32_type:
+			src := (*[1 << 30]C.metaffi_int32)(data)[:length:length]
+			out := make([]int32, length)
+			for i := 0; i < length; i++ {
+				out[i] = int32(src[i])
+			}
+			result = out
+
+		case C.metaffi_uint32_type:
+			src := (*[1 << 30]C.metaffi_uint32)(data)[:length:length]
+			out := make([]uint32, length)
+			for i := 0; i < length; i++ {
+				out[i] = uint32(src[i])
+			}
+			result = out
+
+		case C.metaffi_int64_type:
+			src := (*[1 << 30]C.metaffi_int64)(data)[:length:length]
+			out := make([]int64, length)
+			for i := 0; i < length; i++ {
+				out[i] = int64(src[i])
+			}
+			result = out
+
+		case C.metaffi_uint64_type:
+			src := (*[1 << 30]C.metaffi_uint64)(data)[:length:length]
+			out := make([]uint64, length)
+			for i := 0; i < length; i++ {
+				out[i] = uint64(src[i])
+			}
+			result = out
+
+		case C.metaffi_bool_type:
+			src := (*[1 << 30]C.metaffi_bool)(data)[:length:length]
+			out := make([]bool, length)
+			for i := 0; i < length; i++ {
+				out[i] = src[i] != 0
+			}
+			result = out
+
+		case C.metaffi_string8_type:
+			src := (*[1 << 30]*C.char)(data)[:length:length]
+			out := make([]string, length)
+			for i := 0; i < length; i++ {
+				if src[i] != nil {
+					out[i] = C.GoString(src[i])
+				}
+			}
+			result = out
+
+		default:
+			return fmt.Errorf("traversePackedArray: unsupported element type %v", elemType)
+		}
+	}
+
+	if currentIndex == nil || len(currentIndex) == 0 {
+		ctxt.Result = result
+	} else {
+		elem := getElement(currentIndex, ctxt.Result)
+		elem.Set(reflect.ValueOf(result))
 	}
 
 	return nil

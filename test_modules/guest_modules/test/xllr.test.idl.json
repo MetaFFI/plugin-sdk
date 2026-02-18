@@ -341,7 +341,7 @@
           "entity_path": {"entity_path": "test::return_int64_array_1d"},
           "parameters": [],
           "return_values": [
-            {"name": "result", "type": "int64_array", "type_alias": "std::vector<int64_t>", "comment": "", "tags": {}, "dimensions": 1}
+            {"name": "result", "type": "int64_packed_array", "type_alias": "std::vector<int64_t>", "comment": "", "tags": {}, "dimensions": 1}
           ]
         },
         {

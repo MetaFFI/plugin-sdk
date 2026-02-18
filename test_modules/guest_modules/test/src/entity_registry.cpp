@@ -38,6 +38,35 @@ const EntityDefinition* EntityRegistry::find_entity(const std::string& entity_pa
 	return nullptr;
 }
 
+namespace {
+	// Helper function to check if two types are compatible
+	// Packed and regular arrays with the same base type are considered compatible
+	bool types_compatible(metaffi_type type1, metaffi_type type2)
+	{
+		// Exact match is always compatible
+		if(type1 == type2)
+		{
+			return true;
+		}
+
+		// Check if both are array types
+		bool is_array1 = (type1 & metaffi_array_type) == metaffi_array_type;
+		bool is_array2 = (type2 & metaffi_array_type) == metaffi_array_type;
+
+		if(is_array1 && is_array2)
+		{
+			// Get base types (remove array and packed flags)
+			metaffi_type base1 = type1 & ~(metaffi_array_type | metaffi_packed_type);
+			metaffi_type base2 = type2 & ~(metaffi_array_type | metaffi_packed_type);
+
+			// Arrays are compatible if they have the same base type
+			return base1 == base2;
+		}
+
+		return false;
+	}
+}
+
 bool EntityRegistry::validate_types(const EntityDefinition& entity,
                                     const metaffi_type_info* params_types, int8_t params_count,
                                     const metaffi_type_info* retval_types, int8_t retval_count,
@@ -64,7 +93,7 @@ bool EntityRegistry::validate_types(const EntityDefinition& entity,
 	// Check parameter types
 	for(int8_t i = 0; i < params_count; ++i)
 	{
-		if(params_types[i].type != entity.params_types[i].type)
+		if(!types_compatible(params_types[i].type, entity.params_types[i].type))
 		{
 			const char* expected_str;
 			const char* got_str;
@@ -80,7 +109,7 @@ bool EntityRegistry::validate_types(const EntityDefinition& entity,
 	// Check return types
 	for(int8_t i = 0; i < retval_count; ++i)
 	{
-		if(retval_types[i].type != entity.retval_types[i].type)
+		if(!types_compatible(retval_types[i].type, entity.retval_types[i].type))
 		{
 			const char* expected_str;
 			const char* got_str;
@@ -374,7 +403,7 @@ void EntityRegistry::register_all_entities()
 	register_entity({
 		"test::return_int64_array_1d",
 		{},
-		{metaffi_type_info(metaffi_int64_array_type, nullptr, false, 1)},
+		{metaffi_type_info(metaffi_int64_packed_array_type, nullptr, false, 1)},
 		XCallVariant::NO_PARAMS_RET,
 		handler_return_int64_array_1d
 	});
@@ -406,7 +435,7 @@ void EntityRegistry::register_all_entities()
 	register_entity({
 		"test::return_string_array",
 		{},
-		{metaffi_type_info(metaffi_string8_array_type, nullptr, false, 1)},
+		{metaffi_type_info(metaffi_string8_packed_array_type, nullptr, false, 1)},
 		XCallVariant::NO_PARAMS_RET,
 		handler_return_string_array
 	});
@@ -417,7 +446,7 @@ void EntityRegistry::register_all_entities()
 
 	register_entity({
 		"test::sum_int64_array",
-		{metaffi_type_info(metaffi_int64_array_type, nullptr, false, 1)},
+		{metaffi_type_info(metaffi_int64_packed_array_type, nullptr, false, 1)},
 		{metaffi_type_info(metaffi_int64_type)},
 		XCallVariant::PARAMS_RET,
 		handler_sum_int64_array
@@ -425,15 +454,15 @@ void EntityRegistry::register_all_entities()
 
 	register_entity({
 		"test::echo_int64_array",
-		{metaffi_type_info(metaffi_int64_array_type, nullptr, false, 1)},
-		{metaffi_type_info(metaffi_int64_array_type, nullptr, false, 1)},
+		{metaffi_type_info(metaffi_int64_packed_array_type, nullptr, false, 1)},
+		{metaffi_type_info(metaffi_int64_packed_array_type, nullptr, false, 1)},
 		XCallVariant::PARAMS_RET,
 		handler_echo_int64_array
 	});
 
 	register_entity({
 		"test::join_strings",
-		{metaffi_type_info(metaffi_string8_array_type, nullptr, false, 1)},
+		{metaffi_type_info(metaffi_string8_packed_array_type, nullptr, false, 1)},
 		{metaffi_type_info(metaffi_string8_type)},
 		XCallVariant::PARAMS_RET,
 		handler_join_strings

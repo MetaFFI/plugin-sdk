@@ -1252,3 +1252,207 @@ func TestDeserializePrefilledCDTSCallable(t *testing.T) {
 		}
 	}
 }
+
+// ===== Packed Array Tests =====
+
+func TestPackedInt32Slice(t *testing.T) {
+	cdts, err := NewCDTSGoSerializerFromSize(1)
+	if err != nil {
+		t.Fatalf("NewCDTSGoSerializerFromSize failed: %v", err)
+	}
+
+	input := []int32{10, 20, 30, 40, 50}
+	_, err = cdts.AddInt32PackedSlice(input)
+	if err != nil {
+		t.Fatalf("AddInt32PackedSlice failed: %v", err)
+	}
+
+	cdts.Reset()
+	result, err := cdts.ExtractInt32PackedSlice()
+	if err != nil {
+		t.Fatalf("ExtractInt32PackedSlice failed: %v", err)
+	}
+
+	if len(result) != len(input) {
+		t.Fatalf("Expected length %d, got %d", len(input), len(result))
+	}
+	for i, v := range input {
+		if result[i] != v {
+			t.Errorf("Element %d: expected %d, got %d", i, v, result[i])
+		}
+	}
+}
+
+func TestPackedFloat64Slice(t *testing.T) {
+	cdts, err := NewCDTSGoSerializerFromSize(1)
+	if err != nil {
+		t.Fatalf("NewCDTSGoSerializerFromSize failed: %v", err)
+	}
+
+	input := []float64{1.1, 2.2, 3.3, 4.4}
+	_, err = cdts.AddFloat64PackedSlice(input)
+	if err != nil {
+		t.Fatalf("AddFloat64PackedSlice failed: %v", err)
+	}
+
+	cdts.Reset()
+	result, err := cdts.ExtractFloat64PackedSlice()
+	if err != nil {
+		t.Fatalf("ExtractFloat64PackedSlice failed: %v", err)
+	}
+
+	if len(result) != len(input) {
+		t.Fatalf("Expected length %d, got %d", len(input), len(result))
+	}
+	for i, v := range input {
+		if result[i] != v {
+			t.Errorf("Element %d: expected %f, got %f", i, v, result[i])
+		}
+	}
+}
+
+func TestPackedUint8Slice(t *testing.T) {
+	cdts, err := NewCDTSGoSerializerFromSize(1)
+	if err != nil {
+		t.Fatalf("NewCDTSGoSerializerFromSize failed: %v", err)
+	}
+
+	input := []uint8{1, 2, 3, 255, 0}
+	_, err = cdts.AddUint8PackedSlice(input)
+	if err != nil {
+		t.Fatalf("AddUint8PackedSlice failed: %v", err)
+	}
+
+	cdts.Reset()
+	result, err := cdts.ExtractUint8PackedSlice()
+	if err != nil {
+		t.Fatalf("ExtractUint8PackedSlice failed: %v", err)
+	}
+
+	if len(result) != len(input) {
+		t.Fatalf("Expected length %d, got %d", len(input), len(result))
+	}
+	for i, v := range input {
+		if result[i] != v {
+			t.Errorf("Element %d: expected %d, got %d", i, v, result[i])
+		}
+	}
+}
+
+func TestPackedBoolSlice(t *testing.T) {
+	cdts, err := NewCDTSGoSerializerFromSize(1)
+	if err != nil {
+		t.Fatalf("NewCDTSGoSerializerFromSize failed: %v", err)
+	}
+
+	input := []bool{true, false, true, true, false}
+	_, err = cdts.AddBoolPackedSlice(input)
+	if err != nil {
+		t.Fatalf("AddBoolPackedSlice failed: %v", err)
+	}
+
+	cdts.Reset()
+	result, err := cdts.ExtractBoolPackedSlice()
+	if err != nil {
+		t.Fatalf("ExtractBoolPackedSlice failed: %v", err)
+	}
+
+	if len(result) != len(input) {
+		t.Fatalf("Expected length %d, got %d", len(input), len(result))
+	}
+	for i, v := range input {
+		if result[i] != v {
+			t.Errorf("Element %d: expected %v, got %v", i, v, result[i])
+		}
+	}
+}
+
+func TestPackedStringSlice(t *testing.T) {
+	cdts, err := NewCDTSGoSerializerFromSize(1)
+	if err != nil {
+		t.Fatalf("NewCDTSGoSerializerFromSize failed: %v", err)
+	}
+
+	input := []string{"hello", "world", "packed"}
+	_, err = cdts.AddStringPackedSlice(input)
+	if err != nil {
+		t.Fatalf("AddStringPackedSlice failed: %v", err)
+	}
+
+	cdts.Reset()
+	result, err := cdts.ExtractStringPackedSlice()
+	if err != nil {
+		t.Fatalf("ExtractStringPackedSlice failed: %v", err)
+	}
+
+	if len(result) != len(input) {
+		t.Fatalf("Expected length %d, got %d", len(input), len(result))
+	}
+	for i, v := range input {
+		if result[i] != v {
+			t.Errorf("Element %d: expected %q, got %q", i, v, result[i])
+		}
+	}
+}
+
+func TestPackedEmptySlice(t *testing.T) {
+	cdts, err := NewCDTSGoSerializerFromSize(1)
+	if err != nil {
+		t.Fatalf("NewCDTSGoSerializerFromSize failed: %v", err)
+	}
+
+	_, err = cdts.AddInt32PackedSlice([]int32{})
+	if err != nil {
+		t.Fatalf("AddInt32PackedSlice failed for empty: %v", err)
+	}
+
+	cdts.Reset()
+	result, err := cdts.ExtractInt32PackedSlice()
+	if err != nil {
+		t.Fatalf("ExtractInt32PackedSlice failed for empty: %v", err)
+	}
+
+	if result != nil {
+		t.Errorf("Expected nil for empty packed slice, got %v", result)
+	}
+}
+
+func TestIsPackedArray(t *testing.T) {
+	cdts, err := NewCDTSGoSerializerFromSize(2)
+	if err != nil {
+		t.Fatalf("NewCDTSGoSerializerFromSize failed: %v", err)
+	}
+
+	// First element: packed array
+	_, err = cdts.AddInt32PackedSlice([]int32{1, 2, 3})
+	if err != nil {
+		t.Fatalf("AddInt32PackedSlice failed: %v", err)
+	}
+
+	// Second element: regular int32
+	_, err = cdts.AddInt32(42)
+	if err != nil {
+		t.Fatalf("AddInt32 failed: %v", err)
+	}
+
+	cdts.Reset()
+
+	isPacked, err := cdts.IsPackedArray()
+	if err != nil {
+		t.Fatalf("IsPackedArray failed: %v", err)
+	}
+	if !isPacked {
+		t.Error("Expected packed array at index 0")
+	}
+
+	// Advance past the packed array
+	_, _ = cdts.ExtractInt32PackedSlice()
+
+	isPacked, err = cdts.IsPackedArray()
+	if err != nil {
+		t.Fatalf("IsPackedArray failed: %v", err)
+	}
+	if isPacked {
+		t.Error("Expected non-packed at index 1")
+	}
+}

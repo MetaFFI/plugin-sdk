@@ -27,6 +27,7 @@ public class MetaFFITypeInfo
 		MetaFFIAny(4194304),
 		MetaFFINull(8388608),
 		MetaFFICallable(16777216),
+		MetaFFIPacked(33554432),
 		MetaFFIFloat64Array(MetaFFIFloat64.value | MetaFFIArray.value),
 		MetaFFIFloat32Array(MetaFFIFloat32.value | MetaFFIArray.value),
 		MetaFFIInt8Array(MetaFFIInt8.value | MetaFFIArray.value),
@@ -44,7 +45,21 @@ public class MetaFFITypeInfo
 		MetaFFIString32Array(MetaFFIString32.value | MetaFFIArray.value),
 		MetaFFIAnyArray(MetaFFIAny.value | MetaFFIArray.value),
 		MetaFFIHandleArray(MetaFFIHandle.value | MetaFFIArray.value),
-		MetaFFISizeArray(MetaFFISize.value | MetaFFIArray.value);
+		MetaFFISizeArray(MetaFFISize.value | MetaFFIArray.value),
+		MetaFFIFloat64PackedArray(MetaFFIFloat64.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIFloat32PackedArray(MetaFFIFloat32.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIInt8PackedArray(MetaFFIInt8.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIInt16PackedArray(MetaFFIInt16.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIInt32PackedArray(MetaFFIInt32.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIInt64PackedArray(MetaFFIInt64.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIUInt8PackedArray(MetaFFIUInt8.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIUInt16PackedArray(MetaFFIUInt16.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIUInt32PackedArray(MetaFFIUInt32.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIUInt64PackedArray(MetaFFIUInt64.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIBoolPackedArray(MetaFFIBool.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIString8PackedArray(MetaFFIString8.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFIHandlePackedArray(MetaFFIHandle.value | MetaFFIArray.value | MetaFFIPacked.value),
+		MetaFFICallablePackedArray(MetaFFICallable.value | MetaFFIArray.value | MetaFFIPacked.value);
 
 		public final long value;
 

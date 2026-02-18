@@ -9,12 +9,14 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+void* xllr_alloc_memory(uint64_t size);
 void xllr_free_memory(void* ptr);
 #ifdef __cplusplus
 }
 #endif
 
 #ifdef __cplusplus
+#include <cstdlib>
 #include <vector>
 #include <string_view>
 #include <sstream>
@@ -109,6 +111,7 @@ union cdt_types
 	struct cdt_metaffi_handle* handle_val;
 	struct cdt_metaffi_callable* callable_val;
 	struct cdts* array_val;
+	struct cdt_packed_array* packed_array_val;
 
 #ifdef __cplusplus
 	cdt_types() : int64_val(0) {}
@@ -159,8 +162,8 @@ struct cdt
 		{
 			// calculate the length of val - a char8_t*
 			std::u8string_view val_view(val);
-			cdt_val.string8_val = new char8_t[val_view.size() + 1];
-			
+			cdt_val.string8_val = static_cast<char8_t*>(xllr_alloc_memory((val_view.size() + 1) * sizeof(char8_t)));
+
 			// copy val, using val_view to cdt_val.string8_val
 			std::memcpy(cdt_val.string8_val, val_view.data(), val_view.size());
 			cdt_val.string8_val[val_view.size()] = 0;
@@ -183,7 +186,7 @@ struct cdt
 		{
 			// calculate the length of val - a char16_t*
 			std::u16string_view val_view(val);
-			cdt_val.string16_val = new char16_t[val_view.size() + 1];
+			cdt_val.string16_val = static_cast<char16_t*>(xllr_alloc_memory((val_view.size() + 1) * sizeof(char16_t)));
 
 			// copy val, using val_view to cdt_val.string16_val
 			std::memcpy(cdt_val.string16_val, val_view.data(), val_view.size() * sizeof(char16_t));
@@ -207,7 +210,7 @@ struct cdt
 		{
 			// calculate the length of val - a char32_t*
 			std::u32string_view val_view(val);
-			cdt_val.string32_val = new char32_t[val_view.size() + 1];
+			cdt_val.string32_val = static_cast<char32_t*>(xllr_alloc_memory((val_view.size() + 1) * sizeof(char32_t)));
 
 			// copy val, using val_view to cdt_val.string32_val
 			std::memcpy(cdt_val.string32_val, val_view.data(), val_view.size() * sizeof(char32_t));
@@ -254,6 +257,26 @@ struct cdt
 		type = metaffi_array_type | common_type;
 		free_required = true;
 		cdt_val.array_val = pcdts;
+	}
+	
+	/**
+	 * @brief Set a packed (contiguous) array.
+	 * @param packed Pointer to a heap-allocated cdt_packed_array whose data buffer is also heap-allocated.
+	 * @param element_type The element type (e.g., metaffi_int32_type). The packed+array flags are added automatically.
+	 */
+	void set_packed_array(cdt_packed_array* packed, metaffi_types element_type)
+	{
+		type = element_type | metaffi_array_type | metaffi_packed_type;
+		free_required = true;
+		cdt_val.packed_array_val = packed;
+	}
+	
+	/**
+	 * @brief Get the packed array pointer. Caller must check metaffi_is_packed_array(type) first.
+	 */
+	[[nodiscard]] cdt_packed_array* get_packed_array() const
+	{
+		return cdt_val.packed_array_val;
 	}
 	
 	cdt(const cdt& other) = delete;
@@ -441,7 +464,12 @@ struct cdt
 	{
 		if(free_required)
 		{
-			if(type & metaffi_array_type)
+			if(metaffi_is_packed_array(type))
+			{
+				// Packed array: free the data buffer based on element type, then the struct.
+				free_packed_array();
+			}
+			else if(type & metaffi_array_type)
 			{
 				delete cdt_val.array_val;
 				cdt_val.array_val = nullptr;
@@ -452,19 +480,19 @@ struct cdt
 				{
 					case metaffi_string8_type:
 					{
-						delete[] cdt_val.string8_val;
+						xllr_free_memory(cdt_val.string8_val);
 						cdt_val.string8_val = nullptr;
 					}break;
 				
 					case metaffi_string16_type:
 					{
-						delete[] cdt_val.string16_val;
+						xllr_free_memory(cdt_val.string16_val);
 						cdt_val.string16_val = nullptr;
 					}break;
 				
 					case metaffi_string32_type:
 					{
-						delete[] cdt_val.string32_val;
+						xllr_free_memory(cdt_val.string32_val);
 						cdt_val.string32_val = nullptr;
 					}break;
 				
@@ -506,6 +534,129 @@ struct cdt
 			}
 		}
 	}
+	
+private:
+	/**
+	 * @brief Free packed array data buffer and struct based on element type.
+	 * All allocations/frees go through xllr_alloc_memory/xllr_free_memory
+	 * to avoid cross-DLL CRT mismatches.
+	 * Numeric/bool/char/size: single xllr_free_memory on the data buffer.
+	 * Strings: xllr_free_memory each string + the pointer array.
+	 * Handles: release callbacks + xllr_free_memory the array.
+	 * Callables: free sub-allocations + xllr_free_memory the array.
+	 */
+	void free_packed_array()
+	{
+		cdt_packed_array* packed = cdt_val.packed_array_val;
+		if(!packed)
+		{
+			return;
+		}
+
+		if(packed->data)
+		{
+			metaffi_type elem_type = metaffi_packed_element_type(type);
+
+			// All packed array data buffers must be allocated/freed via xllr_alloc_memory/xllr_free_memory
+			// to ensure matching allocator across DLL boundaries.
+			// Individual strings are allocated via xllr_alloc_string* and freed via xllr_free_string.
+			switch(elem_type)
+			{
+				// Numeric / bool / size / char types: contiguous buffer allocated with xllr_alloc_memory.
+				case metaffi_float32_type:
+				case metaffi_float64_type:
+				case metaffi_int8_type:
+				case metaffi_int16_type:
+				case metaffi_int32_type:
+				case metaffi_int64_type:
+				case metaffi_uint8_type:
+				case metaffi_uint16_type:
+				case metaffi_uint32_type:
+				case metaffi_uint64_type:
+				case metaffi_bool_type:
+				case metaffi_size_type:
+				case metaffi_char8_type:
+				case metaffi_char16_type:
+				case metaffi_char32_type:
+					xllr_free_memory(packed->data);
+					break;
+
+				// String types: pointer array and each individual string
+				// both allocated with xllr_alloc_memory (malloc-based).
+				case metaffi_string8_type:
+				{
+					auto* strings = static_cast<metaffi_string8*>(packed->data);
+					for(metaffi_size i = 0; i < packed->length; i++)
+					{
+						xllr_free_memory(strings[i]);
+					}
+					xllr_free_memory(strings);
+				}break;
+
+				case metaffi_string16_type:
+				{
+					auto* strings = static_cast<metaffi_string16*>(packed->data);
+					for(metaffi_size i = 0; i < packed->length; i++)
+					{
+						xllr_free_memory(strings[i]);
+					}
+					xllr_free_memory(strings);
+				}break;
+
+				case metaffi_string32_type:
+				{
+					auto* strings = static_cast<metaffi_string32*>(packed->data);
+					for(metaffi_size i = 0; i < packed->length; i++)
+					{
+						xllr_free_memory(strings[i]);
+					}
+					xllr_free_memory(strings);
+				}break;
+
+				// Handle type: array of cdt_metaffi_handle structs.
+				// Call release callback on each, then free the array.
+				case metaffi_handle_type:
+				{
+					auto* handles = static_cast<cdt_metaffi_handle*>(packed->data);
+					for(metaffi_size i = 0; i < packed->length; i++)
+					{
+						if(handles[i].release)
+						{
+							handles[i].release(&handles[i]);
+						}
+					}
+					xllr_free_memory(handles);
+				}break;
+
+				// Callable type: array of cdt_metaffi_callable structs.
+				// Free sub-arrays, then the array itself.
+				case metaffi_callable_type:
+				{
+					auto* callables = static_cast<cdt_metaffi_callable*>(packed->data);
+					for(metaffi_size i = 0; i < packed->length; i++)
+					{
+						if(callables[i].parameters_types)
+							xllr_free_memory(callables[i].parameters_types);
+						if(callables[i].retval_types)
+							xllr_free_memory(callables[i].retval_types);
+					}
+					xllr_free_memory(callables);
+				}break;
+
+				default:
+				{
+					xllr_free_memory(packed->data);
+				}break;
+			}
+
+			packed->data = nullptr;
+		}
+
+		xllr_free_memory(packed);
+		cdt_val.packed_array_val = nullptr;
+	}
+	
+public:
 	
 	~cdt()
 	{

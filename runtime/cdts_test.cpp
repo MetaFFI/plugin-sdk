@@ -798,4 +798,188 @@ TEST_SUITE("CDTS Tests")
 
 		traverse_cdts(pcdts, tcb);
 	}
+	
+	TEST_CASE("packed int32 array")
+	{
+		// Create a packed int32 array: [10, 20, 30, 40, 50]
+		const metaffi_size arr_len = 5;
+		metaffi_int32 src_data[] = {10, 20, 30, 40, 50};
+		
+		// --- Construct via callbacks ---
+		construct_cdts_callbacks ccb = {};
+		ccb.context = (void*) src_data;
+		
+		ccb.get_root_elements_count = [](void* context) -> metaffi_size {
+			return 1; // one packed array element at root
+		};
+		
+		ccb.get_type_info = [](const metaffi_size* index, metaffi_size index_length, void* context) -> metaffi_type_info {
+			REQUIRE(index_length == 1);
+			REQUIRE(index[0] == 0);
+			return {metaffi_int32_packed_array_type, nullptr};
+		};
+		
+		ccb.get_packed_array = [](const metaffi_size* index, metaffi_size index_size, metaffi_type element_type, metaffi_bool* is_free_required, void* context) -> cdt_packed_array* {
+			REQUIRE(index_size == 1);
+			REQUIRE(index[0] == 0);
+			REQUIRE(element_type == metaffi_int32_type);
+			
+			// Copy the source data into a new buffer
+			auto* buf = new metaffi_int32[5];
+			std::memcpy(buf, context, 5 * sizeof(metaffi_int32));
+			
+			auto* packed = new cdt_packed_array(buf, 5);
+			*is_free_required = TRUE;
+			return packed;
+		};
+		
+		cdts arr;
+		construct_cdts(arr, ccb);
+		
+		// Verify the CDT was constructed correctly
+		REQUIRE(arr.length == 1);
+		REQUIRE(metaffi_is_packed_array(arr[0].type));
+		REQUIRE(arr[0].type == metaffi_int32_packed_array_type);
+		REQUIRE(arr[0].free_required == TRUE);
+		
+		cdt_packed_array* packed = arr[0].get_packed_array();
+		REQUIRE(packed != nullptr);
+		REQUIRE(packed->length == 5);
+		
+		auto* data = static_cast<metaffi_int32*>(packed->data);
+		for(metaffi_size i = 0; i < 5; i++)
+		{
+			REQUIRE(data[i] == src_data[i]);
+		}
+		
+		// --- Traverse via callbacks ---
+		bool traversed = false;
+		traverse_cdts_callbacks tcb;
+		tcb.context = (void*) &traversed;
+		
+		tcb.on_packed_array = [](const metaffi_size* index, metaffi_size index_size, const cdt_packed_array* val, metaffi_type element_type, void* context) {
+			REQUIRE(index_size == 1);
+			REQUIRE(index[0] == 0);
+			REQUIRE(element_type == metaffi_int32_type);
+			REQUIRE(val != nullptr);
+			REQUIRE(val->length == 5);
+			
+			auto* data = static_cast<metaffi_int32*>(val->data);
+			metaffi_int32 expected[] = {10, 20, 30, 40, 50};
+			for(metaffi_size i = 0; i < 5; i++)
+			{
+				REQUIRE(data[i] == expected[i]);
+			}
+			
+			*static_cast<bool*>(context) = true;
+		};
+		
+		traverse_cdts(arr, tcb);
+		REQUIRE(traversed == true);
+	}
+	
+	TEST_CASE("packed float64 array")
+	{
+		// Create a packed float64 array: [1.1, 2.2, 3.3]
+		const metaffi_size arr_len = 3;
+		metaffi_float64 src_data[] = {1.1, 2.2, 3.3};
+		
+		// Direct construction (bypassing callbacks) to test set_packed_array/get_packed_array
+		cdt item{};
+		auto* buf = new metaffi_float64[arr_len];
+		std::memcpy(buf, src_data, arr_len * sizeof(metaffi_float64));
+		
+		auto* packed = new cdt_packed_array(buf, arr_len);
+		item.set_packed_array(packed, metaffi_float64_type);
+		
+		REQUIRE(item.type == metaffi_float64_packed_array_type);
+		REQUIRE(item.free_required == TRUE);
+		REQUIRE(metaffi_is_packed_array(item.type));
+		REQUIRE(metaffi_packed_element_type(item.type) == metaffi_float64_type);
+		
+		cdt_packed_array* retrieved = item.get_packed_array();
+		REQUIRE(retrieved != nullptr);
+		REQUIRE(retrieved->length == arr_len);
+		
+		auto* data = static_cast<metaffi_float64*>(retrieved->data);
+		for(metaffi_size i = 0; i < arr_len; i++)
+		{
+			REQUIRE(data[i] == src_data[i]);
+		}
+		
+		// Destructor will call free() which exercises free_packed_array()
+	}
+	
+	TEST_CASE("packed string8 array")
+	{
+		// Test packed string array with copy semantics
+		const metaffi_size arr_len = 3;
+		
+		cdt item{};
+		
+		// Allocate string array: array of char8_t*
+		auto* strings = new metaffi_string8[arr_len];
+		
+		// Copy strings into heap-allocated buffers
+		const char* sources[] = {"hello", "world", "packed"};
+		for(metaffi_size i = 0; i < arr_len; i++)
+		{
+			size_t len = std::strlen(sources[i]);
+			strings[i] = new char8_t[len + 1];
+			std::memcpy(strings[i], sources[i], len + 1);
+		}
+		
+		auto* packed = new cdt_packed_array(strings, arr_len);
+		item.set_packed_array(packed, metaffi_string8_type);
+		
+		REQUIRE(item.type == metaffi_string8_packed_array_type);
+		REQUIRE(metaffi_is_packed_array(item.type));
+		REQUIRE(metaffi_packed_element_type(item.type) == metaffi_string8_type);
+		
+		cdt_packed_array* retrieved = item.get_packed_array();
+		auto* str_data = static_cast<metaffi_string8*>(retrieved->data);
+		
+		REQUIRE(std::strcmp((const char*)str_data[0], "hello") == 0);
+		REQUIRE(std::strcmp((const char*)str_data[1], "world") == 0);
+		REQUIRE(std::strcmp((const char*)str_data[2], "packed") == 0);
+		
+		// Destructor exercises free_packed_array() with string cleanup
+	}
+	
+	TEST_CASE("packed type macros")
+	{
+		// Test the helper macros
+		REQUIRE(metaffi_is_packed_array(metaffi_int32_packed_array_type));
+		REQUIRE(metaffi_is_packed_array(metaffi_float64_packed_array_type));
+		REQUIRE(metaffi_is_packed_array(metaffi_string8_packed_array_type));
+		REQUIRE(metaffi_is_packed_array(metaffi_handle_packed_array_type));
+		
+		REQUIRE_FALSE(metaffi_is_packed_array(metaffi_int32_type));
+		REQUIRE_FALSE(metaffi_is_packed_array(metaffi_int32_array_type));
+		REQUIRE_FALSE(metaffi_is_packed_array(metaffi_array_type));
+		REQUIRE_FALSE(metaffi_is_packed_array(metaffi_packed_type)); // packed alone without array is not a packed array
+		
+		REQUIRE(metaffi_packed_element_type(metaffi_int32_packed_array_type) == metaffi_int32_type);
+		REQUIRE(metaffi_packed_element_type(metaffi_float64_packed_array_type) == metaffi_float64_type);
+		REQUIRE(metaffi_packed_element_type(metaffi_string8_packed_array_type) == metaffi_string8_type);
+		REQUIRE(metaffi_packed_element_type(metaffi_handle_packed_array_type) == metaffi_handle_type);
+		REQUIRE(metaffi_packed_element_type(metaffi_callable_packed_array_type) == metaffi_callable_type);
+	}
+	
+	TEST_CASE("packed type to string")
+	{
+		const char* str = nullptr;
+		
+		metaffi_type_to_str(metaffi_int32_packed_array_type, str);
+		REQUIRE(std::string(str) == "metaffi_int32_packed_array");
+		
+		metaffi_type_to_str(metaffi_float64_packed_array_type, str);
+		REQUIRE(std::string(str) == "metaffi_float64_packed_array");
+		
+		metaffi_type_to_str(metaffi_string8_packed_array_type, str);
+		REQUIRE(std::string(str) == "metaffi_string8_packed_array");
+		
+		metaffi_type_to_str(metaffi_handle_packed_array_type, str);
+		REQUIRE(std::string(str) == "metaffi_handle_packed_array");
+	}
 }

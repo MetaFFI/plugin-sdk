@@ -477,6 +477,9 @@ public class CodeGenerator {
         if (type == null || type.isEmpty()) {
             return type;
         }
+        if (type.endsWith("_packed_array")) {
+            return type.substring(0, type.length() - 13); // strip "_packed_array"
+        }
         if (type.endsWith("_array")) {
             return type.substring(0, type.length() - 6);
         }
@@ -484,6 +487,9 @@ public class CodeGenerator {
     }
 
     private int normalizeDimensions(String type, int dims) {
+        if (type != null && type.endsWith("_packed_array")) {
+            return 1; // packed arrays are always 1D
+        }
         if (type != null && type.endsWith("_array") && dims == 0) {
             return 1;
         }
@@ -657,7 +663,10 @@ public class CodeGenerator {
 
         String baseType = type;
         int dims = dimensions;
-        if (type.endsWith("_array")) {
+        if (type.endsWith("_packed_array")) {
+            baseType = type.substring(0, type.length() - 13); // strip "_packed_array"
+            dims = 1; // packed arrays are always 1D
+        } else if (type.endsWith("_array")) {
             baseType = type.substring(0, type.length() - 6);
             if (dims == 0) {
                 dims = 1;

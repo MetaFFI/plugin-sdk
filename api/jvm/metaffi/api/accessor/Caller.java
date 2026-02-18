@@ -169,9 +169,9 @@ public class Caller
 				if(paramsCount > 0 && retvalsCount > 0)
 					MetaFFIAccessor.xcall_params_ret(xcallAndContext, xcall_params);
 				else if(paramsCount > 0)
-					MetaFFIAccessor.xcall_params_no_ret(xcallAndContext, parametersCDTS);
+					MetaFFIAccessor.xcall_params_no_ret(xcallAndContext, xcall_params);
 				else if(retvalsCount > 0)
-					MetaFFIAccessor.xcall_no_params_ret(xcallAndContext, returnValuesCDTS);
+					MetaFFIAccessor.xcall_no_params_ret(xcallAndContext, xcall_params);
 				else
 					MetaFFIAccessor.xcall_no_params_no_ret(xcallAndContext);
 				if(profile)

@@ -36,6 +36,24 @@ void traverse_cdt(const cdt& item, const metaffi::runtime::traverse_cdts_callbac
 		throw std::runtime_error("traversed CDT must have a concrete type, not dynamic type like metaffi_any_type");
 	}
 	
+	// Handle packed arrays before the regular array path
+	if(metaffi_is_packed_array(item.type))
+	{
+		if(!item.cdt_val.packed_array_val)
+		{
+			throw std::runtime_error("Packed array value is null");
+		}
+		
+		if(!callbacks.on_packed_array)
+		{
+			throw std::runtime_error("on_packed_array callback is null but a packed array CDT was encountered");
+		}
+		
+		metaffi_type element_type = metaffi_packed_element_type(item.type);
+		callbacks.on_packed_array(current_index.data(), current_index.size(), item.cdt_val.packed_array_val, element_type, callbacks.context);
+		return;
+	}
+	
 	metaffi_type common_type = metaffi_any_type;
 	metaffi_type type_to_use = item.type;
 	if(type_to_use & metaffi_array_type && type_to_use != metaffi_array_type)
@@ -256,6 +274,21 @@ void construct_cdt(cdt& item, const metaffi::runtime::construct_cdts_callbacks& 
 	if(ti.type == metaffi_any_type)
 	{
 		throw std::runtime_error("get_type_info must return a concrete type, not dynamic type like metaffi_any_type");
+	}
+	
+	// Handle packed array types early, before regular array logic
+	if(metaffi_is_packed_array(ti.type))
+	{
+		if(!callbacks.get_packed_array)
+		{
+			throw std::runtime_error("get_packed_array callback is null but a packed array type was requested");
+		}
+		
+		metaffi_type element_type = metaffi_packed_element_type(ti.type);
+		item.type = ti.type;
+		item.free_required = true; // default
+		item.cdt_val.packed_array_val = callbacks.get_packed_array(current_index.data(), current_index.size(), element_type, &item.free_required, callbacks.context);
+		return;
 	}
 	
 	if((ti.type != metaffi_any_type) && ti.fixed_dimensions > 0){

@@ -1449,4 +1449,275 @@ TEST_SUITE("CDTS JVM Serializer")
 		CHECK(deser.peek_type() == metaffi_null_type);
 		CHECK(deser.is_null() == true);
 	}
+
+	// ===== Packed Array Tests =====
+
+	TEST_CASE("Packed int32 array round-trip")
+	{
+		cdts data(1);
+		cdts_jvm_serializer ser(g_env, data);
+
+		// Create Java int array
+		jintArray arr = g_env->NewIntArray(5);
+		jint values[] = {10, 20, 30, 40, 50};
+		g_env->SetIntArrayRegion(arr, 0, 5, values);
+
+		ser.add_packed_array(arr, metaffi_int32_type);
+
+		// Verify CDT type is packed
+		CHECK(metaffi_is_packed_array(data[0].type));
+		CHECK(metaffi_packed_element_type(data[0].type) == metaffi_int32_type);
+
+		// Extract
+		ser.reset();
+		jintArray extracted = (jintArray)ser.extract_array();
+
+		REQUIRE(extracted != nullptr);
+		CHECK(g_env->GetArrayLength(extracted) == 5);
+		jint* elements = g_env->GetIntArrayElements(extracted, nullptr);
+		for (int i = 0; i < 5; i++)
+		{
+			CHECK(elements[i] == values[i]);
+		}
+		g_env->ReleaseIntArrayElements(extracted, elements, JNI_ABORT);
+		g_env->DeleteLocalRef(extracted);
+		g_env->DeleteLocalRef(arr);
+	}
+
+	TEST_CASE("Packed float64 array round-trip")
+	{
+		cdts data(1);
+		cdts_jvm_serializer ser(g_env, data);
+
+		jdoubleArray arr = g_env->NewDoubleArray(3);
+		jdouble values[] = {1.1, 2.2, 3.3};
+		g_env->SetDoubleArrayRegion(arr, 0, 3, values);
+
+		ser.add_packed_array(arr, metaffi_float64_type);
+
+		CHECK(metaffi_is_packed_array(data[0].type));
+
+		ser.reset();
+		jdoubleArray extracted = (jdoubleArray)ser.extract_array();
+
+		REQUIRE(extracted != nullptr);
+		CHECK(g_env->GetArrayLength(extracted) == 3);
+		jdouble* elements = g_env->GetDoubleArrayElements(extracted, nullptr);
+		for (int i = 0; i < 3; i++)
+		{
+			CHECK(elements[i] == doctest::Approx(values[i]));
+		}
+		g_env->ReleaseDoubleArrayElements(extracted, elements, JNI_ABORT);
+		g_env->DeleteLocalRef(extracted);
+		g_env->DeleteLocalRef(arr);
+	}
+
+	TEST_CASE("Packed uint8 array round-trip")
+	{
+		cdts data(1);
+		cdts_jvm_serializer ser(g_env, data);
+
+		// Java byte[] represents uint8 packed array (same bits)
+		jbyteArray arr = g_env->NewByteArray(4);
+		jbyte values[] = {0, 127, -128, -1}; // 0, 127, 128, 255 as unsigned
+		g_env->SetByteArrayRegion(arr, 0, 4, values);
+
+		ser.add_packed_array(arr, metaffi_uint8_type);
+
+		CHECK(metaffi_is_packed_array(data[0].type));
+		CHECK(metaffi_packed_element_type(data[0].type) == metaffi_uint8_type);
+
+		ser.reset();
+		jbyteArray extracted = (jbyteArray)ser.extract_array();
+
+		REQUIRE(extracted != nullptr);
+		CHECK(g_env->GetArrayLength(extracted) == 4);
+		jbyte* elements = g_env->GetByteArrayElements(extracted, nullptr);
+		for (int i = 0; i < 4; i++)
+		{
+			CHECK(elements[i] == values[i]);
+		}
+		g_env->ReleaseByteArrayElements(extracted, elements, JNI_ABORT);
+		g_env->DeleteLocalRef(extracted);
+		g_env->DeleteLocalRef(arr);
+	}
+
+	TEST_CASE("Packed bool array round-trip")
+	{
+		cdts data(1);
+		cdts_jvm_serializer ser(g_env, data);
+
+		jbooleanArray arr = g_env->NewBooleanArray(3);
+		jboolean values[] = {JNI_TRUE, JNI_FALSE, JNI_TRUE};
+		g_env->SetBooleanArrayRegion(arr, 0, 3, values);
+
+		ser.add_packed_array(arr, metaffi_bool_type);
+
+		CHECK(metaffi_is_packed_array(data[0].type));
+
+		ser.reset();
+		jbooleanArray extracted = (jbooleanArray)ser.extract_array();
+
+		REQUIRE(extracted != nullptr);
+		CHECK(g_env->GetArrayLength(extracted) == 3);
+		jboolean* elements = g_env->GetBooleanArrayElements(extracted, nullptr);
+		CHECK(elements[0] == JNI_TRUE);
+		CHECK(elements[1] == JNI_FALSE);
+		CHECK(elements[2] == JNI_TRUE);
+		g_env->ReleaseBooleanArrayElements(extracted, elements, JNI_ABORT);
+		g_env->DeleteLocalRef(extracted);
+		g_env->DeleteLocalRef(arr);
+	}
+
+	TEST_CASE("Packed string8 array round-trip")
+	{
+		cdts data(1);
+		cdts_jvm_serializer ser(g_env, data);
+
+		// Create String[] in Java
+		jclass string_class = g_env->FindClass("java/lang/String");
+		jobjectArray arr = g_env->NewObjectArray(3, string_class, nullptr);
+
+		jstring s0 = g_env->NewStringUTF("hello");
+		jstring s1 = g_env->NewStringUTF("world");
+		jstring s2 = g_env->NewStringUTF("packed");
+		g_env->SetObjectArrayElement(arr, 0, s0);
+		g_env->SetObjectArrayElement(arr, 1, s1);
+		g_env->SetObjectArrayElement(arr, 2, s2);
+
+		ser.add_packed_array((jarray)arr, metaffi_string8_type);
+
+		CHECK(metaffi_is_packed_array(data[0].type));
+		CHECK(metaffi_packed_element_type(data[0].type) == metaffi_string8_type);
+
+		ser.reset();
+		jobjectArray extracted = (jobjectArray)ser.extract_array();
+
+		REQUIRE(extracted != nullptr);
+		CHECK(g_env->GetArrayLength(extracted) == 3);
+
+		jstring e0 = (jstring)g_env->GetObjectArrayElement(extracted, 0);
+		jstring e1 = (jstring)g_env->GetObjectArrayElement(extracted, 1);
+		jstring e2 = (jstring)g_env->GetObjectArrayElement(extracted, 2);
+
+		const char* c0 = g_env->GetStringUTFChars(e0, nullptr);
+		const char* c1 = g_env->GetStringUTFChars(e1, nullptr);
+		const char* c2 = g_env->GetStringUTFChars(e2, nullptr);
+
+		CHECK(std::string(c0) == "hello");
+		CHECK(std::string(c1) == "world");
+		CHECK(std::string(c2) == "packed");
+
+		g_env->ReleaseStringUTFChars(e0, c0);
+		g_env->ReleaseStringUTFChars(e1, c1);
+		g_env->ReleaseStringUTFChars(e2, c2);
+
+		g_env->DeleteLocalRef(e0);
+		g_env->DeleteLocalRef(e1);
+		g_env->DeleteLocalRef(e2);
+		g_env->DeleteLocalRef(extracted);
+		g_env->DeleteLocalRef(s0);
+		g_env->DeleteLocalRef(s1);
+		g_env->DeleteLocalRef(s2);
+		g_env->DeleteLocalRef(arr);
+		g_env->DeleteLocalRef(string_class);
+	}
+
+	TEST_CASE("Packed empty array round-trip")
+	{
+		cdts data(1);
+		cdts_jvm_serializer ser(g_env, data);
+
+		jintArray arr = g_env->NewIntArray(0);
+		ser.add_packed_array(arr, metaffi_int32_type);
+
+		CHECK(metaffi_is_packed_array(data[0].type));
+		cdt_packed_array* packed = data[0].get_packed_array();
+		CHECK(packed->length == 0);
+
+		ser.reset();
+		jintArray extracted = (jintArray)ser.extract_array();
+		REQUIRE(extracted != nullptr);
+		CHECK(g_env->GetArrayLength(extracted) == 0);
+
+		g_env->DeleteLocalRef(extracted);
+		g_env->DeleteLocalRef(arr);
+	}
+
+	TEST_CASE("Packed int64 array round-trip")
+	{
+		cdts data(1);
+		cdts_jvm_serializer ser(g_env, data);
+
+		jlongArray arr = g_env->NewLongArray(3);
+		jlong values[] = {INT64_MIN, 0, INT64_MAX};
+		g_env->SetLongArrayRegion(arr, 0, 3, values);
+
+		ser.add_packed_array(arr, metaffi_int64_type);
+
+		ser.reset();
+		jlongArray extracted = (jlongArray)ser.extract_array();
+
+		REQUIRE(extracted != nullptr);
+		CHECK(g_env->GetArrayLength(extracted) == 3);
+		jlong* elements = g_env->GetLongArrayElements(extracted, nullptr);
+		CHECK(elements[0] == INT64_MIN);
+		CHECK(elements[1] == 0);
+		CHECK(elements[2] == INT64_MAX);
+		g_env->ReleaseLongArrayElements(extracted, elements, JNI_ABORT);
+		g_env->DeleteLocalRef(extracted);
+		g_env->DeleteLocalRef(arr);
+	}
+
+	TEST_CASE("Packed float32 array round-trip")
+	{
+		cdts data(1);
+		cdts_jvm_serializer ser(g_env, data);
+
+		jfloatArray arr = g_env->NewFloatArray(3);
+		jfloat values[] = {-1.5f, 0.0f, 3.14f};
+		g_env->SetFloatArrayRegion(arr, 0, 3, values);
+
+		ser.add_packed_array(arr, metaffi_float32_type);
+
+		ser.reset();
+		jfloatArray extracted = (jfloatArray)ser.extract_array();
+
+		REQUIRE(extracted != nullptr);
+		CHECK(g_env->GetArrayLength(extracted) == 3);
+		jfloat* elements = g_env->GetFloatArrayElements(extracted, nullptr);
+		for (int i = 0; i < 3; i++)
+		{
+			CHECK(elements[i] == doctest::Approx(values[i]));
+		}
+		g_env->ReleaseFloatArrayElements(extracted, elements, JNI_ABORT);
+		g_env->DeleteLocalRef(extracted);
+		g_env->DeleteLocalRef(arr);
+	}
+
+	TEST_CASE("extract_packed_array directly")
+	{
+		// Manually construct a packed CDT and extract via extract_packed_array
+		cdts data(1);
+
+		// Build packed int32 array manually
+		cdt_packed_array* packed = new cdt_packed_array();
+		packed->length = 3;
+		int32_t* buf = static_cast<int32_t*>(malloc(3 * sizeof(int32_t)));
+		buf[0] = 100; buf[1] = 200; buf[2] = 300;
+		packed->data = buf;
+		data[0].set_packed_array(packed, metaffi_int32_type);
+
+		cdts_jvm_serializer deser(g_env, data);
+		jintArray extracted = (jintArray)deser.extract_packed_array();
+
+		REQUIRE(extracted != nullptr);
+		CHECK(g_env->GetArrayLength(extracted) == 3);
+		jint* elements = g_env->GetIntArrayElements(extracted, nullptr);
+		CHECK(elements[0] == 100);
+		CHECK(elements[1] == 200);
+		CHECK(elements[2] == 300);
+		g_env->ReleaseIntArrayElements(extracted, elements, JNI_ABORT);
+		g_env->DeleteLocalRef(extracted);
+	}
 } // TEST_SUITE

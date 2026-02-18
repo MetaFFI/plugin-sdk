@@ -101,6 +101,9 @@ def _metaffi_type_string_to_enum(metaffi_type: str, dimensions: int, metaffi_typ
     """
     Convert MetaFFI type string to MetaFFITypes enum.
 
+    For 1D arrays of packable primitive types, automatically upgrades to packed
+    array types for performance optimization.
+
     Args:
         metaffi_type: MetaFFI type string
         dimensions: Number of array dimensions
@@ -114,12 +117,44 @@ def _metaffi_type_string_to_enum(metaffi_type: str, dimensions: int, metaffi_typ
 
     # Handle array types
     if dimensions > 0 or metaffi_type.endswith("_array"):
-        base_type = metaffi_type.replace("_array", "")
+        # Strip array suffixes to get base type name
+        # Must check "_packed_array" before "_array" to avoid leaving "int64_packed"
+        is_packed_in_idl = "_packed_array" in metaffi_type
+        if is_packed_in_idl:
+            base_type = metaffi_type.replace("_packed_array", "")
+        else:
+            base_type = metaffi_type.replace("_array", "")
+
         base_enum = _base_type_to_enum(base_type, metaffi_types_module)
-        # Combine with array flag
+
+        # Determine effective dimensions (if type ends with _array but dims=0, treat as 1D)
+        effective_dims = dimensions if dimensions > 0 else 1
+
+        # Use packed array type if IDL explicitly says packed, or if 1D packable primitive
+        if is_packed_in_idl or (effective_dims == 1 and _is_packable_primitive(base_type)):
+            return base_enum | metaffi_types_module.MetaFFITypes.metaffi_array_type | metaffi_types_module.MetaFFITypes.metaffi_packed_type
+
+        # Otherwise use regular array type
         return base_enum | metaffi_types_module.MetaFFITypes.metaffi_array_type
 
     return _base_type_to_enum(metaffi_type, metaffi_types_module)
+
+
+# Set of base types that have packed array variants
+_PACKABLE_PRIMITIVES = frozenset({
+    "float64", "float32",
+    "int8", "int16", "int32", "int64",
+    "uint8", "uint16", "uint32", "uint64",
+    "bool", "string8", "handle", "callable",
+})
+
+
+def _is_packable_primitive(base_type: str) -> bool:
+    """
+    Returns True if the given base type has a packed array variant.
+    Packed arrays are supported for numeric types, bool, string8, handle, and callable.
+    """
+    return base_type in _PACKABLE_PRIMITIVES
 
 
 def _base_type_to_enum(metaffi_type: str, metaffi_types_module: Any):

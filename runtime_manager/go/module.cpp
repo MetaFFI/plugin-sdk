@@ -6,10 +6,23 @@
 #include <sstream>
 #include <iostream>
 #include <cstdlib>
+#include <unordered_map>
 #include <boost/algorithm/string.hpp>
 
 namespace
 {
+	// Go doesn't support dlclose (Go issue #11100).  Calling FreeLibrary on a Go
+	// shared library causes a crash during Go runtime teardown.  We keep every
+	// loaded library alive for the lifetime of the process by storing an extra
+	// shared_ptr in this static map.  The map is keyed by canonical module path
+	// so the same library is only loaded once.
+	std::mutex g_loaded_libraries_mutex;
+	std::unordered_map<std::string, std::shared_ptr<boost::dll::shared_library>>& get_loaded_libraries()
+	{
+		static std::unordered_map<std::string, std::shared_ptr<boost::dll::shared_library>> s_map;
+		return s_map;
+	}
+
 	bool go_module_log_enabled()
 	{
 		static const bool enabled = []() -> bool
@@ -44,22 +57,39 @@ Module::Module(go_runtime_manager* manager, const std::string& module_path)
 		throw std::runtime_error("Module: module path cannot be empty");
 	}
 
-	// Load the shared library
-	m_library = std::make_shared<boost::dll::shared_library>();
+	// Load the shared library (or reuse a previously loaded one).
+	// Go doesn't support dlclose, so loaded libraries are cached for the
+	// process lifetime to prevent boost::dll's destructor from calling
+	// FreeLibrary and crashing Go's runtime teardown.
+	{
+		std::lock_guard<std::mutex> lib_lock(g_loaded_libraries_mutex);
+		auto& cache = get_loaded_libraries();
+		auto it = cache.find(m_modulePath);
+		if (it != cache.end())
+		{
+			m_library = it->second;
+		}
+		else
+		{
+			m_library = std::make_shared<boost::dll::shared_library>();
 
 #ifdef _WIN32
-	auto load_mode = boost::dll::load_mode::default_mode;
+			auto load_mode = boost::dll::load_mode::default_mode;
 #else
-	auto load_mode = boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global;
+			auto load_mode = boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global;
 #endif
 
-	try
-	{
-		m_library->load(m_modulePath, load_mode);
-	}
-	catch (const std::exception& e)
-	{
-		throw std::runtime_error("Module: failed to load shared library '" + m_modulePath + "': " + e.what());
+			try
+			{
+				m_library->load(m_modulePath, load_mode);
+			}
+			catch (const std::exception& e)
+			{
+				throw std::runtime_error("Module: failed to load shared library '" + m_modulePath + "': " + e.what());
+			}
+
+			cache[m_modulePath] = m_library;
+		}
 	}
 }
 

@@ -99,6 +99,26 @@ func TestArrays(t *testing.T) {
 	}
 }
 
+func TestPackedArrays(t *testing.T) {
+	if Sum1dInt64Array([]int64{1, 2, 3, 4, 5}) != 15 {
+		t.Fatalf("Sum1dInt64Array")
+	}
+	arr := []int64{100, 200, 300}
+	result := Echo1dInt64Array(arr)
+	if !reflect.DeepEqual(result, arr) {
+		t.Fatalf("Echo1dInt64Array")
+	}
+	farr := []float64{1.5, 2.5, 3.5}
+	fresult := Echo1dFloat64Array(farr)
+	if !reflect.DeepEqual(fresult, farr) {
+		t.Fatalf("Echo1dFloat64Array")
+	}
+	made := Make1dInt64Array()
+	if !reflect.DeepEqual(made, []int64{10, 20, 30, 40, 50}) {
+		t.Fatalf("Make1dInt64Array")
+	}
+}
+
 func TestObjects(t *testing.T) {
 	sc := &SomeClass{Name: "x"}
 	if !strings.Contains(sc.Print(), "SomeClass") {

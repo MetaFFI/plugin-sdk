@@ -29,6 +29,7 @@ class MetaFFITypes(IntFlag):
 	metaffi_any_type = 4194304
 	metaffi_null_type = 8388608
 	metaffi_callable_type = 16777216
+	metaffi_packed_type = 33554432
 	metaffi_float64_array_type = metaffi_float64_type | metaffi_array_type
 	metaffi_float32_array_type = metaffi_float32_type | metaffi_array_type
 	metaffi_int8_array_type = metaffi_int8_type | metaffi_array_type
@@ -47,6 +48,20 @@ class MetaFFITypes(IntFlag):
 	metaffi_any_array_type = metaffi_any_type | metaffi_array_type
 	metaffi_handle_array_type = metaffi_handle_type | metaffi_array_type
 	metaffi_size_array_type = metaffi_size_type | metaffi_array_type
+	metaffi_float64_packed_array_type = metaffi_float64_type | metaffi_array_type | metaffi_packed_type
+	metaffi_float32_packed_array_type = metaffi_float32_type | metaffi_array_type | metaffi_packed_type
+	metaffi_int8_packed_array_type = metaffi_int8_type | metaffi_array_type | metaffi_packed_type
+	metaffi_int16_packed_array_type = metaffi_int16_type | metaffi_array_type | metaffi_packed_type
+	metaffi_int32_packed_array_type = metaffi_int32_type | metaffi_array_type | metaffi_packed_type
+	metaffi_int64_packed_array_type = metaffi_int64_type | metaffi_array_type | metaffi_packed_type
+	metaffi_uint8_packed_array_type = metaffi_uint8_type | metaffi_array_type | metaffi_packed_type
+	metaffi_uint16_packed_array_type = metaffi_uint16_type | metaffi_array_type | metaffi_packed_type
+	metaffi_uint32_packed_array_type = metaffi_uint32_type | metaffi_array_type | metaffi_packed_type
+	metaffi_uint64_packed_array_type = metaffi_uint64_type | metaffi_array_type | metaffi_packed_type
+	metaffi_bool_packed_array_type = metaffi_bool_type | metaffi_array_type | metaffi_packed_type
+	metaffi_string8_packed_array_type = metaffi_string8_type | metaffi_array_type | metaffi_packed_type
+	metaffi_handle_packed_array_type = metaffi_handle_type | metaffi_array_type | metaffi_packed_type
+	metaffi_callable_packed_array_type = metaffi_callable_type | metaffi_array_type | metaffi_packed_type
 	
 	def describe(self):
 		return self.name, self.value

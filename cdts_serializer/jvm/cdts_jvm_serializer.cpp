@@ -414,6 +414,55 @@ namespace
 	}
 }
 
+// ===== Packed Array Helpers =====
+
+/**
+ * @brief Allocate a packed buffer by memcpy from a JNI primitive array.
+ * Uses GetPrimitiveArrayCritical for zero-copy access to JVM heap.
+ * @param env JNI environment
+ * @param arr JNI primitive array
+ * @param length Array length
+ * @param elem_size Size of each element in bytes
+ * @return malloc'd buffer (caller owns), never null
+ */
+void* packed_from_jni_array(JNIEnv* env, jarray arr, jsize length, size_t elem_size)
+{
+	size_t byte_size = static_cast<size_t>(length) * elem_size;
+	void* buf = xllr_alloc_memory(byte_size);
+	if (!buf)
+	{
+		throw std::runtime_error("add_packed_array: xllr_alloc_memory failed (" + std::to_string(byte_size) + " bytes)");
+	}
+	void* src = env->GetPrimitiveArrayCritical(arr, nullptr);
+	if (!src)
+	{
+		xllr_free_memory(buf);
+		throw std::runtime_error("add_packed_array: GetPrimitiveArrayCritical failed");
+	}
+	std::memcpy(buf, src, byte_size);
+	env->ReleasePrimitiveArrayCritical(arr, src, JNI_ABORT);
+	return buf;
+}
+
+/**
+ * @brief Memcpy from a packed buffer into a JNI primitive array via GetPrimitiveArrayCritical.
+ * @param env JNI environment
+ * @param arr Target JNI primitive array (must already be created with correct size)
+ * @param data Source packed buffer
+ * @param length Number of elements
+ * @param elem_size Size of each element in bytes
+ */
+void packed_to_jni_array(JNIEnv* env, jarray arr, const void* data, jsize length, size_t elem_size)
+{
+	void* dst = env->GetPrimitiveArrayCritical(arr, nullptr);
+	if (!dst)
+	{
+		throw std::runtime_error("extract_packed_array: GetPrimitiveArrayCritical failed");
+	}
+	std::memcpy(dst, data, static_cast<size_t>(length) * elem_size);
+	env->ReleasePrimitiveArrayCritical(arr, dst, 0);
+}
+
 // ===== Phase 1: Core Infrastructure =====
 
 //--------------------------------------------------------------------
@@ -1484,6 +1533,98 @@ cdts_jvm_serializer& cdts_jvm_serializer::add_array(jarray arr, int dimensions, 
 
 	metaffi_type base_type = (element_type & metaffi_array_type) ? (element_type & ~metaffi_array_type) : element_type;
 	serialize_array(arr, dimensions, base_type);
+	return *this;
+}
+
+cdts_jvm_serializer& cdts_jvm_serializer::add_packed_array(jarray arr, metaffi_type element_type)
+{
+	check_bounds(current_index);
+
+	if (!arr) {
+		throw std::runtime_error("add_packed_array: null array not allowed for packed arrays");
+	}
+
+	jsize length = env->GetArrayLength(arr);
+	check_jni_exception("GetArrayLength in add_packed_array");
+
+	// Allocate packed array struct via xllr_alloc_memory
+	cdt_packed_array* packed = static_cast<cdt_packed_array*>(xllr_alloc_memory(sizeof(cdt_packed_array)));
+	if (!packed) { throw std::runtime_error("add_packed_array: xllr_alloc_memory failed for cdt_packed_array"); }
+	packed->data = nullptr;
+	packed->length = static_cast<metaffi_size>(length);
+
+	if (length == 0) {
+		packed->data = nullptr;
+		data[current_index].set_packed_array(packed, static_cast<metaffi_types>(element_type));
+		current_index++;
+		return *this;
+	}
+
+	switch(element_type) {
+		case metaffi_int8_type:
+		case metaffi_uint8_type: {
+			packed->data = packed_from_jni_array(env, arr, length, sizeof(metaffi_int8));
+			break;
+		}
+		case metaffi_int16_type:
+		case metaffi_uint16_type: {
+			packed->data = packed_from_jni_array(env, arr, length, sizeof(metaffi_int16));
+			break;
+		}
+		case metaffi_int32_type:
+		case metaffi_uint32_type: {
+			packed->data = packed_from_jni_array(env, arr, length, sizeof(metaffi_int32));
+			break;
+		}
+		case metaffi_int64_type:
+		case metaffi_uint64_type: {
+			packed->data = packed_from_jni_array(env, arr, length, sizeof(metaffi_int64));
+			break;
+		}
+		case metaffi_float32_type: {
+			packed->data = packed_from_jni_array(env, arr, length, sizeof(metaffi_float32));
+			break;
+		}
+		case metaffi_float64_type: {
+			packed->data = packed_from_jni_array(env, arr, length, sizeof(metaffi_float64));
+			break;
+		}
+		case metaffi_bool_type: {
+			packed->data = packed_from_jni_array(env, arr, length, sizeof(metaffi_bool));
+			break;
+		}
+		case metaffi_string8_type: {
+			// String arrays: element-by-element JNI string conversion
+			metaffi_string8* str_buf = static_cast<metaffi_string8*>(
+				xllr_alloc_memory(static_cast<size_t>(length) * sizeof(metaffi_string8))
+			);
+			if (!str_buf) {
+				xllr_free_memory(packed);
+				throw std::runtime_error("add_packed_array: xllr_alloc_memory failed for string8 pointer array");
+			}
+
+			jobjectArray objArr = (jobjectArray)arr;
+			for (jsize i = 0; i < length; i++) {
+				jstring jstr = (jstring)env->GetObjectArrayElement(objArr, i);
+				if (jstr) {
+					str_buf[i] = jstring_to_string8(jstr);
+					env->DeleteLocalRef(jstr);
+				} else {
+					str_buf[i] = nullptr;
+				}
+			}
+			packed->data = str_buf;
+			break;
+		}
+		default:
+			xllr_free_memory(packed);
+			throw std::runtime_error(
+				"add_packed_array: unsupported element type " + std::to_string(element_type)
+			);
+	}
+
+	data[current_index].set_packed_array(packed, static_cast<metaffi_types>(element_type));
+	current_index++;
 	return *this;
 }
 
@@ -2696,6 +2837,11 @@ jarray cdts_jvm_serializer::extract_array()
 
 	cdt& current = data[current_index];
 
+	// Handle packed arrays first - single memcpy path
+	if (metaffi_is_packed_array(current.type)) {
+		return extract_packed_array();
+	}
+
 	if (!(current.type & metaffi_array_type)) {
 		throw std::runtime_error("Type mismatch: expected array");
 	}
@@ -2738,6 +2884,128 @@ jarray cdts_jvm_serializer::extract_array()
 		} else {
 			result = (jarray)create_object_array(*arr_cdts, element_type);
 		}
+	}
+
+	current_index++;
+	return result;
+}
+
+jarray cdts_jvm_serializer::extract_packed_array()
+{
+	check_bounds(current_index);
+
+	cdt& current = data[current_index];
+
+	if (!metaffi_is_packed_array(current.type)) {
+		throw std::runtime_error(
+			"extract_packed_array: current CDT is not a packed array (type=" + std::to_string(current.type) + ")"
+		);
+	}
+
+	metaffi_type elem_type = metaffi_packed_element_type(current.type);
+	cdt_packed_array* packed = current.get_packed_array();
+
+	// Handle null/empty packed arrays
+	if (!packed || packed->length == 0) {
+		current_index++;
+		switch(elem_type) {
+			case metaffi_int8_type:
+			case metaffi_uint8_type:    return env->NewByteArray(0);
+			case metaffi_int16_type:
+			case metaffi_uint16_type:   return env->NewShortArray(0);
+			case metaffi_int32_type:
+			case metaffi_uint32_type:   return env->NewIntArray(0);
+			case metaffi_int64_type:
+			case metaffi_uint64_type:   return env->NewLongArray(0);
+			case metaffi_float32_type:  return env->NewFloatArray(0);
+			case metaffi_float64_type:  return env->NewDoubleArray(0);
+			case metaffi_bool_type:     return env->NewBooleanArray(0);
+			default:                    return nullptr;
+		}
+	}
+
+	jsize jni_length = static_cast<jsize>(packed->length);
+	jarray result = nullptr;
+
+	switch(elem_type) {
+		case metaffi_int8_type:
+		case metaffi_uint8_type: {
+			jbyteArray arr = env->NewByteArray(jni_length);
+			check_jni_exception("NewByteArray in extract_packed_array");
+			packed_to_jni_array(env, arr, packed->data, jni_length, sizeof(jbyte));
+			result = arr;
+			break;
+		}
+		case metaffi_int16_type:
+		case metaffi_uint16_type: {
+			jshortArray arr = env->NewShortArray(jni_length);
+			check_jni_exception("NewShortArray in extract_packed_array");
+			packed_to_jni_array(env, arr, packed->data, jni_length, sizeof(jshort));
+			result = arr;
+			break;
+		}
+		case metaffi_int32_type:
+		case metaffi_uint32_type: {
+			jintArray arr = env->NewIntArray(jni_length);
+			check_jni_exception("NewIntArray in extract_packed_array");
+			packed_to_jni_array(env, arr, packed->data, jni_length, sizeof(jint));
+			result = arr;
+			break;
+		}
+		case metaffi_int64_type:
+		case metaffi_uint64_type: {
+			jlongArray arr = env->NewLongArray(jni_length);
+			check_jni_exception("NewLongArray in extract_packed_array");
+			packed_to_jni_array(env, arr, packed->data, jni_length, sizeof(jlong));
+			result = arr;
+			break;
+		}
+		case metaffi_float32_type: {
+			jfloatArray arr = env->NewFloatArray(jni_length);
+			check_jni_exception("NewFloatArray in extract_packed_array");
+			packed_to_jni_array(env, arr, packed->data, jni_length, sizeof(jfloat));
+			result = arr;
+			break;
+		}
+		case metaffi_float64_type: {
+			jdoubleArray arr = env->NewDoubleArray(jni_length);
+			check_jni_exception("NewDoubleArray in extract_packed_array");
+			packed_to_jni_array(env, arr, packed->data, jni_length, sizeof(jdouble));
+			result = arr;
+			break;
+		}
+		case metaffi_bool_type: {
+			jbooleanArray arr = env->NewBooleanArray(jni_length);
+			check_jni_exception("NewBooleanArray in extract_packed_array");
+			packed_to_jni_array(env, arr, packed->data, jni_length, sizeof(jboolean));
+			result = arr;
+			break;
+		}
+		case metaffi_string8_type: {
+			// String arrays: element-by-element conversion
+			jclass string_class = env->FindClass("java/lang/String");
+			check_jni_exception("FindClass String in extract_packed_array");
+			jobjectArray arr = env->NewObjectArray(jni_length, string_class, nullptr);
+			check_jni_exception("NewObjectArray in extract_packed_array");
+
+			metaffi_string8* strings = static_cast<metaffi_string8*>(packed->data);
+			for (jsize i = 0; i < jni_length; i++) {
+				if (strings[i]) {
+					jstring jstr = env->NewStringUTF(reinterpret_cast<const char*>(strings[i]));
+					check_jni_exception("NewStringUTF in extract_packed_array");
+					env->SetObjectArrayElement(arr, i, jstr);
+					env->DeleteLocalRef(jstr);
+				}
+				// null strings leave the element as null
+			}
+			env->DeleteLocalRef(string_class);
+			result = arr;
+			break;
+		}
+		default:
+			throw std::runtime_error(
+				"extract_packed_array: unsupported element type " + std::to_string(elem_type)
+			);
 	}
 
 	current_index++;
@@ -2789,6 +3057,11 @@ jarray cdts_jvm_serializer::extract_array(const metaffi_type_info& type_info)
 	check_bounds(current_index);
 
 	cdt& current = data[current_index];
+
+	// Handle packed arrays first - single memcpy path
+	if (metaffi_is_packed_array(current.type)) {
+		return extract_packed_array();
+	}
 
 	if (!(current.type & metaffi_array_type)) {
 		throw std::runtime_error("Type mismatch: expected array");

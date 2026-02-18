@@ -51,6 +51,22 @@ var TemplateFuncMap = map[string]interface{}{
 	"GetTypeForCDTToGo":                          getTypeForCDTToGo,
 	"SafeTypeForAssertion":                       safeTypeForAssertion,
 	"ConvertGlobalSetterExpression":              convertGlobalSetterExpression,
+	"AutoPackedTypeStr":                          AutoPackedTypeStr,
+	"AutoPackedNumericType":                      AutoPackedNumericType,
+	"IsDirectlySerializable":                     isDirectlySerializable,
+	"IsDirectlySerializableScalarOnly":           isDirectlySerializableScalarOnly,
+	"DirectExtractExpr":                          directExtractExpr,
+	"DirectSetStmt":                              directSetStmt,
+}
+
+// stripArraySuffix strips "_packed_array" or "_array" suffix from a MetaFFI type string,
+// returning the base type (e.g. "int64_packed_array" -> "int64", "int64_array" -> "int64").
+func stripArraySuffix(t IDL.MetaFFIType) IDL.MetaFFIType {
+	s := string(t)
+	if strings.HasSuffix(s, "_packed_array") {
+		return IDL.MetaFFIType(strings.TrimSuffix(s, "_packed_array"))
+	}
+	return IDL.MetaFFIType(strings.ReplaceAll(s, "_array", ""))
 }
 
 // isGoKeywordType returns true if the type string is a Go keyword that cannot stand alone as a type
@@ -108,6 +124,62 @@ func GetMetaFFINumericType(typeName IDL.MetaFFIType) uint64 {
 	return t
 }
 
+// autoPackedType returns the packed array type string for a 1D primitive array,
+// or the original type string if packing is not applicable.
+// Packed arrays are only used for 1-dimensional arrays of primitive types that
+// have a defined packed variant (numerics, bool, string8, handle, callable).
+func autoPackedType(arg *IDL.ArgDefinition) IDL.MetaFFIType {
+	typeStr := arg.Type
+	dims := arg.Dimensions
+
+	// If dimensions not explicitly set but type ends with _array, treat as 1D
+	if dims == 0 && strings.HasSuffix(string(typeStr), "_array") {
+		dims = 1
+	}
+
+	// Only pack 1D arrays
+	if dims != 1 {
+		return typeStr
+	}
+
+	// Already a packed type - return as-is
+	if strings.HasSuffix(string(typeStr), "_packed_array") {
+		return typeStr
+	}
+
+	// Convert regular array to packed if a packed variant exists
+	if strings.HasSuffix(string(typeStr), "_array") {
+		baseType := strings.TrimSuffix(string(typeStr), "_array")
+		packedType := IDL.MetaFFIType(baseType + "_packed_array")
+		if _, found := IDL.TypeStringToTypeEnum[packedType]; found {
+			return packedType
+		}
+	}
+
+	// Handle IDL format where type is base type (e.g. "uint8") with dimensions=1
+	// (as opposed to "uint8_array" with dimensions=0). Promote to packed if applicable.
+	if !strings.Contains(string(typeStr), "_array") {
+		packedType := IDL.MetaFFIType(string(typeStr) + "_packed_array")
+		if _, found := IDL.TypeStringToTypeEnum[packedType]; found {
+			return packedType
+		}
+	}
+
+	return typeStr
+}
+
+// AutoPackedTypeStr is a template function that returns the (possibly packed)
+// type string for an ArgDefinition. Used in guest template code generation.
+func AutoPackedTypeStr(arg *IDL.ArgDefinition) string {
+	return string(autoPackedType(arg))
+}
+
+// AutoPackedNumericType is a template function that returns the numeric MetaFFI
+// type enum value for an ArgDefinition, using packed type when applicable.
+func AutoPackedNumericType(arg *IDL.ArgDefinition) uint64 {
+	return GetMetaFFINumericType(autoPackedType(arg))
+}
+
 func Iterate(count *uint) []uint {
 	var i uint
 	var items []uint
@@ -118,24 +190,23 @@ func Iterate(count *uint) []uint {
 }
 
 func GetMetaFFITypeInfos(funcDef *IDL.FunctionDefinition) string {
-	paramsTypes := funcDef.GetParametersMetaFFITypeInfo()
-	retvalTypes := funcDef.GetReturnValuesMetaFFITypeInfo()
-
 	strParams := "nil"
 	strRetVals := "nil"
 
-	if paramsTypes != nil && len(paramsTypes) > 0 {
+	if funcDef.Parameters != nil && len(funcDef.Parameters) > 0 {
 		strParams = "[]IDL.MetaFFITypeInfo{"
-		for _, p := range paramsTypes {
-			strParams += `IDL.MetaFFITypeInfo{StringType: IDL.` + IDL.TypeStringToEnumName[p.StringType] + `, Alias: "` + p.Alias + `", Type: ` + fmt.Sprintf("%v", GetMetaFFINumericType(p.StringType)) + `, Dimensions: ` + fmt.Sprintf("%v", p.Dimensions) + ` },`
+		for _, a := range funcDef.Parameters {
+			packedT := autoPackedType(a)
+			strParams += `IDL.MetaFFITypeInfo{StringType: IDL.` + IDL.TypeStringToEnumName[packedT] + `, Alias: "` + a.TypeAlias + `", Type: ` + fmt.Sprintf("%v", GetMetaFFINumericType(packedT)) + `, Dimensions: ` + fmt.Sprintf("%v", a.Dimensions) + ` },`
 		}
 		strParams += "}"
 	}
 
-	if retvalTypes != nil && len(retvalTypes) > 0 {
+	if funcDef.ReturnValues != nil && len(funcDef.ReturnValues) > 0 {
 		strRetVals = "[]IDL.MetaFFITypeInfo{"
-		for _, p := range retvalTypes {
-			strRetVals += `IDL.MetaFFITypeInfo{StringType: IDL.` + IDL.TypeStringToEnumName[p.StringType] + `, Alias: "` + p.Alias + `", Type: ` + fmt.Sprintf("%v", GetMetaFFINumericType(p.StringType)) + `, Dimensions: ` + fmt.Sprintf("%v", p.Dimensions) + ` },`
+		for _, a := range funcDef.ReturnValues {
+			packedT := autoPackedType(a)
+			strRetVals += `IDL.MetaFFITypeInfo{StringType: IDL.` + IDL.TypeStringToEnumName[packedT] + `, Alias: "` + a.TypeAlias + `", Type: ` + fmt.Sprintf("%v", GetMetaFFINumericType(packedT)) + `, Dimensions: ` + fmt.Sprintf("%v", a.Dimensions) + ` },`
 		}
 		strRetVals += "}"
 	}
@@ -402,7 +473,15 @@ func convertToGoType(def *IDL.ArgDefinition, mod *IDL.ModuleDefinition) string {
 
 	var res string
 
-	t := IDL.MetaFFIType(strings.ReplaceAll(string(def.Type), "_array", ""))
+	// Strip array suffixes to get the base type.
+	// Must strip "_packed_array" before "_array" since "_packed_array" ends with "_array".
+	baseStr := string(def.Type)
+	if strings.HasSuffix(baseStr, "_packed_array") {
+		baseStr = strings.TrimSuffix(baseStr, "_packed_array")
+	} else {
+		baseStr = strings.ReplaceAll(baseStr, "_array", "")
+	}
+	t := IDL.MetaFFIType(baseStr)
 
 	switch t {
 	case IDL.STRING8:
@@ -676,7 +755,7 @@ func assertAndConvert(varName string, def *IDL.ArgDefinition, mod *IDL.ModuleDef
 // cdtStorageGoType returns the Go type that FromCDTToGo stores a value as,
 // based on the MetaFFI type (e.g., int64, string, float64, interface{}).
 func cdtStorageGoType(metaffiType IDL.MetaFFIType) string {
-	t := IDL.MetaFFIType(strings.ReplaceAll(string(metaffiType), "_array", ""))
+	t := stripArraySuffix(metaffiType)
 	switch t {
 	case IDL.STRING8, IDL.STRING16, IDL.STRING32:
 		return "string"
@@ -713,7 +792,7 @@ func convertEmptyInterfaceFromCDTSToCorrectType(elem *IDL.ArgDefinition, mod *ID
 	}
 
 	// Non-array scalar types
-	baseType := IDL.MetaFFIType(strings.ReplaceAll(string(elem.Type), "_array", ""))
+	baseType := stripArraySuffix(elem.Type)
 
 	if baseType == IDL.HANDLE {
 		// HANDLE: CDT stores the original Go value as interface{}.
@@ -750,6 +829,184 @@ func convertEmptyInterfaceFromCDTSToCorrectType(elem *IDL.ArgDefinition, mod *ID
 	return fmt.Sprintf("%v := %v(%vAsInterface.(%v))", elem.Name, targetType, elem.Name, cdtType)
 }
 
+// ============================================================
+// Typed CDT template helpers (Direct* serialization)
+// ============================================================
+
+// isDirectlySerializable returns true if the arg can be handled by Direct*
+// CDT functions (scalars and 1D packed arrays of primitive types).
+func isDirectlySerializable(elem *IDL.ArgDefinition) bool {
+	effectiveType := autoPackedType(elem)
+	typeStr := string(effectiveType)
+
+	// Packed array → supported if base type has Direct* function
+	// AND the Go element type matches the CDT element type.
+	if strings.HasSuffix(typeStr, "_packed_array") {
+		base := strings.TrimSuffix(typeStr, "_packed_array")
+		if typeToGoFuncCase(base) == "" {
+			return false
+		}
+		// Verify TypeAlias compatibility to avoid []int vs []int64 mismatches
+		if elem.TypeAlias != "" {
+			aliasElem := strings.TrimPrefix(elem.TypeAlias, "[]")
+			cdtGoType := cdtStorageGoType(IDL.MetaFFIType(base))
+			if normalizeGoAlias(aliasElem) != normalizeGoAlias(cdtGoType) {
+				return false
+			}
+		}
+		return true
+	}
+
+	// Regular (non-packed) array that wasn't promoted → fallback
+	if strings.HasSuffix(typeStr, "_array") {
+		return false
+	}
+
+	// Multi-dim arrays → fallback
+	if elem.Dimensions > 1 {
+		return false
+	}
+
+	// Scalar primitive (dims == 0 at this point since autoPackedType would have
+	// promoted dims == 1 to packed if the base type supports it)
+	return typeToGoFuncCase(typeStr) != ""
+}
+
+// isDirectlySerializableScalarOnly is like isDirectlySerializable but only
+// returns true for scalar primitives, never for packed arrays.
+// Use for PARAMETERS in the guest template: the caller (host) determines the
+// wire format for arrays, which may be per-element CDT arrays instead of packed.
+func isDirectlySerializableScalarOnly(elem *IDL.ArgDefinition) bool {
+	effectiveType := autoPackedType(elem)
+	typeStr := string(effectiveType)
+
+	// Any array (packed or not) → fallback
+	if strings.Contains(typeStr, "_array") {
+		return false
+	}
+	if elem.Dimensions >= 1 {
+		return false
+	}
+
+	return typeToGoFuncCase(typeStr) != ""
+}
+
+// normalizeGoAlias resolves Go's built-in type aliases for comparison.
+func normalizeGoAlias(t string) string {
+	switch t {
+	case "byte":
+		return "uint8"
+	case "rune":
+		return "int32"
+	default:
+		return t
+	}
+}
+
+// typeToGoFuncCase maps a MetaFFI base type string to the Go-cased suffix
+// used in Direct*CDT function names (e.g. "int32" → "Int32").
+// Returns "" for unsupported types.
+func typeToGoFuncCase(metaffiBase string) string {
+	switch IDL.MetaFFIType(metaffiBase) {
+	case IDL.INT8:
+		return "Int8"
+	case IDL.INT16:
+		return "Int16"
+	case IDL.INT32:
+		return "Int32"
+	case IDL.INT64:
+		return "Int64"
+	case IDL.UINT8:
+		return "Uint8"
+	case IDL.UINT16:
+		return "Uint16"
+	case IDL.UINT32:
+		return "Uint32"
+	case IDL.UINT64:
+		return "Uint64"
+	case IDL.FLOAT32:
+		return "Float32"
+	case IDL.FLOAT64:
+		return "Float64"
+	case IDL.BOOL:
+		return "Bool"
+	case IDL.STRING8:
+		return "String8"
+	default:
+		return ""
+	}
+}
+
+// directCDTFuncSuffix returns the suffix for Direct*CDT function names
+// (e.g. "Int32" for scalars, "Uint8PackedSlice" for packed arrays).
+func directCDTFuncSuffix(effectiveType IDL.MetaFFIType) string {
+	typeStr := string(effectiveType)
+	if strings.HasSuffix(typeStr, "_packed_array") {
+		base := strings.TrimSuffix(typeStr, "_packed_array")
+		return typeToGoFuncCase(base) + "PackedSlice"
+	}
+	return typeToGoFuncCase(typeStr)
+}
+
+// directCDTGoReturnType returns the Go type that DirectGetCDT* returns.
+func directCDTGoReturnType(effectiveType IDL.MetaFFIType) string {
+	typeStr := string(effectiveType)
+	if strings.HasSuffix(typeStr, "_packed_array") {
+		base := strings.TrimSuffix(typeStr, "_packed_array")
+		return "[]" + cdtStorageGoType(IDL.MetaFFIType(base))
+	}
+	return cdtStorageGoType(effectiveType)
+}
+
+// directExtractExpr generates a Go expression that extracts a parameter from
+// the CDT array using a Direct* function. Includes type conversion if needed.
+// Example outputs:
+//
+//	DirectGetCDTUint8PackedSlice(unsafe.Pointer(parameters_CDTS), 0)
+//	int(DirectGetCDTInt64(unsafe.Pointer(parameters_CDTS), 1))
+func directExtractExpr(elem *IDL.ArgDefinition, mod *IDL.ModuleDefinition, index int, cdtsVarName string) string {
+	effectiveType := autoPackedType(elem)
+	suffix := directCDTFuncSuffix(effectiveType)
+	expr := fmt.Sprintf("DirectGetCDT%s(unsafe.Pointer(%s), %d)", suffix, cdtsVarName, index)
+
+	// Packed arrays return the correct slice type – no conversion needed.
+	if strings.HasSuffix(string(effectiveType), "_packed_array") {
+		return expr
+	}
+
+	// Scalar: check if the CDT return type differs from the target Go type.
+	cdtRet := directCDTGoReturnType(effectiveType)
+	target := safeTypeForAssertion(elem, mod)
+	if target != "interface{}" && cdtRet != target {
+		return fmt.Sprintf("%s(%s)", target, expr)
+	}
+	return expr
+}
+
+// directSetStmt generates a Go statement that writes a return value to the
+// CDT array using a Direct* function. Includes type conversion if needed.
+// Example outputs:
+//
+//	DirectSetCDTUint8PackedSlice(unsafe.Pointer(retvals_CDTS), 0, data)
+//	DirectSetCDTInt64(unsafe.Pointer(retvals_CDTS), 0, int64(result))
+func directSetStmt(elem *IDL.ArgDefinition, mod *IDL.ModuleDefinition, index int, cdtsVarName string, varName string) string {
+	effectiveType := autoPackedType(elem)
+	suffix := directCDTFuncSuffix(effectiveType)
+
+	// Packed arrays – pass the slice directly.
+	if strings.HasSuffix(string(effectiveType), "_packed_array") {
+		return fmt.Sprintf("DirectSetCDT%s(unsafe.Pointer(%s), %d, %s)", suffix, cdtsVarName, index, varName)
+	}
+
+	// Scalar: check if the Go variable type differs from what DirectSet expects.
+	cdtParam := directCDTGoReturnType(effectiveType)
+	target := safeTypeForAssertion(elem, mod)
+	if target != "interface{}" && cdtParam != target {
+		return fmt.Sprintf("DirectSetCDT%s(unsafe.Pointer(%s), %d, %s(%s))", suffix, cdtsVarName, index, cdtParam, varName)
+	}
+	return fmt.Sprintf("DirectSetCDT%s(unsafe.Pointer(%s), %d, %s)", suffix, cdtsVarName, index, varName)
+}
+
 // convertGlobalSetterExpression returns a Go expression that converts _globalSetValAsInterface
 // to the correct Go type for assignment to a global variable.
 // This is separate from convertEmptyInterfaceFromCDTSToCorrectType because for global setters,
@@ -772,7 +1029,7 @@ func convertGlobalSetterExpression(elem *IDL.ArgDefinition, mod *IDL.ModuleDefin
 		return fmt.Sprintf("%v.(%v)", varName, typ)
 	}
 
-	baseType := IDL.MetaFFIType(strings.ReplaceAll(string(elem.Type), "_array", ""))
+	baseType := stripArraySuffix(elem.Type)
 
 	if baseType == IDL.HANDLE {
 		targetType := elem.TypeAlias

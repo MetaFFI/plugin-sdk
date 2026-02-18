@@ -4,6 +4,7 @@
 #include "xllr_capi_loader.h"
 #include <cstring>
 #include <cstdlib>
+#include <iostream>
 #include <sstream>
 #include <limits>
 #include <new>
@@ -59,7 +60,6 @@ void handler_print_hello(cdts* data, char** out_err)
 
 void handler_return_int8(cdts* data, char** out_err)
 {
-	// data[1] is the return values cdts - use type-specific assignment
 	data[1].arr[0] = static_cast<metaffi_int8>(42);
 	log_entity("test::return_int8", "returning 42");
 }
@@ -339,12 +339,19 @@ void handler_concat_strings(cdts* data, char** out_err)
 
 void handler_return_int64_array_1d(cdts* data, char** out_err)
 {
-	// Create array [1, 2, 3]
-	data[1].arr[0].set_new_array(3, 1, metaffi_int64_type);
-	cdts& arr = *data[1].arr[0].cdt_val.array_val;
-	arr[0] = static_cast<metaffi_int64>(1);
-	arr[1] = static_cast<metaffi_int64>(2);
-	arr[2] = static_cast<metaffi_int64>(3);
+	// Create packed array [1, 2, 3]
+	// All packed array data must use xllr_alloc_memory for cross-runtime compatibility
+	cdt_packed_array* packed = static_cast<cdt_packed_array*>(xllr_alloc_memory(sizeof(cdt_packed_array)));
+	packed->data = nullptr;
+	packed->length = 3;
+
+	auto* buf = static_cast<metaffi_int64*>(xllr_alloc_memory(3 * sizeof(metaffi_int64)));
+	buf[0] = 1;
+	buf[1] = 2;
+	buf[2] = 3;
+	packed->data = buf;
+
+	data[1].arr[0].set_packed_array(packed, metaffi_int64_type);
 	log_entity("test::return_int64_array_1d", "returning [1, 2, 3]");
 }
 
@@ -422,26 +429,51 @@ void handler_return_ragged_array(cdts* data, char** out_err)
 
 void handler_return_string_array(cdts* data, char** out_err)
 {
-	// Create array ["one", "two", "three"]
-	data[1].arr[0].set_new_array(3, 1, metaffi_string8_type);
-	cdts& arr = *data[1].arr[0].cdt_val.array_val;
-	arr[0].set_string(reinterpret_cast<const char8_t*>("one"), true);
-	arr[1].set_string(reinterpret_cast<const char8_t*>("two"), true);
-	arr[2].set_string(reinterpret_cast<const char8_t*>("three"), true);
+	// Create packed string array ["one", "two", "three"]
+	cdt_packed_array* packed = static_cast<cdt_packed_array*>(xllr_alloc_memory(sizeof(cdt_packed_array)));
+	packed->data = nullptr;
+	packed->length = 3;
+
+	auto* buf = static_cast<metaffi_string8*>(xllr_alloc_memory(3 * sizeof(metaffi_string8)));
+	buf[0] = xllr_alloc_string8(reinterpret_cast<const char8_t*>("one"), 3);
+	buf[1] = xllr_alloc_string8(reinterpret_cast<const char8_t*>("two"), 3);
+	buf[2] = xllr_alloc_string8(reinterpret_cast<const char8_t*>("three"), 5);
+	packed->data = buf;
+
+	data[1].arr[0].set_packed_array(packed, metaffi_string8_type);
+
 	log_entity("test::return_string_array", "returning [\"one\", \"two\", \"three\"]");
 }
 
 void handler_sum_int64_array(cdts* data, char** out_err)
 {
-	// data[0] = params, data[1] = returns
-	cdts* arr = data[0].arr[0].cdt_val.array_val;
+	// data[0] = params (packed int64 array), data[1] = returns
+	cdt& param = data[0].arr[0];
 	metaffi_int64 sum = 0;
 
-	if(arr && arr->arr)
+	if(metaffi_is_packed_array(param.type))
 	{
-		for(metaffi_size i = 0; i < arr->length; ++i)
+		// Packed array path
+		cdt_packed_array* packed = param.get_packed_array();
+		if(packed && packed->data)
 		{
-			sum += arr->arr[i].cdt_val.int64_val;
+			auto* vals = static_cast<metaffi_int64*>(packed->data);
+			for(metaffi_size i = 0; i < packed->length; ++i)
+			{
+				sum += vals[i];
+			}
+		}
+	}
+	else
+	{
+		// Regular array path (fallback)
+		cdts* arr = param.cdt_val.array_val;
+		if(arr && arr->arr)
+		{
+			for(metaffi_size i = 0; i < arr->length; ++i)
+			{
+				sum += arr->arr[i].cdt_val.int64_val;
+			}
 		}
 	}
 
@@ -451,41 +483,89 @@ void handler_sum_int64_array(cdts* data, char** out_err)
 
 void handler_echo_int64_array(cdts* data, char** out_err)
 {
-	// data[0] = params, data[1] = returns
-	cdts* input_arr = data[0].arr[0].cdt_val.array_val;
+	// data[0] = params (packed int64 array), data[1] = returns (packed int64 array)
+	cdt& param = data[0].arr[0];
 
-	if(!input_arr || !input_arr->arr)
+	if(metaffi_is_packed_array(param.type))
 	{
-		data[1].arr[0].type = metaffi_null_type;
-		log_entity("test::echo_int64_array", "echoing null array");
-		return;
+		// Packed array path
+		cdt_packed_array* input = param.get_packed_array();
+		if(!input || !input->data)
+		{
+			data[1].arr[0].type = metaffi_null_type;
+			log_entity("test::echo_int64_array", "echoing null packed array");
+			return;
+		}
+
+		auto* in_vals = static_cast<metaffi_int64*>(input->data);
+
+		// Create output packed array
+		cdt_packed_array* output = static_cast<cdt_packed_array*>(xllr_alloc_memory(sizeof(cdt_packed_array)));
+		output->data = nullptr;
+		output->length = input->length;
+		auto* out_vals = static_cast<metaffi_int64*>(xllr_alloc_memory(input->length * sizeof(metaffi_int64)));
+		for(metaffi_size i = 0; i < input->length; ++i)
+		{
+			out_vals[i] = in_vals[i];
+		}
+		output->data = out_vals;
+		data[1].arr[0].set_packed_array(output, metaffi_int64_type);
+		log_entity("test::echo_int64_array", "echoing packed array of length " + std::to_string(input->length));
 	}
-
-	// Create output array with same size
-	data[1].arr[0].set_new_array(input_arr->length, input_arr->fixed_dimensions, metaffi_int64_type);
-	cdts& output_arr = *data[1].arr[0].cdt_val.array_val;
-
-	for(metaffi_size i = 0; i < input_arr->length; ++i)
+	else
 	{
-		output_arr[i] = input_arr->arr[i].cdt_val.int64_val;
-	}
+		// Regular array path (fallback)
+		cdts* input_arr = param.cdt_val.array_val;
+		if(!input_arr || !input_arr->arr)
+		{
+			data[1].arr[0].type = metaffi_null_type;
+			log_entity("test::echo_int64_array", "echoing null array");
+			return;
+		}
 
-	log_entity("test::echo_int64_array", "echoing array of length " + std::to_string(input_arr->length));
+		data[1].arr[0].set_new_array(input_arr->length, input_arr->fixed_dimensions, metaffi_int64_type);
+		cdts& output_arr = *data[1].arr[0].cdt_val.array_val;
+		for(metaffi_size i = 0; i < input_arr->length; ++i)
+		{
+			output_arr[i] = input_arr->arr[i].cdt_val.int64_val;
+		}
+		log_entity("test::echo_int64_array", "echoing array of length " + std::to_string(input_arr->length));
+	}
 }
 
 void handler_join_strings(cdts* data, char** out_err)
 {
-	// data[0] = params, data[1] = returns
-	cdts* arr = data[0].arr[0].cdt_val.array_val;
+	// data[0] = params (packed string8 array), data[1] = returns
+	cdt& param = data[0].arr[0];
 	std::string result;
 
-	if(arr && arr->arr)
+	if(metaffi_is_packed_array(param.type))
 	{
-		for(metaffi_size i = 0; i < arr->length; ++i)
+		// Packed string array path
+		cdt_packed_array* packed = param.get_packed_array();
+		if(packed && packed->data)
 		{
-			if(i > 0) result += ", ";
-			const char* s = reinterpret_cast<const char*>(arr->arr[i].cdt_val.string8_val);
-			if(s) result += s;
+			auto* strings = static_cast<metaffi_string8*>(packed->data);
+			for(metaffi_size i = 0; i < packed->length; ++i)
+			{
+				if(i > 0) result += ", ";
+				const char* s = reinterpret_cast<const char*>(strings[i]);
+				if(s) result += s;
+			}
+		}
+	}
+	else
+	{
+		// Regular array path (fallback)
+		cdts* arr = param.cdt_val.array_val;
+		if(arr && arr->arr)
+		{
+			for(metaffi_size i = 0; i < arr->length; ++i)
+			{
+				if(i > 0) result += ", ";
+				const char* s = reinterpret_cast<const char*>(arr->arr[i].cdt_val.string8_val);
+				if(s) result += s;
+			}
 		}
 	}
 

@@ -8,6 +8,7 @@ package cdts_go_serializer
 #include <xllr_capi_loader.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 // Initialize XLLR - call this before using any XLLR functions
 static int xllr_initialized = 0;
@@ -195,6 +196,51 @@ struct cdts* get_cdt_array(struct cdt* c) {
 
 void set_cdt_array(struct cdt* c, struct cdts* arr) {
     c->cdt_val.array_val = arr;
+}
+
+// Packed array getter/setter
+struct cdt_packed_array* get_cdt_packed_array_val(struct cdt* c) {
+    return c->cdt_val.packed_array_val;
+}
+
+void set_cdt_packed_array_val(struct cdt* c, struct cdt_packed_array* val) {
+    c->cdt_val.packed_array_val = val;
+}
+
+// Packed array struct accessors
+void* get_packed_array_data(struct cdt_packed_array* p) {
+    return p->data;
+}
+
+metaffi_size get_packed_array_length(struct cdt_packed_array* p) {
+    return p->length;
+}
+
+// Allocate a new cdt_packed_array with a data buffer for numeric types.
+// elem_size is sizeof(element_type). Caller must cast data pointer appropriately.
+struct cdt_packed_array* alloc_packed_array(metaffi_size length, size_t elem_size) {
+    ensure_xllr_loaded();
+    struct cdt_packed_array* p = (struct cdt_packed_array*)xllr_alloc_memory(sizeof(struct cdt_packed_array));
+    if (!p) return NULL;
+    p->length = length;
+    if (length > 0 && elem_size > 0) {
+        p->data = xllr_alloc_memory(length * elem_size);
+        if (!p->data) { xllr_free_memory(p); return NULL; }
+        memset(p->data, 0, length * elem_size);
+    } else {
+        p->data = NULL;
+    }
+    return p;
+}
+
+// Helper: check if a type is a packed array type
+static int is_packed_array_type(metaffi_type t) {
+    return (t & metaffi_packed_type) && (t & metaffi_array_type);
+}
+
+// Helper: get element type from packed array type
+static metaffi_type packed_element_type(metaffi_type t) {
+    return t & ~(metaffi_array_type | metaffi_packed_type);
 }
 
 // Handle getter/setter
@@ -1003,6 +1049,388 @@ func (s *CDTSGoSerializer) AddBoolSlice(vals []bool) (*CDTSGoSerializer, error) 
 		return nil, err
 	}
 	return s, nil
+}
+
+// ===== Packed Array Serialization Methods (Go → CDTS, zero-copy for numeric types) =====
+
+// addPackedNumericSlice is a generic helper for adding a packed numeric slice.
+// It memcpy's the Go slice's backing array directly into the packed buffer.
+func (s *CDTSGoSerializer) addPackedNumericSlice(dataPtr unsafe.Pointer, length uint64, elemSize uintptr, packedType C.metaffi_type) (*CDTSGoSerializer, error) {
+	cdt, err := s.getCurrentCDT()
+	if err != nil {
+		return nil, err
+	}
+
+	packed := C.alloc_packed_array(C.metaffi_size(length), C.size_t(elemSize))
+	if packed == nil {
+		return nil, errors.New("alloc_packed_array failed: memory allocation error")
+	}
+
+	if length > 0 {
+		C.memcpy(C.get_packed_array_data(packed), dataPtr, C.size_t(length*uint64(elemSize)))
+	}
+
+	C.set_cdt_packed_array_val(cdt, packed)
+	C.set_cdt_type(cdt, packedType)
+	C.set_cdt_free_required(cdt, 1)
+	s.currentIndex++
+	return s, nil
+}
+
+// AddInt8PackedSlice adds a packed int8 array (contiguous buffer, no per-element CDT)
+func (s *CDTSGoSerializer) AddInt8PackedSlice(vals []int8) (*CDTSGoSerializer, error) {
+	if len(vals) == 0 {
+		return s.addPackedNumericSlice(nil, 0, unsafe.Sizeof(C.metaffi_int8(0)), C.metaffi_int8_packed_array_type)
+	}
+	return s.addPackedNumericSlice(unsafe.Pointer(&vals[0]), uint64(len(vals)), unsafe.Sizeof(C.metaffi_int8(0)), C.metaffi_int8_packed_array_type)
+}
+
+// AddInt16PackedSlice adds a packed int16 array
+func (s *CDTSGoSerializer) AddInt16PackedSlice(vals []int16) (*CDTSGoSerializer, error) {
+	if len(vals) == 0 {
+		return s.addPackedNumericSlice(nil, 0, unsafe.Sizeof(C.metaffi_int16(0)), C.metaffi_int16_packed_array_type)
+	}
+	return s.addPackedNumericSlice(unsafe.Pointer(&vals[0]), uint64(len(vals)), unsafe.Sizeof(C.metaffi_int16(0)), C.metaffi_int16_packed_array_type)
+}
+
+// AddInt32PackedSlice adds a packed int32 array
+func (s *CDTSGoSerializer) AddInt32PackedSlice(vals []int32) (*CDTSGoSerializer, error) {
+	if len(vals) == 0 {
+		return s.addPackedNumericSlice(nil, 0, unsafe.Sizeof(C.metaffi_int32(0)), C.metaffi_int32_packed_array_type)
+	}
+	return s.addPackedNumericSlice(unsafe.Pointer(&vals[0]), uint64(len(vals)), unsafe.Sizeof(C.metaffi_int32(0)), C.metaffi_int32_packed_array_type)
+}
+
+// AddInt64PackedSlice adds a packed int64 array
+func (s *CDTSGoSerializer) AddInt64PackedSlice(vals []int64) (*CDTSGoSerializer, error) {
+	if len(vals) == 0 {
+		return s.addPackedNumericSlice(nil, 0, unsafe.Sizeof(C.metaffi_int64(0)), C.metaffi_int64_packed_array_type)
+	}
+	return s.addPackedNumericSlice(unsafe.Pointer(&vals[0]), uint64(len(vals)), unsafe.Sizeof(C.metaffi_int64(0)), C.metaffi_int64_packed_array_type)
+}
+
+// AddUint8PackedSlice adds a packed uint8 array
+func (s *CDTSGoSerializer) AddUint8PackedSlice(vals []uint8) (*CDTSGoSerializer, error) {
+	if len(vals) == 0 {
+		return s.addPackedNumericSlice(nil, 0, unsafe.Sizeof(C.metaffi_uint8(0)), C.metaffi_uint8_packed_array_type)
+	}
+	return s.addPackedNumericSlice(unsafe.Pointer(&vals[0]), uint64(len(vals)), unsafe.Sizeof(C.metaffi_uint8(0)), C.metaffi_uint8_packed_array_type)
+}
+
+// AddUint16PackedSlice adds a packed uint16 array
+func (s *CDTSGoSerializer) AddUint16PackedSlice(vals []uint16) (*CDTSGoSerializer, error) {
+	if len(vals) == 0 {
+		return s.addPackedNumericSlice(nil, 0, unsafe.Sizeof(C.metaffi_uint16(0)), C.metaffi_uint16_packed_array_type)
+	}
+	return s.addPackedNumericSlice(unsafe.Pointer(&vals[0]), uint64(len(vals)), unsafe.Sizeof(C.metaffi_uint16(0)), C.metaffi_uint16_packed_array_type)
+}
+
+// AddUint32PackedSlice adds a packed uint32 array
+func (s *CDTSGoSerializer) AddUint32PackedSlice(vals []uint32) (*CDTSGoSerializer, error) {
+	if len(vals) == 0 {
+		return s.addPackedNumericSlice(nil, 0, unsafe.Sizeof(C.metaffi_uint32(0)), C.metaffi_uint32_packed_array_type)
+	}
+	return s.addPackedNumericSlice(unsafe.Pointer(&vals[0]), uint64(len(vals)), unsafe.Sizeof(C.metaffi_uint32(0)), C.metaffi_uint32_packed_array_type)
+}
+
+// AddUint64PackedSlice adds a packed uint64 array
+func (s *CDTSGoSerializer) AddUint64PackedSlice(vals []uint64) (*CDTSGoSerializer, error) {
+	if len(vals) == 0 {
+		return s.addPackedNumericSlice(nil, 0, unsafe.Sizeof(C.metaffi_uint64(0)), C.metaffi_uint64_packed_array_type)
+	}
+	return s.addPackedNumericSlice(unsafe.Pointer(&vals[0]), uint64(len(vals)), unsafe.Sizeof(C.metaffi_uint64(0)), C.metaffi_uint64_packed_array_type)
+}
+
+// AddFloat32PackedSlice adds a packed float32 array
+func (s *CDTSGoSerializer) AddFloat32PackedSlice(vals []float32) (*CDTSGoSerializer, error) {
+	if len(vals) == 0 {
+		return s.addPackedNumericSlice(nil, 0, unsafe.Sizeof(C.metaffi_float32(0)), C.metaffi_float32_packed_array_type)
+	}
+	return s.addPackedNumericSlice(unsafe.Pointer(&vals[0]), uint64(len(vals)), unsafe.Sizeof(C.metaffi_float32(0)), C.metaffi_float32_packed_array_type)
+}
+
+// AddFloat64PackedSlice adds a packed float64 array
+func (s *CDTSGoSerializer) AddFloat64PackedSlice(vals []float64) (*CDTSGoSerializer, error) {
+	if len(vals) == 0 {
+		return s.addPackedNumericSlice(nil, 0, unsafe.Sizeof(C.metaffi_float64(0)), C.metaffi_float64_packed_array_type)
+	}
+	return s.addPackedNumericSlice(unsafe.Pointer(&vals[0]), uint64(len(vals)), unsafe.Sizeof(C.metaffi_float64(0)), C.metaffi_float64_packed_array_type)
+}
+
+// AddBoolPackedSlice adds a packed bool array (metaffi_bool = uint8)
+func (s *CDTSGoSerializer) AddBoolPackedSlice(vals []bool) (*CDTSGoSerializer, error) {
+	cdt, err := s.getCurrentCDT()
+	if err != nil {
+		return nil, err
+	}
+
+	length := uint64(len(vals))
+	packed := C.alloc_packed_array(C.metaffi_size(length), C.size_t(unsafe.Sizeof(C.metaffi_bool(0))))
+	if packed == nil {
+		return nil, errors.New("alloc_packed_array failed: memory allocation error")
+	}
+
+	if length > 0 {
+		data := (*[1 << 30]C.metaffi_bool)(C.get_packed_array_data(packed))[:length:length]
+		for i, v := range vals {
+			if v {
+				data[i] = 1
+			} else {
+				data[i] = 0
+			}
+		}
+	}
+
+	C.set_cdt_packed_array_val(cdt, packed)
+	C.set_cdt_type(cdt, C.metaffi_bool_packed_array_type)
+	C.set_cdt_free_required(cdt, 1)
+	s.currentIndex++
+	return s, nil
+}
+
+// AddStringPackedSlice adds a packed string8 array (array of char* pointers)
+func (s *CDTSGoSerializer) AddStringPackedSlice(vals []string) (*CDTSGoSerializer, error) {
+	cdt, err := s.getCurrentCDT()
+	if err != nil {
+		return nil, err
+	}
+
+	length := uint64(len(vals))
+	// Allocate cdt_packed_array with pointer array for strings
+	packed := C.alloc_packed_array(C.metaffi_size(length), C.size_t(unsafe.Sizeof((*C.char8_t)(nil))))
+	if packed == nil {
+		return nil, errors.New("alloc_packed_array failed: memory allocation error")
+	}
+
+	if length > 0 {
+		// data is an array of char8_t* (metaffi_string8)
+		data := (*[1 << 30]*C.char8_t)(C.get_packed_array_data(packed))[:length:length]
+		for i, v := range vals {
+			cStr := C.CString(v)
+			allocated := C.xllr_alloc_string8((*C.char8_t)(unsafe.Pointer(cStr)), C.uint64_t(len(v)))
+			C.free(unsafe.Pointer(cStr))
+			if allocated == nil {
+				return nil, fmt.Errorf("xllr_alloc_string8 failed for string at index %d", i)
+			}
+			data[i] = allocated
+		}
+	}
+
+	C.set_cdt_packed_array_val(cdt, packed)
+	C.set_cdt_type(cdt, C.metaffi_string8_packed_array_type)
+	C.set_cdt_free_required(cdt, 1)
+	s.currentIndex++
+	return s, nil
+}
+
+// ===== Packed Array Deserialization Methods (CDTS → Go) =====
+
+// extractPackedNumericSlice extracts a packed numeric array as a Go slice using memcpy.
+func (s *CDTSGoSerializer) extractPackedNumericSlice(expectedType C.metaffi_type, elemSize uintptr) (unsafe.Pointer, uint64, error) {
+	cdt, err := s.getCurrentCDT()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	actualType := C.get_cdt_type(cdt)
+	if actualType != expectedType {
+		return nil, 0, fmt.Errorf("type mismatch at index %d: expected packed type %d, got %d", s.currentIndex, expectedType, actualType)
+	}
+
+	packed := C.get_cdt_packed_array_val(cdt)
+	if packed == nil {
+		return nil, 0, fmt.Errorf("packed array value is nil at index %d", s.currentIndex)
+	}
+
+	length := uint64(C.get_packed_array_length(packed))
+	s.currentIndex++
+	if length == 0 {
+		return nil, 0, nil
+	}
+
+	return unsafe.Pointer(C.get_packed_array_data(packed)), length, nil
+}
+
+// ExtractInt8PackedSlice extracts a packed int8 array
+func (s *CDTSGoSerializer) ExtractInt8PackedSlice() ([]int8, error) {
+	dataPtr, length, err := s.extractPackedNumericSlice(C.metaffi_int8_packed_array_type, unsafe.Sizeof(C.metaffi_int8(0)))
+	if err != nil || length == 0 {
+		return nil, err
+	}
+	result := make([]int8, length)
+	C.memcpy(unsafe.Pointer(&result[0]), dataPtr, C.size_t(length*uint64(unsafe.Sizeof(C.metaffi_int8(0)))))
+	return result, nil
+}
+
+// ExtractInt16PackedSlice extracts a packed int16 array
+func (s *CDTSGoSerializer) ExtractInt16PackedSlice() ([]int16, error) {
+	dataPtr, length, err := s.extractPackedNumericSlice(C.metaffi_int16_packed_array_type, unsafe.Sizeof(C.metaffi_int16(0)))
+	if err != nil || length == 0 {
+		return nil, err
+	}
+	result := make([]int16, length)
+	C.memcpy(unsafe.Pointer(&result[0]), dataPtr, C.size_t(length*uint64(unsafe.Sizeof(C.metaffi_int16(0)))))
+	return result, nil
+}
+
+// ExtractInt32PackedSlice extracts a packed int32 array
+func (s *CDTSGoSerializer) ExtractInt32PackedSlice() ([]int32, error) {
+	dataPtr, length, err := s.extractPackedNumericSlice(C.metaffi_int32_packed_array_type, unsafe.Sizeof(C.metaffi_int32(0)))
+	if err != nil || length == 0 {
+		return nil, err
+	}
+	result := make([]int32, length)
+	C.memcpy(unsafe.Pointer(&result[0]), dataPtr, C.size_t(length*uint64(unsafe.Sizeof(C.metaffi_int32(0)))))
+	return result, nil
+}
+
+// ExtractInt64PackedSlice extracts a packed int64 array
+func (s *CDTSGoSerializer) ExtractInt64PackedSlice() ([]int64, error) {
+	dataPtr, length, err := s.extractPackedNumericSlice(C.metaffi_int64_packed_array_type, unsafe.Sizeof(C.metaffi_int64(0)))
+	if err != nil || length == 0 {
+		return nil, err
+	}
+	result := make([]int64, length)
+	C.memcpy(unsafe.Pointer(&result[0]), dataPtr, C.size_t(length*uint64(unsafe.Sizeof(C.metaffi_int64(0)))))
+	return result, nil
+}
+
+// ExtractUint8PackedSlice extracts a packed uint8 array
+func (s *CDTSGoSerializer) ExtractUint8PackedSlice() ([]uint8, error) {
+	dataPtr, length, err := s.extractPackedNumericSlice(C.metaffi_uint8_packed_array_type, unsafe.Sizeof(C.metaffi_uint8(0)))
+	if err != nil || length == 0 {
+		return nil, err
+	}
+	result := make([]uint8, length)
+	C.memcpy(unsafe.Pointer(&result[0]), dataPtr, C.size_t(length*uint64(unsafe.Sizeof(C.metaffi_uint8(0)))))
+	return result, nil
+}
+
+// ExtractUint16PackedSlice extracts a packed uint16 array
+func (s *CDTSGoSerializer) ExtractUint16PackedSlice() ([]uint16, error) {
+	dataPtr, length, err := s.extractPackedNumericSlice(C.metaffi_uint16_packed_array_type, unsafe.Sizeof(C.metaffi_uint16(0)))
+	if err != nil || length == 0 {
+		return nil, err
+	}
+	result := make([]uint16, length)
+	C.memcpy(unsafe.Pointer(&result[0]), dataPtr, C.size_t(length*uint64(unsafe.Sizeof(C.metaffi_uint16(0)))))
+	return result, nil
+}
+
+// ExtractUint32PackedSlice extracts a packed uint32 array
+func (s *CDTSGoSerializer) ExtractUint32PackedSlice() ([]uint32, error) {
+	dataPtr, length, err := s.extractPackedNumericSlice(C.metaffi_uint32_packed_array_type, unsafe.Sizeof(C.metaffi_uint32(0)))
+	if err != nil || length == 0 {
+		return nil, err
+	}
+	result := make([]uint32, length)
+	C.memcpy(unsafe.Pointer(&result[0]), dataPtr, C.size_t(length*uint64(unsafe.Sizeof(C.metaffi_uint32(0)))))
+	return result, nil
+}
+
+// ExtractUint64PackedSlice extracts a packed uint64 array
+func (s *CDTSGoSerializer) ExtractUint64PackedSlice() ([]uint64, error) {
+	dataPtr, length, err := s.extractPackedNumericSlice(C.metaffi_uint64_packed_array_type, unsafe.Sizeof(C.metaffi_uint64(0)))
+	if err != nil || length == 0 {
+		return nil, err
+	}
+	result := make([]uint64, length)
+	C.memcpy(unsafe.Pointer(&result[0]), dataPtr, C.size_t(length*uint64(unsafe.Sizeof(C.metaffi_uint64(0)))))
+	return result, nil
+}
+
+// ExtractFloat32PackedSlice extracts a packed float32 array
+func (s *CDTSGoSerializer) ExtractFloat32PackedSlice() ([]float32, error) {
+	dataPtr, length, err := s.extractPackedNumericSlice(C.metaffi_float32_packed_array_type, unsafe.Sizeof(C.metaffi_float32(0)))
+	if err != nil || length == 0 {
+		return nil, err
+	}
+	result := make([]float32, length)
+	C.memcpy(unsafe.Pointer(&result[0]), dataPtr, C.size_t(length*uint64(unsafe.Sizeof(C.metaffi_float32(0)))))
+	return result, nil
+}
+
+// ExtractFloat64PackedSlice extracts a packed float64 array
+func (s *CDTSGoSerializer) ExtractFloat64PackedSlice() ([]float64, error) {
+	dataPtr, length, err := s.extractPackedNumericSlice(C.metaffi_float64_packed_array_type, unsafe.Sizeof(C.metaffi_float64(0)))
+	if err != nil || length == 0 {
+		return nil, err
+	}
+	result := make([]float64, length)
+	C.memcpy(unsafe.Pointer(&result[0]), dataPtr, C.size_t(length*uint64(unsafe.Sizeof(C.metaffi_float64(0)))))
+	return result, nil
+}
+
+// ExtractBoolPackedSlice extracts a packed bool array
+func (s *CDTSGoSerializer) ExtractBoolPackedSlice() ([]bool, error) {
+	cdt, err := s.getCurrentCDT()
+	if err != nil {
+		return nil, err
+	}
+
+	actualType := C.get_cdt_type(cdt)
+	if actualType != C.metaffi_bool_packed_array_type {
+		return nil, fmt.Errorf("type mismatch at index %d: expected bool packed array, got %d", s.currentIndex, actualType)
+	}
+
+	packed := C.get_cdt_packed_array_val(cdt)
+	if packed == nil {
+		return nil, fmt.Errorf("packed array value is nil at index %d", s.currentIndex)
+	}
+
+	length := uint64(C.get_packed_array_length(packed))
+	s.currentIndex++
+	if length == 0 {
+		return nil, nil
+	}
+
+	data := (*[1 << 30]C.metaffi_bool)(C.get_packed_array_data(packed))[:length:length]
+	result := make([]bool, length)
+	for i := uint64(0); i < length; i++ {
+		result[i] = data[i] != 0
+	}
+	return result, nil
+}
+
+// ExtractStringPackedSlice extracts a packed string8 array
+func (s *CDTSGoSerializer) ExtractStringPackedSlice() ([]string, error) {
+	cdt, err := s.getCurrentCDT()
+	if err != nil {
+		return nil, err
+	}
+
+	actualType := C.get_cdt_type(cdt)
+	if actualType != C.metaffi_string8_packed_array_type {
+		return nil, fmt.Errorf("type mismatch at index %d: expected string8 packed array, got %d", s.currentIndex, actualType)
+	}
+
+	packed := C.get_cdt_packed_array_val(cdt)
+	if packed == nil {
+		return nil, fmt.Errorf("packed array value is nil at index %d", s.currentIndex)
+	}
+
+	length := uint64(C.get_packed_array_length(packed))
+	s.currentIndex++
+	if length == 0 {
+		return nil, nil
+	}
+
+	data := (*[1 << 30]*C.char)(C.get_packed_array_data(packed))[:length:length]
+	result := make([]string, length)
+	for i := uint64(0); i < length; i++ {
+		result[i] = C.GoString(data[i])
+	}
+	return result, nil
+}
+
+// IsPackedArray checks if the current element is a packed array
+func (s *CDTSGoSerializer) IsPackedArray() (bool, error) {
+	cdt, err := s.getCurrentCDT()
+	if err != nil {
+		return false, err
+	}
+	t := C.get_cdt_type(cdt)
+	return C.is_packed_array_type(t) != 0, nil
 }
 
 // ===== Deserialization Methods (CDTS → Go) =====

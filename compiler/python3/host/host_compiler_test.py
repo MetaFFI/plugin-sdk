@@ -419,10 +419,11 @@ class TestHostCompiler(unittest.TestCase):
         self.assertEqual(type_info.fixed_dimensions, 0)
 
     def test_metaffi_type_info_array(self):
-        """Test metaffi_type_info creation for array types."""
+        """Test metaffi_type_info creation for array types.
+        1D arrays of packable primitives are auto-upgraded to packed array types."""
         from sdk.idl_entities.python3 import type_mapper
 
-        # Create array argument
+        # Create 1D array argument - should be auto-packed for primitive types
         arg = idl_entities_model.ArgDefinition(
             name="numbers",
             type="int64_array",
@@ -436,10 +437,33 @@ class TestHostCompiler(unittest.TestCase):
         # Convert to type_info
         type_info = type_mapper.arg_to_metaffi_type_info(arg, metaffi_types)
 
-        # Verify it includes array flag
+        # 1D primitive arrays are auto-upgraded to packed
+        expected_type = metaffi_types.MetaFFITypes.metaffi_int64_type | metaffi_types.MetaFFITypes.metaffi_array_type | metaffi_types.MetaFFITypes.metaffi_packed_type
+        self.assertEqual(type_info.type, expected_type)
+
+    def test_metaffi_type_info_multidim_array(self):
+        """Test metaffi_type_info creation for multi-dimensional array types.
+        Multi-dimensional arrays should NOT be packed."""
+        from sdk.idl_entities.python3 import type_mapper
+
+        # Create 2D array argument - should NOT be packed
+        arg = idl_entities_model.ArgDefinition(
+            name="matrix",
+            type="int64_array",
+            type_alias="",
+            comment="",
+            tags={},
+            dimensions=2,
+            is_optional=False
+        )
+
+        # Convert to type_info
+        type_info = type_mapper.arg_to_metaffi_type_info(arg, metaffi_types)
+
+        # Multi-dimensional arrays remain regular (not packed)
         expected_type = metaffi_types.MetaFFITypes.metaffi_int64_type | metaffi_types.MetaFFITypes.metaffi_array_type
         self.assertEqual(type_info.type, expected_type)
-        self.assertEqual(type_info.fixed_dimensions, 1)
+        self.assertEqual(type_info.fixed_dimensions, 2)
 
     def test_environment_variable_handling_in_generated_code(self):
         """Test that generated code includes environment variable handling."""
