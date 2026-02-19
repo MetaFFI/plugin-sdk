@@ -88,8 +88,8 @@ TEST_PLUGIN_API void free_xcall(xcall* pff, char** err);
  * XCall variant handlers - invoked by the SDK.
  */
 TEST_PLUGIN_API void xcall_params_ret(void* context, cdts params_ret[2], char** out_err);
-TEST_PLUGIN_API void xcall_params_no_ret(void* context, cdts parameters[1], char** out_err);
-TEST_PLUGIN_API void xcall_no_params_ret(void* context, cdts return_values[1], char** out_err);
+TEST_PLUGIN_API void xcall_params_no_ret(void* context, cdts params_ret[2], char** out_err);
+TEST_PLUGIN_API void xcall_no_params_ret(void* context, cdts params_ret[2], char** out_err);
 TEST_PLUGIN_API void xcall_no_params_no_ret(void* context, char** out_err);
 
 } // extern "C"

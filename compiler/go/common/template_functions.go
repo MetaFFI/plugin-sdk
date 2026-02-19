@@ -326,14 +326,11 @@ func generateMethodReceiverCode(meth *IDL.MethodDefinition) string {
 
 // --------------------------------------------------------------------
 func getCDTReturnValueIndex(params []*IDL.ArgDefinition, retvals []*IDL.ArgDefinition) int {
-	// XLLR calling convention:
-	// - params_ret: cdts[2] -> params at [0], retvals at [1]
-	// - no_params_ret: cdts[1] -> retvals at [0]
-	// - params_no_ret: cdts[1] -> params at [0]
-	if len(params) > 0 {
-		return 1 // retvals after params
+	// Caller always passes cdts[2]: [0]=params, [1]=retvals. get_cdt_element(xcall_params, i) returns pdata[i].arr.
+	if len(retvals) > 0 {
+		return 1 // retvals always at buffer index 1
 	}
-	return 0 // retvals only, at index 0
+	panic("getCDTReturnValueIndex called with no retvals")
 }
 
 // --------------------------------------------------------------------

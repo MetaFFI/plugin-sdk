@@ -39,8 +39,8 @@ struct xcall* make_callable(void* make_callable_context, metaffi_type_info* para
 void free_xcall(xcall* pff, char** err);
 
 void xcall_params_ret(void* context, cdts params_ret[2], char** out_err);
-void xcall_params_no_ret(void* context, cdts parameters[1], char** out_err);
-void xcall_no_params_ret(void* context, cdts return_values[1], char** out_err);
+void xcall_params_no_ret(void* context, cdts params_ret[2], char** out_err);
+void xcall_no_params_ret(void* context, cdts params_ret[2], char** out_err);
 void xcall_no_params_no_ret(void* context, char** out_err);
 
 }

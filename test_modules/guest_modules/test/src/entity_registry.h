@@ -38,8 +38,8 @@ private:
 enum class XCallVariant
 {
 	PARAMS_RET,        // void xcall_params_ret(void* context, cdts params_ret[2], char** out_err)
-	PARAMS_NO_RET,     // void xcall_params_no_ret(void* context, cdts parameters[1], char** out_err)
-	NO_PARAMS_RET,     // void xcall_no_params_ret(void* context, cdts return_values[1], char** out_err)
+	PARAMS_NO_RET,     // void xcall_params_no_ret(void* context, cdts params_ret[2], char** out_err)
+	NO_PARAMS_RET,     // void xcall_no_params_ret(void* context, cdts params_ret[2], char** out_err)
 	NO_PARAMS_NO_RET   // void xcall_no_params_no_ret(void* context, char** out_err)
 };
 

@@ -422,21 +422,23 @@ cdts MetaFFIEntity::call_with_cdts(cdts&& params)
 
 	if(params_count > 0)
 	{
-		std::array<cdts, 1> params_only{};
-		params_only[0] = std::move(params);
+		std::array<cdts, 2> params_ret{};
+		params_ret[0] = std::move(params);
+		params_ret[1] = cdts(0);  // [1] = retvals slot (unused)
 
-		xllr_xcall_params_no_ret(_pxcall, params_only.data(), &err);
+		xllr_xcall_params_no_ret(_pxcall, params_ret.data(), &err);
 		throw_if_err(err, "xcall invocation failed");
 		return cdts();
 	}
 
-	std::array<cdts, 1> ret_only{};
-	ret_only[0] = std::move(retvals);
+	std::array<cdts, 2> params_ret{};
+	params_ret[0] = cdts(0);  // [0] = params slot (empty)
+	params_ret[1] = std::move(retvals);
 
-	xllr_xcall_no_params_ret(_pxcall, ret_only.data(), &err);
+	xllr_xcall_no_params_ret(_pxcall, params_ret.data(), &err);
 	throw_if_err(err, "xcall invocation failed");
 
-	retvals = std::move(ret_only[0]);
+	retvals = std::move(params_ret[1]);
 	validate_retvals(retvals);
 	return retvals;
 }

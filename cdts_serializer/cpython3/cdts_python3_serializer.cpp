@@ -529,6 +529,83 @@ void cdts_python3_serializer::pyobject_to_cdt(PyObject* obj, cdt& target, metaff
 				    << " not yet implemented for Python3 serializer";
 				throw_py_err(oss.str());
 			}
+			case metaffi_char8_type:
+			case metaffi_char16_type:
+			case metaffi_char32_type:
+			{
+				// Single character: get first code point from Python str
+				PyObject* utf32_bytes = pPyUnicode_AsUTF32String(obj);
+				if(!utf32_bytes)
+				{
+					std::string error_msg = check_python_error();
+					throw_py_err("Failed to convert Unicode to UTF-32: " + error_msg);
+				}
+				char* buf = nullptr;
+				Py_ssize_t buf_size = 0;
+				if(pPyBytes_AsStringAndSize(utf32_bytes, &buf, &buf_size) == -1)
+				{
+					Py_DECREF(utf32_bytes);
+					std::string error_msg = check_python_error();
+					throw_py_err("Failed to get UTF-32 buffer: " + error_msg);
+				}
+				if(buf_size < 8)  // BOM (4) + at least one code point (4)
+				{
+					Py_DECREF(utf32_bytes);
+					throw_py_err("Python string is empty; cannot convert to single character");
+				}
+				char32_t cp = *reinterpret_cast<const char32_t*>(buf + 4);  // skip BOM
+				Py_DECREF(utf32_bytes);
+
+				target.free_required = false;
+				if(target_type == metaffi_char32_type)
+				{
+					target.type = metaffi_char32_type;
+					target.cdt_val.char32_val.c = cp;
+				}
+				else if(target_type == metaffi_char16_type)
+				{
+					target.type = metaffi_char16_type;
+					if(cp < 0x10000u)
+					{
+						target.cdt_val.char16_val.c[0] = static_cast<char16_t>(cp);
+						target.cdt_val.char16_val.c[1] = u'\0';
+					}
+					else
+					{
+						cp -= 0x10000u;
+						target.cdt_val.char16_val.c[0] = static_cast<char16_t>(0xD800u + (cp >> 10));
+						target.cdt_val.char16_val.c[1] = static_cast<char16_t>(0xDC00u + (cp & 0x3FFu));
+					}
+				}
+				else  // metaffi_char8_type
+				{
+					target.type = metaffi_char8_type;
+					unsigned n = 0;
+					if(cp < 0x80u)
+						target.cdt_val.char8_val.c[n++] = static_cast<char8_t>(cp);
+					else if(cp < 0x800u)
+					{
+						target.cdt_val.char8_val.c[n++] = static_cast<char8_t>(0xC0u | (cp >> 6));
+						target.cdt_val.char8_val.c[n++] = static_cast<char8_t>(0x80u | (cp & 0x3Fu));
+					}
+					else if(cp < 0x10000u)
+					{
+						target.cdt_val.char8_val.c[n++] = static_cast<char8_t>(0xE0u | (cp >> 12));
+						target.cdt_val.char8_val.c[n++] = static_cast<char8_t>(0x80u | ((cp >> 6) & 0x3Fu));
+						target.cdt_val.char8_val.c[n++] = static_cast<char8_t>(0x80u | (cp & 0x3Fu));
+					}
+					else
+					{
+						target.cdt_val.char8_val.c[n++] = static_cast<char8_t>(0xF0u | (cp >> 18));
+						target.cdt_val.char8_val.c[n++] = static_cast<char8_t>(0x80u | ((cp >> 12) & 0x3Fu));
+						target.cdt_val.char8_val.c[n++] = static_cast<char8_t>(0x80u | ((cp >> 6) & 0x3Fu));
+						target.cdt_val.char8_val.c[n++] = static_cast<char8_t>(0x80u | (cp & 0x3Fu));
+					}
+					for(; n < 4; n++)
+						target.cdt_val.char8_val.c[n] = u8'\0';
+				}
+				break;
+			}
 			default:
 			{
 				std::ostringstream oss;
@@ -1820,6 +1897,56 @@ PyObject* cdts_python3_serializer::cdt_to_pyobject(const cdt& source)
 				{
 					error = "Failed to create string32 PyUnicode";
 				}
+				throw_py_err(error);
+			}
+			return result;
+		}
+
+		case metaffi_char8_type:
+		{
+			int8_t n = metaffi_char8::num_of_bytes(source.cdt_val.char8_val.c);
+			if(n <= 0)
+			{
+				throw_py_err("cdt_to_pyobject: invalid char8 UTF-8 sequence");
+			}
+			PyObject* result = pPyUnicode_FromStringAndSize(
+				reinterpret_cast<const char*>(source.cdt_val.char8_val.c), n);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty()) error = "Failed to create char8 PyUnicode";
+				throw_py_err(error);
+			}
+			return result;
+		}
+
+		case metaffi_char16_type:
+		{
+			int8_t n_bytes = metaffi_char16::num_of_bytes(source.cdt_val.char16_val.c);
+			if(n_bytes <= 0)
+			{
+				throw_py_err("cdt_to_pyobject: invalid char16 UTF-16 sequence");
+			}
+			Py_ssize_t n_units = static_cast<Py_ssize_t>(n_bytes / 2);  // code units (char16_t)
+			PyObject* result = pPyUnicode_FromKindAndData(PyUnicode_2BYTE_KIND,
+				reinterpret_cast<const char*>(source.cdt_val.char16_val.c), n_units);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty()) error = "Failed to create char16 PyUnicode";
+				throw_py_err(error);
+			}
+			return result;
+		}
+
+		case metaffi_char32_type:
+		{
+			PyObject* result = pPyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
+				reinterpret_cast<const char*>(&source.cdt_val.char32_val.c), 1);
+			if(!result || pPyErr_Occurred())
+			{
+				std::string error = check_python_error();
+				if(error.empty()) error = "Failed to create char32 PyUnicode";
 				throw_py_err(error);
 			}
 			return result;

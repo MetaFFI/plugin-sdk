@@ -136,29 +136,29 @@ void xllr_xcall_params_ret(struct xcall* pxcall,
 	                       out_err);
 }
 
-void (*pxllr_xcall_no_params_ret)(struct xcall*, struct cdts[1], char**);
+void (*pxllr_xcall_no_params_ret)(struct xcall*, struct cdts[2], char**);
 void xllr_xcall_no_params_ret(struct xcall* pxcall,
-                              struct cdts return_values[1],
+                              struct cdts params_ret[2],
                               char** out_err
 )
 {
 	check_function_pointer(pxllr_xcall_no_params_ret,);
 
 	pxllr_xcall_no_params_ret(pxcall,
-	                          return_values,
+	                          params_ret,
 	                          out_err);
 }
 
-void (*pxllr_xcall_params_no_ret)(struct xcall*, struct cdts[1], char**);
+void (*pxllr_xcall_params_no_ret)(struct xcall*, struct cdts[2], char**);
 void xllr_xcall_params_no_ret(struct xcall* pxcall,
-                              struct cdts parameters[1],
+                              struct cdts params_ret[2],
                               char** out_err
 )
 {
 	check_function_pointer(pxllr_xcall_params_no_ret,);
 
 	pxllr_xcall_params_no_ret(pxcall,
-	                          parameters,
+	                          params_ret,
 	                          out_err);
 }
 
@@ -460,14 +460,14 @@ const char* load_xllr_capi()
 		return out_err;
 	}
 
-	pxllr_xcall_no_params_ret = (void (*)(struct xcall*, struct cdts[1], char**)) load_symbol(cdt_helper_xllr_handle, "xcall_no_params_ret", &out_err);
+	pxllr_xcall_no_params_ret = (void (*)(struct xcall*, struct cdts[2], char**)) load_symbol(cdt_helper_xllr_handle, "xcall_no_params_ret", &out_err);
 	if(!pxllr_xcall_no_params_ret)
 	{
 		printf("Failed to load xllr_xcall_no_params_ret: %s\n", out_err);
 		return out_err;
 	}
 
-	pxllr_xcall_params_no_ret = (void (*)(struct xcall*, struct cdts[1], char**)) load_symbol(cdt_helper_xllr_handle, "xcall_params_no_ret", &out_err);
+	pxllr_xcall_params_no_ret = (void (*)(struct xcall*, struct cdts[2], char**)) load_symbol(cdt_helper_xllr_handle, "xcall_params_no_ret", &out_err);
 	if(!pxllr_xcall_params_no_ret)
 	{
 		printf("Failed to load xllr_xcall_params_no_ret: %s\n", out_err);

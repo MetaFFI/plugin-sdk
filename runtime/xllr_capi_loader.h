@@ -27,12 +27,12 @@ void xllr_xcall_params_ret(struct xcall* pxcall,
 );
 
 void xllr_xcall_no_params_ret(struct xcall* pxcall,
-                struct cdts return_values[1],
+                struct cdts params_ret[2],
                 char** out_err
 );
 
 void xllr_xcall_params_no_ret(struct xcall* pxcall,
-                struct cdts parameters[1],
+                struct cdts params_ret[2],
                 char** out_err
 );
 
