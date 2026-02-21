@@ -1,5 +1,13 @@
 #pragma once
 
+#ifdef __cplusplus
+#include <cstddef>
+#include <cstdint>
+#else
+#include <stddef.h>
+#include <stdint.h>
+#endif
+
 // Python version info - will be set dynamically based on loaded version
 // This file provides forward declarations and type definitions
 

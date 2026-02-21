@@ -16,6 +16,60 @@
 // === Handlers ===
 void* cdt_helper_xllr_handle = NULL;
 
+static int build_xllr_path(char* out, size_t out_size, const char* metaffi_home, const char* ext)
+{
+#ifdef _WIN32
+	const char sep = '\\';
+#else
+	const char sep = '/';
+#endif
+
+	const char* xllr_name = "xllr";
+	size_t home_len = strlen(metaffi_home);
+	size_t xllr_len = strlen(xllr_name);
+	size_t ext_len = strlen(ext);
+	size_t required = home_len + 1 + xllr_len + ext_len + 1; // home + sep + xllr + ext + '\0'
+
+	if(required > out_size)
+	{
+		return 0;
+	}
+
+	memcpy(out, metaffi_home, home_len);
+	out[home_len] = sep;
+	memcpy(out + home_len + 1, xllr_name, xllr_len);
+	memcpy(out + home_len + 1 + xllr_len, ext, ext_len);
+	out[required - 1] = '\0';
+	return 1;
+}
+
+static int build_metaffi_library_path(char* out, size_t out_size, const char* metaffi_home, const char* path_within_metaffi_home, const char* ext)
+{
+#ifdef _WIN32
+	const char sep = '\\';
+#else
+	const char sep = '/';
+#endif
+
+	size_t home_len = strlen(metaffi_home);
+	size_t rel_len = strlen(path_within_metaffi_home);
+	size_t ext_len = strlen(ext);
+	size_t required = home_len + 1 + rel_len + 1 + ext_len + 1; // home + sep + rel + '.' + ext + '\0'
+
+	if(required > out_size)
+	{
+		return 0;
+	}
+
+	memcpy(out, metaffi_home, home_len);
+	out[home_len] = sep;
+	memcpy(out + home_len + 1, path_within_metaffi_home, rel_len);
+	out[home_len + 1 + rel_len] = '.';
+	memcpy(out + home_len + 1 + rel_len + 1, ext, ext_len);
+	out[required - 1] = '\0';
+	return 1;
+}
+
 /************************************************
 *   Allocations
 *************************************************/
@@ -598,10 +652,16 @@ const char* load_xllr()
 
 #ifdef _WIN32
 	char xllr_full_path[MAX_PATH] = {0};
-	metaffi_sprintf(xllr_full_path, sizeof(xllr_full_path), "%s\\xllr%s", metaffi_home, ext);
+	if(!build_xllr_path(xllr_full_path, sizeof(xllr_full_path), metaffi_home, ext))
+	{
+		return "METAFFI_HOME path is too long";
+	}
 #else
 	char xllr_full_path[PATH_MAX+6] = {0};
-	metaffi_sprintf(xllr_full_path, sizeof(xllr_full_path), "%s/xllr%s", metaffi_home, ext);
+	if(!build_xllr_path(xllr_full_path, sizeof(xllr_full_path), metaffi_home, ext))
+	{
+		return "METAFFI_HOME path is too long";
+	}
 #endif
 
 	char* out_err;
@@ -678,10 +738,16 @@ const char* load_metaffi_library(const char* path_within_metaffi_home, void** ou
 	// load $METAFFI_HOME/path_within_metaffi_home
 #ifdef _WIN32
 	char full_path[MAX_PATH] = {0};
-	metaffi_sprintf(full_path, sizeof(full_path), "%s\\%s.%s", metaffi_home, path_within_metaffi_home, ext);
+	if(!build_metaffi_library_path(full_path, sizeof(full_path), metaffi_home, path_within_metaffi_home, ext))
+	{
+		return "METAFFI_HOME path is too long";
+	}
 #else
 	char full_path[PATH_MAX*2] = {0};
-	metaffi_sprintf(full_path, sizeof(full_path), "%s/%s.%s", metaffi_home, path_within_metaffi_home, ext);
+	if(!build_metaffi_library_path(full_path, sizeof(full_path), metaffi_home, path_within_metaffi_home, ext))
+	{
+		return "METAFFI_HOME path is too long";
+	}
 #endif
 	
 	char* out_err;

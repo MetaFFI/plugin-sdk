@@ -137,21 +137,12 @@ private:
 	template<typename T>
 	static constexpr bool is_vector_v = is_vector<T>::value;
 
-	// Type trait: Check if type is a string type
+	// Type trait: Check if type is a string type (portable across MSVC/GCC/Clang)
 	template<typename T>
-	struct is_string_type : std::false_type {};
-
-	template<>
-	struct is_string_type<std::string> : std::true_type {};
-
-	template<>
-	struct is_string_type<std::u16string> : std::true_type {};
-
-	template<>
-	struct is_string_type<std::u32string> : std::true_type {};
-
-	template<typename T>
-	static constexpr bool is_string_type_v = is_string_type<T>::value;
+	static constexpr bool is_string_type_v =
+		std::is_same_v<T, std::string> ||
+		std::is_same_v<T, std::u16string> ||
+		std::is_same_v<T, std::u32string>;
 };
 
 } // namespace metaffi::idl

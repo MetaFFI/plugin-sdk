@@ -1,14 +1,14 @@
 #pragma once
-#include <boost/dll.hpp>
+#include <utils/boost_dll_compat.hpp>
 
 namespace metaffi::utils
 {
 //--------------------------------------------------------------------
 template<typename T>
-std::shared_ptr<typename boost::dll::detail::import_type<T>::type> load_func(const std::string& fullpath, const std::string& funcname, boost::dll::load_mode::type mode )
+std::shared_ptr<boost_dll_import_t<T>> load_func(const std::string& fullpath, const std::string& funcname, boost::dll::load_mode::type mode )
 {
 
-	return std::make_shared<typename boost::dll::detail::import_type<T>::type>(
+	return std::make_shared<boost_dll_import_t<T>>(
 #if BOOST_VERSION >= 107100
 		boost::dll::import_symbol<T>(fullpath, funcname, mode)
 #else
@@ -18,11 +18,11 @@ std::shared_ptr<typename boost::dll::detail::import_type<T>::type> load_func(con
 }
 //--------------------------------------------------------------------
 template<typename T>
-std::shared_ptr<typename boost::dll::detail::import_type<T>::type> load_func(const boost::dll::shared_library& so, const std::string& funcname)
+std::shared_ptr<boost_dll_import_t<T>> load_func(const boost::dll::shared_library& so, const std::string& funcname)
 {
 	try
 	{
-		return std::make_shared<typename boost::dll::detail::import_type<T>::type>(
+		return std::make_shared<boost_dll_import_t<T>>(
 #if BOOST_VERSION >= 107100
 			    boost::dll::import_symbol<T>(so, funcname)
 #else

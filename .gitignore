@@ -81,3 +81,5 @@ api/python3/dist/*
 test_modules/guest_modules/java/test_bin/guest_java.jar
 
 *.compiled
+
+test_modules/guest_modules/c/test_bin/

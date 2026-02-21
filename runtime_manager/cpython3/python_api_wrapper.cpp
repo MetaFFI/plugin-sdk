@@ -590,14 +590,16 @@ static bool try_load_python_library(const std::string& version)
 	}
 
 	// Try to find already loaded Python library
-	struct {
+	struct found_python_lib_info
+	{
 		void* handle;
 		std::string path;
-	} found_info = {nullptr, ""};
+	};
+	found_python_lib_info found_info = {nullptr, ""};
 	
 	dl_iterate_phdr([](struct dl_phdr_info* info, size_t size, void* data) -> int {
 		if (info->dlpi_name && strstr(info->dlpi_name, "libpython")) {
-			auto* found_info = static_cast<decltype(found_info)*>(data);
+			auto* found_info = static_cast<found_python_lib_info*>(data);
 			found_info->handle = dlopen(info->dlpi_name, RTLD_NOLOAD | RTLD_NOW);
 			if (found_info->handle) {
 				found_info->path = info->dlpi_name;
@@ -615,7 +617,7 @@ static bool try_load_python_library(const std::string& version)
 
 	// Try loading with version-specific names
 	std::string version_no_dot = version;
-	std::replace(version_no_dot.begin(), version_no_dot.end(), '.', '');
+	version_no_dot.erase(std::remove(version_no_dot.begin(), version_no_dot.end(), '.'), version_no_dot.end());
 	
 	const char* lib_names[] = {
 		("libpython" + version + ".so").c_str(),
@@ -1037,15 +1039,17 @@ bool load_python3_api_from_loaded_library(std::string& out_detected_version)
 	else
 	{
 		// Try to find the library using dl_iterate_phdr
-		struct {
+		struct found_python_lib_info
+		{
 			void* handle;
 			std::string path;
-		} found_info = {nullptr, ""};
+		};
+		found_python_lib_info found_info = {nullptr, ""};
 		
 		dl_iterate_phdr([](struct dl_phdr_info* info, size_t size, void* data) -> int {
 			if(info->dlpi_name && strstr(info->dlpi_name, "libpython"))
 			{
-				auto* found_info = static_cast<decltype(found_info)*>(data);
+				auto* found_info = static_cast<found_python_lib_info*>(data);
 				found_info->handle = dlopen(info->dlpi_name, RTLD_NOLOAD | RTLD_NOW);
 				if(found_info->handle)
 				{
