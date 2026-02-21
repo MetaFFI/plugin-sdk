@@ -27,4 +27,5 @@ require (
 	golang.org/x/tools v0.35.0 // indirect
 )
 
+replace github.com/MetaFFI/sdk/idl_entities/go => ../../idl_entities/go
 
