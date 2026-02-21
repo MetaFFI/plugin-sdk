@@ -7,9 +7,12 @@ add_py_test(sdk.api.python3.unittest.test_python3_api
 )
 
 # Set test dependency on xllr.python3 being built
-set_tests_properties("(python3 test) sdk.api.python3.unittest.test_python3_api" PROPERTIES
-    DEPENDS xllr.python3
-)
+set(_python_api_test_name "(python3 test) sdk.api.python3.unittest.test_python3_api")
+if(TEST "${_python_api_test_name}")
+    set_tests_properties("${_python_api_test_name}" PROPERTIES
+        DEPENDS xllr.python3
+    )
+endif()
 
 # * ---- Publish python metaffi package to pypi ----
 add_custom_target(python3.publish
