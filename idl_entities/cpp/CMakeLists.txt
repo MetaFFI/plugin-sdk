@@ -1,7 +1,7 @@
 # C++ IDL Entities Library (header-only)
 
 # Find dependencies
-find_or_install_package(nlohmann_json)
+find_or_install_package(nlohmann-json)
 find_or_install_package(doctest)
 
 # Set paths
