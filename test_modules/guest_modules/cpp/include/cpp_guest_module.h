@@ -92,13 +92,13 @@ private:
 	Inner inner_;
 };
 
-class CPP_GUEST_MODULE_API Greeter {
+class Greeter {
 public:
 	virtual ~Greeter() = default;
 	virtual std::string greet(const std::string& name) = 0;
 };
 
-class CPP_GUEST_MODULE_API SimpleGreeter : public Greeter {
+class SimpleGreeter : public Greeter {
 public:
 	std::string greet(const std::string& name) override;
 };
