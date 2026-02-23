@@ -5,16 +5,188 @@
 #include <runtime/xllr_capi_loader.h>
 #include <utils/env_utils.h>
 #include <jni.h>
+#include <cstdlib>
 #include <filesystem>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
+
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 using namespace metaffi::utils;
 
 // Global JVM instance for tests
 static JavaVM* g_jvm = nullptr;
 static JNIEnv* g_env = nullptr;
+
+namespace
+{
+	using JNI_CreateJavaVM_t = jint (JNICALL *)(JavaVM**, void**, void*);
+
+#ifdef _WIN32
+	HMODULE g_libjvm_handle = nullptr;
+#else
+	void* g_libjvm_handle = nullptr;
+#endif
+	JNI_CreateJavaVM_t g_jni_create_java_vm = nullptr;
+
+	std::filesystem::path libjvm_from_java_home(const std::filesystem::path& java_home)
+	{
+#ifdef _WIN32
+		return java_home / "bin" / "server" / "jvm.dll";
+#else
+		return java_home / "lib" / "server" / "libjvm.so";
+#endif
+	}
+
+	std::filesystem::path java_home_from_java_executable(const std::filesystem::path& java_executable)
+	{
+		auto exe_dir = java_executable.parent_path();
+		if(exe_dir.filename() == "bin")
+		{
+			return exe_dir.parent_path();
+		}
+		return {};
+	}
+
+	std::filesystem::path normalize_configured_path(std::string configured_path)
+	{
+		if(configured_path.size() >= 2 &&
+		   ((configured_path.front() == '"' && configured_path.back() == '"') ||
+		    (configured_path.front() == '\'' && configured_path.back() == '\'')))
+		{
+			configured_path = configured_path.substr(1, configured_path.size() - 2);
+		}
+
+		return std::filesystem::path(configured_path);
+	}
+
+	std::filesystem::path resolve_libjvm_path()
+	{
+		std::vector<std::filesystem::path> candidates;
+
+		const std::string java_home = get_env_var("JAVA_HOME");
+		if(!java_home.empty())
+		{
+			candidates.emplace_back(libjvm_from_java_home(java_home));
+		}
+
+		const std::string jdk_home = get_env_var("JDK_HOME");
+		if(!jdk_home.empty())
+		{
+			candidates.emplace_back(libjvm_from_java_home(jdk_home));
+		}
+
+#ifdef METAFFI_DEFAULT_JAVA_EXECUTABLE
+		{
+			const std::filesystem::path default_java_executable = normalize_configured_path(METAFFI_DEFAULT_JAVA_EXECUTABLE);
+			const auto home = java_home_from_java_executable(default_java_executable);
+			if(!home.empty())
+			{
+				candidates.emplace_back(libjvm_from_java_home(home));
+			}
+		}
+#endif
+
+#ifdef METAFFI_DEFAULT_LIBJVM_PATH
+		{
+			std::filesystem::path default_libjvm = normalize_configured_path(METAFFI_DEFAULT_LIBJVM_PATH);
+#ifdef _WIN32
+			if(default_libjvm.extension() == ".lib")
+			{
+				// FindJNI returns jvm.lib on Windows; convert to runtime jvm.dll path.
+				auto root = default_libjvm.parent_path().parent_path();
+				default_libjvm = root / "bin" / "server" / "jvm.dll";
+			}
+#endif
+			candidates.emplace_back(default_libjvm);
+		}
+#endif
+
+		for(const auto& candidate : candidates)
+		{
+			if(!candidate.empty() && std::filesystem::exists(candidate))
+			{
+				return candidate;
+			}
+		}
+
+		throw std::runtime_error("Could not resolve libjvm path (checked JAVA_HOME/JDK_HOME and CMake-provided defaults)");
+	}
+
+	void ensure_jni_create_java_vm_loaded()
+	{
+		if(g_jni_create_java_vm)
+		{
+			return;
+		}
+
+		const auto libjvm_path = resolve_libjvm_path();
+
+#ifdef _WIN32
+		const auto server_dir = libjvm_path.parent_path();
+		const auto bin_dir = server_dir.parent_path();
+
+		using SetDefaultDllDirectories_t = BOOL (WINAPI *)(DWORD);
+		using AddDllDirectory_t = DLL_DIRECTORY_COOKIE (WINAPI *)(PCWSTR);
+		auto kernel32 = GetModuleHandleW(L"kernel32.dll");
+		auto set_default_dll_directories = reinterpret_cast<SetDefaultDllDirectories_t>(
+			GetProcAddress(kernel32, "SetDefaultDllDirectories"));
+		auto add_dll_directory = reinterpret_cast<AddDllDirectory_t>(
+			GetProcAddress(kernel32, "AddDllDirectory"));
+
+		if(set_default_dll_directories)
+		{
+			set_default_dll_directories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+		}
+		if(add_dll_directory)
+		{
+			add_dll_directory(bin_dir.wstring().c_str());
+			add_dll_directory(server_dir.wstring().c_str());
+		}
+
+		g_libjvm_handle = LoadLibraryExW(L"jvm.dll", nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+		if(!g_libjvm_handle)
+		{
+			g_libjvm_handle = LoadLibraryW(libjvm_path.wstring().c_str());
+		}
+		if(!g_libjvm_handle)
+		{
+			throw std::runtime_error("Failed to load jvm.dll");
+		}
+
+		g_jni_create_java_vm = reinterpret_cast<JNI_CreateJavaVM_t>(GetProcAddress(g_libjvm_handle, "JNI_CreateJavaVM"));
+		if(!g_jni_create_java_vm)
+		{
+			throw std::runtime_error("Failed to resolve JNI_CreateJavaVM from jvm.dll");
+		}
+#else
+		dlerror();
+		g_libjvm_handle = dlopen(libjvm_path.string().c_str(), RTLD_NOW | RTLD_GLOBAL);
+		const char* load_err = dlerror();
+		if(!g_libjvm_handle || load_err)
+		{
+			throw std::runtime_error(std::string("Failed to load libjvm.so: ") + (load_err ? load_err : "unknown error"));
+		}
+
+		dlerror();
+		g_jni_create_java_vm = reinterpret_cast<JNI_CreateJavaVM_t>(dlsym(g_libjvm_handle, "JNI_CreateJavaVM"));
+		const char* symbol_err = dlerror();
+		if(!g_jni_create_java_vm || symbol_err)
+		{
+			throw std::runtime_error(std::string("Failed to resolve JNI_CreateJavaVM from libjvm.so: ") + (symbol_err ? symbol_err : "unknown error"));
+		}
+#endif
+	}
+}
 
 // JVM initialization fixture
 struct JVMFixture
@@ -50,7 +222,8 @@ struct JVMFixture
 			vm_args.options = options;
 			vm_args.ignoreUnrecognized = JNI_FALSE;
 
-			jint result = JNI_CreateJavaVM(&g_jvm, (void**)&g_env, &vm_args);
+			ensure_jni_create_java_vm_loaded();
+			jint result = g_jni_create_java_vm(&g_jvm, (void**)&g_env, &vm_args);
 			if (result != JNI_OK)
 			{
 				throw std::runtime_error("Failed to create JVM");

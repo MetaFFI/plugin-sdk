@@ -12,8 +12,24 @@ collect_c_cpp_files(${CMAKE_CURRENT_LIST_DIR} cdts_jvm_serializer)
 c_cpp_exe(cdts_jvm_serializer_test
     "${cdts_jvm_serializer_src};${sdk_src};cdts_jvm_serializer_test.cpp"
     "${sdk_include_dir};${doctest_INCLUDE_DIRS};${CMAKE_CURRENT_LIST_DIR};${JNI_INCLUDE_DIRS};${Boost_INCLUDE_DIRS}"
-    "doctest::doctest;Boost::filesystem;${JNI_LIBRARIES}"
+    "doctest::doctest;Boost::filesystem"
     "sdk/cdts_serializer/jvm")
+
+if(DEFINED JAVA_JVM_LIBRARY AND NOT "${JAVA_JVM_LIBRARY}" STREQUAL "")
+	set(cdts_jvm_default_libjvm_path "${JAVA_JVM_LIBRARY}")
+	file(TO_CMAKE_PATH "${cdts_jvm_default_libjvm_path}" cdts_jvm_default_libjvm_path)
+	target_compile_definitions(cdts_jvm_serializer_test PRIVATE
+		METAFFI_DEFAULT_LIBJVM_PATH="${cdts_jvm_default_libjvm_path}"
+	)
+endif()
+
+if(DEFINED Java_JAVA_EXECUTABLE AND NOT "${Java_JAVA_EXECUTABLE}" STREQUAL "")
+	set(cdts_jvm_default_java_executable "${Java_JAVA_EXECUTABLE}")
+	file(TO_CMAKE_PATH "${cdts_jvm_default_java_executable}" cdts_jvm_default_java_executable)
+	target_compile_definitions(cdts_jvm_serializer_test PRIVATE
+		METAFFI_DEFAULT_JAVA_EXECUTABLE="${cdts_jvm_default_java_executable}"
+	)
+endif()
 
 # Register test with CTest
 add_test(NAME cdts_jvm_serializer_test

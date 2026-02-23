@@ -18,7 +18,7 @@
 #endif
 #include <windows.h>
 #else
-#include <boost/dll.hpp>
+#include <dlfcn.h>
 #endif
 
 class jni_api_wrapper
@@ -40,8 +40,9 @@ private:
 	HMODULE m_libjvm = nullptr;
 	static HMODULE s_libjvm;
 #else
-	std::shared_ptr<boost::dll::shared_library> m_libjvm;
-	static std::shared_ptr<boost::dll::shared_library> s_libjvm;
+	void* m_libjvm = nullptr;
+	static void* s_libjvm;
+	static std::string s_libjvm_path;
 #endif
 	static std::mutex s_libjvm_mutex;
 };
