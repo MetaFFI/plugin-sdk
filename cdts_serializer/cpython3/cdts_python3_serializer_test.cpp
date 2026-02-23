@@ -36,7 +36,9 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	
-	g_runtime = cpython3_runtime_manager::create(versions[0]);
+	// detect_installed_python3() returns ascending versions (3.8..3.13);
+	// use the newest available runtime for test compatibility.
+	g_runtime = cpython3_runtime_manager::create(versions.back());
 	g_gil = std::make_unique<cpython3_runtime_manager::scoped_gil>();
 
 	char* source_root = metaffi_getenv_alloc("METAFFI_SOURCE_ROOT");

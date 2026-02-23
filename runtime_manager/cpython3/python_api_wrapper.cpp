@@ -615,21 +615,19 @@ static bool try_load_python_library(const std::string& version)
 		return true;
 	}
 
-	// Try loading with version-specific names
-	std::string version_no_dot = version;
-	version_no_dot.erase(std::remove(version_no_dot.begin(), version_no_dot.end(), '.'), version_no_dot.end());
-	
-	const char* lib_names[] = {
-		("libpython" + version + ".so").c_str(),
-		("libpython" + version + ".so.1.0").c_str(),
-		("libpython" + version + ".so.1").c_str(),
+	// Try loading with version-specific names.
+	// Keep the backing strings alive for the entire load loop.
+	const std::vector<std::string> lib_names = {
+		"libpython" + version + ".so",
+		"libpython" + version + ".so.1.0",
+		"libpython" + version + ".so.1",
 		"libpython3.so",
 	};
 
 	// First try loading directly
-	for(const char* lib_name: lib_names)
+	for(const auto& lib_name : lib_names)
 	{
-		python_lib_handle = dlopen(lib_name, RTLD_NOW | RTLD_GLOBAL);
+		python_lib_handle = dlopen(lib_name.c_str(), RTLD_NOW | RTLD_GLOBAL);
 		if(python_lib_handle)
 		{
 			python_lib_path = lib_name;
@@ -641,7 +639,7 @@ static bool try_load_python_library(const std::string& version)
 	std::vector<std::string> search_paths = get_python_search_paths();
 	for(const auto& path: search_paths)
 	{
-		for(const char* lib_name: lib_names)
+		for(const auto& lib_name : lib_names)
 		{
 			std::string full_path = path + lib_name;
 			python_lib_handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
@@ -657,13 +655,13 @@ static bool try_load_python_library(const std::string& version)
 #endif
 }
 
-// Detect installed Python 3 versions (3.10-3.13)
+// Detect installed Python 3 versions (3.8-3.13)
 std::vector<std::string> detect_installed_python3()
 {
 	std::vector<std::string> detected_versions;
 	
-	// Try versions from 3.10 to 3.13
-	for(int minor = 10; minor <= 13; minor++)
+	// Try versions from 3.8 to 3.13
+	for(int minor = 8; minor <= 13; minor++)
 	{
 		std::string version = "3." + std::to_string(minor);
 		if(try_load_python_library(version))
@@ -977,8 +975,8 @@ bool load_python3_api_from_loaded_library(std::string& out_detected_version)
 	HMODULE found_handle = nullptr;
 	std::string found_version;
 	
-	// Try version-specific DLLs first (3.10 to 3.13)
-	for(int minor = 10; minor <= 13; minor++)
+	// Try version-specific DLLs first (3.8 to 3.13)
+	for(int minor = 8; minor <= 13; minor++)
 	{
 		std::string dll_name = "python3" + std::to_string(minor) + ".dll";
 		HMODULE h = GetModuleHandleA(dll_name.c_str());

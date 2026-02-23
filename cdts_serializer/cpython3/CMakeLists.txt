@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
 # Find required packages
-find_package(Python3 COMPONENTS Development REQUIRED)
 find_or_install_package(doctest)
 find_or_install_package(Boost COMPONENTS filesystem)
 
@@ -12,14 +11,14 @@ collect_c_cpp_files(${CMAKE_CURRENT_LIST_DIR} cdts_python3_serializer)
 collect_c_cpp_files("${metaffi_sdk_root}/runtime_manager/cpython3" cpython3_runtime_manager)
 
 # Build test executable
-set(cdts_python3_serializer_test_libs "doctest::doctest;Boost::filesystem;Python3::Python")
+set(cdts_python3_serializer_test_libs "doctest::doctest;Boost::filesystem")
 if(WIN32)
 	set(cdts_python3_serializer_test_libs "${cdts_python3_serializer_test_libs};version")
 endif()
 
 c_cpp_exe(cdts_python3_serializer_test
 	"${cdts_python3_serializer_src};${cpython3_runtime_manager_src};${sdk_src};cdts_python3_serializer_test.cpp"
-	"${sdk_include_dir};${doctest_INCLUDE_DIRS};${CMAKE_CURRENT_LIST_DIR};${Boost_INCLUDE_DIRS};${Python3_INCLUDE_DIRS}"
+	"${sdk_include_dir};${doctest_INCLUDE_DIRS};${CMAKE_CURRENT_LIST_DIR};${Boost_INCLUDE_DIRS}"
 	"${cdts_python3_serializer_test_libs}"
 	"sdk/cdts_serializer/cpython3")
 

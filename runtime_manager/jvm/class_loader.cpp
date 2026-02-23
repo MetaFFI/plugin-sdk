@@ -277,13 +277,20 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 		
 		jobjectArray jarURLArray = env->NewObjectArray(1, url_class, nullptr); // URL[]{}
 		check_and_throw_jvm_exception(env, jarURLArray,);
-		env->SetObjectArrayElement(jarURLArray, 0, env->NewObject(url_class, url_class_constructor, env->NewStringUTF(jvm_bridge_url.c_str())));
-		check_and_throw_jvm_exception(env, true,);
+		jstring jvm_bridge_url_str = env->NewStringUTF(jvm_bridge_url.c_str());
+		check_and_throw_jvm_exception(env, jvm_bridge_url_str, env->DeleteLocalRef(jarURLArray););
+		jobject jvm_bridge_url_obj = env->NewObject(url_class, url_class_constructor, jvm_bridge_url_str);
+		check_and_throw_jvm_exception(env, jvm_bridge_url_obj, env->DeleteLocalRef(jvm_bridge_url_str); env->DeleteLocalRef(jarURLArray););
+		env->SetObjectArrayElement(jarURLArray, 0, jvm_bridge_url_obj);
+		check_and_throw_jvm_exception(env, true, env->DeleteLocalRef(jvm_bridge_url_obj); env->DeleteLocalRef(jvm_bridge_url_str); env->DeleteLocalRef(jarURLArray););
+		env->DeleteLocalRef(jvm_bridge_url_obj);
+		env->DeleteLocalRef(jvm_bridge_url_str);
 		
 		jobject local_child = env->NewObject(url_class_loader, url_class_loader_constructor, jarURLArray, classLoaderInstance);
-		check_and_throw_jvm_exception(env, local_child,);
+		check_and_throw_jvm_exception(env, local_child, env->DeleteLocalRef(jarURLArray););
 		childURLClassLoader = env->NewGlobalRef(local_child);
 		env->DeleteLocalRef(local_child);
+		env->DeleteLocalRef(jarURLArray);
 	}
 	
 	if(!is_bridge_added)
@@ -299,10 +306,14 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 		boost::replace_all(jvm_bridge, "\\", "/");
 #endif
 		
-		jobject urlInstance = env->NewObject(url_class, url_class_constructor, env->NewStringUTF(jvm_bridge.c_str()));
-		check_and_throw_jvm_exception(env, urlInstance,);
-		env->CallObjectMethod(childURLClassLoader, add_url, urlInstance);
-		check_and_throw_jvm_exception(env, true,);
+		jstring jvm_bridge_str = env->NewStringUTF(jvm_bridge.c_str());
+		check_and_throw_jvm_exception(env, jvm_bridge_str,);
+		jobject urlInstance = env->NewObject(url_class, url_class_constructor, jvm_bridge_str);
+		check_and_throw_jvm_exception(env, urlInstance, env->DeleteLocalRef(jvm_bridge_str););
+		env->CallVoidMethod(childURLClassLoader, add_url, urlInstance);
+		check_and_throw_jvm_exception(env, true, env->DeleteLocalRef(urlInstance); env->DeleteLocalRef(jvm_bridge_str););
+		env->DeleteLocalRef(urlInstance);
+		env->DeleteLocalRef(jvm_bridge_str);
 		
 		is_bridge_added = true;
 	}
@@ -347,18 +358,25 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 			url_path += '/';
 		}
 		
-		jobject urlInstance = env->NewObject(url_class, url_class_constructor, env->NewStringUTF(url_path.c_str()));
-		check_and_throw_jvm_exception(env, urlInstance,);
-		env->CallObjectMethod(childURLClassLoader, add_url, urlInstance);
-		check_and_throw_jvm_exception(env, true,);
+		jstring url_path_str = env->NewStringUTF(url_path.c_str());
+		check_and_throw_jvm_exception(env, url_path_str,);
+		jobject urlInstance = env->NewObject(url_class, url_class_constructor, url_path_str);
+		check_and_throw_jvm_exception(env, urlInstance, env->DeleteLocalRef(url_path_str););
+		env->CallVoidMethod(childURLClassLoader, add_url, urlInstance);
+		check_and_throw_jvm_exception(env, true, env->DeleteLocalRef(urlInstance); env->DeleteLocalRef(url_path_str););
+		env->DeleteLocalRef(urlInstance);
+		env->DeleteLocalRef(url_path_str);
 		
 		
 		loaded_paths.insert(url_path);
 	}
 	
-	jobject targetClass = env->CallStaticObjectMethod(class_class, for_name_method, env->NewStringUTF(class_name.c_str()), JNI_TRUE, childURLClassLoader);
+	jstring class_name_str = env->NewStringUTF(class_name.c_str());
+	check_and_throw_jvm_exception(env, class_name_str,);
+	jobject targetClass = env->CallStaticObjectMethod(class_class, for_name_method, class_name_str, JNI_TRUE, childURLClassLoader);
 	
-	check_and_throw_jvm_exception(env, targetClass,);
+	check_and_throw_jvm_exception(env, targetClass, env->DeleteLocalRef(class_name_str););
+	env->DeleteLocalRef(class_name_str);
 	jclass global_class = (jclass)env->NewGlobalRef(targetClass);
 	env->DeleteLocalRef(targetClass);
 	loaded_classes[class_name] = global_class;
