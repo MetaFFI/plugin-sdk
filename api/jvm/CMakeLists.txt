@@ -5,7 +5,9 @@ find_package(JNI REQUIRED)
 
 set(JVM_API_TEST_DIR ${CMAKE_CURRENT_LIST_DIR}/unittest)
 set(JVM_API_TEST_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/unittest_classes)
-set(JVM_API_JAR_PATH "$ENV{METAFFI_HOME}/sdk/api/jvm/metaffi.api.jar")
+set(METAFFI_HOME_CMAKE "$ENV{METAFFI_HOME}")
+file(TO_CMAKE_PATH "${METAFFI_HOME_CMAKE}" METAFFI_HOME_CMAKE)
+set(JVM_API_JAR_PATH "${METAFFI_HOME_CMAKE}/sdk/api/jvm/metaffi.api.jar")
 set(JVM_API_JUNIT_JAR ${CMAKE_CURRENT_LIST_DIR}/lib/junit-4.13.1.jar)
 set(JVM_API_HAMCREST_JAR ${CMAKE_CURRENT_LIST_DIR}/lib/hamcrest-core-1.3.jar)
 

@@ -1,11 +1,14 @@
 set(JVM_HOST_COMPILER_SRC_DIR ${CMAKE_CURRENT_LIST_DIR})
 
+set(METAFFI_HOME_CMAKE "$ENV{METAFFI_HOME}")
+file(TO_CMAKE_PATH "${METAFFI_HOME_CMAKE}" METAFFI_HOME_CMAKE)
+
 set(GSON_JAR ${CMAKE_SOURCE_DIR}/sdk/idl_compiler/jvm/lib/gson-2.10.1.jar)
 set(JUNIT_JAR ${CMAKE_SOURCE_DIR}/sdk/idl_compiler/jvm/lib/junit-4.13.2.jar)
 set(HAMCREST_JAR ${CMAKE_SOURCE_DIR}/sdk/idl_compiler/jvm/lib/hamcrest-core-1.3.jar)
-set(JVM_IDL_ENTITIES_JAR $ENV{METAFFI_HOME}/sdk/idl_entities/jvm/jvm_idl_entities.jar)
+set(JVM_IDL_ENTITIES_JAR ${METAFFI_HOME_CMAKE}/sdk/idl_entities/jvm/jvm_idl_entities.jar)
 set(JVM_HOST_COMPILER_JAR_NAME "metaffi.jvm.compiler.host")
-set(JVM_HOST_COMPILER_JAR_PATH "$ENV{METAFFI_HOME}/jvm/compiler/${JVM_HOST_COMPILER_JAR_NAME}.jar")
+set(JVM_HOST_COMPILER_JAR_PATH "${METAFFI_HOME_CMAKE}/jvm/compiler/${JVM_HOST_COMPILER_JAR_NAME}.jar")
 
 if(NOT EXISTS ${GSON_JAR})
     message(FATAL_ERROR "Missing Gson dependency: ${GSON_JAR}")

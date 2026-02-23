@@ -13,8 +13,13 @@
 #endif
 
 
-#if __STDC_VERSION__ < 202302L && !__cplusplus
-	typedef uint8_t char8_t;
+#ifndef __cplusplus
+	/* Some C compilers on Windows report C23 but still do not provide char8_t. */
+	#ifdef __CHAR8_TYPE__
+		typedef __CHAR8_TYPE__ char8_t;
+	#else
+		typedef uint8_t char8_t;
+	#endif
 #endif
 
 typedef double metaffi_float64;

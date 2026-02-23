@@ -33,4 +33,21 @@ add_dependencies(jvm_runtime_manager_test jvm_runtime_manager_test_jar)
 target_compile_definitions(jvm_runtime_manager_test PRIVATE JDK_TEST_JAR_PATH=\"${JDK_TEST_JAR_PATH}\")
 
 add_test(NAME jvm_runtime_manager_test COMMAND $ENV{METAFFI_HOME}/sdk/runtime_manager/jvm/jvm_runtime_manager_test${CMAKE_EXECUTABLE_SUFFIX})
+
+if(WIN32)
+	get_jvm_dll_search_paths(jvm_runtime_manager_jvm_paths)
+
+	set(jvm_runtime_manager_test_path "$ENV{METAFFI_HOME}/sdk/runtime_manager/jvm;$ENV{METAFFI_HOME}/sdk/api/cpp;$ENV{METAFFI_HOME}/jvm")
+	if(jvm_runtime_manager_jvm_paths)
+		list(JOIN jvm_runtime_manager_jvm_paths ";" jvm_runtime_manager_jvm_paths_joined)
+		set(jvm_runtime_manager_test_path "${jvm_runtime_manager_test_path};${jvm_runtime_manager_jvm_paths_joined}")
+	endif()
+	set(jvm_runtime_manager_test_path "${jvm_runtime_manager_test_path};$ENV{PATH}")
+	string(REPLACE ";" "\\;" jvm_runtime_manager_test_path "${jvm_runtime_manager_test_path}")
+
+	set_tests_properties(jvm_runtime_manager_test PROPERTIES
+		ENVIRONMENT "PATH=${jvm_runtime_manager_test_path}"
+	)
+endif()
+
 set(jvm_runtime_manager_test jvm_runtime_manager_test PARENT_SCOPE)

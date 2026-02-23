@@ -51,7 +51,9 @@ compile_java(testdata_classes
 set(TEST_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/test)
 
 # Get the JAR file path for classpath (built by build_jar macro)
-set(JVM_IDL_COMPILER_JAR $ENV{METAFFI_HOME}/sdk/idl_compiler/jvm/jvm_idl_compiler.jar)
+set(METAFFI_HOME_CMAKE "$ENV{METAFFI_HOME}")
+file(TO_CMAKE_PATH "${METAFFI_HOME_CMAKE}" METAFFI_HOME_CMAKE)
+set(JVM_IDL_COMPILER_JAR "${METAFFI_HOME_CMAKE}/sdk/idl_compiler/jvm/jvm_idl_compiler.jar")
 set(TESTDATA_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/test)
 
 # Get testdata sources to exclude them from test sources
