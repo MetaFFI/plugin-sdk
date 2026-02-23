@@ -1,6 +1,7 @@
 #include "module.h"
 #include "entity.h"
 #include "runtime_manager.h"
+#include <utils/entity_path_parser.h>
 
 #include <stdexcept>
 #include <sstream>
@@ -201,24 +202,45 @@ bool Module::has_symbol(const std::string& symbol_name) const
 
 std::string Module::parse_entity_path_logical_name(const std::string& entity_path)
 {
-	std::vector<std::string> parts;
-	boost::split(parts, entity_path, boost::is_any_of(","));
+	metaffi::utils::entity_path_parser fpp(entity_path);
 
-	for (const auto& part : parts)
+	if (fpp.contains("callable"))
 	{
-		std::string trimmed = boost::trim_copy(part);
-		if (trimmed.rfind("callable=", 0) == 0)
+		std::string logical_name = boost::trim_copy(fpp["callable"]);
+		if (logical_name.empty())
 		{
-			std::string logical_name = trimmed.substr(9);
-			boost::trim(logical_name);
-			if (logical_name.empty())
-			{
-				throw std::runtime_error("Module: callable= value is empty");
-			}
-			return logical_name;
+			throw std::runtime_error("Module: callable= value is empty");
 		}
+		return logical_name;
 	}
-	return entity_path;
+
+	if (fpp.contains("global"))
+	{
+		std::string logical_name = boost::trim_copy(fpp["global"]);
+		if (logical_name.empty())
+		{
+			throw std::runtime_error("Module: global= value is empty");
+		}
+		return logical_name;
+	}
+
+	if (fpp.contains("field"))
+	{
+		std::string logical_name = boost::trim_copy(fpp["field"]);
+		if (logical_name.empty())
+		{
+			throw std::runtime_error("Module: field= value is empty");
+		}
+		return logical_name;
+	}
+
+	std::string logical_name = boost::trim_copy(entity_path);
+	if (logical_name.empty())
+	{
+		throw std::runtime_error("Module: entity_path is empty");
+	}
+
+	return logical_name;
 }
 
 void* Module::get_symbol(const std::string& symbol_name) const
@@ -233,15 +255,77 @@ void* Module::get_symbol(const std::string& symbol_name) const
 
 std::string Module::parse_entity_path(const std::string& entity_path)
 {
-	// Entity path format: "callable=LogicalName" (e.g. "HelloWorld" or "SomeClass.Print").
-	// MetaFFI Go guest compiler exports C symbols as EntryPoint_<Name> (dots in Name become underscores).
-	// So we map callable=X to symbol "EntryPoint_" + X with '.' replaced by '_'.
+	metaffi::utils::entity_path_parser fpp(entity_path);
+	std::string symbol = "EntryPoint_";
+
+	if (fpp.contains("callable"))
+	{
+		std::string callable_name = boost::trim_copy(fpp["callable"]);
+		if (callable_name.empty())
+		{
+			throw std::runtime_error("Module: callable= value is empty");
+		}
+
+		boost::replace_all(callable_name, ".", "_");
+		symbol += callable_name;
+		if (callable_name.size() >= 12 && callable_name.substr(callable_name.size() - 12) == "_EmptyStruct")
+		{
+			symbol += "_MetaFFI";
+		}
+		return symbol;
+	}
+
+	if (fpp.contains("global"))
+	{
+		std::string global_name = boost::trim_copy(fpp["global"]);
+		if (global_name.empty())
+		{
+			throw std::runtime_error("Module: global= value is empty");
+		}
+
+		if (fpp.contains("getter"))
+		{
+			symbol += "Get";
+		}
+		else if (fpp.contains("setter"))
+		{
+			symbol += "Set";
+		}
+		else
+		{
+			throw std::runtime_error("Module: global action is not specified (getter/setter)");
+		}
+
+		symbol += global_name;
+		return symbol;
+	}
+
+	if (fpp.contains("field"))
+	{
+		std::string field_name = boost::trim_copy(fpp["field"]);
+		if (field_name.empty())
+		{
+			throw std::runtime_error("Module: field= value is empty");
+		}
+
+		std::string action = fpp.contains("getter") ? "_Get" : fpp.contains("setter") ? "_Set" : "";
+		if (action.empty())
+		{
+			throw std::runtime_error("Module: field action is not specified (getter/setter)");
+		}
+
+		boost::replace_all(field_name, ".", action);
+		symbol += field_name;
+		return symbol;
+	}
 
 	std::string logical_name = parse_entity_path_logical_name(entity_path);
-	std::string symbol = "EntryPoint_";
-	for (char c : logical_name)
+	boost::replace_all(logical_name, ".", "_");
+	symbol += logical_name;
+	if (logical_name.size() >= 12 && logical_name.substr(logical_name.size() - 12) == "_EmptyStruct")
 	{
-		symbol += (c == '.') ? '_' : c;
+		symbol += "_MetaFFI";
 	}
+
 	return symbol;
 }
