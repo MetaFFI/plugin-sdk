@@ -116,6 +116,18 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator<<(bool val)
 	return *this;
 }
 
+#if defined(__linux__)
+cdts_cpp_serializer& cdts_cpp_serializer::operator<<(long long val)
+{
+	return (*this) << static_cast<int64_t>(val);
+}
+
+cdts_cpp_serializer& cdts_cpp_serializer::operator<<(unsigned long long val)
+{
+	return (*this) << static_cast<uint64_t>(val);
+}
+#endif
+
 // Strings
 cdts_cpp_serializer& cdts_cpp_serializer::operator<<(const std::string& val)
 {
@@ -434,6 +446,24 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator>>(bool& val)
 	current_index++;
 	return *this;
 }
+
+#if defined(__linux__)
+cdts_cpp_serializer& cdts_cpp_serializer::operator>>(long long& val)
+{
+	int64_t tmp = 0;
+	(*this) >> tmp;
+	val = static_cast<long long>(tmp);
+	return *this;
+}
+
+cdts_cpp_serializer& cdts_cpp_serializer::operator>>(unsigned long long& val)
+{
+	uint64_t tmp = 0;
+	(*this) >> tmp;
+	val = static_cast<unsigned long long>(tmp);
+	return *this;
+}
+#endif
 
 // Strings
 cdts_cpp_serializer& cdts_cpp_serializer::operator>>(std::string& val)
