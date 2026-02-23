@@ -1,5 +1,6 @@
 #include "metaffi/api/metaffi_api.h"
 
+#include <iostream>
 #include <sstream>
 #include <utils/logger.hpp>
 
@@ -114,6 +115,40 @@ bool matches_expected_type(const MetaFFITypeInfo& expected, const cdt& actual)
 	return expected_type == actual_type;
 }
 
+const char* safe_alias(const MetaFFITypeInfo& type_info)
+{
+	return type_info.alias ? type_info.alias : "";
+}
+
+metaffi_int64 get_actual_fixed_dimensions(const cdt& actual)
+{
+	if(is_array_type(actual.type) && actual.cdt_val.array_val != nullptr)
+	{
+		return actual.cdt_val.array_val->fixed_dimensions;
+	}
+	return MIXED_OR_UNKNOWN_DIMENSIONS;
+}
+
+const char* metaffi_type_name(metaffi_type type)
+{
+	const char* type_name = nullptr;
+	metaffi_type_to_str(type, type_name);
+	return type_name ? type_name : "Unknown type";
+}
+
+std::string format_type_diagnostics(const MetaFFITypeInfo& expected, const cdt& actual)
+{
+	std::ostringstream ss;
+	ss << "expected type=" << static_cast<unsigned long long>(expected.type)
+	   << " (" << metaffi_type_name(expected.type) << ")"
+	   << ", actual type=" << static_cast<unsigned long long>(actual.type)
+	   << " (" << metaffi_type_name(actual.type) << ")"
+	   << ", expected alias=\"" << safe_alias(expected) << "\""
+	   << ", expected fixed_dimensions=" << static_cast<long long>(expected.fixed_dimensions)
+	   << ", actual fixed_dimensions=" << static_cast<long long>(get_actual_fixed_dimensions(actual));
+	return ss.str();
+}
+
 void validate_cdts_types(const std::vector<MetaFFITypeInfo>& expected,
 						 const cdts& actual,
 						 const char* what)
@@ -132,10 +167,12 @@ void validate_cdts_types(const std::vector<MetaFFITypeInfo>& expected,
 		const cdt& value = actual.arr[i];
 		if(!matches_expected_type(exp, value))
 		{
+			const std::string details = format_type_diagnostics(exp, value);
+			std::cerr << "+++ " << what << " type mismatch at index " << i
+			          << ": " << details << std::endl;
+
 			std::ostringstream ss;
-			ss << what << " type mismatch at index " << i
-			   << ". expected type=" << exp.type
-			   << ", actual type=" << value.type;
+			ss << what << " type mismatch at index " << i << ". " << details;
 			throw std::invalid_argument(ss.str());
 		}
 	}

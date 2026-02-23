@@ -7,6 +7,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <unordered_set>
@@ -92,6 +93,19 @@ namespace
 		return parse_bool_env_value(get_env_var("METAFFI_JVM_DETACH_ON_ENV_RELEASE"), false);
 	}
 
+	bool jvm_diag_enabled()
+	{
+		return parse_bool_env_value(get_env_var("METAFFI_JVM_DIAG"), false);
+	}
+
+	void jvm_diag(const std::string& msg)
+	{
+		if(jvm_diag_enabled())
+		{
+			std::cerr << "+++ " << msg << std::endl;
+		}
+	}
+
 #ifdef _WIN32
 	void prepare_windows_jvm(const jvm_installed_info& info)
 	{
@@ -109,6 +123,9 @@ namespace
 		set_env_var("PATH", new_path);
 		set_env_var("JAVA_HOME", info.home);
 		set_env_var("JDK_HOME", info.home);
+		jvm_diag(std::string("jvm prepare_windows_jvm home=") + info.home);
+		jvm_diag(std::string("jvm prepare_windows_jvm libjvm=") + info.libjvm_path);
+		jvm_diag(std::string("jvm prepare_windows_jvm path_prefix=") + prefix);
 
 		// Rely on PATH and per-load search path to resolve JVM dependencies.
 	}
@@ -282,6 +299,9 @@ namespace
 
 	void verify_loaded_jvm(const jvm_installed_info& requested, const std::string& loaded_path)
 	{
+		jvm_diag(std::string("jvm verify requested_home=") + requested.home);
+		jvm_diag(std::string("jvm verify requested_libjvm=") + requested.libjvm_path);
+		jvm_diag(std::string("jvm verify loaded_libjvm=") + loaded_path);
 		if(loaded_path.empty())
 		{
 			return;
@@ -310,6 +330,7 @@ namespace
 				requested_version = read_release_value(requested_home, "JAVA_RUNTIME_VERSION");
 			}
 		}
+		jvm_diag(std::string("jvm verify requested_version=") + requested_version);
 
 #ifdef _WIN32
 		if(requested_version.empty())
@@ -322,6 +343,7 @@ namespace
 		{
 			throw std::runtime_error("Unable to determine loaded JVM version from file metadata");
 		}
+		jvm_diag(std::string("jvm verify loaded_version=") + loaded_version);
 
 		if(!version_prefix_matches(requested_version, loaded_version))
 		{
@@ -642,6 +664,9 @@ void jvm::load_or_create_with_info(const std::string& classpath_option)
 	{
 		throw std::runtime_error("libjvm_path is empty in jvm_installed_info");
 	}
+	jvm_diag(std::string("jvm load_or_create info.home=") + m_info.home);
+	jvm_diag(std::string("jvm load_or_create info.libjvm_path=") + m_info.libjvm_path);
+	jvm_diag(std::string("jvm load_or_create info.version=") + m_info.version);
 
 #ifdef _WIN32
 	prepare_windows_jvm(m_info);
@@ -654,6 +679,7 @@ void jvm::load_or_create_with_info(const std::string& classpath_option)
 #endif
 
 	m_jni_api = std::make_shared<jni_api_wrapper>(m_info.libjvm_path);
+	jvm_diag(std::string("jvm load_or_create loaded_libjvm=") + m_jni_api->get_loaded_path());
 	METAFFI_DEBUG(LOG, "Verifying loaded JVM");
 	verify_loaded_jvm(m_info, m_jni_api->get_loaded_path());
 

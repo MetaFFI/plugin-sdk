@@ -1,11 +1,30 @@
 #include "jni_api_wrapper.h"
 
 #include <filesystem>
+#include <iostream>
+#include <utils/env_utils.h>
 #include <utils/logger.hpp>
 #include <stdexcept>
 #include <vector>
 
 static auto LOG = metaffi::get_logger("jvm_runtime_manager");
+
+namespace
+{
+	bool diag_enabled()
+	{
+		const std::string raw = get_env_var("METAFFI_JVM_DIAG");
+		return !raw.empty() && raw != "0";
+	}
+
+	void diag(const std::string& msg)
+	{
+		if(diag_enabled())
+		{
+			std::cerr << "+++ " << msg << std::endl;
+		}
+	}
+}
 
 #ifdef _WIN32
 HMODULE jni_api_wrapper::s_libjvm = nullptr;
@@ -42,25 +61,44 @@ namespace
 		auto server_dir = libjvm_path.parent_path();
 		auto bin_dir = server_dir.parent_path();
 
-		SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+		diag(std::string("jni_api_wrapper requested_libjvm=") + libjvm_path.string());
+		diag(std::string("jni_api_wrapper add_dll_dir bin=") + bin_dir.string());
+		diag(std::string("jni_api_wrapper add_dll_dir server=") + server_dir.string());
+
+		if(!SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS))
+		{
+			const auto last_error = static_cast<unsigned long>(GetLastError());
+			diag(std::string("jni_api_wrapper SetDefaultDllDirectories failed error=") + std::to_string(last_error));
+		}
 
 		auto bin_cookie = AddDllDirectory(bin_dir.c_str());
 		if(!bin_cookie)
 		{
+			const auto last_error = static_cast<unsigned long>(GetLastError());
+			diag(std::string("jni_api_wrapper AddDllDirectory(bin) failed error=") + std::to_string(last_error));
 			throw std::runtime_error("Failed to add JVM bin directory to DLL search path");
 		}
+		diag("jni_api_wrapper AddDllDirectory(bin) succeeded");
 
 		auto server_cookie = AddDllDirectory(server_dir.c_str());
 		if(!server_cookie)
 		{
+			const auto last_error = static_cast<unsigned long>(GetLastError());
+			diag(std::string("jni_api_wrapper AddDllDirectory(server) failed error=") + std::to_string(last_error));
 			throw std::runtime_error("Failed to add JVM server directory to DLL search path");
 		}
+		diag("jni_api_wrapper AddDllDirectory(server) succeeded");
 
 		HMODULE module = LoadLibraryExW(L"jvm.dll", nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 		if(!module)
 		{
+			const auto last_error = static_cast<unsigned long>(GetLastError());
+			diag(std::string("jni_api_wrapper LoadLibraryExW(jvm.dll) failed error=") + std::to_string(last_error));
 			throw std::runtime_error("Failed to load jvm.dll with configured search paths");
 		}
+
+		const auto loaded_path = get_module_path(module);
+		diag(std::string("jni_api_wrapper loaded_jvm_path=") + std::filesystem::path(loaded_path).string());
 
 		return module;
 	}
@@ -70,11 +108,17 @@ namespace
 jni_api_wrapper::jni_api_wrapper(const std::string& libjvm_path)
 {
 	std::lock_guard<std::mutex> lock(s_libjvm_mutex);
+	diag(std::string("jni_api_wrapper ctor libjvm_path=") + libjvm_path);
 #ifdef _WIN32
 	if(!s_libjvm)
 	{
 		METAFFI_DEBUG(LOG, "jni_api_wrapper: loading libjvm: {}", libjvm_path);
 		s_libjvm = load_jvm_with_search_paths(std::filesystem::path(libjvm_path));
+	}
+	else
+	{
+		diag(std::string("jni_api_wrapper reusing existing_jvm_path=") +
+			std::filesystem::path(get_module_path(s_libjvm)).string());
 	}
 
 	m_libjvm = s_libjvm;
@@ -134,6 +178,7 @@ jni_api_wrapper::jni_api_wrapper(const std::string& libjvm_path)
 	get_created_java_vms = m_libjvm->get<JNI_GetCreatedJavaVMs_t>("JNI_GetCreatedJavaVMs");
 #endif
 	METAFFI_DEBUG(LOG, "jni_api_wrapper: JNI symbols loaded");
+	diag(std::string("jni_api_wrapper jni_symbols_loaded loaded_path=") + get_loaded_path());
 }
 
 std::string jni_api_wrapper::get_loaded_path() const
