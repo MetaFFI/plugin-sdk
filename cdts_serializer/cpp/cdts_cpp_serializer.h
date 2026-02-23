@@ -89,6 +89,23 @@ private:
 		using type = typename vector_element_type<T>::type;
 	};
 
+	template<typename T>
+	using clean_t = std::remove_cv_t<std::remove_reference_t<T>>;
+
+	template<typename T>
+	static constexpr bool is_fixed_signed_integral_v =
+		std::is_same_v<clean_t<T>, int8_t> ||
+		std::is_same_v<clean_t<T>, int16_t> ||
+		std::is_same_v<clean_t<T>, int32_t> ||
+		std::is_same_v<clean_t<T>, int64_t>;
+
+	template<typename T>
+	static constexpr bool is_fixed_unsigned_integral_v =
+		std::is_same_v<clean_t<T>, uint8_t> ||
+		std::is_same_v<clean_t<T>, uint16_t> ||
+		std::is_same_v<clean_t<T>, uint32_t> ||
+		std::is_same_v<clean_t<T>, uint64_t>;
+
 	// ===== Helper Methods =====
 
 	/**
@@ -131,6 +148,20 @@ public:
 	cdts_cpp_serializer& operator<<(float val);
 	cdts_cpp_serializer& operator<<(double val);
 	cdts_cpp_serializer& operator<<(bool val);
+
+	// Fallback integrals for platform-dependent native types (e.g., long long on Linux)
+	template<typename T, typename std::enable_if_t<
+		std::is_integral_v<clean_t<T>> &&
+		std::is_signed_v<clean_t<T>> &&
+		!std::is_same_v<clean_t<T>, bool> &&
+		!is_fixed_signed_integral_v<T>, int> = 0>
+	cdts_cpp_serializer& operator<<(T val);
+
+	template<typename T, typename std::enable_if_t<
+		std::is_integral_v<clean_t<T>> &&
+		std::is_unsigned_v<clean_t<T>> &&
+		!is_fixed_unsigned_integral_v<T>, int> = 0>
+	cdts_cpp_serializer& operator<<(T val);
 
 	// Strings
 	cdts_cpp_serializer& operator<<(const std::string& val);
@@ -179,6 +210,19 @@ public:
 	cdts_cpp_serializer& operator>>(float& val);
 	cdts_cpp_serializer& operator>>(double& val);
 	cdts_cpp_serializer& operator>>(bool& val);
+
+	template<typename T, typename std::enable_if_t<
+		std::is_integral_v<clean_t<T>> &&
+		std::is_signed_v<clean_t<T>> &&
+		!std::is_same_v<clean_t<T>, bool> &&
+		!is_fixed_signed_integral_v<T>, int> = 0>
+	cdts_cpp_serializer& operator>>(T& val);
+
+	template<typename T, typename std::enable_if_t<
+		std::is_integral_v<clean_t<T>> &&
+		std::is_unsigned_v<clean_t<T>> &&
+		!is_fixed_unsigned_integral_v<T>, int> = 0>
+	cdts_cpp_serializer& operator>>(T& val);
 
 	// Strings
 	cdts_cpp_serializer& operator>>(std::string& val);
@@ -298,6 +342,92 @@ void cdts_cpp_serializer::validate_type_at(metaffi_size index) const
 		   << expected << ", got " << actual;
 		throw std::runtime_error(ss.str());
 	}
+}
+
+template<typename T, typename std::enable_if_t<
+	std::is_integral_v<cdts_cpp_serializer::clean_t<T>> &&
+	std::is_signed_v<cdts_cpp_serializer::clean_t<T>> &&
+	!std::is_same_v<cdts_cpp_serializer::clean_t<T>, bool> &&
+	!cdts_cpp_serializer::is_fixed_signed_integral_v<T>, int>>
+cdts_cpp_serializer& cdts_cpp_serializer::operator<<(T val)
+{
+	using ValueT = clean_t<T>;
+	static_assert(sizeof(ValueT) <= sizeof(int64_t), "Unsupported signed integral width");
+
+	if constexpr (sizeof(ValueT) <= sizeof(int32_t))
+	{
+		return (*this) << static_cast<int32_t>(val);
+	}
+
+	return (*this) << static_cast<int64_t>(val);
+}
+
+template<typename T, typename std::enable_if_t<
+	std::is_integral_v<cdts_cpp_serializer::clean_t<T>> &&
+	std::is_unsigned_v<cdts_cpp_serializer::clean_t<T>> &&
+	!cdts_cpp_serializer::is_fixed_unsigned_integral_v<T>, int>>
+cdts_cpp_serializer& cdts_cpp_serializer::operator<<(T val)
+{
+	using ValueT = clean_t<T>;
+	static_assert(sizeof(ValueT) <= sizeof(uint64_t), "Unsupported unsigned integral width");
+
+	if constexpr (sizeof(ValueT) <= sizeof(uint32_t))
+	{
+		return (*this) << static_cast<uint32_t>(val);
+	}
+
+	return (*this) << static_cast<uint64_t>(val);
+}
+
+template<typename T, typename std::enable_if_t<
+	std::is_integral_v<cdts_cpp_serializer::clean_t<T>> &&
+	std::is_signed_v<cdts_cpp_serializer::clean_t<T>> &&
+	!std::is_same_v<cdts_cpp_serializer::clean_t<T>, bool> &&
+	!cdts_cpp_serializer::is_fixed_signed_integral_v<T>, int>>
+cdts_cpp_serializer& cdts_cpp_serializer::operator>>(T& val)
+{
+	using ValueT = clean_t<T>;
+	static_assert(sizeof(ValueT) <= sizeof(int64_t), "Unsupported signed integral width");
+
+	if constexpr (sizeof(ValueT) <= sizeof(int32_t))
+	{
+		int32_t tmp{};
+		(*this) >> tmp;
+		val = static_cast<ValueT>(tmp);
+	}
+	else
+	{
+		int64_t tmp{};
+		(*this) >> tmp;
+		val = static_cast<ValueT>(tmp);
+	}
+
+	return *this;
+}
+
+template<typename T, typename std::enable_if_t<
+	std::is_integral_v<cdts_cpp_serializer::clean_t<T>> &&
+	std::is_unsigned_v<cdts_cpp_serializer::clean_t<T>> &&
+	!cdts_cpp_serializer::is_fixed_unsigned_integral_v<T>, int>>
+cdts_cpp_serializer& cdts_cpp_serializer::operator>>(T& val)
+{
+	using ValueT = clean_t<T>;
+	static_assert(sizeof(ValueT) <= sizeof(uint64_t), "Unsupported unsigned integral width");
+
+	if constexpr (sizeof(ValueT) <= sizeof(uint32_t))
+	{
+		uint32_t tmp{};
+		(*this) >> tmp;
+		val = static_cast<ValueT>(tmp);
+	}
+	else
+	{
+		uint64_t tmp{};
+		(*this) >> tmp;
+		val = static_cast<ValueT>(tmp);
+	}
+
+	return *this;
 }
 
 template<typename T>
