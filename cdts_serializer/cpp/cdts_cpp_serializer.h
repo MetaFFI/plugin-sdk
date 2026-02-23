@@ -331,10 +331,27 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator<<(const std::vector<T>& vec)
 		return *this;
 	}
 
-	// For 1D vectors of primitive types (NOT metaffi_variant or handles): use packed arrays
+	// For top-level 1D vectors of primitive types (NOT metaffi_variant or handles): use packed arrays.
+	// Nested vectors (e.g. rows in vector<vector<int32_t>>) stay as regular CDTS arrays because some
+	// runtimes expect explicit nested array objects there.
 	if constexpr (depth == 1 && !std::is_same_v<T, metaffi_variant> &&
 	              !std::is_same_v<T, cdt_metaffi_handle> && !std::is_same_v<T, cdt_metaffi_handle*>)
 	{
+		if(data.fixed_dimensions != MIXED_OR_UNKNOWN_DIMENSIONS)
+		{
+			data[current_index].set_new_array(vec.size(), 1, static_cast<metaffi_types>(common_type));
+			cdts& arr = static_cast<cdts&>(data[current_index]);
+			cdts_cpp_serializer nested(arr);
+			for(size_t i = 0; i < vec.size(); ++i)
+			{
+				nested.set_index(i);
+				nested << vec[i];
+			}
+
+			current_index++;
+			return *this;
+		}
+
 		// Allocate packed array struct via xllr_alloc_memory (matching xllr_free_memory in cdt::free_packed_array)
 		cdt_packed_array* packed = static_cast<cdt_packed_array*>(xllr_alloc_memory(sizeof(cdt_packed_array)));
 		packed->length = static_cast<metaffi_size>(vec.size());

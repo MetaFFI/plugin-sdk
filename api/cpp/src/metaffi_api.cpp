@@ -63,10 +63,36 @@ bool is_array_type(metaffi_type type)
 	return (type & metaffi_array_type) == metaffi_array_type;
 }
 
+bool is_packed_array_type(metaffi_type type)
+{
+	return (type & metaffi_packed_type) == metaffi_packed_type;
+}
+
 metaffi_type base_type(metaffi_type type)
 {
 	// Remove array and packed flags to get the base element type
 	return is_array_type(type) ? (type & ~(metaffi_array_type | metaffi_packed_type)) : type;
+}
+
+metaffi_int64 get_actual_fixed_dimensions(const cdt& actual)
+{
+	if(!is_array_type(actual.type))
+	{
+		return MIXED_OR_UNKNOWN_DIMENSIONS;
+	}
+
+	// Packed arrays are always linear, contiguous one-dimensional buffers.
+	if(is_packed_array_type(actual.type))
+	{
+		return 1;
+	}
+
+	if(actual.cdt_val.array_val != nullptr)
+	{
+		return actual.cdt_val.array_val->fixed_dimensions;
+	}
+
+	return MIXED_OR_UNKNOWN_DIMENSIONS;
 }
 
 bool matches_expected_type(const MetaFFITypeInfo& expected, const cdt& actual)
@@ -102,8 +128,8 @@ bool matches_expected_type(const MetaFFITypeInfo& expected, const cdt& actual)
 
 		if(expected.fixed_dimensions != MIXED_OR_UNKNOWN_DIMENSIONS)
 		{
-			const cdts& arr = static_cast<const cdts&>(actual);
-			if(arr.fixed_dimensions != expected.fixed_dimensions)
+			const metaffi_int64 actual_fixed_dimensions = get_actual_fixed_dimensions(actual);
+			if(actual_fixed_dimensions != expected.fixed_dimensions)
 			{
 				return false;
 			}
@@ -118,25 +144,6 @@ bool matches_expected_type(const MetaFFITypeInfo& expected, const cdt& actual)
 const char* safe_alias(const MetaFFITypeInfo& type_info)
 {
 	return type_info.alias ? type_info.alias : "";
-}
-
-metaffi_int64 get_actual_fixed_dimensions(const cdt& actual)
-{
-	if(!is_array_type(actual.type))
-	{
-		return MIXED_OR_UNKNOWN_DIMENSIONS;
-	}
-
-	if((actual.type & metaffi_packed_type) == metaffi_packed_type)
-	{
-		return MIXED_OR_UNKNOWN_DIMENSIONS;
-	}
-
-	if(actual.cdt_val.array_val != nullptr)
-	{
-		return actual.cdt_val.array_val->fixed_dimensions;
-	}
-	return MIXED_OR_UNKNOWN_DIMENSIONS;
 }
 
 const char* metaffi_type_name(metaffi_type type)
