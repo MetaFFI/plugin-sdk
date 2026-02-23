@@ -122,7 +122,17 @@ const char* safe_alias(const MetaFFITypeInfo& type_info)
 
 metaffi_int64 get_actual_fixed_dimensions(const cdt& actual)
 {
-	if(is_array_type(actual.type) && actual.cdt_val.array_val != nullptr)
+	if(!is_array_type(actual.type))
+	{
+		return MIXED_OR_UNKNOWN_DIMENSIONS;
+	}
+
+	if((actual.type & metaffi_packed_type) == metaffi_packed_type)
+	{
+		return MIXED_OR_UNKNOWN_DIMENSIONS;
+	}
+
+	if(actual.cdt_val.array_val != nullptr)
 	{
 		return actual.cdt_val.array_val->fixed_dimensions;
 	}
