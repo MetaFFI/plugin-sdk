@@ -8,9 +8,6 @@
 #include <vector>
 #include <utils/env_utils.h>
 #include <utils/logger.hpp>
-#if !defined(_WIN32)
-#  include <dlfcn.h>
-#endif
 
 namespace fs = std::filesystem;
 
@@ -75,18 +72,6 @@ inline std::shared_ptr<boost::dll::shared_library> load_plugin(const std::string
 	try
 	{
 		plugin_dll->load( plugin_full_path, boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global );
-
-#if !defined(_WIN32) && defined(RTLD_NODELETE) && defined(RTLD_NOLOAD)
-		// Apply RTLD_NODELETE so dlclose() never unmaps this plugin.
-		// Language plugins (Go, JVM, Python) all have issues with premature unloading:
-		// Go can't be safely unloaded, JVM hangs on DestroyJavaVM, Python corrupts
-		// glibc's heap via Py_Finalize. RTLD_NOLOAD doesn't re-load the library —
-		// it only upgrades the flags on the already-resident handle. The OS reclaims
-		// memory cleanly at process exit.
-		// boost::dll::load_mode::rtld_nodelete was added in Boost 1.76; using dlopen
-		// directly avoids a compile error on older Boost versions.
-		dlopen(plugin[0].c_str(), RTLD_LAZY | RTLD_GLOBAL | RTLD_NODELETE | RTLD_NOLOAD);
-#endif
 	}
 	catch(std::exception& ex)
 	{
