@@ -79,7 +79,14 @@ inline std::shared_ptr<boost::dll::shared_library> load_plugin(const std::string
 		ss << ex.what() << " Failed to load " << plugin_full_path;
 		throw std::runtime_error(ss.str());
 	}
-	
+
+	// Keep a permanent reference so refcount never reaches 0 and dlclose is never called.
+	// Heap-allocated to survive past static destruction order.
+	static auto* s_permanent_refs = new std::vector<std::shared_ptr<boost::dll::shared_library>>();
+	fprintf(stderr, "+++ load_plugin: loaded '%s', keeping permanent ref\n", plugin[0].c_str());
+	fflush(stderr);
+	s_permanent_refs->push_back(plugin_dll);
+
 	return plugin_dll;
 }
 //--------------------------------------------------------------------

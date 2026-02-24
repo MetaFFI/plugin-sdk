@@ -600,7 +600,7 @@ static bool try_load_python_library(const std::string& version)
 	dl_iterate_phdr([](struct dl_phdr_info* info, size_t size, void* data) -> int {
 		if (info->dlpi_name && strstr(info->dlpi_name, "libpython")) {
 			auto* found_info = static_cast<found_python_lib_info*>(data);
-			found_info->handle = dlopen(info->dlpi_name, RTLD_NOLOAD | RTLD_NOW);
+			found_info->handle = dlopen(info->dlpi_name, RTLD_NOLOAD | RTLD_NOW | RTLD_NODELETE);
 			if (found_info->handle) {
 				found_info->path = info->dlpi_name;
 				return 1; // Stop iteration
@@ -612,6 +612,8 @@ static bool try_load_python_library(const std::string& version)
 	if(found_info.handle) {
 		python_lib_handle = found_info.handle;
 		python_lib_path = found_info.path.empty() ? "already loaded (path unknown)" : found_info.path;
+		fprintf(stderr, "+++ python_api_wrapper: found already-loaded '%s' with RTLD_NODELETE\n", python_lib_path.c_str());
+		fflush(stderr);
 		return true;
 	}
 
@@ -627,9 +629,11 @@ static bool try_load_python_library(const std::string& version)
 	// First try loading directly
 	for(const auto& lib_name : lib_names)
 	{
-		python_lib_handle = dlopen(lib_name.c_str(), RTLD_NOW | RTLD_GLOBAL);
+		python_lib_handle = dlopen(lib_name.c_str(), RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
 		if(python_lib_handle)
 		{
+			fprintf(stderr, "+++ python_api_wrapper: loaded '%s' with RTLD_NODELETE\n", lib_name.c_str());
+			fflush(stderr);
 			python_lib_path = lib_name;
 			return true;
 		}
@@ -642,9 +646,11 @@ static bool try_load_python_library(const std::string& version)
 		for(const auto& lib_name : lib_names)
 		{
 			std::string full_path = path + lib_name;
-			python_lib_handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
+			python_lib_handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_GLOBAL | RTLD_NODELETE);
 			if(python_lib_handle)
 			{
+				fprintf(stderr, "+++ python_api_wrapper: loaded '%s' with RTLD_NODELETE\n", full_path.c_str());
+				fflush(stderr);
 				python_lib_path = full_path;
 				return true;
 			}
