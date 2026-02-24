@@ -71,7 +71,7 @@ inline std::shared_ptr<boost::dll::shared_library> load_plugin(const std::string
 	std::shared_ptr<boost::dll::shared_library> plugin_dll = std::make_shared<boost::dll::shared_library>();
 	try
 	{
-		plugin_dll->load( plugin_full_path, boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global );
+		plugin_dll->load( plugin_full_path, boost::dll::load_mode::rtld_now | boost::dll::load_mode::rtld_global | boost::dll::load_mode::rtld_nodelete );
 	}
 	catch(std::exception& ex)
 	{

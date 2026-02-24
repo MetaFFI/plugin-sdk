@@ -310,23 +310,13 @@ void cpython3_runtime_manager::release_runtime()
 				Py_DECREF(mainThreadId);
 				Py_DECREF(threadingModule);
 				
-				// Finalize Python
-				fprintf(stderr, "+++ cpython3_runtime_manager: Py_FinalizeEx begin\n"); fflush(stderr);
-				int res = pPy_FinalizeEx();
-				fprintf(stderr, "+++ cpython3_runtime_manager: Py_FinalizeEx done (res=%d)\n", res); fflush(stderr);
-				if(res < 0)
-				{
-					std::string error = check_python_error();
-					if(error.empty())
-					{
-						error = "Py_FinalizeEx reported failure";
-					}
-					throw std::runtime_error(error);
-				}
-				// After Py_FinalizeEx, Python is finalized and we should not release GIL
-				// The finalization process releases all thread states
+				// Do NOT call Py_FinalizeEx from within a dlopen'd plugin.
+				// Py_FinalizeEx internally dlcloses ctypes-loaded extensions (xllr.python3.so etc.),
+				// corrupting glibc's heap allocator. The OS reclaims Python memory cleanly at process exit.
+				fprintf(stderr, "+++ cpython3_runtime_manager: release_runtime skipping Py_FinalizeEx (plugin context - avoids heap corruption)\n"); fflush(stderr);
+				pPyGILState_Release(gstate);
 				m_is_runtime_loaded = false;
-				fprintf(stderr, "+++ cpython3_runtime_manager: release_runtime done (embedded, finalized)\n"); fflush(stderr);
+				fprintf(stderr, "+++ cpython3_runtime_manager: release_runtime done (embedded, skipped finalize)\n"); fflush(stderr);
 				return;
 			}
 			else
