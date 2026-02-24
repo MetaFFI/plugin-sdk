@@ -8,6 +8,7 @@
 #include <mutex>
 #include <stdexcept>
 #include <boost/filesystem.hpp>
+#include <cstdio>
 
 namespace
 {
@@ -218,16 +219,20 @@ void cpython3_runtime_manager::load_runtime()
 
 void cpython3_runtime_manager::release_runtime()
 {
+	fprintf(stderr, "+++ cpython3_runtime_manager: release_runtime enter (loaded=%d embedded=%d)\n",
+	        (int)m_is_runtime_loaded, (int)m_is_embedded); fflush(stderr);
 	std::lock_guard<std::mutex> lock(m_mutex);
-	
+
 	if(!m_is_runtime_loaded)
 	{
+		fprintf(stderr, "+++ cpython3_runtime_manager: release_runtime - not loaded, returning\n"); fflush(stderr);
 		return; // Not loaded
 	}
-	
+
 	// If we didn't initialize the interpreter, don't finalize it
 	if(!m_is_embedded)
 	{
+		fprintf(stderr, "+++ cpython3_runtime_manager: release_runtime - not embedded, skipping Py_Finalize\n"); fflush(stderr);
 		m_is_runtime_loaded = false;
 		return;
 	}
@@ -306,7 +311,9 @@ void cpython3_runtime_manager::release_runtime()
 				Py_DECREF(threadingModule);
 				
 				// Finalize Python
+				fprintf(stderr, "+++ cpython3_runtime_manager: Py_FinalizeEx begin\n"); fflush(stderr);
 				int res = pPy_FinalizeEx();
+				fprintf(stderr, "+++ cpython3_runtime_manager: Py_FinalizeEx done (res=%d)\n", res); fflush(stderr);
 				if(res < 0)
 				{
 					std::string error = check_python_error();
@@ -319,6 +326,7 @@ void cpython3_runtime_manager::release_runtime()
 				// After Py_FinalizeEx, Python is finalized and we should not release GIL
 				// The finalization process releases all thread states
 				m_is_runtime_loaded = false;
+				fprintf(stderr, "+++ cpython3_runtime_manager: release_runtime done (embedded, finalized)\n"); fflush(stderr);
 				return;
 			}
 			else
@@ -338,6 +346,7 @@ void cpython3_runtime_manager::release_runtime()
 			pPyGILState_Release(gstate);
 		}
 		m_is_runtime_loaded = false;
+		fprintf(stderr, "+++ cpython3_runtime_manager: release_runtime done (threads>1 or non-main, skipped Py_Finalize)\n"); fflush(stderr);
 	}
 		catch(const std::exception&)
 		{
