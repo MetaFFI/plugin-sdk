@@ -321,14 +321,25 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 	if(!is_metaffi_handle_loaded)
 	{
 		jobject targetClass = env->FindClass("metaffi/api/accessor/MetaFFIHandle");
-		check_and_throw_jvm_exception(env, targetClass,);
-		loaded_classes["metaffi/api/accessor/MetaFFIHandle"] = (jclass)env->NewGlobalRef(targetClass);
+		if(env->ExceptionCheck() == JNI_TRUE || !targetClass)
+		{
+			env->ExceptionClear();
+			jstring metaffi_handle_class_name = env->NewStringUTF("metaffi.api.accessor.MetaFFIHandle");
+			check_and_throw_jvm_exception(env, metaffi_handle_class_name,);
+			targetClass = env->CallStaticObjectMethod(class_class, for_name_method, metaffi_handle_class_name, JNI_TRUE, childURLClassLoader);
+			check_and_throw_jvm_exception(env, targetClass, env->DeleteLocalRef(metaffi_handle_class_name););
+			env->DeleteLocalRef(metaffi_handle_class_name);
+		}
+		jclass global_metaffi_handle = (jclass)env->NewGlobalRef(targetClass);
+		loaded_classes["metaffi/api/accessor/MetaFFIHandle"] = global_metaffi_handle;
+		loaded_classes["metaffi.api.accessor.MetaFFIHandle"] = global_metaffi_handle;
 		is_metaffi_handle_loaded = true;
 
-		if(class_name == "metaffi/api/accessor/MetaFFIHandle")
+		if(class_name == "metaffi/api/accessor/MetaFFIHandle" || class_name == "metaffi.api.accessor.MetaFFIHandle")
 		{
 			return {env, (jclass)targetClass};
 		}
+		env->DeleteLocalRef(targetClass);
 	}
 	
 	std::string tmp;
@@ -371,7 +382,9 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 		loaded_paths.insert(url_path);
 	}
 	
-	jstring class_name_str = env->NewStringUTF(class_name.c_str());
+	std::string class_name_for_lookup = class_name;
+	boost::replace_all(class_name_for_lookup, "/", ".");
+	jstring class_name_str = env->NewStringUTF(class_name_for_lookup.c_str());
 	check_and_throw_jvm_exception(env, class_name_str,);
 	jobject targetClass = env->CallStaticObjectMethod(class_class, for_name_method, class_name_str, JNI_TRUE, childURLClassLoader);
 	
@@ -380,6 +393,7 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 	jclass global_class = (jclass)env->NewGlobalRef(targetClass);
 	env->DeleteLocalRef(targetClass);
 	loaded_classes[class_name] = global_class;
+	loaded_classes[class_name_for_lookup] = global_class;
 	
 	return {env, global_class};
 #ifdef _MSC_VER

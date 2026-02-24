@@ -25,6 +25,32 @@ import (
 var runtime *api.MetaFFIRuntime
 var mod *api.MetaFFIModule
 
+func asInstanceHandle(v interface{}) interface{} {
+	switch h := v.(type) {
+	case Handle:
+		return h
+	case MetaFFIHandle:
+		return h
+	default:
+		panic(fmt.Sprintf("Expected Handle or MetaFFIHandle, got %T", v))
+	}
+}
+
+func handleValue(v interface{}) Handle {
+	switch h := v.(type) {
+	case Handle:
+		return h
+	case MetaFFIHandle:
+		return h.Val
+	default:
+		panic(fmt.Sprintf("Expected Handle or MetaFFIHandle, got %T", v))
+	}
+}
+
+func asInterface(v interface{}) interface{} {
+	return v
+}
+
 // Entities Callers
 {{range $mindex, $m := .Modules}}
 
@@ -134,7 +160,7 @@ func {{ToGoNameConv $f.Getter.GetNameWithOverloadIndex}}_Getter() ({{ConvertToGo
 		return zero, err
 	}
 
-	return res[0].({{ConvertToGoType $f.ArgDefinition $m}}), nil
+	return {{if eq (ConvertToGoType $f.ArgDefinition $m) "interface{}"}}asInterface(res[0]){{else}}res[0].({{ConvertToGoType $f.ArgDefinition $m}}){{end}}, nil
 }
 {{end}}{{/* End Getter */}}
 {{if $f.Setter}}
@@ -161,7 +187,7 @@ func {{ToGoNameConv $f.GetNameWithOverloadIndex}}({{range $index, $elem := $f.Pa
 	var res []interface{}
 	res, err = {{$f.GetNameWithOverloadIndex}}_caller({{range $index, $elem := $f.Parameters}}{{if $index}},{{end}} {{$elem.Name}}{{end}})
 
-	return {{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}res[{{$index}}].({{ConvertToGoType $elem $m}}){{end}}, nil
+	return {{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}{{if eq (ConvertToGoType $elem $m) "interface{}"}}asInterface(res[{{$index}}]){{else}}res[{{$index}}].({{ConvertToGoType $elem $m}}){{end}}{{end}}, nil
 {{else}}
 	_, err = {{$f.GetNameWithOverloadIndex}}_caller({{range $index, $elem := $f.Parameters}}{{if $index}},{{end}} {{$elem.Name}}{{end}})
 	return err
@@ -171,7 +197,7 @@ func {{ToGoNameConv $f.GetNameWithOverloadIndex}}({{range $index, $elem := $f.Pa
 
 {{range $cindex, $c := $m.Classes}}
 type {{AsPublic $c.Name}} struct{
-	h Handle
+	h interface{}
 }
 
 {{range $findex, $f := $c.Constructors}}
@@ -185,7 +211,7 @@ func New{{ToGoNameConv $f.GetNameWithOverloadIndex}}({{range $index, $elem := $f
 	}
 
 	inst := &{{AsPublic $c.Name}}{
-		h: res[0].(Handle),
+		h: asInstanceHandle(res[0]),
 	}
 	
 	return inst, nil	
@@ -193,7 +219,7 @@ func New{{ToGoNameConv $f.GetNameWithOverloadIndex}}({{range $index, $elem := $f
 {{end}}{{/* End Constructor */}}
 
 func (this *{{AsPublic $c.Name}}) GetHandle() Handle{
-	return this.h
+	return handleValue(this.h)
 }
 
 func (this *{{AsPublic $c.Name}}) SetHandle(h Handle){
@@ -214,7 +240,7 @@ func {{GenerateMethodReceiverCode $f.Getter}} {{GenerateMethodName $f.Getter}}_G
 		return
 	}
 	
-	return {{range $index, $elem := $f.Getter.ReturnValues}}{{if $index}},{{end}}res[{{$index}}].({{ConvertToGoType $elem $m}}){{end}}{{if $f.Getter.ReturnValues}},{{end}} nil
+	return {{range $index, $elem := $f.Getter.ReturnValues}}{{if $index}},{{end}}{{if eq (ConvertToGoType $elem $m) "interface{}"}}asInterface(res[{{$index}}]){{else}}res[{{$index}}].({{ConvertToGoType $elem $m}}){{end}}{{end}}{{if $f.Getter.ReturnValues}},{{end}} nil
 }
 {{end}}{{/* End Getter */}}
 {{if $f.Setter}}
@@ -244,7 +270,7 @@ func {{GenerateMethodReceiverCode $f}} {{GenerateMethodName $f}}({{GenerateMetho
 		return
 	}
 	
-	return {{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}res[{{$index}}].({{ConvertToGoType $elem $m}}){{end}}, nil
+	return {{range $index, $elem := $f.ReturnValues}}{{if $index}},{{end}}{{if eq (ConvertToGoType $elem $m) "interface{}"}}asInterface(res[{{$index}}]){{else}}res[{{$index}}].({{ConvertToGoType $elem $m}}){{end}}{{end}}, nil
 {{else}}
 	{{if $f.InstanceRequired}}
 	_, err = {{$c.Name}}_{{$f.GetNameWithOverloadIndex}}_caller(this.h{{range $index, $elem := $f.Parameters}}{{if gt $index 0}}, {{$elem.Name}}{{end}}{{end}})

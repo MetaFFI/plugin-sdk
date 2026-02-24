@@ -21,6 +21,35 @@ static void set_error(char** out_err, const std::string& msg)
 	}
 }
 
+static std::string normalize_entity_path(const char* entity_path)
+{
+	std::string raw = entity_path ? entity_path : "";
+	if(raw.empty() || raw.find("entity_path=") == std::string::npos)
+	{
+		return raw;
+	}
+
+	std::stringstream ss(raw);
+	std::string item;
+	while(std::getline(ss, item, ','))
+	{
+		auto eq = item.find('=');
+		if(eq == std::string::npos)
+		{
+			continue;
+		}
+
+		auto key = item.substr(0, eq);
+		auto value = item.substr(eq + 1);
+		if(key == "entity_path" && !value.empty())
+		{
+			return value;
+		}
+	}
+
+	return raw;
+}
+
 static void log_type_info(const metaffi_type_info* types, int8_t count, const char* label)
 {
 	for(int8_t i = 0; i < count; ++i)
@@ -168,7 +197,12 @@ xcall* load_entity(
 	}
 
 	// Lookup entity in registry
-	const EntityDefinition* entity = EntityRegistry::instance().find_entity(entity_path ? entity_path : "");
+	std::string normalized_entity_path = normalize_entity_path(entity_path);
+	if(normalized_entity_path != (entity_path ? entity_path : ""))
+	{
+		METAFFI_DEBUG(LOG, "  normalized_entity_path: {}", normalized_entity_path);
+	}
+	const EntityDefinition* entity = EntityRegistry::instance().find_entity(normalized_entity_path);
 	if(!entity)
 	{
 		std::string error_msg = "Entity not found: " + std::string(entity_path ? entity_path : "null");
@@ -184,7 +218,7 @@ xcall* load_entity(
 	                                              retvals_types, retval_count,
 	                                              validation_error))
 	{
-		std::string error_msg = "Type validation failed for " + std::string(entity_path) + ": " + validation_error;
+		std::string error_msg = "Type validation failed for " + normalized_entity_path + ": " + validation_error;
 		log_error("load_entity", error_msg);
 		set_error(err, error_msg);
 		return nullptr;
@@ -197,7 +231,7 @@ xcall* load_entity(
 		set_error(err, "Failed to allocate memory for EntityContext");
 		return nullptr;
 	}
-	auto* ctx = new (ctx_mem) EntityContext(entity_path, entity->variant, entity->handler);
+	auto* ctx = new (ctx_mem) EntityContext(normalized_entity_path, entity->variant, entity->handler);
 
 	// Create xcall structure
 	void* pxcall_mem = xllr_alloc_memory(sizeof(xcall));
