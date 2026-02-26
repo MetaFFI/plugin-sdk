@@ -1,4 +1,4 @@
-#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#define DOCTEST_CONFIG_IMPLEMENT
 #include <doctest/doctest.h>
 #include "runtime_manager.h"
 #include "module.h"
@@ -8,6 +8,21 @@
 #include <fstream>
 #include <thread>
 #include <vector>
+#include <cstdlib>
+
+// Custom main: call _exit() after doctest completes to avoid the destructor
+// storm where 50+ cpython3_runtime_manager instances all try to release the
+// Python runtime during global cleanup, causing crashes on Windows CI.
+int main(int argc, char** argv)
+{
+	doctest::Context context;
+	context.applyCommandLine(argc, argv);
+	int res = context.run();
+
+	// Skip global destructors — the Python interpreter and GIL state
+	// cannot survive 50+ concurrent release_runtime calls at process exit.
+	_exit(res);
+}
 #include <atomic>
 
 template<typename Func>
