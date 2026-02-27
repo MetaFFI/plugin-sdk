@@ -22,9 +22,6 @@ c_cpp_exe(cdts_python3_serializer_test
 	"${cdts_python3_serializer_test_libs}"
 	"sdk/cdts_serializer/cpython3")
 
-# Copy vcpkg runtime dependencies to $METAFFI_HOME
-copy_vcpkg_runtime_dependencies(cdts_python3_serializer_test "sdk/cdts_serializer/cpython3")
-
 # Register test with CTest
 add_test(NAME cdts_python3_serializer_test
          COMMAND $ENV{METAFFI_HOME}/sdk/cdts_serializer/cpython3/cdts_python3_serializer_test${CMAKE_EXECUTABLE_SUFFIX})
