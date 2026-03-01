@@ -177,9 +177,16 @@ jni_class jni_class_loader::load_class(const std::string& class_name)
 			return "";
 		}
 
-		std::filesystem::path api_jar = std::filesystem::path(metaffi_home) / "jvm" / "metaffi.api.jar";
+		// installed location (plugin zip extracts api/metaffi.api.jar → jvm/api/)
+		std::filesystem::path api_jar = std::filesystem::path(metaffi_home) / "jvm" / "api" / "metaffi.api.jar";
 		if(!std::filesystem::exists(api_jar))
 		{
+			// CMake build installs directly to jvm/
+			api_jar = std::filesystem::path(metaffi_home) / "jvm" / "metaffi.api.jar";
+		}
+		if(!std::filesystem::exists(api_jar))
+		{
+			// CMake SDK build output (developer machine)
 			api_jar = std::filesystem::path(metaffi_home) / "sdk" / "api" / "jvm" / "metaffi.api.jar";
 		}
 

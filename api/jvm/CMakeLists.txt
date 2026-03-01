@@ -42,7 +42,7 @@ c_cpp_shared_lib(metaffi.api.accessor
 		"${API_ACCESSOR_SRC};${API_JVM_SRC};${sdk_src}"
 		"${sdk_include_dir};${metaffi_sdk_root};${CMAKE_CURRENT_LIST_DIR};${CMAKE_CURRENT_LIST_DIR}/accessor;${Boost_INCLUDE_DIRS};${JNI_INCLUDE_DIRS};"
 		"Boost::filesystem"
-		"sdk/api/jvm")
+		"jvm")
 
 set(metaffi.api.accessor ${metaffi.api.accessor} PARENT_SCOPE)
 
