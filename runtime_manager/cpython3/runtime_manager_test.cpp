@@ -56,9 +56,11 @@ bool expect_throw(Func&& func)
 }
 
 // Helper function to create a test Python module file
+// Each module gets its own subdirectory so Python's FileFinder cache for a
+// previously-scanned directory never hides a newly-written .py file.
 std::string create_test_module(const std::string& module_name, const std::string& content)
 {
-	std::filesystem::path test_dir = std::filesystem::temp_directory_path() / "metaffi_cpython3_test";
+	std::filesystem::path test_dir = std::filesystem::temp_directory_path() / "metaffi_cpython3_test" / module_name;
 	std::filesystem::create_directories(test_dir);
 	
 	std::filesystem::path module_path = test_dir / (module_name + ".py");
