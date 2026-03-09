@@ -125,6 +125,9 @@ public:
 				std::vector<MetaFFITypeInfo> retvals_types,
 				bool owns_xcall);
 
+	/// @brief Default constructor — creates an empty, unbound entity (for use as static).
+	MetaFFIEntity() noexcept;
+
 	MetaFFIEntity(const MetaFFIEntity&) = delete;
 	MetaFFIEntity& operator=(const MetaFFIEntity&) = delete;
 	MetaFFIEntity(MetaFFIEntity&& other) noexcept;

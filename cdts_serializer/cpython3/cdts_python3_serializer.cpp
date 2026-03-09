@@ -2130,6 +2130,7 @@ PyObject* cdts_python3_serializer::extract_as_tuple()
 			}
 			catch(const std::exception& e)
 			{
+				(void)e;
 				METAFFI_DEBUG(LOG, "extract_as_tuple: EXCEPTION at index {}: {}", i, e.what());
 				throw;
 			}

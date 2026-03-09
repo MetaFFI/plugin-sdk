@@ -112,7 +112,8 @@ C_GUEST_API int64_t c_guest_get_counter(void);
 C_GUEST_API void c_guest_set_counter(int64_t value);
 C_GUEST_API int64_t c_guest_inc_counter(int64_t delta);
 
-C_GUEST_API void c_guest_hello_world(void);
+C_GUEST_API void c_guest_no_op(void);
+C_GUEST_API const char* c_guest_hello_world(void);
 C_GUEST_API int c_guest_returns_an_error(void);
 C_GUEST_API double c_guest_div_integers(int64_t x, int64_t y);
 C_GUEST_API const char* c_guest_join_strings(CGuestStringArray arr);
@@ -186,6 +187,44 @@ C_GUEST_API int c_guest_sum_variadic(int count, ...);
 C_GUEST_API const char* c_guest_join_variadic(const char* prefix, int count, ...);
 
 C_GUEST_API CGuestPlainStruct c_guest_make_plain_struct(int id, const char* name);
+
+/* --- Typed scalar returns --- */
+C_GUEST_API int8_t   c_guest_return_int8(void);
+C_GUEST_API int16_t  c_guest_return_int16(void);
+C_GUEST_API int32_t  c_guest_return_int32(void);
+C_GUEST_API int64_t  c_guest_return_int64(void);
+C_GUEST_API uint8_t  c_guest_return_uint8(void);
+C_GUEST_API uint16_t c_guest_return_uint16(void);
+C_GUEST_API uint32_t c_guest_return_uint32(void);
+C_GUEST_API uint64_t c_guest_return_uint64(void);
+C_GUEST_API float    c_guest_return_float32(void);
+C_GUEST_API double   c_guest_return_float64(void);
+C_GUEST_API int      c_guest_return_bool(void);
+C_GUEST_API const char* c_guest_return_string(void);
+
+/* --- Typed scalar accepts --- */
+C_GUEST_API void c_guest_accept_int8(int8_t val);
+C_GUEST_API void c_guest_accept_int16(int16_t val);
+C_GUEST_API void c_guest_accept_int32(int32_t val);
+C_GUEST_API void c_guest_accept_int64(int64_t val);
+C_GUEST_API void c_guest_accept_uint8(uint8_t val);
+C_GUEST_API void c_guest_accept_uint16(uint16_t val);
+C_GUEST_API void c_guest_accept_uint32(uint32_t val);
+C_GUEST_API void c_guest_accept_uint64(uint64_t val);
+C_GUEST_API void c_guest_accept_float32(float val);
+C_GUEST_API void c_guest_accept_float64(double val);
+C_GUEST_API void c_guest_accept_bool(int val);
+C_GUEST_API void c_guest_accept_string(const char* val);
+
+/* --- Typed echo (round-trip) --- */
+C_GUEST_API int64_t     c_guest_echo_int64(int64_t val);
+C_GUEST_API double      c_guest_echo_float64(double val);
+C_GUEST_API const char* c_guest_echo_string(const char* val);
+C_GUEST_API int         c_guest_echo_bool(int val);
+
+/* --- 1D int64 array helpers --- */
+C_GUEST_API int64_t* c_guest_make_1d_int64_array(size_t* out_len);
+C_GUEST_API int64_t  c_guest_sum_1d_int64_array(const int64_t* arr, size_t len);
 
 #ifdef __cplusplus
 }

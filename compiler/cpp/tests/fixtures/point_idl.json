@@ -1,0 +1,196 @@
+{
+  "idl_source": "test",
+  "idl_extension": ".json",
+  "idl_filename_with_extension": "test.json",
+  "idl_full_path": "",
+  "metaffi_guest_lib": "guest_test",
+  "target_language": "cpp",
+  "modules": [
+    {
+      "name": "test_module",
+      "comment": "",
+      "tags": {},
+      "functions": [
+        {
+          "name": "add",
+          "comment": "",
+          "tags": {},
+          "entity_path": {"callable": "?add@@YAHHH@Z"},
+          "parameters": [
+            {"name": "a", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0},
+            {"name": "b", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "Point",
+          "comment": "",
+          "tags": {},
+          "entity_path": {},
+          "constructors": [
+            {
+              "name": "ctor",
+              "comment": "",
+              "tags": {},
+              "entity_path": {"callable": "??0Point@@QEAA@HN@Z"},
+              "parameters": [
+                {"name": "x", "type": "int32",   "type_alias": "", "comment": "", "tags": {}, "dimensions": 0},
+                {"name": "y", "type": "float64", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+              ],
+              "return_values": [
+                {"name": "instance", "type": "handle", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+              ]
+            }
+          ],
+          "release": {
+            "name": "dtor",
+            "comment": "",
+            "tags": {},
+            "entity_path": {"callable": "??1Point@@QEAA@XZ"},
+            "parameters": [],
+            "return_values": []
+          },
+          "methods": [
+            {
+              "name": "sum",
+              "comment": "",
+              "tags": {},
+              "entity_path": {"callable": "?sum@Point@@QEBANXZ"},
+              "parameters": [],
+              "return_values": [
+                {"name": "result", "type": "float64", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+              ]
+            },
+            {
+              "name": "set_x",
+              "comment": "",
+              "tags": {},
+              "entity_path": {"callable": "?set_x@Point@@QEAAXH@Z"},
+              "parameters": [
+                {"name": "v", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+              ],
+              "return_values": []
+            }
+          ],
+          "fields": [
+            {
+              "name": "x",
+              "type": "int32",
+              "type_alias": "",
+              "comment": "",
+              "tags": {},
+              "dimensions": 0,
+              "getter": {
+                "name": "get_x",
+                "comment": "",
+                "tags": {},
+                "entity_path": {"field": "x", "field_offset": "0"},
+                "parameters": [],
+                "return_values": [
+                  {"name": "value", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+                ]
+              },
+              "setter": {
+                "name": "set_x_field",
+                "comment": "",
+                "tags": {},
+                "entity_path": {"field": "x", "field_offset": "0", "field_size": "4"},
+                "parameters": [
+                  {"name": "v", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+                ],
+                "return_values": []
+              }
+            }
+          ]
+        }
+      ],
+      "globals": [
+        {
+          "name": "g_counter",
+          "type": "int32",
+          "type_alias": "",
+          "comment": "",
+          "tags": {},
+          "dimensions": 0,
+          "getter": {
+            "name": "get_g_counter",
+            "comment": "",
+            "tags": {},
+            "entity_path": {"getter": "true", "global": "g_counter"},
+            "parameters": [],
+            "return_values": [
+              {"name": "value", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+            ]
+          },
+          "setter": {
+            "name": "set_g_counter",
+            "comment": "",
+            "tags": {},
+            "entity_path": {"global": "g_counter", "setter": "true"},
+            "parameters": [
+              {"name": "v", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+            ],
+            "return_values": []
+          }
+        }
+      ],
+      "external_resources": []
+    },
+    {
+      "name": "math",
+      "comment": "",
+      "tags": {},
+      "functions": [
+        {
+          "name": "multiply",
+          "comment": "",
+          "tags": {},
+          "entity_path": {"callable": "?multiply@@YAHHH@Z"},
+          "parameters": [
+            {"name": "a", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0},
+            {"name": "b", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+          ],
+          "return_values": [
+            {"name": "result", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+          ]
+        }
+      ],
+      "classes": [],
+      "globals": [
+        {
+          "name": "g_scale",
+          "type": "int32",
+          "type_alias": "",
+          "comment": "",
+          "tags": {},
+          "dimensions": 0,
+          "getter": {
+            "name": "get_g_scale",
+            "comment": "",
+            "tags": {},
+            "entity_path": {"getter": "true", "global": "g_scale"},
+            "parameters": [],
+            "return_values": [
+              {"name": "value", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+            ]
+          },
+          "setter": {
+            "name": "set_g_scale",
+            "comment": "",
+            "tags": {},
+            "entity_path": {"global": "g_scale", "setter": "true"},
+            "parameters": [
+              {"name": "v", "type": "int32", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+            ],
+            "return_values": []
+          }
+        }
+      ],
+      "external_resources": []
+    }
+  ]
+}

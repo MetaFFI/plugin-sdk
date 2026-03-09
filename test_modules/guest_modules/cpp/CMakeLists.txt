@@ -12,7 +12,6 @@ c_cpp_shared_lib(cpp_guest_module
 	""
 	"${CPP_GUEST_OUT_DIR}"
 )
-target_compile_definitions(cpp_guest_module PRIVATE CPP_GUEST_MODULE_EXPORTS)
 
 file(GLOB_RECURSE CPP_GUEST_HEADERS
 	"${CPP_GUEST_INCLUDE_DIR}/*.h"

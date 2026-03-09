@@ -653,9 +653,11 @@ func (this *GuestCompiler) buildDynamicLibrary(code string) ([]byte, error) {
 		return nil, err
 	}
 
-	_, err = this.goClean(dir)
-	if err != nil {
-		return nil, err
+	// Cache clean is best-effort — on Windows, locked files in the Go build
+	// cache frequently cause "Access is denied" errors.  Go's build system
+	// handles cache invalidation automatically, so a failure here is harmless.
+	if _, cleanErr := this.goClean(dir); cleanErr != nil {
+		fmt.Printf("[go_compiler:guest] warning: go clean -cache failed (non-fatal): %v\n", cleanErr)
 	}
 
 	_, err = this.goBuild(dir)

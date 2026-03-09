@@ -26,10 +26,13 @@ int64_t c_guest_inc_counter(int64_t delta)
 	return c_guest_counter;
 }
 
-void c_guest_hello_world(void)
+void c_guest_no_op(void) {}
+
+const char* c_guest_hello_world(void)
 {
 	++c_guest_counter;
 	metaffi_logf("sdk.test_modules.guest_modules.c", METAFFI_LOG_LEVEL_INFO, "Hello World, from C");
+	return "Hello World from C";
 }
 
 int c_guest_returns_an_error(void)
@@ -785,4 +788,69 @@ CGuestPlainStruct c_guest_make_plain_struct(int id, const char* name)
 	out.id = id;
 	out.name = name;
 	return out;
+}
+
+/* --- Typed scalar returns --- */
+
+int8_t   c_guest_return_int8(void)   { return 42; }
+int16_t  c_guest_return_int16(void)  { return 42; }
+int32_t  c_guest_return_int32(void)  { return 42; }
+int64_t  c_guest_return_int64(void)  { return 42; }
+uint8_t  c_guest_return_uint8(void)  { return 42; }
+uint16_t c_guest_return_uint16(void) { return 42; }
+uint32_t c_guest_return_uint32(void) { return 42; }
+uint64_t c_guest_return_uint64(void) { return 42; }
+float    c_guest_return_float32(void) { return 3.14f; }
+double   c_guest_return_float64(void) { return 3.14; }
+int      c_guest_return_bool(void)    { return 1; }
+const char* c_guest_return_string(void) { return "hello"; }
+
+/* --- Typed scalar accepts --- */
+
+void c_guest_accept_int8(int8_t val)     { (void)val; }
+void c_guest_accept_int16(int16_t val)   { (void)val; }
+void c_guest_accept_int32(int32_t val)   { (void)val; }
+void c_guest_accept_int64(int64_t val)   { (void)val; }
+void c_guest_accept_uint8(uint8_t val)   { (void)val; }
+void c_guest_accept_uint16(uint16_t val) { (void)val; }
+void c_guest_accept_uint32(uint32_t val) { (void)val; }
+void c_guest_accept_uint64(uint64_t val) { (void)val; }
+void c_guest_accept_float32(float val)   { (void)val; }
+void c_guest_accept_float64(double val)  { (void)val; }
+void c_guest_accept_bool(int val)        { (void)val; }
+void c_guest_accept_string(const char* val) { (void)val; }
+
+/* --- Typed echo (round-trip) --- */
+
+int64_t c_guest_echo_int64(int64_t val)  { return val; }
+double  c_guest_echo_float64(double val) { return val; }
+
+const char* c_guest_echo_string(const char* val)
+{
+	if (!val) return NULL;
+	size_t len = strlen(val) + 1;
+	char* out = (char*)malloc(len);
+	if (out) memcpy(out, val, len);
+	return out;
+}
+
+int c_guest_echo_bool(int val) { return val; }
+
+/* --- 1D int64 array helpers --- */
+
+int64_t* c_guest_make_1d_int64_array(size_t* out_len)
+{
+	static const size_t kLen = 5;
+	if (out_len) *out_len = kLen;
+	int64_t* arr = (int64_t*)malloc(sizeof(int64_t) * kLen);
+	if (!arr) return NULL;
+	for (size_t i = 0; i < kLen; ++i) arr[i] = (int64_t)(i + 1);
+	return arr;
+}
+
+int64_t c_guest_sum_1d_int64_array(const int64_t* arr, size_t len)
+{
+	int64_t total = 0;
+	for (size_t i = 0; i < len; ++i) total += arr[i];
+	return total;
 }

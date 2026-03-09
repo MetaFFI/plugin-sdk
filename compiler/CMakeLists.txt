@@ -1,12 +1,12 @@
 add_subdirectory(go)
 add_subdirectory(python3)
 add_subdirectory(jvm)
+add_subdirectory(cpp)
 
-add_custom_target(metaffi_compiler_tests
-	DEPENDS compiler_go_tests compiler_python3_tests compiler_jvm_tests
-)
+add_custom_target(metaffi_compiler_tests)
+add_dependencies(metaffi_compiler_tests compiler_go_tests compiler_python3_tests compiler_jvm_tests cpp_compiler_test)
 set(metaffi_compiler_tests metaffi_compiler_tests PARENT_SCOPE)
 
-add_custom_target(compiler
-)
+add_custom_target(compiler)
+add_dependencies(compiler metaffi_compiler_tests)
 set(compiler compiler PARENT_SCOPE)

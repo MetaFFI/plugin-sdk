@@ -55,7 +55,7 @@ def metaffi_type_to_python_type_annotation(metaffi_type: str, dimensions: int = 
         # Boolean
         "bool": "bool",
         # Handle
-        "handle": type_alias if type_alias else "Any",
+        "handle": type_alias if (type_alias and type_alias.isidentifier()) else "Any",
         # Callable
         "callable": "Any",  # Python callable type
         # Other

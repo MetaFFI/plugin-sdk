@@ -164,7 +164,7 @@
           "entity_path": {"entity_path": "test::return_null"},
           "parameters": [],
           "return_values": [
-            {"name": "result", "type": "null", "type_alias": "", "comment": "", "tags": {}, "dimensions": 0}
+            {"name": "result", "type": "null", "type_alias": "", "comment": "Returns a null value", "tags": {}, "dimensions": 0}
           ]
         },
         {

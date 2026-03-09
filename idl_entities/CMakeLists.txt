@@ -11,8 +11,7 @@ add_custom_target(idl_entities_specs
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
 )
 
-add_custom_target(idl_entities
-    DEPENDS idl_entities_specs python3_idl_entities jvm_idl_entities cpp_idl_entities cpp_idl_entities_test
-)
+add_custom_target(idl_entities)
+add_dependencies(idl_entities idl_entities_specs python3_idl_entities jvm_idl_entities cpp_idl_entities cpp_idl_entities_test)
 
 set(idl_entities idl_entities PARENT_SCOPE)

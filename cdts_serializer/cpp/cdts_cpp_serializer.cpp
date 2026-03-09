@@ -527,6 +527,15 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator>>(cdt_metaffi_handle& handle)
 cdts_cpp_serializer& cdts_cpp_serializer::operator>>(cdt_metaffi_handle*& handle)
 {
 	check_bounds(current_index);
+
+	// Accept null type — return nullptr handle
+	if(data[current_index].type == metaffi_null_type)
+	{
+		handle = nullptr;
+		current_index++;
+		return *this;
+	}
+
 	if(data[current_index].type != metaffi_handle_type)
 	{
 		std::stringstream ss;
@@ -544,6 +553,15 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator>>(cdt_metaffi_handle*& handle
 cdts_cpp_serializer& cdts_cpp_serializer::operator>>(metaffi_handle& val)
 {
 	check_bounds(current_index);
+
+	// Accept null type — return nullptr
+	if(data[current_index].type == metaffi_null_type)
+	{
+		val = nullptr;
+		current_index++;
+		return *this;
+	}
+
 	if(data[current_index].type != metaffi_handle_type)
 	{
 		std::stringstream ss;
@@ -558,14 +576,6 @@ cdts_cpp_serializer& cdts_cpp_serializer::operator>>(metaffi_handle& val)
 		val = nullptr;
 		current_index++;
 		return *this;
-	}
-
-	if(handle->runtime_id != CPP_RUNTIME_ID)
-	{
-		std::stringstream ss;
-		ss << "Handle runtime_id mismatch at index " << current_index << ": expected "
-		   << CPP_RUNTIME_ID << ", got " << handle->runtime_id;
-		throw std::runtime_error(ss.str());
 	}
 
 	val = handle->handle;

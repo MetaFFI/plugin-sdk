@@ -6,7 +6,6 @@
 
 namespace guest {
 
-const int64_t CONST_FIVE_SECONDS = 5;
 int64_t g_counter = 0;
 static auto LOG = metaffi::get_logger("cpp.guest");
 
@@ -23,9 +22,12 @@ int64_t inc_counter(int64_t delta) {
 	return g_counter;
 }
 
-void hello_world() {
+void no_op() {}
+
+std::string hello_world() {
 	++g_counter;
 	METAFFI_INFO(LOG, "Hello World, from C++");
+	return "Hello World from C++";
 }
 
 void returns_an_error() {
@@ -427,6 +429,59 @@ std::pair<bool, std::string> return_error_pair(bool ok) {
 		return {true, ""};
 	}
 	return {false, "error"};
+}
+
+// --- Typed scalar returns ---
+
+int8_t   return_int8()   { return 42; }
+int16_t  return_int16()  { return 42; }
+int32_t  return_int32()  { return 42; }
+int64_t  return_int64()  { return 42; }
+uint8_t  return_uint8()  { return 42; }
+uint16_t return_uint16() { return 42; }
+uint32_t return_uint32() { return 42; }
+uint64_t return_uint64() { return 42; }
+float    return_float32() { return 3.14f; }
+double   return_float64() { return 3.14; }
+bool     return_bool()    { return true; }
+std::string return_string() { return "hello"; }
+
+// --- Typed scalar accepts ---
+
+void accept_int8(int8_t val)        { (void)val; }
+void accept_int16(int16_t val)      { (void)val; }
+void accept_int32(int32_t val)      { (void)val; }
+void accept_int64(int64_t val)      { (void)val; }
+void accept_uint8(uint8_t val)      { (void)val; }
+void accept_uint16(uint16_t val)    { (void)val; }
+void accept_uint32(uint32_t val)    { (void)val; }
+void accept_uint64(uint64_t val)    { (void)val; }
+void accept_float32(float val)      { (void)val; }
+void accept_float64(double val)     { (void)val; }
+void accept_bool(bool val)          { (void)val; }
+void accept_string(const std::string& val) { (void)val; }
+
+// --- Typed echo (round-trip) ---
+
+int64_t     echo_int64(int64_t val)         { return val; }
+double      echo_float64(double val)        { return val; }
+std::string echo_string(const std::string& val) { return val; }
+bool        echo_bool(bool val)             { return val; }
+
+// --- 1D int64 array helpers ---
+
+std::vector<int64_t> make_1d_int64_array() {
+	return {1, 2, 3, 4, 5};
+}
+
+int64_t sum_1d_int64_array(const std::vector<int64_t>& arr) {
+	int64_t total = 0;
+	for (auto v : arr) total += v;
+	return total;
+}
+
+std::vector<int64_t> echo_1d_int64_array(const std::vector<int64_t>& arr) {
+	return arr;
 }
 
 }  // namespace guest

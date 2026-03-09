@@ -10,8 +10,9 @@ static int add_callback(int a, int b) {
 }
 
 TEST_CASE("core functions and globals") {
+	no_op();
 	set_counter(0);
-	hello_world();
+	CHECK(hello_world() == "Hello World from C++");
 	CHECK(get_counter() == 1);
 	CHECK(CONST_FIVE_SECONDS == 5);
 	CHECK(inc_counter(2) == 3);
@@ -109,6 +110,48 @@ TEST_CASE("types and primitives") {
 	CHECK(sbox.get() == "x");
 	Vec2 v = add_vec2(Vec2(1, 2), Vec2(3, 4));
 	CHECK(v == Vec2(4, 6));
+}
+
+TEST_CASE("typed returns, accepts, echo, arrays") {
+	// Typed scalar returns
+	CHECK(return_int8()   == static_cast<int8_t>(42));
+	CHECK(return_int16()  == static_cast<int16_t>(42));
+	CHECK(return_int32()  == 42);
+	CHECK(return_int64()  == 42LL);
+	CHECK(return_uint8()  == static_cast<uint8_t>(42));
+	CHECK(return_uint16() == static_cast<uint16_t>(42));
+	CHECK(return_uint32() == 42u);
+	CHECK(return_uint64() == 42uLL);
+	CHECK(return_float32() == doctest::Approx(3.14f));
+	CHECK(return_float64() == doctest::Approx(3.14));
+	CHECK(return_bool() == true);
+	CHECK(return_string() == "hello");
+
+	// Typed scalar accepts (just verify no exception)
+	CHECK_NOTHROW(accept_int8(42));
+	CHECK_NOTHROW(accept_int16(42));
+	CHECK_NOTHROW(accept_int32(42));
+	CHECK_NOTHROW(accept_int64(42LL));
+	CHECK_NOTHROW(accept_uint8(42));
+	CHECK_NOTHROW(accept_uint16(42));
+	CHECK_NOTHROW(accept_uint32(42u));
+	CHECK_NOTHROW(accept_uint64(42uLL));
+	CHECK_NOTHROW(accept_float32(3.14f));
+	CHECK_NOTHROW(accept_float64(3.14));
+	CHECK_NOTHROW(accept_bool(true));
+	CHECK_NOTHROW(accept_string("hello"));
+
+	// Echo (round-trip)
+	CHECK(echo_int64(99LL) == 99LL);
+	CHECK(echo_float64(2.71) == doctest::Approx(2.71));
+	CHECK(echo_string("world") == "world");
+	CHECK(echo_bool(false) == false);
+
+	// 1D int64 array
+	auto arr = make_1d_int64_array();
+	CHECK(arr.size() == 5);
+	CHECK(sum_1d_int64_array(arr) == 15);
+	CHECK(echo_1d_int64_array({10, 20, 30}) == std::vector<int64_t>{10, 20, 30});
 }
 
 TEST_CASE("any, variants, tuples, errors") {

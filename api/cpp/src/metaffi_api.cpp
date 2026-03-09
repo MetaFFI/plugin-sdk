@@ -235,10 +235,6 @@ MetaFFIModule::MetaFFIModule(std::string runtime_plugin, std::string module_path
 	: _runtime_plugin(normalize_runtime_plugin(std::move(runtime_plugin))),
 	  _module_path(std::move(module_path))
 {
-	if(_module_path.empty())
-	{
-		throw std::invalid_argument("module_path must not be empty");
-	}
 }
 
 const std::string& MetaFFIModule::module_path() const
@@ -339,6 +335,12 @@ MetaFFIEntity::MetaFFIEntity(std::string runtime_plugin,
 	{
 		throw std::invalid_argument("pxcall must not be null");
 	}
+}
+
+MetaFFIEntity::MetaFFIEntity() noexcept
+	: _pxcall(nullptr)
+	, _owns_xcall(false)
+{
 }
 
 MetaFFIEntity::MetaFFIEntity(MetaFFIEntity&& other) noexcept

@@ -104,6 +104,5 @@ add_junit_test(sdk.idl_compiler.jvm.compiler_test
 )
 
 # Add test target (optional - can be run manually)
-add_custom_target(jvm_idl_compiler_tests
-    DEPENDS run_tests
-)
+add_custom_target(jvm_idl_compiler_tests)
+add_dependencies(jvm_idl_compiler_tests sdk.idl_compiler.jvm.compiler_test_build)

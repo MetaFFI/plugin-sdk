@@ -58,8 +58,7 @@ add_junit_test(sdk.compiler.jvm.host.tests
     COMMENT "Running JVM host compiler tests"
 )
 
-add_custom_target(compiler_jvm_tests
-    DEPENDS sdk.compiler.jvm.host.tests_build
-)
+add_custom_target(compiler_jvm_tests)
+add_dependencies(compiler_jvm_tests sdk.compiler.jvm.host.tests_build)
 
 set(compiler_jvm_tests compiler_jvm_tests PARENT_SCOPE)

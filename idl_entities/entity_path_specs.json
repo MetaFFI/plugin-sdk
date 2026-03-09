@@ -180,6 +180,155 @@
     }
   },
 
+  "cpp": {
+    "description": "C/C++ runtime plugin entity_path structure. Symbol names are carried as-is (already-mangled); the runtime_manager never mangles or demangles.",
+    "free_function": {
+      "description": "C or C++ free function, or a C++ static method. Symbol must be the already-mangled name (use the plain name for extern \"C\" / pure-C functions).",
+      "required_keys": {
+        "callable": "Symbol name exactly as it appears in the shared library's export table (e.g. 'add', '_ZN3Foo6doWorkEi', '?doWork@Foo@@QAEHH@Z')"
+      },
+      "optional_keys": {
+        "namespace": "C++ namespace path (e.g. 'myns', 'outer::inner'). Used for IDL grouping only — namespace is already encoded in the mangled callable symbol."
+      },
+      "examples": [
+        { "callable": "add" },
+        { "callable": "_ZN3Foo6doWorkEi" },
+        { "callable": "?doWork@Foo@@QAEHH@Z" },
+        { "callable": "?multiply@math@@YAHHH@Z", "namespace": "math" }
+      ]
+    },
+    "instance_method": {
+      "description": "C++ instance method. The caller passes the object pointer (this*) as the first argument when invoking the function.",
+      "required_keys": {
+        "callable": "Mangled symbol name of the instance method"
+      },
+      "required_flags": {
+        "instance_required": "Always true for instance methods"
+      },
+      "optional_keys": {
+        "namespace": "C++ namespace path. Used for IDL grouping — namespace is already encoded in the mangled symbol."
+      },
+      "example": {
+        "callable": "?sum@Point@@QEBANXZ",
+        "instance_required": true,
+        "namespace": ""
+      }
+    },
+    "constructor": {
+      "description": "C++ constructor. The plugin allocates class_size bytes, then calls the constructor function pointer with the memory as this*.",
+      "required_keys": {
+        "callable": "Mangled symbol name of the constructor",
+        "class_size": "sizeof(class) as a decimal integer — number of bytes to allocate"
+      },
+      "required_flags": {
+        "constructor": "Always true for constructors"
+      },
+      "optional_keys": {
+        "namespace": "C++ namespace path. Used for IDL grouping only."
+      },
+      "example": {
+        "callable": "??0Point@@QEAA@HN@Z",
+        "constructor": true,
+        "class_size": "16"
+      }
+    },
+    "destructor": {
+      "description": "C++ destructor. destroy() calls the destructor function pointer with the instance pointer, then frees the memory.",
+      "required_keys": {
+        "callable": "Mangled symbol name of the destructor"
+      },
+      "required_flags": {
+        "destructor": "Always true for destructors"
+      },
+      "optional_keys": {
+        "namespace": "C++ namespace path. Used for IDL grouping only."
+      },
+      "example": {
+        "callable": "??1Point@@QEAA@XZ",
+        "destructor": true
+      }
+    },
+    "field_getter": {
+      "description": "C++ field getter using byte offset arithmetic. Returns a pointer to the field inside the instance (no symbol lookup).",
+      "required_keys": {
+        "field": "Logical field name (used for diagnostics and IDL grouping)",
+        "field_offset": "Byte offset of the field within the class, as a decimal integer"
+      },
+      "required_flags": {
+        "getter": "Always true for getters",
+        "instance_required": "Always true — field belongs to an instance"
+      },
+      "optional_keys": {
+        "namespace": "C++ namespace path. Used for IDL grouping only."
+      },
+      "example": {
+        "field": "x",
+        "getter": true,
+        "instance_required": true,
+        "field_offset": "0"
+      }
+    },
+    "field_setter": {
+      "description": "C++ field setter using byte offset and memcpy. No symbol lookup is performed.",
+      "required_keys": {
+        "field": "Logical field name",
+        "field_offset": "Byte offset of the field within the class, as a decimal integer",
+        "field_size": "Size of the field in bytes, as a decimal integer"
+      },
+      "required_flags": {
+        "setter": "Always true for setters",
+        "instance_required": "Always true — field belongs to an instance"
+      },
+      "optional_keys": {
+        "namespace": "C++ namespace path. Used for IDL grouping only."
+      },
+      "example": {
+        "field": "x",
+        "setter": true,
+        "instance_required": true,
+        "field_offset": "0",
+        "field_size": "4"
+      }
+    },
+    "global_getter": {
+      "description": "Read a C/C++ global variable. Returns a void* pointing directly into the module's memory for the variable (zero-copy).",
+      "required_keys": {
+        "global": "Symbol name of the global variable (e.g. 'g_counter')"
+      },
+      "required_flags": {
+        "getter": "Always true for getters"
+      },
+      "optional_keys": {
+        "namespace": "C++ namespace path. Used for IDL grouping — namespace is already encoded in the mangled symbol."
+      },
+      "example": {
+        "global": "g_counter",
+        "getter": true
+      }
+    },
+    "global_setter": {
+      "description": "Write a C/C++ global variable by memcpy-ing caller-supplied bytes into the variable's memory.",
+      "required_keys": {
+        "global": "Symbol name of the global variable (e.g. 'g_counter')"
+      },
+      "required_flags": {
+        "setter": "Always true for setters"
+      },
+      "optional_keys": {
+        "namespace": "C++ namespace path. Used for IDL grouping — namespace is already encoded in the mangled symbol."
+      },
+      "example": {
+        "global": "g_counter",
+        "setter": true
+      }
+    },
+    "notes": {
+      "name_mangling": "The IDL compiler (sdk/idl_compiler/cpp/) produces mangled names using libclang. The runtime_manager never mangles or demangles symbols.",
+      "abi_verification": "The plugin detects the C++ ABI of each loaded module (MSVC vs Itanium) and hard-fails on a mismatch. Pure-C modules (no C++ runtime dependency) are accepted unconditionally.",
+      "namespace_key": "The optional namespace= key is stored for IDL grouping purposes but does not affect symbol lookup. The mangled callable/global symbol already encodes namespace information."
+    }
+  },
+
   "jvm": {
     "description": "JVM runtime plugin entity_path structure",
     "method": {

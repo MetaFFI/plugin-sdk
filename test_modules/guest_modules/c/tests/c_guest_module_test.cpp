@@ -29,9 +29,12 @@ static const char* string_callback(const char* value) {
 }
 
 TEST_CASE("core functions and globals") {
+	c_guest_no_op();
 	c_guest_set_counter(0);
-	c_guest_hello_world();
+	const char* hw_msg = c_guest_hello_world();
 	CHECK(c_guest_get_counter() == 1);
+	REQUIRE(hw_msg != nullptr);
+	CHECK(std::string(hw_msg) == "Hello World from C");
 	CHECK(C_GUEST_CONST_FIVE_SECONDS == 5);
 	CHECK(c_guest_inc_counter(2) == 3);
 	CHECK(c_guest_div_integers(10, 4) == doctest::Approx(2.5));
@@ -234,4 +237,54 @@ TEST_CASE("types, overloads, variadic, errors") {
 	CHECK(c_guest_return_error_pair(false, &error) == -1);
 	REQUIRE(error != NULL);
 	CHECK(std::string(error) == "error");
+}
+
+TEST_CASE("typed returns, accepts, echo, arrays") {
+	// Typed scalar returns
+	CHECK(c_guest_return_int8()   == static_cast<int8_t>(42));
+	CHECK(c_guest_return_int16()  == static_cast<int16_t>(42));
+	CHECK(c_guest_return_int32()  == 42);
+	CHECK(c_guest_return_int64()  == 42LL);
+	CHECK(c_guest_return_uint8()  == static_cast<uint8_t>(42));
+	CHECK(c_guest_return_uint16() == static_cast<uint16_t>(42));
+	CHECK(c_guest_return_uint32() == 42u);
+	CHECK(c_guest_return_uint64() == 42uLL);
+	CHECK(c_guest_return_float32() == doctest::Approx(3.14f));
+	CHECK(c_guest_return_float64() == doctest::Approx(3.14));
+	CHECK(c_guest_return_bool() == 1);
+	REQUIRE(c_guest_return_string() != nullptr);
+	CHECK(std::string(c_guest_return_string()) == "hello");
+
+	// Typed scalar accepts (just verify no crash)
+	c_guest_accept_int8(42);
+	c_guest_accept_int16(42);
+	c_guest_accept_int32(42);
+	c_guest_accept_int64(42LL);
+	c_guest_accept_uint8(42);
+	c_guest_accept_uint16(42);
+	c_guest_accept_uint32(42u);
+	c_guest_accept_uint64(42uLL);
+	c_guest_accept_float32(3.14f);
+	c_guest_accept_float64(3.14);
+	c_guest_accept_bool(1);
+	c_guest_accept_string("hello");
+
+	// Echo (round-trip)
+	CHECK(c_guest_echo_int64(99LL) == 99LL);
+	CHECK(c_guest_echo_float64(2.71) == doctest::Approx(2.71));
+	const char* echoed = c_guest_echo_string("world");
+	REQUIRE(echoed != nullptr);
+	CHECK(std::string(echoed) == "world");
+	free((void*)echoed);
+	CHECK(c_guest_echo_bool(0) == 0);
+	CHECK(c_guest_echo_bool(1) == 1);
+
+	// 1D int64 array
+	size_t arr_len = 0;
+	int64_t* arr = c_guest_make_1d_int64_array(&arr_len);
+	REQUIRE(arr != nullptr);
+	CHECK(arr_len == 5);
+	int64_t total = c_guest_sum_1d_int64_array(arr, arr_len);
+	CHECK(total == 15);
+	free(arr);
 }

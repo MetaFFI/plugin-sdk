@@ -138,7 +138,9 @@ void handler_return_string8(cdts* data, char** out_err)
 
 void handler_return_null(cdts* data, char** out_err)
 {
+	// Leave CDT in null state (type = metaffi_null_type)
 	data[1].arr[0].type = metaffi_null_type;
+	data[1].arr[0].free_required = 0;
 	log_entity("test::return_null", "returning null");
 }
 

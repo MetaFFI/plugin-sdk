@@ -53,6 +53,5 @@ add_java_main_test(java_guest_module_tests
 	COMMENT "Running Java guest module tests"
 )
 
-add_custom_target(java_guest_module_tests
-	DEPENDS java_guest_module_tests_build
-)
+add_custom_target(java_guest_module_tests)
+add_dependencies(java_guest_module_tests java_guest_module_tests_build)

@@ -10,15 +10,7 @@
 #include <variant>
 #include <vector>
 
-#ifdef _WIN32
-#	ifdef CPP_GUEST_MODULE_EXPORTS
-#		define CPP_GUEST_MODULE_API __declspec(dllexport)
-#	else
-#		define CPP_GUEST_MODULE_API __declspec(dllimport)
-#	endif
-#else
-#	define CPP_GUEST_MODULE_API
-#endif
+#define CPP_GUEST_MODULE_API
 
 namespace guest {
 
@@ -26,14 +18,15 @@ using AddCallback = int(*)(int, int);
 using StringTransformer = std::function<std::string(const std::string&)>;
 using VoidCallback = std::function<void()>;
 
-CPP_GUEST_MODULE_API extern const int64_t CONST_FIVE_SECONDS;
+inline constexpr int64_t CONST_FIVE_SECONDS = 5;
 CPP_GUEST_MODULE_API extern int64_t g_counter;
 
 CPP_GUEST_MODULE_API int64_t get_counter();
 CPP_GUEST_MODULE_API void set_counter(int64_t value);
 CPP_GUEST_MODULE_API int64_t inc_counter(int64_t delta);
 
-CPP_GUEST_MODULE_API void hello_world();
+CPP_GUEST_MODULE_API void no_op();
+CPP_GUEST_MODULE_API std::string hello_world();
 CPP_GUEST_MODULE_API void returns_an_error();
 CPP_GUEST_MODULE_API double div_integers(int64_t x, int64_t y);
 CPP_GUEST_MODULE_API std::string join_strings(const std::vector<std::string>& arr);
@@ -205,5 +198,44 @@ struct CPP_GUEST_MODULE_API MultiReturn {
 
 CPP_GUEST_MODULE_API MultiReturn return_multiple_return_values();
 CPP_GUEST_MODULE_API std::pair<bool, std::string> return_error_pair(bool ok);
+
+// --- Typed scalar returns ---
+CPP_GUEST_MODULE_API int8_t   return_int8();
+CPP_GUEST_MODULE_API int16_t  return_int16();
+CPP_GUEST_MODULE_API int32_t  return_int32();
+CPP_GUEST_MODULE_API int64_t  return_int64();
+CPP_GUEST_MODULE_API uint8_t  return_uint8();
+CPP_GUEST_MODULE_API uint16_t return_uint16();
+CPP_GUEST_MODULE_API uint32_t return_uint32();
+CPP_GUEST_MODULE_API uint64_t return_uint64();
+CPP_GUEST_MODULE_API float    return_float32();
+CPP_GUEST_MODULE_API double   return_float64();
+CPP_GUEST_MODULE_API bool     return_bool();
+CPP_GUEST_MODULE_API std::string return_string();
+
+// --- Typed scalar accepts ---
+CPP_GUEST_MODULE_API void accept_int8(int8_t val);
+CPP_GUEST_MODULE_API void accept_int16(int16_t val);
+CPP_GUEST_MODULE_API void accept_int32(int32_t val);
+CPP_GUEST_MODULE_API void accept_int64(int64_t val);
+CPP_GUEST_MODULE_API void accept_uint8(uint8_t val);
+CPP_GUEST_MODULE_API void accept_uint16(uint16_t val);
+CPP_GUEST_MODULE_API void accept_uint32(uint32_t val);
+CPP_GUEST_MODULE_API void accept_uint64(uint64_t val);
+CPP_GUEST_MODULE_API void accept_float32(float val);
+CPP_GUEST_MODULE_API void accept_float64(double val);
+CPP_GUEST_MODULE_API void accept_bool(bool val);
+CPP_GUEST_MODULE_API void accept_string(const std::string& val);
+
+// --- Typed echo (round-trip) ---
+CPP_GUEST_MODULE_API int64_t     echo_int64(int64_t val);
+CPP_GUEST_MODULE_API double      echo_float64(double val);
+CPP_GUEST_MODULE_API std::string echo_string(const std::string& val);
+CPP_GUEST_MODULE_API bool        echo_bool(bool val);
+
+// --- 1D int64 array helpers ---
+CPP_GUEST_MODULE_API std::vector<int64_t> make_1d_int64_array();
+CPP_GUEST_MODULE_API int64_t              sum_1d_int64_array(const std::vector<int64_t>& arr);
+CPP_GUEST_MODULE_API std::vector<int64_t> echo_1d_int64_array(const std::vector<int64_t>& arr);
 
 }  // namespace guest

@@ -18,9 +18,6 @@ add_subdirectory(runtime)
 add_subdirectory(runtime_manager)
 add_subdirectory(test_modules)
 
-add_custom_target(metaffi_sdk
-	DEPENDS cdts_serializer compiler api idl_entities idl_compiler sdk_runtime runtime_manager test_modules
-)
-set_target_properties(metaffi_sdk PROPERTIES EXCLUDE_FROM_ALL TRUE)
-
+add_custom_target(metaffi_sdk)
+add_dependencies(metaffi_sdk cdts_serializer compiler api idl_entities idl_compiler sdk_runtime runtime_manager test_modules)
 set(metaffi_sdk metaffi_sdk PARENT_SCOPE)

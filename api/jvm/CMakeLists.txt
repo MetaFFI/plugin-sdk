@@ -58,9 +58,8 @@ build_jar(metaffi.api
 set(metaffi.api ${metaffi.api} PARENT_SCOPE)
 add_dependencies(metaffi.api metaffi.api.accessor)
 
-add_custom_target(api_jvm
-	DEPENDS metaffi.api metaffi.api.accessor
-)
+add_custom_target(api_jvm)
+add_dependencies(api_jvm metaffi.api metaffi.api.accessor)
 set(api_jvm ${api_jvm} PARENT_SCOPE)
 
 # * ---- compile and run JVM API JUnit tests ----
@@ -103,6 +102,5 @@ add_junit_test(jvm_api_test
 )
 
 # Keep legacy build target name for compatibility with existing scripts.
-add_custom_target(jvm_api_test
-	DEPENDS jvm_api_test_build
-)
+add_custom_target(jvm_api_test)
+add_dependencies(jvm_api_test jvm_api_test_build)

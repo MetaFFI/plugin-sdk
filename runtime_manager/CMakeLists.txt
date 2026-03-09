@@ -1,10 +1,10 @@
 # Runtime Manager Libraries
 
+add_subdirectory(cpp)
 add_subdirectory(cpython3)
 add_subdirectory(go)
 add_subdirectory(jvm)
 
-add_custom_target(runtime_manager
-	DEPENDS cpython3_runtime_manager_test go_runtime_manager_test jvm_runtime_manager_test
-)
+add_custom_target(runtime_manager)
+add_dependencies(runtime_manager cpp_runtime_manager_test cpython3_runtime_manager_test go_runtime_manager_test jvm_runtime_manager_test)
 set(runtime_manager runtime_manager PARENT_SCOPE)

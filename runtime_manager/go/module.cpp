@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
-#include <cstdlib>
+#include <utils/safe_func.h>
 #include <unordered_map>
 #include <boost/algorithm/string.hpp>
 
@@ -28,13 +28,14 @@ namespace
 	{
 		static const bool enabled = []() -> bool
 		{
-			const char* raw = std::getenv("METAFFI_GO_PLUGIN_DEBUG_LOG");
+			char* raw = metaffi_getenv_alloc("METAFFI_GO_PLUGIN_DEBUG_LOG");
 			if(!raw)
 			{
 				return false;
 			}
 
 			std::string val(raw);
+			metaffi_free_env(raw);
 			boost::algorithm::to_lower(val);
 			return val == "1" || val == "true" || val == "yes" || val == "on";
 		}();
