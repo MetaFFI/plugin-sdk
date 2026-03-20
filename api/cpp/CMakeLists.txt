@@ -17,18 +17,29 @@ set(CPP_API_INCLUDE
 	${Boost_INCLUDE_DIRS}
 )
 
-# Header-only target: install metaffi.h to $METAFFI_HOME/cpp/api/
+# Shared library for plugin host tests that link against metaffi.api.cpp
+c_cpp_shared_lib(metaffi.api.cpp
+	"${CPP_API_SRC}"
+	"${CPP_API_INCLUDE}"
+	"Boost::filesystem"
+	"sdk/api/cpp"
+)
+
 file(GLOB_RECURSE CPP_API_HEADERS
 	"${CMAKE_CURRENT_LIST_DIR}/include/*.h"
 	"${CMAKE_CURRENT_LIST_DIR}/include/*.hpp"
 )
 
-add_custom_target(api_cpp
+add_custom_command(TARGET metaffi.api.cpp POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E make_directory $ENV{METAFFI_HOME}/cpp/api/metaffi
 	COMMAND ${CMAKE_COMMAND} -E copy_if_different
 		${CMAKE_CURRENT_LIST_DIR}/include/metaffi/metaffi.h
 		$ENV{METAFFI_HOME}/cpp/api/metaffi/metaffi.h
+	COMMAND_EXPAND_LISTS
 )
+
+add_custom_target(api_cpp)
+add_dependencies(api_cpp metaffi.api.cpp)
 set(api_cpp api_cpp PARENT_SCOPE)
 
 # --- C++ API integration test (compiles source directly) ---
