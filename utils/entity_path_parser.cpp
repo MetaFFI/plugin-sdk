@@ -1,5 +1,6 @@
 #include "entity_path_parser.h"
 #include "expand_env.h"
+#include <boost/algorithm/string.hpp>
 
 namespace metaffi { namespace utils
 {

@@ -1,6 +1,6 @@
 #include "xllr_capi_loader.h"
-#include <utils/logger_c.h>
-#include <utils/safe_func.h>
+#include "utils/logger_c.h"
+#include "utils/safe_func.h"
 
 #include <stdlib.h>
 #ifndef WIN32
